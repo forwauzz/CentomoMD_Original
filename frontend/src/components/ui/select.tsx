@@ -29,6 +29,7 @@ interface SelectValueProps {
   placeholder?: string;
   className?: string;
   children?: React.ReactNode;
+  value?: string;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -65,7 +66,7 @@ export const Select: React.FC<SelectProps> = ({
             return React.cloneElement(child, {
               ref: triggerRef,
               onClick: () => {
-                console.log('Select: trigger clicked, disabled:', disabled, 'isOpen:', isOpen);
+                console.log('Select: trigger clicked, disabled:', disabled, 'isOpen:', isOpen, 'value:', value);
                 if (!disabled) {
                   setIsOpen(!isOpen);
                 } else {
@@ -81,6 +82,11 @@ export const Select: React.FC<SelectProps> = ({
             return React.cloneElement(child, {
               onSelect: handleSelect,
               selectedValue: value
+            });
+          }
+          if (child.type === SelectValue) {
+            return React.cloneElement(child, {
+              value
             });
           }
         }
@@ -174,9 +180,13 @@ export const SelectItem: React.FC<SelectItemProps & {
 export const SelectValue: React.FC<SelectValueProps> = ({ 
   placeholder, 
   className,
-  children 
-}) => (
-  <span className={cn("block truncate", className)}>
-    {children || placeholder}
-  </span>
-);
+  children,
+  value
+}) => {
+  console.log('SelectValue: rendering with value:', value, 'children:', children);
+  return (
+    <span className={cn("block truncate", className)}>
+      {children || placeholder}
+    </span>
+  );
+};

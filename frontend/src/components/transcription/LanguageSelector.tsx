@@ -24,10 +24,15 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   onLanguageChange,
   disabled = false
 }) => {
+  console.log('LanguageSelector: rendering with language:', language, 'disabled:', disabled);
+  
   const handleLanguageChange = (newLanguage: string) => {
     console.log('LanguageSelector: language changed to:', newLanguage);
     onLanguageChange(newLanguage);
   };
+
+  const displayText = getLanguageDisplay(language);
+  console.log('LanguageSelector: displayText:', displayText);
 
   return (
     <div className="flex items-center space-x-2">
@@ -41,7 +46,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue>
-            {getLanguageDisplay(language)}
+            {displayText}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
