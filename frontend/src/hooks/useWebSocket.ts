@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { WebSocketMessage, UseWebSocketReturn } from '@/types';
 import { createWebSocketUrl } from '@/lib/utils';
 
-export const useWebSocket = (): UseWebSocketReturn => {
+export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -77,6 +77,11 @@ export const useWebSocket = (): UseWebSocketReturn => {
           // Handle other messages
           console.log('WebSocket message received:', message);
           
+          // Pass message to callback if provided
+          if (onMessage) {
+            onMessage(message);
+          }
+          
         } catch (parseError) {
           console.error('Failed to parse WebSocket message:', parseError);
         }
@@ -86,7 +91,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
       console.error('Failed to create WebSocket connection:', error);
       setError('Failed to create WebSocket connection');
     }
-  }, [reconnectAttempts]);
+  }, [reconnectAttempts, onMessage]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {

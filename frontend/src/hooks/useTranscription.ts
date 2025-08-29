@@ -22,7 +22,59 @@ export const useTranscription = (sessionId?: string) => {
     reconnectionAttempts: 0,
   });
 
-  const { isConnected, sendMessage, error: wsError, reconnect } = useWebSocket();
+  // Handle WebSocket messages
+  const handleWebSocketMessage = useCallback((message: any) => {
+    console.log('Transcription hook received message:', message);
+    
+    switch (message.type) {
+      case 'transcription_result':
+        const transcript = message.data.transcript;
+        console.log('Received transcript:', transcript);
+        
+        // Add to final transcripts
+        const newTranscript: Transcript = {
+          id: `transcript_${Date.now()}`,
+          session_id: sessionId || '',
+          section: state.currentSection,
+          content: transcript,
+          language: message.data.language_detected || 'fr-CA',
+          is_final: true,
+          confidence_score: message.data.confidence_score || 0.95,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        setState(prev => ({
+          ...prev,
+          finalTranscripts: [...prev.finalTranscripts, newTranscript],
+        }));
+        break;
+
+      case 'transcription_started':
+        console.log('Transcription started on server');
+        break;
+
+      case 'transcription_stopped':
+        console.log('Transcription stopped on server');
+        break;
+
+      case 'connection_established':
+        console.log('WebSocket connection established');
+        break;
+
+      case 'error':
+        setState(prev => ({
+          ...prev,
+          error: message.payload?.message || 'Unknown error',
+        }));
+        break;
+
+      default:
+        console.log('Unknown message type:', message.type);
+    }
+  }, [state.currentSection, sessionId]);
+
+  const { isConnected, sendMessage, error: wsError, reconnect } = useWebSocket(handleWebSocketMessage);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -46,59 +98,8 @@ export const useTranscription = (sessionId?: string) => {
 
   const startRecording = useCallback(async () => {
     try {
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
-          channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      streamRef.current = stream;
-
-      // Create audio context for processing
-      const audioContext = new AudioContext({
-        sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
-      });
-      audioContextRef.current = audioContext;
-
-      // Create source from stream
-      const source = audioContext.createMediaStreamSource(stream);
-
-      // Create script processor for audio processing
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      processorRef.current = processor;
-
-      processor.onaudioprocess = (event) => {
-        if (!state.isRecording) return;
-
-        const inputBuffer = event.inputBuffer;
-        const inputData = inputBuffer.getChannelData(0);
-        
-        // Convert to PCM
-        const pcmData = convertToPCM(inputData);
-        const audioChunk = createAudioChunk(pcmData);
-
-        // Send audio chunk via WebSocket
-        const message: WebSocketMessage = {
-          type: 'audio_chunk',
-          payload: {
-            audioData: Array.from(new Uint8Array(audioChunk)),
-            timestamp: Date.now(),
-          },
-          sessionId,
-        };
-
-        sendMessage(message);
-      };
-
-      // Connect the audio nodes
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-
+      console.log('Starting recording...');
+      
       // Start transcription on server
       const startMessage: WebSocketMessage = {
         type: 'start_transcription',
@@ -126,6 +127,8 @@ export const useTranscription = (sessionId?: string) => {
         currentTranscript: '',
       });
 
+      console.log('Recording started successfully');
+
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       updateState({
@@ -134,26 +137,11 @@ export const useTranscription = (sessionId?: string) => {
       });
       throw error;
     }
-  }, [state.isRecording, sendMessage, sessionId, updateState]);
+  }, [sendMessage, sessionId, updateState]);
 
   const stopRecording = useCallback(async () => {
     try {
-      // Stop audio processing
-      if (processorRef.current) {
-        processorRef.current.disconnect();
-        processorRef.current = null;
-      }
-
-      if (audioContextRef.current) {
-        await audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-
-      // Stop media stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
+      console.log('Stopping recording...');
 
       // Stop transcription on server
       const stopMessage: WebSocketMessage = {
@@ -168,6 +156,8 @@ export const useTranscription = (sessionId?: string) => {
         isRecording: false,
         currentTranscript: '',
       });
+
+      console.log('Recording stopped successfully');
 
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -191,62 +181,6 @@ export const useTranscription = (sessionId?: string) => {
 
     sendMessage(message);
   }, [sendMessage, sessionId]);
-
-  // Handle WebSocket messages
-  const handleWebSocketMessage = useCallback((message: any) => {
-    switch (message.type) {
-      case 'transcription_result':
-        if (message.payload.type === 'partial') {
-          updateState({
-            currentTranscript: message.payload.transcript,
-          });
-        } else if (message.payload.type === 'final') {
-          const newTranscript: Transcript = {
-            id: `transcript_${Date.now()}`,
-            session_id: sessionId || '',
-            section: state.currentSection,
-            content: message.payload.transcript,
-            language: message.payload.language || 'fr',
-            is_final: true,
-            confidence_score: message.payload.confidence,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
-          updateState({
-            currentTranscript: '',
-            finalTranscripts: [...state.finalTranscripts, newTranscript],
-          });
-        }
-        break;
-
-      case 'voice_command_detected':
-        // Handle voice command detection
-        console.log('Voice command detected:', message.payload);
-        break;
-
-      case 'error':
-        updateState({
-          error: message.payload.message,
-        });
-        break;
-
-      case 'reconnection_attempt':
-        updateState({
-          reconnectionAttempts: message.payload.attempt,
-        });
-        break;
-
-      default:
-        console.log('Unknown message type:', message.type);
-    }
-  }, [state.currentSection, state.finalTranscripts, sessionId, updateState]);
-
-  // Set up WebSocket message handler
-  useEffect(() => {
-    // This would be set up in the useWebSocket hook
-    // For now, we'll handle it here
-  }, [handleWebSocketMessage]);
 
   // Cleanup on unmount
   useEffect(() => {
