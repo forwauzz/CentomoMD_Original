@@ -82,6 +82,8 @@ export const useTranscription = (sessionId?: string) => {
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioChunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAudioChunkTimeRef = useRef<number>(0);
+  const audioChunkBufferRef = useRef<number[]>([]);
 
   // Update connection status
   useEffect(() => {
@@ -99,9 +101,70 @@ export const useTranscription = (sessionId?: string) => {
     setState(prev => ({ ...prev, ...updates }));
   }, []);
 
+  // Throttled audio chunk sending
+  const sendAudioChunk = useCallback((audioData: number[]) => {
+    const now = Date.now();
+    const timeSinceLastChunk = now - lastAudioChunkTimeRef.current;
+    
+    // Only send audio chunks every 500ms to prevent overwhelming the connection
+    if (timeSinceLastChunk >= 500) {
+      // Combine buffered data with new data
+      const combinedData = [...audioChunkBufferRef.current, ...audioData];
+      audioChunkBufferRef.current = [];
+      
+      const message: WebSocketMessage = {
+        type: 'audio_chunk',
+        payload: {
+          audioData: combinedData,
+          timestamp: now,
+          sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+          channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
+        },
+        sessionId,
+      };
+
+      sendMessage(message);
+      lastAudioChunkTimeRef.current = now;
+    } else {
+      // Buffer audio data for next send
+      audioChunkBufferRef.current.push(...audioData);
+    }
+  }, [sendMessage, sessionId]);
+
+  // Periodic flush of buffered audio data
+  useEffect(() => {
+    if (state.isRecording) {
+      const flushInterval = setInterval(() => {
+        if (audioChunkBufferRef.current.length > 0) {
+          const now = Date.now();
+          const message: WebSocketMessage = {
+            type: 'audio_chunk',
+            payload: {
+              audioData: [...audioChunkBufferRef.current],
+              timestamp: now,
+              sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+              channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
+            },
+            sessionId,
+          };
+
+          sendMessage(message);
+          audioChunkBufferRef.current = [];
+          lastAudioChunkTimeRef.current = now;
+        }
+      }, 1000); // Flush every second
+
+      return () => clearInterval(flushInterval);
+    }
+  }, [state.isRecording, sendMessage, sessionId]);
+
   const startRecording = useCallback(async () => {
     try {
       console.log('Starting real audio recording...');
+      
+      // Reset audio chunk tracking
+      lastAudioChunkTimeRef.current = 0;
+      audioChunkBufferRef.current = [];
       
       // Request microphone access with specific audio constraints
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -141,19 +204,8 @@ export const useTranscription = (sessionId?: string) => {
         const pcmData = convertToPCM(inputData);
         const audioChunk = createAudioChunk(pcmData);
 
-        // Send audio chunk via WebSocket
-        const message: WebSocketMessage = {
-          type: 'audio_chunk',
-          payload: {
-            audioData: Array.from(new Uint8Array(audioChunk)),
-            timestamp: Date.now(),
-            sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
-            channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
-          },
-          sessionId,
-        };
-
-        sendMessage(message);
+        // Send audio chunk with throttling
+        sendAudioChunk(Array.from(new Uint8Array(audioChunk)));
       };
 
       // Connect the audio nodes
@@ -198,11 +250,29 @@ export const useTranscription = (sessionId?: string) => {
       });
       throw error;
     }
-  }, [state.isRecording, sendMessage, sessionId, updateState]);
+  }, [state.isRecording, sendMessage, sessionId, updateState, sendAudioChunk]);
 
   const stopRecording = useCallback(async () => {
     try {
       console.log('Stopping real audio recording...');
+
+      // Flush any remaining buffered audio data
+      if (audioChunkBufferRef.current.length > 0) {
+        const now = Date.now();
+        const message: WebSocketMessage = {
+          type: 'audio_chunk',
+          payload: {
+            audioData: [...audioChunkBufferRef.current],
+            timestamp: now,
+            sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+            channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
+          },
+          sessionId,
+        };
+
+        sendMessage(message);
+        audioChunkBufferRef.current = [];
+      }
 
       // Stop audio processing
       if (processorRef.current) {
