@@ -80,11 +80,11 @@ export enum VoiceCommandAction {
 
 export interface TranscriptionConfig {
   language_code?: string;
-  identify_language: boolean;
-  language_options: string[];
-  preferred_language?: string;
+  identify_language?: boolean;  // Optional for single language sessions
+  language_options?: string[];  // Optional for single language sessions
+  preferred_language?: string;  // Optional for single language sessions
   media_sample_rate_hz: number;
-  media_encoding: string;
+  media_encoding?: 'pcm' | 'pcm16' | 'ogg-opus' | 'flac';  // Optional, defaults to 'pcm'
   vocabulary_name?: string;
   vocabulary_filter_name?: string;
   show_speaker_labels?: boolean;

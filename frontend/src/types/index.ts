@@ -270,7 +270,7 @@ export interface TranscriptionConfig {
   identifyLanguage?: boolean;
   languageOptions?: TranscriptionLanguage[];
   mediaSampleRateHertz?: number;
-  mediaEncoding?: 'pcm' | 'ogg-opus' | 'flac';
+  mediaEncoding?: 'pcm' | 'pcm16' | 'ogg-opus' | 'flac';
   showSpeakerLabels?: boolean;
   maxSpeakerLabels?: number;
 }

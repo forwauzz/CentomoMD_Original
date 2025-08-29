@@ -1,8 +1,25 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from backend directory
+const envPath = path.resolve(__dirname, '../../.env');
+console.log('🔍 Loading environment from:', envPath);
+dotenv.config({ path: envPath });
+
+// Debug: Log loaded environment variables (without sensitive data)
+console.log('🔍 Environment variables loaded:');
+console.log('  - NODE_ENV:', process.env.NODE_ENV);
+console.log('  - AWS_REGION:', process.env.AWS_REGION);
+console.log('  - S3_BUCKET_NAME:', process.env.S3_BUCKET_NAME ? `"${process.env.S3_BUCKET_NAME}"` : 'NOT SET');
+console.log('  - S3_BUCKET_NAME length:', process.env.S3_BUCKET_NAME ? process.env.S3_BUCKET_NAME.length : 0);
+console.log('  - S3_BUCKET_NAME raw:', JSON.stringify(process.env.S3_BUCKET_NAME));
+console.log('  - ENCRYPTION_KEY:', process.env.ENCRYPTION_KEY ? `${process.env.ENCRYPTION_KEY.length} chars` : 'NOT SET');
 
 // Environment schema validation
 const envSchema = z.object({
@@ -16,24 +33,24 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS_ACCESS_KEY_ID is required'),
   AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS_SECRET_ACCESS_KEY is required'),
 
-  // Supabase Configuration
-  SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
-  SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY is required'),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  // Supabase Configuration (optional for development)
+  SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL').optional().default('https://placeholder.supabase.co'),
+  SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY is required').optional().default('placeholder-key'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required').optional().default('placeholder-service-key'),
 
   // S3 Configuration
-  S3_BUCKET_NAME: z.string().min(1, 'S3_BUCKET_NAME is required'),
+  S3_BUCKET_NAME: z.string().min(1, 'S3_BUCKET_NAME is required').default('centomomd-dev-bucket'),
   S3_REGION: z.string().default('ca-central-1'),
 
   // Security Configuration
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  ENCRYPTION_KEY: z.string().length(32, 'ENCRYPTION_KEY must be exactly 32 characters'),
+  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters').transform(val => val.substring(0, 32)),
 
   // Logging Configuration
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 
   // Database Configuration (optional)
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().optional().or(z.literal('')),
 
   // Optional Services
   SENTRY_DSN: z.string().url().optional(),

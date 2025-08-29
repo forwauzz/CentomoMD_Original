@@ -60,7 +60,8 @@ export function validatePatientId(patientId: string): boolean {
 // WebSocket utilities
 export function createWebSocketUrl(path: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.host;
+  // Use backend port (3001) instead of frontend port (5173)
+  const host = window.location.hostname + ':3001';
   return `${protocol}//${host}${path}`;
 }
 
@@ -74,9 +75,7 @@ export function convertToPCM(audioData: Float32Array): Int16Array {
   return pcmData;
 }
 
-export function createAudioChunk(audioData: Int16Array): ArrayBuffer {
-  return audioData.buffer.slice(audioData.byteOffset, audioData.byteOffset + audioData.byteLength);
-}
+// Removed createAudioChunk function - now sending raw PCM16 data directly
 
 // Error handling utilities
 export function getErrorMessage(error: unknown): string {
