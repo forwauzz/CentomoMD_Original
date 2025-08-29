@@ -122,6 +122,7 @@ export const translations = {
     notRecording: 'Pas d\'enregistrement',
     connectionLost: 'Connexion perdue',
     reconnecting: 'Reconnexion...',
+    audioLevel: 'Niveau audio',
     
     // Sections
     section7: 'Section 7 - Historique de faits et évolution',
@@ -185,6 +186,7 @@ export const translations = {
     notRecording: 'Not Recording',
     connectionLost: 'Connection Lost',
     reconnecting: 'Reconnecting...',
+    audioLevel: 'Audio Level',
     
     // Sections
     section7: 'Section 7 - History of facts and evolution',

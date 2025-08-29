@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Square, Play, Pause, Save, Download } from 'lucide-react';
+import { Mic, MicOff, Square, Play, Pause, Save, Download, Volume2 } from 'lucide-react';
 import { cn, formatDuration, t } from '@/lib/utils';
 import { TranscriptionState, CNESSTSection, TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -29,6 +29,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showVoiceCommands, setShowVoiceCommands] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   const {
     isRecording,
@@ -46,6 +47,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   const sessionTimerRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>(0);
+  const audioLevelRef = useRef<number>(0);
 
   // Session timer
   useEffect(() => {
@@ -68,6 +70,22 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         clearInterval(sessionTimerRef.current);
       }
     };
+  }, [isRecording, isPaused]);
+
+  // Audio level visualization
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      const interval = setInterval(() => {
+        // Simulate audio level based on recording state
+        const baseLevel = Math.random() * 30 + 10; // 10-40 range
+        const newLevel = Math.min(100, baseLevel + Math.random() * 20);
+        setAudioLevel(newLevel);
+      }, 100);
+
+      return () => clearInterval(interval);
+    } else {
+      setAudioLevel(0);
+    }
   }, [isRecording, isPaused]);
 
   // Auto-save every 5 minutes
@@ -205,6 +223,25 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </>
             )}
           </div>
+
+          {/* Audio Level Visualization */}
+          {isRecording && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <Volume2 className="h-4 w-4 text-green-500" />
+                  <span>{t('audioLevel', language)}</span>
+                </div>
+                <span className="text-green-600 font-medium">{Math.round(audioLevel)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-100 ease-out"
+                  style={{ width: `${audioLevel}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Progress Bar */}
           {isRecording && (

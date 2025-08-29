@@ -75,10 +75,13 @@ export const useTranscription = (sessionId?: string) => {
   }, [state.currentSection, sessionId]);
 
   const { isConnected, sendMessage, error: wsError, reconnect } = useWebSocket(handleWebSocketMessage);
+  
+  // Audio processing refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioChunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update connection status
   useEffect(() => {
@@ -98,8 +101,65 @@ export const useTranscription = (sessionId?: string) => {
 
   const startRecording = useCallback(async () => {
     try {
-      console.log('Starting recording...');
+      console.log('Starting real audio recording...');
       
+      // Request microphone access with specific audio constraints
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+          channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      streamRef.current = stream;
+      console.log('Microphone access granted');
+
+      // Create audio context for processing
+      const audioContext = new AudioContext({
+        sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+      });
+      audioContextRef.current = audioContext;
+
+      // Create source from stream
+      const source = audioContext.createMediaStreamSource(stream);
+
+      // Create script processor for real-time audio processing
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      // Process audio in real-time
+      processor.onaudioprocess = (event) => {
+        if (!state.isRecording) return;
+
+        const inputBuffer = event.inputBuffer;
+        const inputData = inputBuffer.getChannelData(0);
+        
+        // Convert to PCM format
+        const pcmData = convertToPCM(inputData);
+        const audioChunk = createAudioChunk(pcmData);
+
+        // Send audio chunk via WebSocket
+        const message: WebSocketMessage = {
+          type: 'audio_chunk',
+          payload: {
+            audioData: Array.from(new Uint8Array(audioChunk)),
+            timestamp: Date.now(),
+            sampleRate: DEFAULT_AUDIO_CONFIG.sampleRate,
+            channelCount: DEFAULT_AUDIO_CONFIG.channelCount,
+          },
+          sessionId,
+        };
+
+        sendMessage(message);
+      };
+
+      // Connect the audio nodes
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
       // Start transcription on server
       const startMessage: WebSocketMessage = {
         type: 'start_transcription',
@@ -127,21 +187,45 @@ export const useTranscription = (sessionId?: string) => {
         currentTranscript: '',
       });
 
-      console.log('Recording started successfully');
+      console.log('Real audio recording started successfully');
 
     } catch (error) {
       const errorMessage = getErrorMessage(error);
+      console.error('Failed to start audio recording:', error);
       updateState({
         error: errorMessage,
         isRecording: false,
       });
       throw error;
     }
-  }, [sendMessage, sessionId, updateState]);
+  }, [state.isRecording, sendMessage, sessionId, updateState]);
 
   const stopRecording = useCallback(async () => {
     try {
-      console.log('Stopping recording...');
+      console.log('Stopping real audio recording...');
+
+      // Stop audio processing
+      if (processorRef.current) {
+        processorRef.current.disconnect();
+        processorRef.current = null;
+      }
+
+      if (audioContextRef.current) {
+        await audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+
+      // Stop media stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      // Clear any audio chunk intervals
+      if (audioChunkIntervalRef.current) {
+        clearInterval(audioChunkIntervalRef.current);
+        audioChunkIntervalRef.current = null;
+      }
 
       // Stop transcription on server
       const stopMessage: WebSocketMessage = {
@@ -157,10 +241,11 @@ export const useTranscription = (sessionId?: string) => {
         currentTranscript: '',
       });
 
-      console.log('Recording stopped successfully');
+      console.log('Real audio recording stopped successfully');
 
     } catch (error) {
       const errorMessage = getErrorMessage(error);
+      console.error('Failed to stop audio recording:', error);
       updateState({
         error: errorMessage,
         isRecording: false,
