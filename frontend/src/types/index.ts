@@ -262,3 +262,15 @@ export interface PerformanceMetrics {
   memoryUsage: number;
   timestamp: number;
 }
+
+export type TranscriptionLanguage = 'fr-CA' | 'en-US';
+
+export interface TranscriptionConfig {
+  languageCode: TranscriptionLanguage;
+  identifyLanguage?: boolean;
+  languageOptions?: TranscriptionLanguage[];
+  mediaSampleRateHertz?: number;
+  mediaEncoding?: 'pcm' | 'ogg-opus' | 'flac';
+  showSpeakerLabels?: boolean;
+  maxSpeakerLabels?: number;
+}

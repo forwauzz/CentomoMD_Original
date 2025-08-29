@@ -115,6 +115,10 @@ export const translations = {
     next: 'Suivant',
     previous: 'Précédent',
     
+    // Language
+    language: 'Langue',
+    selectLanguage: 'Sélectionner la langue',
+    
     // Transcription
     startRecording: 'Démarrer l\'enregistrement',
     stopRecording: 'Arrêter l\'enregistrement',
@@ -178,6 +182,10 @@ export const translations = {
     back: 'Back',
     next: 'Next',
     previous: 'Previous',
+    
+    // Language
+    language: 'Language',
+    selectLanguage: 'Select language',
     
     // Transcription
     startRecording: 'Start Recording',

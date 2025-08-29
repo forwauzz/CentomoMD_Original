@@ -12,6 +12,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { VoiceCommandPanel } from './VoiceCommandPanel';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
+import { LanguageSelector } from './LanguageSelector';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -26,6 +27,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 }) => {
   const [currentSection, setCurrentSection] = useState<CNESSTSection>('section_7');
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr-CA');
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showVoiceCommands, setShowVoiceCommands] = useState(false);
@@ -174,6 +176,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           <CardTitle className="flex items-center justify-between">
             <span>{t('transcription', language)}</span>
             <div className="flex items-center space-x-2">
+              <LanguageSelector
+                language={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
+                disabled={isRecording}
+              />
               <SectionSelector
                 currentSection={currentSection}
                 onSectionChange={setCurrentSection}
