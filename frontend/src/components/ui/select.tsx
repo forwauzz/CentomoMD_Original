@@ -38,16 +38,10 @@ export const Select: React.FC<SelectProps> = ({
   children
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedValue, setSelectedValue] = React.useState(value || '');
   const triggerRef = React.useRef<HTMLButtonElement>(null);
-
-  React.useEffect(() => {
-    setSelectedValue(value || '');
-  }, [value]);
 
   const handleSelect = (newValue: string) => {
     console.log('Select: handleSelect called with:', newValue);
-    setSelectedValue(newValue);
     onValueChange?.(newValue);
     setIsOpen(false);
   };
@@ -78,13 +72,13 @@ export const Select: React.FC<SelectProps> = ({
               },
               disabled,
               isOpen,
-              selectedValue
+              value
             });
           }
           if (child.type === SelectContent && isOpen) {
             return React.cloneElement(child, {
               onSelect: handleSelect,
-              selectedValue
+              selectedValue: value
             });
           }
         }
@@ -98,9 +92,9 @@ export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerPr
   onClick?: () => void; 
   disabled?: boolean; 
   isOpen?: boolean;
-  selectedValue?: string;
+  value?: string;
 }>(
-  ({ children, className, onClick, disabled, isOpen, selectedValue, ...props }, ref) => (
+  ({ children, className, onClick, disabled, isOpen, value, ...props }, ref) => (
     <button
       ref={ref}
       onClick={onClick}

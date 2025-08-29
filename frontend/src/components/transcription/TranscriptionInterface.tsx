@@ -36,7 +36,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
     setSelectedLanguage(newLanguage);
+    console.log('TranscriptionInterface: selectedLanguage state updated to:', newLanguage);
   };
+
+  // Debug: Monitor selectedLanguage changes
+  useEffect(() => {
+    console.log('TranscriptionInterface: selectedLanguage state changed to:', selectedLanguage);
+  }, [selectedLanguage]);
 
   const {
     isRecording,
