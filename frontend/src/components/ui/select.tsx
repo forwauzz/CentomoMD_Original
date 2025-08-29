@@ -43,6 +43,8 @@ export const Select: React.FC<SelectProps> = ({
 
   const handleSelect = (newValue: string) => {
     console.log('Select: handleSelect called with:', newValue);
+    console.log('Select: current value is:', value);
+    console.log('Select: onValueChange function exists:', !!onValueChange);
     onValueChange?.(newValue);
     setIsOpen(false);
   };
@@ -57,6 +59,8 @@ export const Select: React.FC<SelectProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  console.log('Select: rendering with value:', value, 'isOpen:', isOpen);
 
   return (
     <div className="relative">

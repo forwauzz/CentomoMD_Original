@@ -25,6 +25,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   disabled = false
 }) => {
   console.log('LanguageSelector: rendering with language:', language, 'disabled:', disabled);
+  console.log('LanguageSelector: onLanguageChange function exists:', !!onLanguageChange);
   
   const handleLanguageChange = (newLanguage: string) => {
     console.log('LanguageSelector: language changed to:', newLanguage);
