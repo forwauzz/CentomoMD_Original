@@ -53,7 +53,8 @@ wss.on('connection', (ws, req) => {
               text: res.transcript, 
               isFinal: !res.is_partial,
               language_detected: res.language_detected,
-              confidence_score: res.confidence_score
+              confidence_score: res.confidence_score,
+              speaker: res.speaker                           // PATIENT vs CLINICIAN
             })),
             (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
           );

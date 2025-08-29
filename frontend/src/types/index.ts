@@ -83,6 +83,7 @@ export interface Segment {
   startTime?: number | null;
   endTime?: number | null;
   isFinal: boolean;
+  speaker?: string | null;     // PATIENT vs CLINICIAN
 }
 
 export interface TranscriptionState {

@@ -107,6 +107,7 @@ export interface TranscriptionResult {
   resultId?: string;           // stable key for tracking segments
   startTime?: number | null;   // start time in seconds
   endTime?: number | null;     // end time in seconds
+  speaker?: string | null;     // PATIENT vs CLINICIAN
 }
 
 export interface SpeakerLabel {

@@ -8,6 +8,7 @@ type Segment = {
   startTime?: number | null; 
   endTime?: number | null; 
   isFinal: boolean; 
+  speaker?: string | null;     // PATIENT vs CLINICIAN
 };
 
 export const useTranscription = (sessionId?: string) => {
@@ -26,6 +27,11 @@ export const useTranscription = (sessionId?: string) => {
   // Enhanced segment tracking
   const [segments, setSegments] = useState<Segment[]>([]);
   const segIndex = useRef<Map<string, number>>(new Map());
+
+  // Section routing for CNESST (wire the buffers)
+  const [activeSection, setActiveSection] = useState<'section_7'|'section_8'|'section_11'>('section_7');
+  type SectionBuffers = Record<string, Segment[]>;
+  const [buffers, setBuffers] = useState<SectionBuffers>({});
 
   // Debounced update system for smooth partial results
   const updateQueue = useRef<Segment[]>([]);
@@ -55,6 +61,14 @@ export const useTranscription = (sessionId?: string) => {
     });
   }, []);
 
+  // Section routing function
+  const routeFinalToSection = useCallback((seg: Segment) => {
+    setBuffers(prev => {
+      const arr = prev[activeSection] ?? [];
+      return { ...prev, [activeSection]: [...arr, seg] };
+    });
+  }, [activeSection]);
+
   // Debounced update system to avoid flicker
   const enqueueUpdate = useCallback((s: Segment) => {
     updateQueue.current.push(s);
@@ -74,7 +88,7 @@ export const useTranscription = (sessionId?: string) => {
     .map(s => s.text)
     .join(' ');
 
-  // Build final paragraphs with heuristics and deduplication
+  // Build final paragraphs with heuristics, deduplication, and speaker attribution
   const buildParagraphs = useCallback(() => {
     const PAUSE_MS = 1200;
     
@@ -97,7 +111,9 @@ export const useTranscription = (sessionId?: string) => {
       return !NON_CLINICAL.some(k => t.includes(k));
     }
     
-    const finalsClinical = segments.filter(s => s.isFinal && isClinical(s.text));
+    // Use section buffers for CNESST routing
+    const sectionSegments = buffers[activeSection] || [];
+    const finalsClinical = sectionSegments.filter(s => s.isFinal && isClinical(s.text));
     
     // Dedupe exact repeats (keeps first occurrence)
     const seen = new Set<string>();
@@ -118,12 +134,15 @@ export const useTranscription = (sessionId?: string) => {
         paragraphs.push(buf.join(' ')); 
         buf = []; 
       }
-      buf.push(curr.text.trim());
+      
+      // Add speaker prefix if available
+      const speakerPrefix = curr.speaker ? `${curr.speaker === 'spk_0' ? 'Dr:' : 'Pt:'} ` : '';
+      buf.push(speakerPrefix + curr.text.trim());
     }
     if (buf.length) paragraphs.push(buf.join(' '));
     
     return paragraphs;
-  }, [segments]);
+  }, [segments, buffers, activeSection]);
 
   // French typography polish (clinic-friendly)
   const tidyFr = useCallback((s: string) => {
@@ -214,14 +233,22 @@ export const useTranscription = (sessionId?: string) => {
           } else if (msg.type === 'transcription_result') {
             console.log('Transcription result:', msg);
             
-            // Enhanced segment tracking with stable IDs
-            enqueueUpdate({
+            // Enhanced segment tracking with stable IDs and speaker info
+            const seg = {
               id: msg.resultId || crypto.randomUUID(),
               text: msg.text,
               startTime: msg.startTime,
               endTime: msg.endTime,
-              isFinal: !!msg.isFinal
-            });
+              isFinal: !!msg.isFinal,
+              speaker: msg.speaker
+            };
+            
+            enqueueUpdate(seg);
+            
+            // Route final segments to active section buffer
+            if (seg.isFinal) {
+              routeFinalToSection(seg);
+            }
 
             // Update current transcript for live display
             setState(prev => ({
@@ -380,6 +407,10 @@ export const useTranscription = (sessionId?: string) => {
     // Enhanced segment data
     segments,
     paragraphs: buildParagraphs(),
+    
+    // Section routing data
+    activeSection,
+    buffers,
 
     // Actions
     startRecording,
@@ -387,5 +418,6 @@ export const useTranscription = (sessionId?: string) => {
     sendVoiceCommand,
     updateState,
     reconnect,
+    setActiveSection,
   };
 };

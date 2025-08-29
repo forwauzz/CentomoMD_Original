@@ -61,8 +61,8 @@ export class TranscriptionService {
       MediaEncoding: 'pcm',
       MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
-      ShowSpeakerLabels: config.show_speaker_labels || false,
-      MaxSpeakerLabels: config.max_speaker_labels || 2,
+      ShowSpeakerLabels: true,     // Enable speaker attribution
+      MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN
       EnablePartialResultsStabilization: true,
       PartialResultsStability: 'high',
     };
@@ -159,6 +159,9 @@ export class TranscriptionService {
           const alt = r.Alternatives?.[0];
           if (!alt?.Transcript) continue;
           // FIX: partial flag (true means partial)
+          // Extract speaker information (best-effort)
+          const speaker = alt?.Items?.[0]?.Speaker || null;
+          
           onTranscript({
             transcript: alt.Transcript,
             is_partial: r.IsPartial === true,        // <-- was inverted
@@ -167,6 +170,7 @@ export class TranscriptionService {
             resultId: r.ResultId,                    // stable key for tracking
             startTime: r.StartTime ?? null,          // start time in seconds
             endTime: r.EndTime ?? null,              // end time in seconds
+            speaker,                                 // PATIENT vs CLINICIAN
           });
         }
       }
