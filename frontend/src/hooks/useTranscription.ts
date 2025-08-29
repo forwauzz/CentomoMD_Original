@@ -74,7 +74,7 @@ export const useTranscription = (sessionId?: string) => {
     .map(s => s.text)
     .join(' ');
 
-  // Build final paragraphs with heuristics
+  // Build final paragraphs with heuristics and deduplication
   const buildParagraphs = useCallback(() => {
     const PAUSE_MS = 1200;
     
@@ -85,13 +85,35 @@ export const useTranscription = (sessionId?: string) => {
       return false;
     }
 
-    const finals = segments.filter(s => s.isFinal);
+    // Filter non-clinical chatter (safety net)
+    const NON_CLINICAL = [
+      'abonnez-vous', 'écrivez-nous en commentaire', 'chaîne', 'vidéo',
+      'easy french', 'discord', 'zoom', 'lien', 'membership', 'site web',
+      'subscribe', 'comment below', 'channel', 'video', 'link', 'website'
+    ];
+    
+    function isClinical(s: string) {
+      const t = s.toLowerCase();
+      return !NON_CLINICAL.some(k => t.includes(k));
+    }
+    
+    const finalsClinical = segments.filter(s => s.isFinal && isClinical(s.text));
+    
+    // Dedupe exact repeats (keeps first occurrence)
+    const seen = new Set<string>();
+    const uniqFinals = finalsClinical.filter(s => {
+      const norm = s.text.trim().toLowerCase();
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+
     const paragraphs: string[] = [];
     let buf: string[] = [];
     
-    for (let i = 0; i < finals.length; i++) {
-      const prev = finals[i - 1];
-      const curr = finals[i];
+    for (let i = 0; i < uniqFinals.length; i++) {
+      const prev = uniqFinals[i - 1];
+      const curr = uniqFinals[i];
       if (i > 0 && shouldBreak(prev, curr)) { 
         paragraphs.push(buf.join(' ')); 
         buf = []; 
@@ -103,11 +125,28 @@ export const useTranscription = (sessionId?: string) => {
     return paragraphs;
   }, [segments]);
 
-  // French typography polish
+  // French typography polish (clinic-friendly)
   const tidyFr = useCallback((s: string) => {
-    const cap = s.charAt(0).toUpperCase() + s.slice(1);
-    const fixed = cap.replace(/\s+([,.?!;:])/g, '$1'); // remove space before punctuation
-    return /[.?!]$/.test(fixed) ? fixed : fixed + '.';
+    let t = s.trim();
+
+    // Quick common medical fixes
+    t = t.replace(/\bamisidal\b/ig, 'amygdales')
+         .replace(/\bcarte vitale\b/ig, 'carte Vitale')
+         .replace(/\bdoliprane\b/ig, 'Doliprane')
+         .replace(/\bparacétamol\b/ig, 'paracétamol')
+         .replace(/\bibuprofène\b/ig, 'ibuprofène');
+
+    // Spacing before : ; ? ! (French typography)
+    t = t.replace(/\s*([:;?!])/g, ' $1');
+
+    // Remove spaces before ., and double spaces
+    t = t.replace(/\s*\./g, '.').replace(/\s{2,}/g, ' ');
+
+    // Capitalize first letter, ensure terminal punctuation
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    if (!/[.?!]$/.test(t)) t += '.';
+    
+    return t;
   }, []);
 
   // Start transcription with direct WebSocket connection
