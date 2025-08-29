@@ -49,6 +49,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     isConnected,
     currentTranscript,
     finalTranscripts,
+    segments,
+    paragraphs,
     startRecording,
     stopRecording,
     sendVoiceCommand,
@@ -325,7 +327,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Current Transcript */}
+            {/* Current Transcript - Live Partial Results */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 {t('currentTranscript', language)}
@@ -340,24 +342,27 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               />
             </div>
 
-            {/* Final Transcripts */}
-            {finalTranscripts.length > 0 && (
+            {/* Final Transcripts - Enhanced Paragraph Display */}
+            {paragraphs.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   {t('finalTranscripts', language)}
                 </label>
-                <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                  {finalTranscripts.map((transcript, index) => (
-                    <div
-                      key={transcript.id || index}
-                      className="p-3 bg-muted rounded-md"
-                    >
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                        <span>{t(transcript.section, language)}</span>
-                        <span>{transcript.language.toUpperCase()}</span>
-                      </div>
-                      <p className="text-sm">{transcript.content}</p>
-                    </div>
+                
+                {/* Section Header with Language Badge */}
+                <div className="flex items-center space-x-2 mb-3">
+                  <h3 className="text-lg font-semibold">{t(currentSection, language)}</h3>
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedLanguage === 'fr-CA' ? 'FR-CA' : 'EN-US'}
+                  </Badge>
+                </div>
+                
+                {/* Paragraphs Display */}
+                <div id="finalTranscripts" className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+                  {paragraphs.map((paragraph, index) => (
+                    <p key={index} className="leading-7 text-sm">
+                      {paragraph}
+                    </p>
                   ))}
                 </div>
               </div>

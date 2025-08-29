@@ -47,6 +47,9 @@ wss.on('connection', (ws, req) => {
             },
             (res) => ws.send(JSON.stringify({ 
               type: 'transcription_result', 
+              resultId: res.resultId,                         // stable key
+              startTime: res.startTime ?? null,
+              endTime: res.endTime ?? null,
               text: res.transcript, 
               isFinal: !res.is_partial,
               language_detected: res.language_detected,

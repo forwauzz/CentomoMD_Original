@@ -164,6 +164,9 @@ export class TranscriptionService {
             is_partial: r.IsPartial === true,        // <-- was inverted
             confidence_score: alt.Confidence,
             timestamp: new Date(),
+            resultId: r.ResultId,                    // stable key for tracking
+            startTime: r.StartTime ?? null,          // start time in seconds
+            endTime: r.EndTime ?? null,              // end time in seconds
           });
         }
       }

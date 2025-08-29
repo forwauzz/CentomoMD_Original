@@ -76,6 +76,15 @@ export type TranscriptionMode = 'word_for_word' | 'smart_dictation' | 'ambient';
 export type SessionStatus = 'active' | 'paused' | 'completed' | 'cancelled';
 
 // Frontend-specific types
+// Enhanced segment tracking for partial results
+export interface Segment {
+  id: string;
+  text: string;
+  startTime?: number | null;
+  endTime?: number | null;
+  isFinal: boolean;
+}
+
 export interface TranscriptionState {
   isRecording: boolean;
   isConnected: boolean;

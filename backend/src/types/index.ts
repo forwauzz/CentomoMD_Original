@@ -104,6 +104,9 @@ export interface TranscriptionResult {
   language_detected?: string;
   speaker_labels?: SpeakerLabel[];
   timestamp: Date;
+  resultId?: string;           // stable key for tracking segments
+  startTime?: number | null;   // start time in seconds
+  endTime?: number | null;     // end time in seconds
 }
 
 export interface SpeakerLabel {

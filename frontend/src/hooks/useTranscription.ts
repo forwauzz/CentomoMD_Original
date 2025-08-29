@@ -1,6 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { TranscriptionState, Transcript } from '@/types';
 
+// Enhanced segment tracking for partial results
+type Segment = { 
+  id: string; 
+  text: string; 
+  startTime?: number | null; 
+  endTime?: number | null; 
+  isFinal: boolean; 
+};
+
 export const useTranscription = (sessionId?: string) => {
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
@@ -14,6 +23,14 @@ export const useTranscription = (sessionId?: string) => {
     reconnectionAttempts: 0,
   });
 
+  // Enhanced segment tracking
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const segIndex = useRef<Map<string, number>>(new Map());
+
+  // Debounced update system for smooth partial results
+  const updateQueue = useRef<Segment[]>([]);
+  const updateTimeout = useRef<number | undefined>(undefined);
+
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -21,6 +38,76 @@ export const useTranscription = (sessionId?: string) => {
 
   const updateState = useCallback((updates: Partial<TranscriptionState>) => {
     setState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  // Enhanced segment upsert with debouncing
+  const upsertSegment = useCallback((s: Segment) => {
+    setSegments(prev => {
+      const next = [...prev];
+      const i = segIndex.current.get(s.id);
+      if (i == null) { 
+        segIndex.current.set(s.id, next.length); 
+        next.push(s); 
+      } else { 
+        next[i] = { ...next[i], ...s }; 
+      }
+      return next;
+    });
+  }, []);
+
+  // Debounced update system to avoid flicker
+  const enqueueUpdate = useCallback((s: Segment) => {
+    updateQueue.current.push(s);
+    if (updateTimeout.current) return;
+    
+    updateTimeout.current = window.setTimeout(() => {
+      const batch = updateQueue.current; 
+      updateQueue.current = [];
+      batch.forEach(upsertSegment);
+      updateTimeout.current = undefined;
+    }, 80); // ~12 fps for smooth updates
+  }, [upsertSegment]);
+
+  // Build live partial transcript from non-final segments
+  const liveTranscript = segments
+    .filter(s => !s.isFinal)
+    .map(s => s.text)
+    .join(' ');
+
+  // Build final paragraphs with heuristics
+  const buildParagraphs = useCallback(() => {
+    const PAUSE_MS = 1200;
+    
+    function shouldBreak(prev?: Segment, curr?: Segment) {
+      if (!prev || !curr) return false;
+      if (/[.?!]$/.test(prev.text.trim())) return true;                     // end punctuation
+      if ((curr.startTime ?? 0) - (prev.endTime ?? 0) > PAUSE_MS) return true; // long pause
+      return false;
+    }
+
+    const finals = segments.filter(s => s.isFinal);
+    const paragraphs: string[] = [];
+    let buf: string[] = [];
+    
+    for (let i = 0; i < finals.length; i++) {
+      const prev = finals[i - 1];
+      const curr = finals[i];
+      if (i > 0 && shouldBreak(prev, curr)) { 
+        paragraphs.push(buf.join(' ')); 
+        buf = []; 
+      }
+      buf.push(curr.text.trim());
+    }
+    if (buf.length) paragraphs.push(buf.join(' '));
+    
+    return paragraphs;
+  }, [segments]);
+
+  // French typography polish
+  const tidyFr = useCallback((s: string) => {
+    const cap = s.charAt(0).toUpperCase() + s.slice(1);
+    const fixed = cap.replace(/\s+([,.?!;:])/g, '$1'); // remove space before punctuation
+    return /[.?!]$/.test(fixed) ? fixed : fixed + '.';
   }, []);
 
   // Start transcription with direct WebSocket connection
@@ -86,35 +173,47 @@ export const useTranscription = (sessionId?: string) => {
             
             updateState({ isRecording: true });
           } else if (msg.type === 'transcription_result') {
-            const { text, isFinal } = msg;
-            console.log('Transcription result:', { text, isFinal });
+            console.log('Transcription result:', msg);
             
-                         if (isFinal) {
-               // Handle final results - add to final transcripts
-               const newTranscript: Transcript = {
-                 id: `transcript_${Date.now()}`,
-                 session_id: sessionId || '',
-                 section: state.currentSection,
-                 content: text,
-                 language: msg.language_detected || 'fr-CA',
-                 is_final: true,
-                 confidence_score: msg.confidence_score || 0.95,
-                 created_at: new Date().toISOString(),
-                 updated_at: new Date().toISOString(),
-               };
+            // Enhanced segment tracking with stable IDs
+            enqueueUpdate({
+              id: msg.resultId || crypto.randomUUID(),
+              text: msg.text,
+              startTime: msg.startTime,
+              endTime: msg.endTime,
+              isFinal: !!msg.isFinal
+            });
 
-               setState(prev => ({
-                 ...prev,
-                 finalTranscripts: [...prev.finalTranscripts, newTranscript],
-                 currentTranscript: '', // Clear current transcript for next partial result
-               }));
-             } else {
-               // Handle partial results - update current transcript
-               setState(prev => ({
-                 ...prev,
-                 currentTranscript: text,
-               }));
-             }
+            // Update current transcript for live display
+            setState(prev => ({
+              ...prev,
+              currentTranscript: liveTranscript
+            }));
+
+            if (msg.isFinal) {
+              // Handle final results - add to final transcripts
+              const paragraphs = buildParagraphs();
+              const finalDisplay = paragraphs.map(tidyFr);
+              
+              // Create final transcript entry
+              const newTranscript: Transcript = {
+                id: `transcript_${Date.now()}`,
+                session_id: sessionId || '',
+                section: state.currentSection,
+                content: finalDisplay.join('\n\n'),
+                language: msg.language_detected || 'fr-CA',
+                is_final: true,
+                confidence_score: msg.confidence_score || 0.95,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              setState(prev => ({
+                ...prev,
+                finalTranscripts: [...prev.finalTranscripts, newTranscript],
+                currentTranscript: '', // Clear current transcript for next partial result
+              }));
+            }
           } else if (msg.type === 'transcription_error') {
             console.error('Transcribe error:', msg.error);
             updateState({ error: msg.error });
@@ -148,10 +247,16 @@ export const useTranscription = (sessionId?: string) => {
         isRecording: false 
       });
     }
-  }, [sessionId, state.currentSection, updateState]);
+  }, [sessionId, state.currentSection, updateState, enqueueUpdate, liveTranscript, buildParagraphs, tidyFr]);
 
   const stopTranscription = useCallback(() => {
     console.log('Stopping transcription');
+    
+    // Clear any pending updates
+    if (updateTimeout.current) {
+      clearTimeout(updateTimeout.current);
+      updateTimeout.current = undefined;
+    }
     
     const ws: WebSocket | undefined = (window as any).__tx_ws;
     try { 
@@ -215,6 +320,10 @@ export const useTranscription = (sessionId?: string) => {
       if (state.isRecording) {
         stopTranscription();
       }
+      // Clear any pending updates
+      if (updateTimeout.current) {
+        clearTimeout(updateTimeout.current);
+      }
     };
   }, [state.isRecording, stopTranscription]);
 
@@ -222,12 +331,16 @@ export const useTranscription = (sessionId?: string) => {
     // State
     isRecording: state.isRecording,
     isConnected: state.isConnected,
-    currentTranscript: state.currentTranscript,
+    currentTranscript: liveTranscript, // Use live transcript from segments
     finalTranscripts: state.finalTranscripts,
     currentSection: state.currentSection,
     mode: state.mode,
     error: state.error,
     reconnectionAttempts: state.reconnectionAttempts,
+    
+    // Enhanced segment data
+    segments,
+    paragraphs: buildParagraphs(),
 
     // Actions
     startRecording,
