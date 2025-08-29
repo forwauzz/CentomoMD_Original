@@ -68,6 +68,8 @@ export const Select: React.FC<SelectProps> = ({
                 console.log('Select: trigger clicked, disabled:', disabled, 'isOpen:', isOpen);
                 if (!disabled) {
                   setIsOpen(!isOpen);
+                } else {
+                  console.log('Select: trigger is disabled, not opening');
                 }
               },
               disabled,

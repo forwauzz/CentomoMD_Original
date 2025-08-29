@@ -159,6 +159,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   const connectionStatus = getConnectionStatus();
 
+  // Debug: Check recording state
+  console.log('TranscriptionInterface: isRecording =', isRecording, 'selectedLanguage =', selectedLanguage);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -190,7 +193,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               <LanguageSelector
                 language={selectedLanguage}
                 onLanguageChange={handleLanguageChange}
-                disabled={isRecording}
+                disabled={false} // Temporarily force enabled for testing
               />
               <SectionSelector
                 currentSection={currentSection}
