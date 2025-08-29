@@ -33,6 +33,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [showVoiceCommands, setShowVoiceCommands] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
 
+  const handleLanguageChange = (newLanguage: string) => {
+    console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
+    setSelectedLanguage(newLanguage);
+  };
+
   const {
     isRecording,
     isConnected,
@@ -178,7 +183,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             <div className="flex items-center space-x-2">
               <LanguageSelector
                 language={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
+                onLanguageChange={handleLanguageChange}
                 disabled={isRecording}
               />
               <SectionSelector

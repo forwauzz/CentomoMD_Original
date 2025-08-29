@@ -28,6 +28,7 @@ interface SelectItemProps {
 interface SelectValueProps {
   placeholder?: string;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -45,6 +46,7 @@ export const Select: React.FC<SelectProps> = ({
   }, [value]);
 
   const handleSelect = (newValue: string) => {
+    console.log('Select: handleSelect called with:', newValue);
     setSelectedValue(newValue);
     onValueChange?.(newValue);
     setIsOpen(false);
@@ -68,9 +70,15 @@ export const Select: React.FC<SelectProps> = ({
           if (child.type === SelectTrigger) {
             return React.cloneElement(child, {
               ref: triggerRef,
-              onClick: () => !disabled && setIsOpen(!isOpen),
+              onClick: () => {
+                console.log('Select: trigger clicked, disabled:', disabled, 'isOpen:', isOpen);
+                if (!disabled) {
+                  setIsOpen(!isOpen);
+                }
+              },
               disabled,
-              isOpen
+              isOpen,
+              selectedValue
             });
           }
           if (child.type === SelectContent && isOpen) {
@@ -86,8 +94,13 @@ export const Select: React.FC<SelectProps> = ({
   );
 };
 
-export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps & { onClick?: () => void; disabled?: boolean; isOpen?: boolean }>(
-  ({ children, className, onClick, disabled, isOpen, ...props }, ref) => (
+export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps & { 
+  onClick?: () => void; 
+  disabled?: boolean; 
+  isOpen?: boolean;
+  selectedValue?: string;
+}>(
+  ({ children, className, onClick, disabled, isOpen, selectedValue, ...props }, ref) => (
     <button
       ref={ref}
       onClick={onClick}
@@ -104,21 +117,27 @@ export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerPr
   )
 );
 
-export const SelectContent: React.FC<SelectContentProps & { onSelect?: (value: string) => void; selectedValue?: string }> = ({
+export const SelectContent: React.FC<SelectContentProps & { 
+  onSelect?: (value: string) => void; 
+  selectedValue?: string;
+}> = ({
   children,
   className,
   onSelect,
   selectedValue
 }) => (
   <div className={cn(
-    "absolute top-full z-50 w-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95",
+    "absolute top-full z-50 w-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md",
     className
   )}>
     <div className="p-1">
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.type === SelectItem) {
           return React.cloneElement(child, {
-            onClick: () => onSelect?.(child.props.value),
+            onClick: () => {
+              console.log('SelectContent: item clicked with value:', child.props.value);
+              onSelect?.(child.props.value);
+            },
             isSelected: child.props.value === selectedValue
           });
         }
@@ -128,7 +147,10 @@ export const SelectContent: React.FC<SelectContentProps & { onSelect?: (value: s
   </div>
 );
 
-export const SelectItem: React.FC<SelectItemProps & { onClick?: () => void; isSelected?: boolean }> = ({
+export const SelectItem: React.FC<SelectItemProps & { 
+  onClick?: () => void; 
+  isSelected?: boolean;
+}> = ({
   children,
   className,
   onClick,
@@ -136,9 +158,14 @@ export const SelectItem: React.FC<SelectItemProps & { onClick?: () => void; isSe
   ...props
 }) => (
   <div
-    onClick={onClick}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('SelectItem: clicked');
+      onClick?.();
+    }}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+      "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
       isSelected && "bg-accent text-accent-foreground",
       className
     )}
@@ -148,8 +175,12 @@ export const SelectItem: React.FC<SelectItemProps & { onClick?: () => void; isSe
   </div>
 );
 
-export const SelectValue: React.FC<SelectValueProps> = ({ placeholder, className }) => (
+export const SelectValue: React.FC<SelectValueProps> = ({ 
+  placeholder, 
+  className,
+  children 
+}) => (
   <span className={cn("block truncate", className)}>
-    {placeholder}
+    {children || placeholder}
   </span>
 );

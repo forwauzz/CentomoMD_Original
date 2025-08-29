@@ -8,11 +8,27 @@ interface LanguageSelectorProps {
   disabled?: boolean;
 }
 
+const getLanguageDisplay = (languageCode: string) => {
+  switch (languageCode) {
+    case 'fr-CA':
+      return '🇨🇦 Français (Canada)';
+    case 'en-US':
+      return '🇺🇸 English (US)';
+    default:
+      return '🇨🇦 Français (Canada)';
+  }
+};
+
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   language,
   onLanguageChange,
   disabled = false
 }) => {
+  const handleLanguageChange = (newLanguage: string) => {
+    console.log('LanguageSelector: language changed to:', newLanguage);
+    onLanguageChange(newLanguage);
+  };
+
   return (
     <div className="flex items-center space-x-2">
       <label className="text-sm font-medium">
@@ -20,11 +36,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       </label>
       <Select
         value={language}
-        onValueChange={onLanguageChange}
+        onValueChange={handleLanguageChange}
         disabled={disabled}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder={t('selectLanguage', 'fr')} />
+          <SelectValue>
+            {getLanguageDisplay(language)}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="fr-CA">
