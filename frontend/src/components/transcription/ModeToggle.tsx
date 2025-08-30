@@ -1,8 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Settings, Mic, Brain, Radio } from 'lucide-react';
-import { t } from '@/lib/utils';
+import { FileText, Mic, Play } from 'lucide-react';
 import { TranscriptionMode } from '@/types';
 
 interface ModeToggleProps {
@@ -11,58 +9,48 @@ interface ModeToggleProps {
   language?: 'fr' | 'en';
 }
 
-const modes: { value: TranscriptionMode; label: string; description: string; icon: React.ReactNode }[] = [
+const modes: { value: TranscriptionMode; label: string; icon: React.ReactNode }[] = [
   {
     value: 'word_for_word',
-    label: 'Word-for-Word',
-    description: 'Raw live speech-to-text',
-    icon: <Mic className="h-4 w-4" />,
+    label: 'Word for Word',
+    icon: <FileText className="h-4 w-4" />,
   },
   {
     value: 'smart_dictation',
     label: 'Smart Dictation',
-    description: 'AI-assisted, medical structured',
-    icon: <Brain className="h-4 w-4" />,
+    icon: <Mic className="h-4 w-4" />,
   },
   {
     value: 'ambient',
-    label: 'Ambient',
-    description: 'Long-form capture, diarized',
-    icon: <Radio className="h-4 w-4" />,
+    label: 'Transcribe (Ambient Listening)',
+    icon: <Play className="h-4 w-4" />,
   },
 ];
 
 export const ModeToggle: React.FC<ModeToggleProps> = ({
   currentMode,
-  onModeChange,
-  language = 'fr'
+  onModeChange
 }) => {
   return (
-    <div className="flex items-center space-x-2">
-      <span className="text-sm font-medium">{t('mode', language)}:</span>
-      <div className="flex space-x-1">
-        {modes.map((mode) => (
-          <Button
-            key={mode.value}
-            variant={currentMode === mode.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onModeChange(mode.value)}
-            className={`text-xs ${
-              currentMode === mode.value
-                ? 'bg-medical-secondary text-white border-medical-secondary'
-                : 'hover:bg-medical-secondary/10'
-            }`}
-          >
-            <div className="flex items-center space-x-1">
-              {mode.icon}
-              <div className="flex flex-col items-start">
-                <span className="font-medium">{t(mode.value, language)}</span>
-                <span className="text-xs opacity-80">{mode.description}</span>
-              </div>
-            </div>
-          </Button>
-        ))}
-      </div>
+    <div className="flex flex-col gap-2">
+      {modes.map((mode) => (
+        <Button
+          key={mode.value}
+          variant={currentMode === mode.value ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onModeChange(mode.value)}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition-all justify-start ${
+            currentMode === mode.value
+              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+          }`}
+        >
+          <div className="flex items-center space-x-2">
+            {mode.icon}
+            <span>{mode.label}</span>
+          </div>
+        </Button>
+      ))}
     </div>
   );
 };

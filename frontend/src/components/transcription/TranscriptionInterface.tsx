@@ -1,17 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Square, Play, Pause, Save, Download, Volume2 } from 'lucide-react';
-import { cn, formatDuration, t } from '@/lib/utils';
-import { TranscriptionState, CNESSTSection, TranscriptionMode } from '@/types';
+import { Mic, MicOff, Save, FileText, Copy, Edit, Trash2, MessageSquare, Volume2 } from 'lucide-react';
+import { t } from '@/lib/utils';
+import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { VoiceCommandPanel } from './VoiceCommandPanel';
-import { VoiceCommandFeedback } from './VoiceCommandFeedback';
-import { VoiceCommandTraining } from './VoiceCommandTraining';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
@@ -24,17 +17,15 @@ interface TranscriptionInterfaceProps {
 
 export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   sessionId,
-  onSessionUpdate,
-  language = 'fr'
+  language = 'en'
 }) => {
-  const [currentSection, setCurrentSection] = useState<CNESSTSection>('section_7');
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr-CA');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en-US');
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [showVoiceCommands, setShowVoiceCommands] = useState(false);
-  const [showTraining, setShowTraining] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTranscript, setEditedTranscript] = useState('');
 
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
@@ -49,28 +40,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   const {
     isRecording,
-    isConnected,
     currentTranscript,
-    finalTranscripts,
-    segments,
     paragraphs,
     activeSection,
-    buffers,
-    voiceCommands,
-    isListening,
     startRecording,
     stopRecording,
-    sendVoiceCommand,
     error,
-    reconnectionAttempts,
     setActiveSection
-  } = useTranscription(sessionId);
-
-  const { sendMessage } = useWebSocket();
+  } = useTranscription(sessionId, selectedLanguage);
 
   const sessionTimerRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>(0);
-  const audioLevelRef = useRef<number>(0);
 
   // Session timer
   useEffect(() => {
@@ -120,6 +100,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   const handleStartRecording = useCallback(async () => {
     try {
+      // Use the selected language for transcription
       await startRecording();
       setIsPaused(false);
       setSessionDuration(0);
@@ -132,312 +113,288 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     try {
       await stopRecording();
       setIsPaused(false);
-      if (sessionTimerRef.current) {
-        clearInterval(sessionTimerRef.current);
-        sessionTimerRef.current = undefined;
-      }
     } catch (error) {
       console.error('Failed to stop recording:', error);
     }
   }, [stopRecording]);
-
-  const handlePauseResume = useCallback(() => {
-    if (isPaused) {
-      setIsPaused(false);
-      sendVoiceCommand('reprendre transcription');
-    } else {
-      setIsPaused(true);
-      sendVoiceCommand('pause transcription');
-    }
-  }, [isPaused, sendVoiceCommand]);
 
   const handleAutoSave = useCallback(() => {
     // Auto-save logic
     console.log('Auto-saving session...');
   }, []);
 
-  const handleExport = useCallback(() => {
-    // Export logic
-    console.log('Exporting session...');
-  }, []);
-
-  const getConnectionStatus = () => {
-    if (!isConnected) return { status: 'disconnected', color: 'destructive' as const };
-    if (reconnectionAttempts > 0) return { status: 'reconnecting', color: 'warning' as const };
-    return { status: 'connected', color: 'success' as const };
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const connectionStatus = getConnectionStatus();
+  // Copy functionality
+  const handleCopy = useCallback(async () => {
+    const transcriptText = paragraphs.join('\n\n');
+    try {
+      await navigator.clipboard.writeText(transcriptText);
+      console.log('Transcript copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy transcript:', error);
+    }
+  }, [paragraphs]);
+
+  // Edit functionality
+  const handleEdit = useCallback(() => {
+    setIsEditing(true);
+    setEditedTranscript(paragraphs.join('\n\n'));
+  }, [paragraphs]);
+
+  const handleSaveEdit = useCallback(() => {
+    setIsEditing(false);
+    // Here you would typically save the edited transcript back to your state/backend
+    console.log('Edited transcript saved:', editedTranscript);
+  }, [editedTranscript]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditedTranscript('');
+  }, []);
+
+  // Delete functionality
+  const handleDelete = useCallback(() => {
+    if (window.confirm('Are you sure you want to delete this transcript?')) {
+      // Here you would typically clear the transcript from your state/backend
+      console.log('Transcript deleted');
+    }
+  }, []);
 
   // Debug: Check recording state
   console.log('TranscriptionInterface: isRecording =', isRecording, 'selectedLanguage =', selectedLanguage);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">{t('newSession', language)}</h1>
-          <p className="text-muted-foreground">
-            {t('sessionDuration', language)}: {formatDuration(sessionDuration)}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant={connectionStatus.color}>
-            {t(connectionStatus.status, language)}
-          </Badge>
-          {reconnectionAttempts > 0 && (
-            <Badge variant="warning">
-              {t('reconnecting', language)} ({reconnectionAttempts})
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{t('transcription', language)}</span>
-            <div className="flex items-center space-x-2">
-              <LanguageSelector
-                language={selectedLanguage}
-                onLanguageChange={handleLanguageChange}
-                disabled={false} // Temporarily force enabled for testing
-              />
-              <SectionSelector
-                currentSection={activeSection}
-                onSectionChange={setActiveSection}
-                language={language}
-              />
-              <ModeToggle
-                currentMode={mode}
-                onModeChange={setMode}
-                language={language}
-              />
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Recording Controls */}
-          <div className="flex items-center justify-center space-x-4">
-            {!isRecording ? (
-              <Button
-                onClick={handleStartRecording}
-                variant="medical"
-                size="medical"
-                className="flex items-center space-x-2"
-              >
-                <Mic className="h-5 w-5" />
-                <span>{t('startRecording', language)}</span>
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={handleStopRecording}
-                  variant="medicalDanger"
-                  size="medical"
-                  className="flex items-center space-x-2"
-                >
-                  <Square className="h-5 w-5" />
-                  <span>{t('stopRecording', language)}</span>
-                </Button>
-                <Button
-                  onClick={handlePauseResume}
-                  variant="outline"
-                  size="medical"
-                  className="flex items-center space-x-2"
-                >
-                  {isPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
-                  <span>{isPaused ? t('resume', language) : t('pause', language)}</span>
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Audio Level Visualization */}
-          {isRecording && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <Volume2 className="h-4 w-4 text-green-500" />
-                  <span>{t('audioLevel', language)}</span>
-                </div>
-                <span className="text-green-600 font-medium">{Math.round(audioLevel)}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-100 ease-out"
-                  style={{ width: `${audioLevel}%` }}
+    <div className="space-y-6 pb-16">
+      {/* Three Card Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Dictation Controls Card */}
+        <div className="lg:col-span-1">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                Dictation Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Language Selector */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Language</label>
+                <LanguageSelector
+                  language={selectedLanguage}
+                  onLanguageChange={handleLanguageChange}
+                  disabled={isRecording}
                 />
               </div>
-            </div>
-          )}
 
-          {/* Progress Bar */}
-          {isRecording && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{t('recording', language)}</span>
-                <span>{formatDuration(sessionDuration)}</span>
-              </div>
-              <Progress value={(sessionDuration / 3600) * 100} className="h-2" />
-            </div>
-          )}
-
-                     {/* Voice Commands & Training Toggle */}
-           <div className="flex justify-center space-x-2">
-             <Button
-               variant="outline"
-               onClick={() => setShowVoiceCommands(!showVoiceCommands)}
-               className="flex items-center space-x-2"
-             >
-               <span>{t('voiceCommands', language)}</span>
-             </Button>
-             <Button
-               variant="outline"
-               onClick={() => setShowTraining(!showTraining)}
-               className="flex items-center space-x-2"
-             >
-               <span>{language === 'fr' ? 'Entraînement' : 'Training'}</span>
-             </Button>
-           </div>
-        </CardContent>
-      </Card>
-
-             {/* Voice Commands Panel */}
-       {showVoiceCommands && (
-         <VoiceCommandPanel
-           onCommand={sendVoiceCommand}
-           language={language}
-         />
-       )}
-
-               {/* Voice Command Feedback */}
-        <VoiceCommandFeedback
-          commands={voiceCommands}
-          isListening={isListening}
-          language={language}
-        />
-
-        {/* Voice Command Training */}
-        {showTraining && (
-          <VoiceCommandTraining
-            language={language}
-            onCommandPractice={sendVoiceCommand}
-            onAccessibilityToggle={(enabled) => {
-              console.log('Accessibility toggled:', enabled);
-              // TODO: Implement accessibility features
-            }}
-          />
-        )}
-
-      {/* Transcription Display */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{t(activeSection, language)}</span>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAutoSave}
-                className="flex items-center space-x-1"
-              >
-                <Save className="h-4 w-4" />
-                <span>{t('save', language)}</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                className="flex items-center space-x-1"
-              >
-                <Download className="h-4 w-4" />
-                <span>{t('export', language)}</span>
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Current Transcript - Live Partial Results */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {t('currentTranscript', language)}
-              </label>
-              <Textarea
-                value={currentTranscript}
-                readOnly
-                placeholder={t('transcriptionPlaceholder', language)}
-                className="min-h-[200px] font-mono text-sm"
-                autoResize
-                maxHeight="400px"
-              />
-            </div>
-
-            {/* Final Transcripts - Enhanced Paragraph Display */}
-            {paragraphs.length > 0 && (
+              {/* Section Selector */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {t('finalTranscripts', language)}
-                </label>
-                
-                {/* Section Header with Language Badge */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-lg font-semibold">{t(activeSection, language)}</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {selectedLanguage === 'fr-CA' ? 'FR-CA' : 'EN-US'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const text = paragraphs.join('\n\n');
-                        navigator.clipboard.writeText(text);
-                      }}
-                      className="flex items-center space-x-1"
-                    >
-                      <span className="text-xs">Copy</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExport}
-                      className="flex items-center space-x-1"
-                    >
-                      <span className="text-xs">Export</span>
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Paragraphs Display with Auto-scroll */}
-                <div 
-                  id="finalTranscripts" 
-                  className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar"
-                  ref={(el) => {
-                    if (el && paragraphs.length > 0) {
-                      // Auto-scroll to bottom when new paragraphs are added
-                      setTimeout(() => {
-                        el.scrollTop = el.scrollHeight;
-                      }, 100);
-                    }
-                  }}
-                >
-                  {paragraphs.map((paragraph, index) => (
-                    <p key={index} className="leading-7 text-sm">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+                <label className="text-sm font-medium text-gray-700">Section</label>
+                <SectionSelector
+                  currentSection={activeSection}
+                  onSectionChange={setActiveSection}
+                />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
+              {/* Mode Toggle */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Mode</label>
+                <ModeToggle
+                  currentMode={mode}
+                  onModeChange={setMode}
+                  language={language}
+                />
+              </div>
+
+              {/* Recording Control Buttons */}
+              <div className="space-y-2">
+                {!isRecording ? (
+                  <Button
+                    onClick={handleStartRecording}
+                    variant="medical"
+                    size="medical"
+                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Mic className="h-5 w-5" />
+                    <span>Start Dictating</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleStopRecording}
+                    variant="medical"
+                    size="medical"
+                    className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700"
+                  >
+                    <MicOff className="h-5 w-5" />
+                    <span>Stop Dictating</span>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Live and Final Transcript Cards Side by Side */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Live Transcription Card */}
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Live Transcription</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Duration and Audio Level Indicators */}
+              {isRecording && (
+                <div className="space-y-3">
+                  {/* Duration Indicator */}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Recording Duration</span>
+                    <span className="font-mono font-medium text-blue-600">
+                      {formatDuration(sessionDuration)}
+                    </span>
+                  </div>
+                  
+                  {/* Audio Level Bar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Volume2 className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-600">Audio Level</span>
+                      </div>
+                      <span className="text-green-600 font-medium">{Math.round(audioLevel)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full transition-all duration-100 ease-out"
+                        style={{ width: `${audioLevel}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Live Transcript Content */}
+              <div className="min-h-[150px] bg-gray-50 rounded-md p-4">
+                {currentTranscript ? (
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {currentTranscript}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Live transcription will appear here when you start dictating...
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Final Transcript Card */}
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5" />
+                  <span>Final Transcript</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    onClick={handleCopy}
+                    title="Copy transcript"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    onClick={handleEdit}
+                    title="Edit transcript"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    onClick={handleDelete}
+                    title="Delete transcript"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Final Transcript Text Area */}
+              <div className="min-h-[200px] bg-gray-50 rounded-md p-4">
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={editedTranscript}
+                      onChange={(e) => setEditedTranscript(e.target.value)}
+                      className="w-full h-32 p-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Edit your transcript here..."
+                    />
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        onClick={handleSaveEdit}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Save
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : paragraphs.length > 0 ? (
+                  <div className="space-y-3">
+                    {paragraphs.map((paragraph, index) => (
+                      <p key={index} className="text-sm text-gray-700 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Final transcript will appear here after you stop dictating...
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Select Template</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Voice Command</span>
+                </Button>
+                <Button variant="default" size="sm" className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700">
+                  <Save className="h-4 w-4" />
+                  <span>Save to Section</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Error Display */}
       {error && (

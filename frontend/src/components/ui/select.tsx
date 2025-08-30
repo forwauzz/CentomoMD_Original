@@ -1,196 +1,146 @@
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-interface SelectProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
+/** Generic Select
+ * - Closed by default
+ * - Opens only on click
+ * - Closes on select / outside click / Escape
+ * - Supports controlled (open) or uncontrolled (defaultOpen)
+ */
+export type SelectItem<T extends string = string> = {
+  label: string;
+  value: T;
+};
+
+type Props<T extends string = string> = {
+  value: T | null;
+  onValueChange: (v: T) => void;
+
+  // NEW: standard open control API (replaces initialOpen)
+  open?: boolean;                    // controlled
+  defaultOpen?: boolean;             // uncontrolled initial
+  onOpenChange?: (next: boolean) => void;
+
   disabled?: boolean;
-  children: React.ReactNode;
-}
-
-interface SelectTriggerProps {
-  children: React.ReactNode;
+  items: Array<SelectItem<T>>;
   className?: string;
+  buttonClassName?: string;
+  menuClassName?: string;
+
+  // optional id for aria
+  id?: string;
+};
+
+function useControlledOpen({
+  open,
+  defaultOpen = false,
+  onOpenChange,
+}: {
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (o: boolean) => void;
+}) {
+  const isControlled = open !== undefined;
+  const [inner, setInner] = React.useState<boolean>(!!defaultOpen);
+
+  const state = isControlled ? (open as boolean) : inner;
+  const setState = React.useCallback(
+    (next: boolean) => {
+      if (!isControlled) setInner(next);
+      onOpenChange?.(next);
+    },
+    [isControlled, onOpenChange]
+  );
+
+  return [state, setState] as const;
 }
 
-interface SelectContentProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface SelectItemProps {
-  value: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface SelectValueProps {
-  placeholder?: string;
-  className?: string;
-  children?: React.ReactNode;
-  value?: string;
-}
-
-export const Select: React.FC<SelectProps> = ({
+export function Select<T extends string = string>({
   value,
   onValueChange,
-  disabled = false,
-  children
-}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  disabled,
+  items,
+  className,
+  buttonClassName,
+  menuClassName,
+  id,
+}: Props<T>) {
+  // CLOSED BY DEFAULT
+  const [open, setOpen] = useControlledOpen({ open: openProp, defaultOpen, onOpenChange });
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
 
-  const handleSelect = (newValue: string) => {
-    console.log('Select: handleSelect called with:', newValue);
-    console.log('Select: current value is:', value);
-    console.log('Select: onValueChange function exists:', !!onValueChange);
-    onValueChange?.(newValue);
-    setIsOpen(false);
-  };
+  const toggle = React.useCallback(() => {
+    if (!disabled) setOpen(!open);
+  }, [disabled, open, setOpen]);
 
-  const handleClickOutside = (event: MouseEvent) => {
-    if (triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
-      setIsOpen(false);
-    }
-  };
+  const close = React.useCallback(() => setOpen(false), [setOpen]);
 
+  // Close on outside click
   React.useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      const n = e.target as Node | null;
+      if (rootRef.current && n && !rootRef.current.contains(n)) close();
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [open, close]);
 
-  console.log('Select: rendering with value:', value, 'isOpen:', isOpen);
+  // Close on Escape
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, close]);
 
   return (
-    <div className="relative">
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          if (child.type === SelectTrigger) {
-            return React.cloneElement(child, {
-              ref: triggerRef,
-              onClick: () => {
-                console.log('Select: trigger clicked, disabled:', disabled, 'isOpen:', isOpen, 'value:', value);
-                if (!disabled) {
-                  setIsOpen(!isOpen);
-                } else {
-                  console.log('Select: trigger is disabled, not opening');
-                }
-              },
-              disabled,
-              isOpen,
-              value
-            });
-          }
-          if (child.type === SelectContent && isOpen) {
-            return React.cloneElement(child, {
-              onSelect: handleSelect,
-              selectedValue: value
-            });
-          }
-          if (child.type === SelectValue) {
-            return React.cloneElement(child, {
-              value
-            });
-          }
-        }
-        return child;
-      })}
+    <div ref={rootRef} className={`relative ${className ?? ""}`} id={id}>
+      {/* Prevent blur-before-click: use onMouseDown preventDefault, then onClick toggles */}
+      <button
+        type="button"
+        className={`select-trigger ${buttonClassName ?? ""}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        disabled={!!disabled}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggle}
+      >
+        {items.find((i) => i.value === value)?.label ?? "Select…"}
+        <span aria-hidden>▾</span>
+      </button>
+
+      {/* MENU — truly non-interactive when closed */}
+      <div
+        role="listbox"
+        className={`select-menu ${open ? "open" : ""} ${menuClassName ?? ""}`}
+        aria-hidden={!open}
+      >
+        {items.map((i) => (
+          <div
+            key={i.value}
+            role="option"
+            aria-selected={value === i.value}
+            className={`select-option ${value === i.value ? "selected" : ""}`}
+            onClick={() => {
+              onValueChange(i.value);
+              close();
+            }}
+          >
+            {i.label}
+          </div>
+        ))}
+      </div>
     </div>
   );
-};
+}
 
-export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps & { 
-  onClick?: () => void; 
-  disabled?: boolean; 
-  isOpen?: boolean;
-  value?: string;
-}>(
-  ({ children, className, onClick, disabled, isOpen, value, ...props }, ref) => (
-    <button
-      ref={ref}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <ChevronDown className={cn("h-4 w-4 opacity-50 transition-transform", isOpen && "rotate-180")} />
-    </button>
-  )
-);
-
-export const SelectContent: React.FC<SelectContentProps & { 
-  onSelect?: (value: string) => void; 
-  selectedValue?: string;
-}> = ({
-  children,
-  className,
-  onSelect,
-  selectedValue
-}) => (
-  <div className={cn(
-    "absolute top-full z-50 w-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md",
-    className
-  )}>
-    <div className="p-1">
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.type === SelectItem) {
-          return React.cloneElement(child, {
-            onClick: () => {
-              console.log('SelectContent: item clicked with value:', child.props.value);
-              onSelect?.(child.props.value);
-            },
-            isSelected: child.props.value === selectedValue
-          });
-        }
-        return child;
-      })}
-    </div>
-  </div>
-);
-
-export const SelectItem: React.FC<SelectItemProps & { 
-  onClick?: () => void; 
-  isSelected?: boolean;
-}> = ({
-  children,
-  className,
-  onClick,
-  isSelected,
-  ...props
-}) => (
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('SelectItem: clicked');
-      onClick?.();
-    }}
-    className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-      isSelected && "bg-accent text-accent-foreground",
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </div>
-);
-
-export const SelectValue: React.FC<SelectValueProps> = ({ 
-  placeholder, 
-  className,
-  children,
-  value
-}) => {
-  console.log('SelectValue: rendering with value:', value, 'children:', children);
-  return (
-    <span className={cn("block truncate", className)}>
-      {children || placeholder}
-    </span>
-  );
-};
+// Legacy exports for backward compatibility
+export const SelectTrigger = Select;
+export const SelectContent = () => null;
+export const SelectItem = () => null;
+export const SelectValue = () => null;

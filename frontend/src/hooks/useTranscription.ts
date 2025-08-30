@@ -14,7 +14,7 @@ type Segment = {
   speaker?: string | null;     // PATIENT vs CLINICIAN
 };
 
-export const useTranscription = (sessionId?: string) => {
+export const useTranscription = (sessionId?: string, language?: string) => {
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
     isConnected: false,
@@ -487,8 +487,9 @@ export const useTranscription = (sessionId?: string) => {
 
   // Legacy compatibility - map to new functions
   const startRecording = useCallback(async () => {
-    await startTranscription('fr-CA');
-  }, [startTranscription]);
+    const lang = (language === 'fr-CA' || language === 'en-US') ? language : 'en-US';
+    await startTranscription(lang);
+  }, [startTranscription, language]);
 
   const stopRecording = useCallback(() => {
     stopTranscription();

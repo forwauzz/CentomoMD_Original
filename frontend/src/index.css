@@ -100,35 +100,40 @@
     @apply medical-button bg-secondary text-secondary-foreground hover:bg-secondary/80;
   }
 
-  .medical-button-destructive {
-    @apply medical-button bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  /* Select Component Styles - Core */
+  .select-trigger {
+    @apply flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  .medical-button-outline {
-    @apply medical-button border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  .select-menu {
+    @apply absolute left-0 right-auto top-full mt-1 min-w-full z-50 bg-white border border-gray-300 rounded-md shadow-lg;
+    
+    /* CLOSED */
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 120ms ease, transform 120ms ease;
   }
 
-  .medical-button-ghost {
-    @apply medical-button hover:bg-accent hover:text-accent-foreground;
+  /* OPEN */
+  .select-menu.open {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
   }
 
-  .medical-button-link {
-    @apply medical-button underline-offset-4 hover:underline text-primary;
+  .select-option {
+    @apply relative flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100;
   }
 
-  .medical-button-sm {
-    @apply h-9 px-3 rounded-md;
+  .select-option.selected {
+    @apply bg-blue-50 text-blue-900;
   }
 
-  .medical-button-md {
-    @apply h-10 px-4 py-2;
-  }
-
-  .medical-button-lg {
-    @apply h-11 px-8 rounded-md;
-  }
-
-  .medical-button-icon {
-    @apply h-10 w-10;
+  /* Ensure no global CSS forces menus visible */
+  .select-menu, .select-menu * { 
+    box-sizing: border-box; 
   }
 }
