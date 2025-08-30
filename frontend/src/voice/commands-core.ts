@@ -1,6 +1,7 @@
 export type CommandIntent =
   | 'section.switch' | 'paragraph.break' | 'stream.pause' | 'stream.resume'
-  | 'buffer.clear' | 'doc.save' | 'doc.export' | 'undo' | 'format.medical';
+  | 'buffer.clear' | 'doc.save' | 'doc.export' | 'undo' | 'format.medical'
+  | 'format.cnesst' | 'validation' | 'custom.vocabulary' | 'template.load';
 
 export function norm(s:string){
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
@@ -18,6 +19,10 @@ export function detectCoreCommand(text: string, lang:'fr-CA'|'en-US'): {intent:C
     save:      ['sauvegarder','enregistrer'],
     export:    ['export','exporter'],
     undo:      ['annuler','retour'],
+    format:    ['formatage médical','formatage cnesst','format cnesst'],
+    validation: ['validation','valider','vérifier'],
+    vocabulary: ['vocabulaire personnalisé','vocabulaire médical'],
+    template:  ['charger template','template'],
     section:   /^section\s+(\d{1,2})$/
   };
   const EN = {
@@ -28,6 +33,10 @@ export function detectCoreCommand(text: string, lang:'fr-CA'|'en-US'): {intent:C
     save:      ['save'],
     export:    ['export'],
     undo:      ['undo','go back'],
+    format:    ['medical formatting','cnesst formatting','format cnesst'],
+    validation: ['validation','validate','verify'],
+    vocabulary: ['custom vocabulary','medical vocabulary'],
+    template:  ['load template','template'],
     section:   /^section\s+(\d{1,2})$/
   };
 
@@ -39,6 +48,10 @@ export function detectCoreCommand(text: string, lang:'fr-CA'|'en-US'): {intent:C
   if (L.save.includes(t))      return {intent:'doc.save'};
   if (L.export.includes(t))    return {intent:'doc.export'};
   if (L.undo.includes(t))      return {intent:'undo'};
+  if (L.format.includes(t))    return {intent:'format.cnesst'};
+  if (L.validation.includes(t)) return {intent:'validation'};
+  if (L.vocabulary.includes(t)) return {intent:'custom.vocabulary'};
+  if (L.template.includes(t))  return {intent:'template.load'};
   const m = t.match(L.section);
   if (m) return {intent:'section.switch', arg:m[1]};
   return null;

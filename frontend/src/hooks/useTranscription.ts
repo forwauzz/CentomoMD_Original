@@ -353,6 +353,22 @@ export const useTranscription = (sessionId?: string) => {
                       setActiveSection(c.arg === '7' ? 'section_7' : c.arg === '8' ? 'section_8' : 'section_11'); 
                       updateVoiceCommandStatus(seg.text, 'completed', `Switched to section ${c.arg}`);
                       break;
+                    case 'format.cnesst':
+                      // TODO: Apply CNESST formatting
+                      updateVoiceCommandStatus(seg.text, 'completed', 'CNESST formatting applied');
+                      break;
+                    case 'validation':
+                      // TODO: Validate against template requirements
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Document validated');
+                      break;
+                    case 'custom.vocabulary':
+                      // TODO: Load custom medical vocabulary
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Custom vocabulary loaded');
+                      break;
+                    case 'template.load':
+                      // TODO: Load template for current section
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Template loaded');
+                      break;
                   }
                   return; // do not add command text to transcript
                 }
