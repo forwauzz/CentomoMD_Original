@@ -17,6 +17,7 @@ class CNESSTTemplateExtractor:
         self.docs_path = Path(docs_path)
         self.output_path = Path(output_path)
         self.templates = {
+            "section7": [],
             "section8": [],
             "section11": []
         }
@@ -103,6 +104,35 @@ class CNESSTTemplateExtractor:
         
         return templates
     
+    def extract_section7_templates(self, text: str, source_file: str) -> List[Dict[str, Any]]:
+        """Extract Section 7 templates (Historique de faits et évolution)"""
+        templates = []
+        section_content = self.find_section_content(text, "7")
+        
+        if not section_content:
+            return templates
+        
+        # Split into subsections based on common patterns
+        subsections = self.split_section7_subsections(section_content)
+        
+        for i, subsection in enumerate(subsections):
+            if len(subsection.strip()) < 50:  # Skip very short content
+                continue
+                
+            template = {
+                "section": "7",
+                "title": f"Section 7 - {self.generate_section7_title(subsection)}",
+                "content": subsection.strip(),
+                "tags": self.extract_section7_tags(subsection),
+                "source_file": source_file,
+                "language": "fr",
+                "category": "historique_evolution",
+                "complexity": "medium"
+            }
+            templates.append(template)
+        
+        return templates
+    
     def extract_section11_templates(self, text: str, source_file: str) -> List[Dict[str, Any]]:
         """Extract Section 11 templates (Résumé et conclusion)"""
         templates = []
@@ -145,6 +175,24 @@ class CNESSTTemplateExtractor:
             r"Force musculaire\s*:",
             r"Réflexes\s*:",
             r"Tests\s*:"
+        ]
+        
+        return self.split_by_patterns(content, subsection_patterns)
+    
+    def split_section7_subsections(self, content: str) -> List[str]:
+        """Split Section 7 content into logical subsections"""
+        # Common Section 7 subsections
+        subsection_patterns = [
+            r"Historique de faits\s*:",
+            r"Évolution\s*:",
+            r"Antécédents\s*:",
+            r"Circonstances\s*:",
+            r"Date de l'événement\s*:",
+            r"Lieu de l'événement\s*:",
+            r"Description des faits\s*:",
+            r"Traitements antérieurs\s*:",
+            r"Consultations\s*:",
+            r"Examens\s*:"
         ]
         
         return self.split_by_patterns(content, subsection_patterns)
@@ -201,6 +249,22 @@ class CNESSTTemplateExtractor:
         
         return "Examen clinique général"
     
+    def generate_section7_title(self, content: str) -> str:
+        """Generate a title for Section 7 template"""
+        # Look for key terms to categorize the template
+        if re.search(r"historique.*faits", content, re.IGNORECASE):
+            return "Historique de faits"
+        elif re.search(r"évolution", content, re.IGNORECASE):
+            return "Évolution de la situation"
+        elif re.search(r"antécédents", content, re.IGNORECASE):
+            return "Antécédents médicaux"
+        elif re.search(r"circonstances", content, re.IGNORECASE):
+            return "Circonstances de l'événement"
+        elif re.search(r"traitements", content, re.IGNORECASE):
+            return "Traitements antérieurs"
+        else:
+            return "Historique et évolution"
+    
     def generate_section11_title(self, content: str) -> str:
         """Generate a title for Section 11 template"""
         # Look for key terms to categorize the template
@@ -243,6 +307,38 @@ class CNESSTTemplateExtractor:
         
         return tags
     
+    def extract_section7_tags(self, content: str) -> List[str]:
+        """Extract relevant tags for Section 7 templates"""
+        tags = ["historique_evolution"]
+        
+        # Content types
+        if re.search(r"historique.*faits", content, re.IGNORECASE):
+            tags.append("historique_faits")
+        if re.search(r"évolution", content, re.IGNORECASE):
+            tags.append("évolution")
+        if re.search(r"antécédents", content, re.IGNORECASE):
+            tags.append("antécédents")
+        if re.search(r"circonstances", content, re.IGNORECASE):
+            tags.append("circonstances")
+        if re.search(r"traitements", content, re.IGNORECASE):
+            tags.append("traitements")
+        if re.search(r"consultations", content, re.IGNORECASE):
+            tags.append("consultations")
+        if re.search(r"examens", content, re.IGNORECASE):
+            tags.append("examens")
+        
+        # Injury types
+        if re.search(r"accident", content, re.IGNORECASE):
+            tags.append("accident")
+        if re.search(r"blessure", content, re.IGNORECASE):
+            tags.append("blessure")
+        if re.search(r"traumatisme", content, re.IGNORECASE):
+            tags.append("traumatisme")
+        if re.search(r"douleur", content, re.IGNORECASE):
+            tags.append("douleur")
+        
+        return tags
+    
     def extract_section11_tags(self, content: str) -> List[str]:
         """Extract relevant tags for Section 11 templates"""
         tags = ["résumé_conclusion"]
@@ -277,6 +373,10 @@ class CNESSTTemplateExtractor:
             if not text:
                 continue
             
+            # Extract Section 7 templates
+            section7_templates = self.extract_section7_templates(text, file_path.name)
+            self.templates["section7"].extend(section7_templates)
+            
             # Extract Section 8 templates
             section8_templates = self.extract_section8_templates(text, file_path.name)
             self.templates["section8"].extend(section8_templates)
@@ -285,11 +385,23 @@ class CNESSTTemplateExtractor:
             section11_templates = self.extract_section11_templates(text, file_path.name)
             self.templates["section11"].extend(section11_templates)
         
+        print(f"Extracted {len(self.templates['section7'])} Section 7 templates")
         print(f"Extracted {len(self.templates['section8'])} Section 8 templates")
         print(f"Extracted {len(self.templates['section11'])} Section 11 templates")
     
     def save_templates(self):
         """Save templates to JSON files"""
+        # Save Section 7 templates
+        section7_path = self.output_path / "section7"
+        section7_path.mkdir(exist_ok=True)
+        
+        for i, template in enumerate(self.templates["section7"]):
+            filename = f"template_{i+1:03d}.json"
+            filepath = section7_path / filename
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(template, f, ensure_ascii=False, indent=2)
+        
         # Save Section 8 templates
         section8_path = self.output_path / "section8"
         section8_path.mkdir(exist_ok=True)
@@ -314,6 +426,7 @@ class CNESSTTemplateExtractor:
         
         # Save summary
         summary = {
+            "total_section7": len(self.templates["section7"]),
             "total_section8": len(self.templates["section8"]),
             "total_section11": len(self.templates["section11"]),
             "generated_at": str(Path().cwd()),

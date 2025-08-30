@@ -108,6 +108,11 @@ The extractor:
 
 ### Supported Patterns
 
+#### Section 7 Patterns
+- "7. Historique de faits et évolution"
+- "Section 7"
+- "7 - Historique de faits"
+
 #### Section 8 Patterns
 - "8. Examen clinique"
 - "Section 8"
@@ -172,13 +177,13 @@ Templates are validated for:
 ## Statistics
 
 Current template counts:
-- **Section 7**: 0 templates (to be added)
+- **Section 7**: 22 templates (extracted from .docx files)
 - **Section 8**: 22 templates (extracted from .docx files)
 - **Section 11**: 22 templates (extracted from .docx files)
 
 ## Future Enhancements
 
-- [ ] Section 7 template extraction
+- [x] Section 7 template extraction ✅
 - [ ] Template versioning system
 - [ ] User-specific template management
 - [ ] Template sharing and collaboration
