@@ -67,31 +67,45 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
     setFilteredTemplates(filtered);
   }, [templates, searchQuery, selectedTags]);
 
-  const loadTemplates = async () => {
-    setLoading(true);
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate loading templates
-      const mockTemplates: TemplateJSON[] = [
-        {
-          section: currentSection,
-          title: `Section ${currentSection} - Template Example`,
-          content: `Contenu d'exemple pour la section ${currentSection}...`,
-          tags: ["exemple", "template"],
-          source_file: "example.docx",
-          language: currentLanguage,
-          category: "exemple",
-          complexity: "medium"
-        }
-      ];
-      
-      setTemplates(mockTemplates);
-    } catch (error) {
-      console.error('Error loading templates:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+           const loadTemplates = async () => {
+           setLoading(true);
+           try {
+             // First try to fetch templates with language filter
+             let response = await fetch(`http://localhost:3001/api/templates/${currentSection}?language=${currentLanguage}`);
+             if (response.ok) {
+               const data = await response.json();
+                                if (data.success && data.data.length > 0) {
+                   console.log(`Loaded ${data.data.length} templates for section ${currentSection} with language ${currentLanguage}`);
+                   setTemplates(data.data);
+                 } else {
+                 // If no templates found with language filter, try without language filter
+                 console.log(`No ${currentLanguage} templates found for section ${currentSection}, trying without language filter`);
+                 response = await fetch(`http://localhost:3001/api/templates/${currentSection}`);
+                 if (response.ok) {
+                   const dataWithoutLanguage = await response.json();
+                   if (dataWithoutLanguage.success) {
+                     console.log(`Loaded ${dataWithoutLanguage.data.length} templates for section ${currentSection} without language filter`);
+                     setTemplates(dataWithoutLanguage.data);
+                   } else {
+                     console.error('Failed to load templates:', dataWithoutLanguage.error);
+                     setTemplates([]);
+                   }
+                 } else {
+                   console.error('Failed to fetch templates without language filter:', response.statusText);
+                   setTemplates([]);
+                 }
+               }
+             } else {
+               console.error('Failed to fetch templates:', response.statusText);
+               setTemplates([]);
+             }
+           } catch (error) {
+             console.error('Error loading templates:', error);
+             setTemplates([]);
+           } finally {
+             setLoading(false);
+           }
+         };
 
   const handleTemplateSelect = (template: TemplateJSON) => {
     onTemplateSelect(template);
@@ -136,9 +150,11 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
           <span>
-            {selectedTemplate 
-              ? selectedTemplate.title 
-              : `Sélectionner un template (Section ${currentSection})`
+            {loading 
+              ? 'Chargement...'
+              : selectedTemplate 
+                ? selectedTemplate.title 
+                : `Sélectionner un template (Section ${currentSection}) - ${templates.length} disponible(s)`
             }
           </span>
         </div>

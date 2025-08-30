@@ -1,15 +1,90 @@
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import cors from 'cors';
 
 import { transcriptionService } from './services/transcriptionService.js';
 import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
+import { templateLibrary } from './template-library/index.js';
 
 const app = express();
 const server = http.createServer(app);
 
+// Apply CORS middleware to all routes
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
+});
+
+// Template Library API Endpoints
+app.get('/api/templates', (req, res) => {
+  try {
+    const { section, language } = req.query;
+    let templates;
+    
+    if (section && ['7', '8', '11'].includes(section as string)) {
+      templates = templateLibrary.getTemplates(section as "7" | "8" | "11", language as "fr" | "en" || "fr");
+    } else {
+      // Return all templates grouped by section
+      templates = {
+        section7: templateLibrary.getTemplatesBySection("7"),
+        section8: templateLibrary.getTemplatesBySection("8"),
+        section11: templateLibrary.getTemplatesBySection("11")
+      };
+    }
+    
+    res.json({ success: true, data: templates });
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+  }
+});
+
+app.get('/api/templates/stats', (req, res) => {
+  try {
+    const stats = templateLibrary.getTemplateStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    console.error('Error fetching template stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch template stats' });
+  }
+});
+
+app.get('/api/templates/:section', (req, res) => {
+  try {
+    const { section } = req.params;
+    const { language, search, tags } = req.query;
+    
+    if (!['7', '8', '11'].includes(section)) {
+      return res.status(400).json({ success: false, error: 'Invalid section' });
+    }
+    
+    let templates = templateLibrary.getTemplatesBySection(section as "7" | "8" | "11");
+    
+    // Apply filters
+    if (language) {
+      templates = templates.filter(t => !t.language || t.language === language);
+    }
+    
+    if (search) {
+      templates = templateLibrary.searchTemplates(section as "7" | "8" | "11", search as string);
+    }
+    
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : [tags];
+      templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
+    }
+    
+    res.json({ success: true, data: templates });
+  } catch (error) {
+    console.error('Error fetching templates by section:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+  }
 });
 
 const wss = new WebSocketServer({ server });
@@ -160,4 +235,16 @@ server.listen(3001, () => {
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
   console.log("🎤 Ready for real-time transcription");
+  
+  // Template Library Status
+  try {
+    const templateStats = templateLibrary.getTemplateStats();
+    console.log("📚 Template Library loaded:", templateStats.total, "templates");
+    console.log("   - Section 7:", templateStats.bySection["7"], "templates");
+    console.log("   - Section 8:", templateStats.bySection["8"], "templates");
+    console.log("   - Section 11:", templateStats.bySection["11"], "templates");
+    console.log("🔗 Template API endpoints available at /api/templates");
+  } catch (error) {
+    console.warn("⚠️ Template Library not available:", error);
+  }
 });

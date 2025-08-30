@@ -8,6 +8,7 @@ import { useTranscription } from '@/hooks/useTranscription';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
+import { TemplateDropdown } from './TemplateDropdown';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -20,7 +21,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en-US');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr-CA');
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -197,6 +198,19 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 <SectionSelector
                   currentSection={activeSection}
                   onSectionChange={setActiveSection}
+                />
+              </div>
+
+              {/* Template Dropdown */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Template</label>
+                <TemplateDropdown
+                  currentSection={activeSection.replace('section_', '') as "7" | "8" | "11"}
+                  currentLanguage={selectedLanguage === 'fr-CA' ? 'fr' : 'en'}
+                  onTemplateSelect={(template) => {
+                    console.log('Template selected:', template);
+                    // TODO: Implement template content injection
+                  }}
                 />
               </div>
 

@@ -40,7 +40,8 @@
   },
   "include": [
     "src/**/*",
-    "templates/**/*"
+    "templates/**/*",
+    "template-library/**/*"
   ],
   "exclude": [
     "node_modules",
