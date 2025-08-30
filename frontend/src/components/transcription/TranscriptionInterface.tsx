@@ -10,6 +10,7 @@ import { TranscriptionState, CNESSTSection, TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { VoiceCommandPanel } from './VoiceCommandPanel';
+import { VoiceCommandFeedback } from './VoiceCommandFeedback';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
@@ -53,6 +54,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     paragraphs,
     activeSection,
     buffers,
+    voiceCommands,
+    isListening,
     startRecording,
     stopRecording,
     sendVoiceCommand,
@@ -293,13 +296,20 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         </CardContent>
       </Card>
 
-      {/* Voice Commands Panel */}
-      {showVoiceCommands && (
-        <VoiceCommandPanel
-          onCommand={sendVoiceCommand}
-          language={language}
-        />
-      )}
+             {/* Voice Commands Panel */}
+       {showVoiceCommands && (
+         <VoiceCommandPanel
+           onCommand={sendVoiceCommand}
+           language={language}
+         />
+       )}
+
+       {/* Voice Command Feedback */}
+       <VoiceCommandFeedback
+         commands={voiceCommands}
+         isListening={isListening}
+         language={language}
+       />
 
       {/* Transcription Display */}
       <Card>

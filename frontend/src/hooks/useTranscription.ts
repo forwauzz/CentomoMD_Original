@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { TranscriptionState, Transcript } from '@/types';
 import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
+import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 
 // Enhanced segment tracking for partial results
 type Segment = { 
@@ -43,6 +44,9 @@ export const useTranscription = (sessionId?: string) => {
   const verbatim = useRef<{isOpen:boolean; customOpen:string|null}>({ isOpen:false, customOpen:null });
   const forceBreakNextRef = useRef<boolean>(false);
   let paused = false; // gate for mic sending
+  
+  // Voice command tracking
+  const [voiceCommands, setVoiceCommands] = useState<VoiceCommandEvent[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -87,6 +91,25 @@ export const useTranscription = (sessionId?: string) => {
 
   const undoLastAction = useCallback(() => {
     setSegments(prev => prev.slice(0, -1));
+  }, []);
+
+  // Voice command tracking functions
+  const addVoiceCommand = useCallback((event: Omit<VoiceCommandEvent, 'timestamp'>) => {
+    const newEvent: VoiceCommandEvent = {
+      ...event,
+      timestamp: Date.now()
+    };
+    setVoiceCommands(prev => [...prev, newEvent]);
+  }, []);
+
+  const updateVoiceCommandStatus = useCallback((command: string, status: VoiceCommandEvent['status'], details?: string) => {
+    setVoiceCommands(prev => 
+      prev.map(cmd => 
+        cmd.command === command 
+          ? { ...cmd, status, details }
+          : cmd
+      )
+    );
   }, []);
 
   // Debounced update system to avoid flicker
@@ -265,36 +288,75 @@ export const useTranscription = (sessionId?: string) => {
                isProtected: false
              };
 
-             if (seg.isFinal) {
-               // 1) verbatim start/end/custom
-               const v = detectVerbatimCmd(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
-               if (v) {
-                 if (v.kind==='open') verbatim.current.isOpen = true;
-                 if (v.kind==='close') verbatim.current.isOpen = false;
-                 if (v.kind==='customOpen') verbatim.current.customOpen = v.key;
-                 if (v.kind==='customClose') verbatim.current.customOpen = null;
-                 // show a small toast if you want, then swallow the command
-                 console.log('Verbatim command detected:', v);
-                 return;
-               }
+                           if (seg.isFinal) {
+                // 1) verbatim start/end/custom
+                const v = detectVerbatimCmd(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
+                if (v) {
+                  addVoiceCommand({
+                    type: 'verbatim',
+                    command: seg.text,
+                    status: 'detected',
+                    details: `${v.kind}${v.key ? `: ${v.key}` : ''}`
+                  });
+                  
+                  if (v.kind==='open') verbatim.current.isOpen = true;
+                  if (v.kind==='close') verbatim.current.isOpen = false;
+                  if (v.kind==='customOpen') verbatim.current.customOpen = v.key;
+                  if (v.kind==='customClose') verbatim.current.customOpen = null;
+                  
+                  updateVoiceCommandStatus(seg.text, 'completed');
+                  console.log('Verbatim command detected:', v);
+                  return;
+                }
 
-               // 2) core commands
-               const c = detectCoreCommand(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
-               if (c) {
-                 console.log('Core command detected:', c);
-                 switch (c.intent) {
-                   case 'paragraph.break': forceBreakNextRef.current = true; break;
-                   case 'stream.pause':    pauseMic(); break;
-                   case 'stream.resume':   resumeMic(); break;
-                   case 'buffer.clear':    clearLiveBuffer(); break;
-                   case 'doc.save':        ws.send(JSON.stringify({ type:'cmd.save' })); break;
-                   case 'doc.export':      ws.send(JSON.stringify({ type:'cmd.export' })); break;
-                   case 'undo':            undoLastAction(); break;
-                   case 'section.switch':  setActiveSection(c.arg === '7' ? 'section_7' : c.arg === '8' ? 'section_8' : 'section_11'); break;
-                 }
-                 return; // do not add command text to transcript
-               }
-             }
+                // 2) core commands
+                const c = detectCoreCommand(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
+                if (c) {
+                  addVoiceCommand({
+                    type: 'core',
+                    command: seg.text,
+                    status: 'detected',
+                    details: `${c.intent}${c.arg ? `: ${c.arg}` : ''}`
+                  });
+                  
+                  console.log('Core command detected:', c);
+                  switch (c.intent) {
+                    case 'paragraph.break': 
+                      forceBreakNextRef.current = true; 
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Paragraph break added');
+                      break;
+                    case 'stream.pause':    
+                      pauseMic(); 
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Transcription paused');
+                      break;
+                    case 'stream.resume':   
+                      resumeMic(); 
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Transcription resumed');
+                      break;
+                    case 'buffer.clear':    
+                      clearLiveBuffer(); 
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Buffer cleared');
+                      break;
+                    case 'doc.save':        
+                      ws.send(JSON.stringify({ type:'cmd.save' })); 
+                      updateVoiceCommandStatus(seg.text, 'executing', 'Saving document...');
+                      break;
+                    case 'doc.export':      
+                      ws.send(JSON.stringify({ type:'cmd.export' })); 
+                      updateVoiceCommandStatus(seg.text, 'executing', 'Exporting document...');
+                      break;
+                    case 'undo':            
+                      undoLastAction(); 
+                      updateVoiceCommandStatus(seg.text, 'completed', 'Last action undone');
+                      break;
+                    case 'section.switch':  
+                      setActiveSection(c.arg === '7' ? 'section_7' : c.arg === '8' ? 'section_8' : 'section_11'); 
+                      updateVoiceCommandStatus(seg.text, 'completed', `Switched to section ${c.arg}`);
+                      break;
+                  }
+                  return; // do not add command text to transcript
+                }
+              }
 
              // 3) mark protected when verbatim mode is on
              if (verbatim.current.isOpen || verbatim.current.customOpen) seg.isProtected = true;
@@ -467,6 +529,10 @@ export const useTranscription = (sessionId?: string) => {
     // Section routing data
     activeSection,
     buffers,
+
+    // Voice command data
+    voiceCommands,
+    isListening: state.isRecording && !paused,
 
     // Actions
     startRecording,
