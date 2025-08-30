@@ -51,11 +51,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     finalTranscripts,
     segments,
     paragraphs,
+    activeSection,
+    buffers,
     startRecording,
     stopRecording,
     sendVoiceCommand,
     error,
-    reconnectionAttempts
+    reconnectionAttempts,
+    setActiveSection
   } = useTranscription(sessionId);
 
   const { sendMessage } = useWebSocket();
@@ -198,8 +201,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 disabled={false} // Temporarily force enabled for testing
               />
               <SectionSelector
-                currentSection={currentSection}
-                onSectionChange={setCurrentSection}
+                currentSection={activeSection}
+                onSectionChange={setActiveSection}
                 language={language}
               />
               <ModeToggle
@@ -302,7 +305,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{t(currentSection, language)}</span>
+            <span>{t(activeSection, language)}</span>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
@@ -350,15 +353,49 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 </label>
                 
                 {/* Section Header with Language Badge */}
-                <div className="flex items-center space-x-2 mb-3">
-                  <h3 className="text-lg font-semibold">{t(currentSection, language)}</h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedLanguage === 'fr-CA' ? 'FR-CA' : 'EN-US'}
-                  </Badge>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-lg font-semibold">{t(activeSection, language)}</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedLanguage === 'fr-CA' ? 'FR-CA' : 'EN-US'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const text = paragraphs.join('\n\n');
+                        navigator.clipboard.writeText(text);
+                      }}
+                      className="flex items-center space-x-1"
+                    >
+                      <span className="text-xs">Copy</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExport}
+                      className="flex items-center space-x-1"
+                    >
+                      <span className="text-xs">Export</span>
+                    </Button>
+                  </div>
                 </div>
                 
-                {/* Paragraphs Display */}
-                <div id="finalTranscripts" className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+                {/* Paragraphs Display with Auto-scroll */}
+                <div 
+                  id="finalTranscripts" 
+                  className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar"
+                  ref={(el) => {
+                    if (el && paragraphs.length > 0) {
+                      // Auto-scroll to bottom when new paragraphs are added
+                      setTimeout(() => {
+                        el.scrollTop = el.scrollHeight;
+                      }, 100);
+                    }
+                  }}
+                >
                   {paragraphs.map((paragraph, index) => (
                     <p key={index} className="leading-7 text-sm">
                       {paragraph}

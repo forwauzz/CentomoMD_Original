@@ -65,6 +65,8 @@ export class TranscriptionService {
       MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN
       EnablePartialResultsStabilization: true,
       PartialResultsStability: 'high',
+      // Custom vocabulary for medical terms (when available)
+      ...(config.vocabulary_name && { VocabularyName: config.vocabulary_name }),
     };
 
     // Create streaming command
