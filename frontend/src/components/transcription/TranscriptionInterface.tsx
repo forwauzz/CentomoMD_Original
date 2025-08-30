@@ -11,6 +11,7 @@ import { useTranscription } from '@/hooks/useTranscription';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { VoiceCommandPanel } from './VoiceCommandPanel';
 import { VoiceCommandFeedback } from './VoiceCommandFeedback';
+import { VoiceCommandTraining } from './VoiceCommandTraining';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
@@ -32,6 +33,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showVoiceCommands, setShowVoiceCommands] = useState(false);
+  const [showTraining, setShowTraining] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
 
   const handleLanguageChange = (newLanguage: string) => {
@@ -283,16 +285,23 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             </div>
           )}
 
-          {/* Voice Commands Toggle */}
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => setShowVoiceCommands(!showVoiceCommands)}
-              className="flex items-center space-x-2"
-            >
-              <span>{t('voiceCommands', language)}</span>
-            </Button>
-          </div>
+                     {/* Voice Commands & Training Toggle */}
+           <div className="flex justify-center space-x-2">
+             <Button
+               variant="outline"
+               onClick={() => setShowVoiceCommands(!showVoiceCommands)}
+               className="flex items-center space-x-2"
+             >
+               <span>{t('voiceCommands', language)}</span>
+             </Button>
+             <Button
+               variant="outline"
+               onClick={() => setShowTraining(!showTraining)}
+               className="flex items-center space-x-2"
+             >
+               <span>{language === 'fr' ? 'Entraînement' : 'Training'}</span>
+             </Button>
+           </div>
         </CardContent>
       </Card>
 
@@ -304,12 +313,24 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
          />
        )}
 
-       {/* Voice Command Feedback */}
-       <VoiceCommandFeedback
-         commands={voiceCommands}
-         isListening={isListening}
-         language={language}
-       />
+               {/* Voice Command Feedback */}
+        <VoiceCommandFeedback
+          commands={voiceCommands}
+          isListening={isListening}
+          language={language}
+        />
+
+        {/* Voice Command Training */}
+        {showTraining && (
+          <VoiceCommandTraining
+            language={language}
+            onCommandPractice={sendVoiceCommand}
+            onAccessibilityToggle={(enabled) => {
+              console.log('Accessibility toggled:', enabled);
+              // TODO: Implement accessibility features
+            }}
+          />
+        )}
 
       {/* Transcription Display */}
       <Card>
