@@ -90,10 +90,22 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
-    try {
-      const msg = JSON.parse(data.toString());
-      if (msg?.type === 'stop_transcription') endAudio?.();
-    } catch {}
+         try {
+       const msg = JSON.parse(data.toString());
+       if (msg?.type === 'stop_transcription') endAudio?.();
+       
+       // Handle voice commands
+       if (msg?.type === 'cmd.save') {
+         // TODO: implement save functionality
+         console.log('Save command received for session:', sessionId);
+         ws.send(JSON.stringify({ type:'cmd_ack', cmd:'save', ok:true }));
+       }
+       if (msg?.type === 'cmd.export') {
+         // TODO: implement export functionality
+         console.log('Export command received for session:', sessionId);
+         ws.send(JSON.stringify({ type:'cmd_ack', cmd:'export', ok:true }));
+       }
+     } catch {}
   });
 
   ws.on('close', () => {

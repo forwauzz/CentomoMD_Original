@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { TranscriptionState, Transcript } from '@/types';
+import { detectVerbatimCmd } from '../voice/verbatim-commands';
+import { detectCoreCommand } from '../voice/commands-core';
 
 // Enhanced segment tracking for partial results
 type Segment = { 
@@ -37,6 +39,11 @@ export const useTranscription = (sessionId?: string) => {
   const updateQueue = useRef<Segment[]>([]);
   const updateTimeout = useRef<number | undefined>(undefined);
 
+  // Voice command state
+  const verbatim = useRef<{isOpen:boolean; customOpen:string|null}>({ isOpen:false, customOpen:null });
+  const forceBreakNextRef = useRef<boolean>(false);
+  let paused = false; // gate for mic sending
+
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -68,6 +75,19 @@ export const useTranscription = (sessionId?: string) => {
       return { ...prev, [activeSection]: [...arr, seg] };
     });
   }, [activeSection]);
+
+  // Voice command functions
+  const pauseMic = useCallback(() => { paused = true; }, []);
+  const resumeMic = useCallback(() => { paused = false; }, []);
+  
+  const clearLiveBuffer = useCallback(() => {
+    setSegments([]);
+    setState(prev => ({ ...prev, currentTranscript: '' }));
+  }, []);
+
+  const undoLastAction = useCallback(() => {
+    setSegments(prev => prev.slice(0, -1));
+  }, []);
 
   // Debounced update system to avoid flicker
   const enqueueUpdate = useCallback((s: Segment) => {
@@ -168,8 +188,9 @@ export const useTranscription = (sessionId?: string) => {
     return t;
   }, []);
 
-  // Start transcription with direct WebSocket connection
-  const startTranscription = useCallback(async (languageCode: 'fr-CA' | 'en-US') => {
+     // Start transcription with direct WebSocket connection
+   const startTranscription = useCallback(async (languageCode: 'fr-CA' | 'en-US') => {
+     const currentLanguageCode = languageCode; // Store for voice commands
     try {
       console.log('Starting transcription with language:', languageCode);
       
@@ -216,39 +237,74 @@ export const useTranscription = (sessionId?: string) => {
             source.connect(proc);
             proc.connect(audioContext.destination);
 
-            let framesSent = 0;
-            proc.onaudioprocess = (e) => {
-              if (ws.readyState !== WebSocket.OPEN) return;
-              const ch = e.inputBuffer.getChannelData(0); // Float32 [-1..1]
-              const pcm = new Int16Array(ch.length);      // 16-bit little-endian
-              for (let i = 0; i < ch.length; i++) {
-                const s = Math.max(-1, Math.min(1, ch[i]));
-                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-              }
-              ws.send(pcm.buffer);                        // 🔑 send BINARY, not JSON
-              if (++framesSent % 25 === 0) console.log('framesSent', framesSent);
-            };
+                         let framesSent = 0;
+             proc.onaudioprocess = (e) => {
+               if (paused || ws.readyState !== WebSocket.OPEN) return;
+               const ch = e.inputBuffer.getChannelData(0); // Float32 [-1..1]
+               const pcm = new Int16Array(ch.length);      // 16-bit little-endian
+               for (let i = 0; i < ch.length; i++) {
+                 const s = Math.max(-1, Math.min(1, ch[i]));
+                 pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+               }
+               ws.send(pcm.buffer);                        // 🔑 send BINARY, not JSON
+               if (++framesSent % 25 === 0) console.log('framesSent', framesSent);
+             };
             
             updateState({ isRecording: true });
-          } else if (msg.type === 'transcription_result') {
-            console.log('Transcription result:', msg);
-            
-            // Enhanced segment tracking with stable IDs and speaker info
-            const seg = {
-              id: msg.resultId || crypto.randomUUID(),
-              text: msg.text,
-              startTime: msg.startTime,
-              endTime: msg.endTime,
-              isFinal: !!msg.isFinal,
-              speaker: msg.speaker
-            };
-            
-            enqueueUpdate(seg);
-            
-            // Route final segments to active section buffer
-            if (seg.isFinal) {
-              routeFinalToSection(seg);
-            }
+                     } else if (msg.type === 'transcription_result') {
+             console.log('Transcription result:', msg);
+             
+             // Enhanced segment tracking with stable IDs and speaker info
+             const seg = {
+               id: msg.resultId || crypto.randomUUID(),
+               text: msg.text,
+               startTime: msg.startTime,
+               endTime: msg.endTime,
+               isFinal: !!msg.isFinal,
+               speaker: msg.speaker,
+               isProtected: false
+             };
+
+             if (seg.isFinal) {
+               // 1) verbatim start/end/custom
+               const v = detectVerbatimCmd(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
+               if (v) {
+                 if (v.kind==='open') verbatim.current.isOpen = true;
+                 if (v.kind==='close') verbatim.current.isOpen = false;
+                 if (v.kind==='customOpen') verbatim.current.customOpen = v.key;
+                 if (v.kind==='customClose') verbatim.current.customOpen = null;
+                 // show a small toast if you want, then swallow the command
+                 console.log('Verbatim command detected:', v);
+                 return;
+               }
+
+               // 2) core commands
+               const c = detectCoreCommand(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
+               if (c) {
+                 console.log('Core command detected:', c);
+                 switch (c.intent) {
+                   case 'paragraph.break': forceBreakNextRef.current = true; break;
+                   case 'stream.pause':    pauseMic(); break;
+                   case 'stream.resume':   resumeMic(); break;
+                   case 'buffer.clear':    clearLiveBuffer(); break;
+                   case 'doc.save':        ws.send(JSON.stringify({ type:'cmd.save' })); break;
+                   case 'doc.export':      ws.send(JSON.stringify({ type:'cmd.export' })); break;
+                   case 'undo':            undoLastAction(); break;
+                   case 'section.switch':  setActiveSection(c.arg === '7' ? 'section_7' : c.arg === '8' ? 'section_8' : 'section_11'); break;
+                 }
+                 return; // do not add command text to transcript
+               }
+             }
+
+             // 3) mark protected when verbatim mode is on
+             if (verbatim.current.isOpen || verbatim.current.customOpen) seg.isProtected = true;
+             
+             enqueueUpdate(seg);
+             
+             // Route final segments to active section buffer
+             if (seg.isFinal) {
+               routeFinalToSection(seg);
+             }
 
             // Update current transcript for live display
             setState(prev => ({

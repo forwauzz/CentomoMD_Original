@@ -84,6 +84,7 @@ export interface Segment {
   endTime?: number | null;
   isFinal: boolean;
   speaker?: string | null;     // PATIENT vs CLINICIAN
+  isProtected?: boolean;       // Protected from formatting
 }
 
 export interface TranscriptionState {
