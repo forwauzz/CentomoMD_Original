@@ -14,12 +14,12 @@ dotenv.config({ path: envPath });
 
 // Debug: Log loaded environment variables (without sensitive data)
 console.log('🔍 Environment variables loaded:');
-console.log('  - NODE_ENV:', process.env.NODE_ENV);
-console.log('  - AWS_REGION:', process.env.AWS_REGION);
-console.log('  - S3_BUCKET_NAME:', process.env.S3_BUCKET_NAME ? `"${process.env.S3_BUCKET_NAME}"` : 'NOT SET');
-console.log('  - S3_BUCKET_NAME length:', process.env.S3_BUCKET_NAME ? process.env.S3_BUCKET_NAME.length : 0);
-console.log('  - S3_BUCKET_NAME raw:', JSON.stringify(process.env.S3_BUCKET_NAME));
-console.log('  - ENCRYPTION_KEY:', process.env.ENCRYPTION_KEY ? `${process.env.ENCRYPTION_KEY.length} chars` : 'NOT SET');
+console.log('  - NODE_ENV:', process.env['NODE_ENV']);
+console.log('  - AWS_REGION:', process.env['AWS_REGION']);
+console.log('  - S3_BUCKET_NAME:', process.env['S3_BUCKET_NAME'] ? `"${process.env['S3_BUCKET_NAME']}"` : 'NOT SET');
+console.log('  - S3_BUCKET_NAME length:', process.env['S3_BUCKET_NAME'] ? process.env['S3_BUCKET_NAME'].length : 0);
+console.log('  - S3_BUCKET_NAME raw:', JSON.stringify(process.env['S3_BUCKET_NAME']));
+console.log('  - ENCRYPTION_KEY:', process.env['ENCRYPTION_KEY'] ? `${process.env['ENCRYPTION_KEY'].length} chars` : 'NOT SET');
 
 // Environment schema validation
 const envSchema = z.object({
@@ -185,7 +185,7 @@ export const validateConfig = (): void => {
     }
   }
 
-  const missingFields = requiredFields.filter(field => !process.env[field]);
+  const missingFields = requiredFields.filter(field => !process.env[field as keyof NodeJS.ProcessEnv]);
 
   if (missingFields.length > 0) {
     console.error('❌ Missing required environment variables:');

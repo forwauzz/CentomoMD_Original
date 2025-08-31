@@ -104,13 +104,13 @@ app.post('/api/templates/format',
     
     const formattedContent = AIFormattingService.formatTemplateContent(content, formattingOptions);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: formattedContent 
     });
   } catch (error) {
     console.error('Error formatting template content:', error);
-    res.status(500).json({ success: false, error: 'Failed to format template content' });
+    return res.status(500).json({ success: false, error: 'Failed to format template content' });
   }
 });
 
@@ -161,14 +161,14 @@ app.post('/api/templates',
     // Add template to the template library
     await templateLibrary.addTemplate(newTemplate);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: newTemplate,
       message: 'Template created successfully'
     });
   } catch (error) {
     console.error('Error creating template:', error);
-    res.status(500).json({ success: false, error: 'Failed to create template' });
+    return res.status(500).json({ success: false, error: 'Failed to create template' });
   }
 });
 
@@ -205,14 +205,14 @@ app.put('/api/templates/:id',
     // Update template in the template library
     await templateLibrary.updateTemplate(id, updatedTemplate);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: updatedTemplate,
       message: 'Template updated successfully'
     });
   } catch (error) {
     console.error('Error updating template:', error);
-    res.status(500).json({ success: false, error: 'Failed to update template' });
+    return res.status(500).json({ success: false, error: 'Failed to update template' });
   }
 });
 
@@ -235,13 +235,13 @@ app.delete('/api/templates/:id',
     // Delete template from the template library
     await templateLibrary.deleteTemplate(id, section as "7" | "8" | "11");
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: 'Template deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting template:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete template' });
+    return res.status(500).json({ success: false, error: 'Failed to delete template' });
   }
 });
 
@@ -304,10 +304,10 @@ app.get('/api/templates/:section', (req, res) => {
       templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
     }
     
-    res.json({ success: true, data: templates });
+    return res.json({ success: true, data: templates });
   } catch (error) {
     console.error('Error fetching templates by section:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch templates' });
   }
 });
 
@@ -333,13 +333,13 @@ app.post('/api/templates/:id/usage', async (req, res) => {
       performance_rating
     });
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: 'Usage tracked successfully'
     });
   } catch (error) {
     console.error('Error tracking template usage:', error);
-    res.status(500).json({ success: false, error: 'Failed to track usage' });
+    return res.status(500).json({ success: false, error: 'Failed to track usage' });
   }
 });
 
@@ -402,13 +402,13 @@ app.post('/api/templates/import',
     
     await templateLibrary.importTemplates(templates);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: `${templates.length} templates imported successfully`
     });
   } catch (error) {
     console.error('Error importing templates:', error);
-    res.status(500).json({ success: false, error: 'Failed to import templates' });
+    return res.status(500).json({ success: false, error: 'Failed to import templates' });
   }
 });
 
@@ -435,13 +435,13 @@ app.post('/api/templates/bulk/status',
     
     await templateLibrary.bulkUpdateStatus(templateIds, status);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: `${templateIds.length} templates updated successfully`
     });
   } catch (error) {
     console.error('Error performing bulk status update:', error);
-    res.status(500).json({ success: false, error: 'Failed to update templates' });
+    return res.status(500).json({ success: false, error: 'Failed to update templates' });
   }
 });
 
@@ -460,13 +460,13 @@ app.post('/api/templates/bulk/delete',
     
     await templateLibrary.bulkDelete(templateIds);
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: `${templateIds.length} templates deleted successfully`
     });
   } catch (error) {
     console.error('Error performing bulk delete:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete templates' });
+    return res.status(500).json({ success: false, error: 'Failed to delete templates' });
   }
 });
 

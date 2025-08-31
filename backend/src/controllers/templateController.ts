@@ -4,7 +4,7 @@ import { logger } from '@/utils/logger.js';
 const router = Router();
 
 // GET /api/templates - Get all templates
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     logger.info('GET /api/templates - Get all templates');
     res.json({ 

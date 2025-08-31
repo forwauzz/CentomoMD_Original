@@ -65,7 +65,7 @@ export const errorHandler = (
   error: AppError | ZodError | Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   let statusCode = 500;
   let code = 'INTERNAL_SERVER_ERROR';
@@ -173,7 +173,7 @@ export const errorHandler = (
     
     // Try to extract status code from error message
     const statusMatch = error.message.match(/status[:\s]*(\d+)/i);
-    if (statusMatch) {
+    if (statusMatch && statusMatch[1]) {
       statusCode = parseInt(statusMatch[1]);
     }
   }
@@ -181,7 +181,7 @@ export const errorHandler = (
   // Log error with context
   const errorContext = {
     userId: req.user?.id,
-    sessionId: req.params.sessionId,
+    sessionId: req.params['sessionId'],
     endpoint: req.path,
     method: req.method,
     ip: req.ip,
@@ -203,7 +203,7 @@ export const errorHandler = (
   }
 
   // Don't send error details in production
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = process.env['NODE_ENV'] === 'development';
   
   const errorResponse: any = {
     error: code,

@@ -11,7 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "db:setup": "tsx src/database/setup.ts",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx src/database/setup.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src --ext .ts",

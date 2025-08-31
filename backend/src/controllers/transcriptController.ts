@@ -4,7 +4,7 @@ import { logger } from '@/utils/logger.js';
 const router = Router();
 
 // GET /api/transcripts - Get all transcripts for the authenticated user
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     logger.info('GET /api/transcripts - Get all transcripts');
     res.json({ 
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/transcripts - Create a new transcript
-router.post('/', async (req, res) => {
+router.post('/', async (_req, res) => {
   try {
     logger.info('POST /api/transcripts - Create new transcript');
     res.json({ 

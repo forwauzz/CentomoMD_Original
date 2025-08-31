@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { performanceLogger } from '@/utils/logger.js';
+import { performanceLogger, logger } from '@/utils/logger.js';
 
 export const performanceMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
@@ -26,7 +26,7 @@ export const performanceMiddleware = (req: Request, res: Response, next: NextFun
     res.setHeader('X-Response-Time', `${responseTime}ms`);
 
     // Call original end method
-    originalEnd.call(this, chunk, encoding);
+    return originalEnd.call(this, chunk, encoding);
   };
 
   next();
@@ -67,7 +67,7 @@ export const memoryUsageMiddleware = (req: Request, res: Response, next: NextFun
 };
 
 // Request size monitoring
-export const requestSizeMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const requestSizeMiddleware = (req: Request, _res: Response, next: NextFunction) => {
   const contentLength = parseInt(req.headers['content-length'] || '0');
   const maxSize = 10 * 1024 * 1024; // 10MB
 

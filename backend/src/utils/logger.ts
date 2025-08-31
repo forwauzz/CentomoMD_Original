@@ -53,7 +53,7 @@ function sanitizeMetadata(meta: any): any {
 
 // Create logger instance
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env['LOG_LEVEL'] || 'info',
   format: format.combine(
     format.timestamp({
       format: 'YYYY-MM-DD HH:mm:ss'
@@ -63,8 +63,8 @@ const logger = winston.createLogger({
   ),
   defaultMeta: {
     service: 'centomo-md-backend',
-    environment: process.env.NODE_ENV || 'development',
-    region: process.env.AWS_REGION || 'ca-central-1'
+    environment: process.env['NODE_ENV'] || 'development',
+    region: process.env['AWS_REGION'] || 'ca-central-1'
   },
   transports: [
     // Console transport for development
@@ -121,8 +121,8 @@ export const auditLogger = winston.createLogger({
   ),
   defaultMeta: {
     service: 'centomo-md-audit',
-    environment: process.env.NODE_ENV || 'development',
-    region: process.env.AWS_REGION || 'ca-central-1'
+    environment: process.env['NODE_ENV'] || 'development',
+    region: process.env['AWS_REGION'] || 'ca-central-1'
   },
   transports: [
     new winston.transports.File({

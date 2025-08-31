@@ -2,15 +2,13 @@ import {
   TranscribeStreamingClient, 
   StartStreamTranscriptionCommand,
   StartStreamTranscriptionCommandInput,
-  TranscriptEvent,
   TranscriptResultStream,
   BadRequestException,
   InternalFailureException,
   LimitExceededException,
   ServiceUnavailableException
 } from '@aws-sdk/client-transcribe-streaming';
-import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
-import { env, awsConfig } from '../config/environment.js';
+import { awsConfig } from '../config/environment.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
 
 export class TranscriptionService {
@@ -57,12 +55,12 @@ export class TranscriptionService {
 
     // Prepare AWS Transcribe configuration - simplified for single language
     const cmdInput: StartStreamTranscriptionCommandInput = {
-      LanguageCode: config.language_code || 'fr-CA',   // single language per session
+      LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
       MediaEncoding: 'pcm',
       MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
-      ShowSpeakerLabels: true,     // Enable speaker attribution
-      MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN
+      ShowSpeakerLabel: true,     // Enable speaker attribution
+      // MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN - not supported in this version
       EnablePartialResultsStabilization: true,
       PartialResultsStability: 'high',
       // Custom vocabulary for medical terms (when available)
@@ -80,10 +78,10 @@ export class TranscriptionService {
         }
 
         // Store the stream for this session
-        this.activeStreams.set(sessionId, response.TranscriptResultStream);
+        this.activeStreams.set(sessionId, response.TranscriptResultStream as any);
 
         // Handle transcript events
-        this.handleTranscriptEvents(sessionId, response.TranscriptResultStream, onTranscript, onError);
+        this.handleTranscriptEvents(sessionId, response.TranscriptResultStream as any, onTranscript, onError);
 
         console.log(`AWS Transcribe streaming started successfully for session: ${sessionId}`);
       } catch (error) {
@@ -154,7 +152,7 @@ export class TranscriptionService {
     onError: (error: Error) => void
   ): Promise<void> {
     try {
-      for await (const evt of stream) {
+      for await (const evt of stream as any) {
         if (!evt.TranscriptEvent) continue;
         const results = evt.TranscriptEvent.Transcript?.Results ?? [];
         for (const r of results) {
@@ -190,7 +188,7 @@ export class TranscriptionService {
       const stream = this.activeStreams.get(sessionId);
       if (stream) {
         // Close the stream
-        await stream.destroy?.();
+        // await stream.destroy?.(); // destroy method not available in this version
         this.activeStreams.delete(sessionId);
       }
 

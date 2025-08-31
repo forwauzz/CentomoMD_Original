@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1756675714076,
+      "tag": "0000_mean_loners",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1756675819656,
+      "tag": "0001_secret_ultragirl",
+      "breakpoints": true
+    }
+  ]
+}

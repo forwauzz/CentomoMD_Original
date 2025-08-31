@@ -543,14 +543,16 @@ export class TemplateLibraryService {
   /**
    * Add a new template to the library
    */
-  public async addTemplate(template: TemplateJSON & { id: string }): Promise<void> {
+  public async addTemplate(template: TemplateJSON): Promise<void> {
     try {
       // Add template to the appropriate section
       const sectionKey = `section${template.section}` as keyof TemplateLibrary;
       this.templates[sectionKey].push(template);
       
       // Create initial version
-      await this.createVersion(template.id, template.content, "Initial version");
+      if (template.id) {
+        await this.createVersion(template.id, template.content, "Initial version");
+      }
       
       // Save the updated templates to disk
       await this.saveTemplatesToDisk(template.section);
@@ -565,7 +567,7 @@ export class TemplateLibraryService {
   /**
    * Update an existing template
    */
-  public async updateTemplate(templateId: string, updatedTemplate: TemplateJSON & { id: string }): Promise<void> {
+  public async updateTemplate(templateId: string, updatedTemplate: TemplateJSON): Promise<void> {
     try {
       const sectionKey = `section${updatedTemplate.section}` as keyof TemplateLibrary;
       const templateIndex = this.templates[sectionKey].findIndex(t => t.id === templateId);
@@ -577,7 +579,7 @@ export class TemplateLibraryService {
       const oldTemplate = this.templates[sectionKey][templateIndex];
       
       // Create new version if content changed
-      if (oldTemplate.content !== updatedTemplate.content) {
+      if (oldTemplate && oldTemplate.content !== updatedTemplate.content) {
         const changes = this.detectChanges(oldTemplate.content, updatedTemplate.content);
         await this.createVersion(templateId, updatedTemplate.content, changes.join(", "));
       }
@@ -614,7 +616,9 @@ export class TemplateLibraryService {
       // Save the updated templates to disk
       await this.saveTemplatesToDisk(section);
       
-      console.log(`Template "${deletedTemplate.title}" deleted from section ${section}`);
+      if (deletedTemplate) {
+        console.log(`Template "${deletedTemplate.title}" deleted from section ${section}`);
+      }
     } catch (error) {
       console.error('Error deleting template:', error);
       throw error;
@@ -746,5 +750,4 @@ export class TemplateLibraryService {
 // Export singleton instance
 export const templateLibrary = new TemplateLibraryService();
 
-// Export types for use in other modules
-export type { TemplateJSON, TemplateLibrary, TemplateVersion, TemplateUsage, TemplateAnalytics };
+

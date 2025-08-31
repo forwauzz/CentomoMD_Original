@@ -455,7 +455,7 @@ export class AIFormattingService {
   /**
    * Calculate content statistics
    */
-  private static calculateStatistics(content: string, language: "fr" | "en"): {
+  private static calculateStatistics(content: string, _language: "fr" | "en"): {
     wordCount: number;
     sentenceCount: number;
     medicalTermsCount: number;
@@ -543,18 +543,7 @@ export class AIFormattingService {
     return terms.some(term => contentLower.includes(term));
   }
 
-  /**
-   * Validate content structure
-   */
-  private static validateStructure(content: string, section: "7" | "8" | "11"): boolean {
-    const sectionHeaders = {
-      "7": "7. Historique de faits et évolution",
-      "8": "8. Questionnaire subjectif",
-      "11": "11. Conclusion médicale"
-    };
 
-    return content.includes(sectionHeaders[section]);
-  }
 
   /**
    * Get formatting suggestions for content

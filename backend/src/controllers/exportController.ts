@@ -4,7 +4,7 @@ import { logger } from '@/utils/logger.js';
 const router = Router();
 
 // POST /api/export - Export transcript
-router.post('/', async (req, res) => {
+router.post('/', async (_req, res) => {
   try {
     logger.info('POST /api/export - Export transcript');
     res.json({ 

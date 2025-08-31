@@ -129,7 +129,7 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
       method: req.method 
     });
 
-    next();
+    return next();
   } catch (error) {
     logger.error('Auth middleware error', { 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -228,7 +228,7 @@ export const requireRole = (allowedRoles: string[]) => {
       method: req.method
     });
 
-    next();
+    return next();
   };
 };
 

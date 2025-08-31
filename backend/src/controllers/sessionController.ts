@@ -4,7 +4,7 @@ import { logger } from '@/utils/logger.js';
 const router = Router();
 
 // GET /api/sessions - Get all sessions for the authenticated user
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     logger.info('GET /api/sessions - Get all sessions');
     res.json({ 
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/sessions - Create a new session
-router.post('/', async (req, res) => {
+router.post('/', async (_req, res) => {
   try {
     logger.info('POST /api/sessions - Create new session');
     res.json({ 

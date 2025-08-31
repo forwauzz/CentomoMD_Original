@@ -59,16 +59,16 @@ export const getWsToken = async (req: Request, res: Response) => {
     );
 
     // TODO: Return WS token
-    res.json({
+    return res.json({
       wsToken,
       expiresIn: 60,
-      wsUrl: config.ws.publicUrl,
-      useWss: config.ws.useWss,
+      wsUrl: env.PUBLIC_WS_URL,
+      useWss: env.USE_WSS,
     });
 
   } catch (error) {
     console.error('WS token exchange error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error',
       code: 'INTERNAL_ERROR'
     });

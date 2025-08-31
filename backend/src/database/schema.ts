@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, json, uuid, varchar, decimal } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer, json, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table
@@ -12,10 +12,35 @@ export const users = pgTable('users', {
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Profiles table (extends Supabase auth.users)
+export const profiles = pgTable('profiles', {
+  user_id: uuid('user_id').primaryKey(), // References auth.users(id) in Supabase
+  display_name: varchar('display_name', { length: 255 }),
+  locale: text('locale', { enum: ['en-CA', 'fr-CA'] }).notNull().default('fr-CA'),
+  consent_pipeda: boolean('consent_pipeda').notNull().default(false),
+  consent_marketing: boolean('consent_marketing').notNull().default(false),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Memberships table (for multi-clinic support)
+export const memberships = pgTable('memberships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) in Supabase
+  clinic_id: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
+  role: text('role', { enum: ['owner', 'admin', 'physician', 'staff', 'it_support'] }).notNull().default('physician'),
+  active: boolean('active').notNull().default(true),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userClinicUnique: unique().on(table.user_id, table.clinic_id),
+}));
+
 // Sessions table
 export const sessions = pgTable('sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  clinic_id: uuid('clinic_id').references(() => clinics.id, { onDelete: 'cascade' }),
   patient_id: varchar('patient_id', { length: 255 }).notNull(), // External patient identifier
   consent_verified: boolean('consent_verified').notNull().default(false),
   status: text('status', { enum: ['active', 'paused', 'completed', 'cancelled'] }).notNull().default('active'),
@@ -65,6 +90,7 @@ export const audit_logs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
   user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'cascade' }),
+  clinic_id: uuid('clinic_id').references(() => clinics.id, { onDelete: 'cascade' }),
   action: varchar('action', { length: 255 }).notNull(),
   resource_type: varchar('resource_type', { length: 100 }).notNull(),
   resource_id: uuid('resource_id'),
@@ -115,12 +141,39 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   audit_logs: many(audit_logs),
   export_history: many(export_history),
+  memberships: many(memberships),
+}));
+
+export const profilesRelations = relations(profiles, ({ one }) => ({
+  user: one(users, {
+    fields: [profiles.user_id],
+    references: [users.id],
+  }),
+}));
+
+export const membershipsRelations = relations(memberships, ({ one }) => ({
+  user: one(users, {
+    fields: [memberships.user_id],
+    references: [users.id],
+  }),
+  clinic: one(clinics, {
+    fields: [memberships.clinic_id],
+    references: [clinics.id],
+  }),
+}));
+
+export const clinicsRelations = relations(clinics, ({ many }) => ({
+  memberships: many(memberships),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   user: one(users, {
     fields: [sessions.user_id],
     references: [users.id],
+  }),
+  clinic: one(clinics, {
+    fields: [sessions.clinic_id],
+    references: [clinics.id],
   }),
   transcripts: many(transcripts),
   audit_logs: many(audit_logs),
@@ -154,6 +207,10 @@ export const auditLogsRelations = relations(audit_logs, ({ one }) => ({
     fields: [audit_logs.session_id],
     references: [sessions.id],
   }),
+  clinic: one(clinics, {
+    fields: [audit_logs.clinic_id],
+    references: [clinics.id],
+  }),
 }));
 
 export const exportHistoryRelations = relations(export_history, ({ one }) => ({
@@ -170,6 +227,8 @@ export const exportHistoryRelations = relations(export_history, ({ one }) => ({
 // Database schema type
 export type DatabaseSchema = {
   users: typeof users;
+  profiles: typeof profiles;
+  memberships: typeof memberships;
   sessions: typeof sessions;
   transcripts: typeof transcripts;
   templates: typeof templates;
@@ -182,6 +241,10 @@ export type DatabaseSchema = {
 // Row types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;
+export type Membership = typeof memberships.$inferSelect;
+export type NewMembership = typeof memberships.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 export type Transcript = typeof transcripts.$inferSelect;

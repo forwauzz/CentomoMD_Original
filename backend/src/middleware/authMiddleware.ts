@@ -7,8 +7,8 @@ let supabase: any = null;
 
 const getSupabaseClient = () => {
   if (!supabase) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env['SUPABASE_URL'];
+    const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
     
     if (!supabaseUrl || !supabaseKey) {
       logger.warn('Supabase credentials not configured, using mock authentication');
@@ -181,7 +181,7 @@ export const requireRole = (allowedRoles: string[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
@@ -200,7 +200,7 @@ export const requireClinicAccess = (req: Request, res: Response, next: NextFunct
     return next();
   }
 
-  const requestedClinicId = req.params.clinicId || req.body.clinic_id;
+  const requestedClinicId = req.params['clinicId'] || req.body.clinic_id;
   
   if (requestedClinicId && req.user.clinic_id !== requestedClinicId) {
     logger.warn('Clinic access denied', {
@@ -218,7 +218,7 @@ export const requireClinicAccess = (req: Request, res: Response, next: NextFunct
     });
   }
 
-  next();
+  return next();
 };
 
 // Session ownership verification middleware
@@ -231,7 +231,7 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
     });
   }
 
-  const sessionId = req.params.sessionId || req.params.id;
+  const sessionId = req.params['sessionId'] || req.params['id'];
   
   if (!sessionId) {
     return res.status(400).json({
@@ -273,7 +273,7 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
       });
     }
 
-    next();
+    return next();
 
   } catch (error) {
     logger.error('Session ownership verification error', {
@@ -291,7 +291,7 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
 };
 
 // Optional authentication middleware (for public endpoints)
-export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const optionalAuth = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
