@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Search, FileText, Tag } from 'lucide-react';
+import { ChevronDown, Search, FileText, Tag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { TemplatePreview } from './TemplatePreview';
 
 export interface TemplateJSON {
   section: "7" | "8" | "11";
@@ -38,6 +39,8 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateJSON | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Load templates for current section
   useEffect(() => {
@@ -112,6 +115,23 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
     setIsOpen(false);
     setSearchQuery('');
     setSelectedTags([]);
+  };
+
+  const handlePreviewTemplate = (template: TemplateJSON) => {
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewTemplate(null);
+  };
+
+  const handleSelectFromPreview = (template: TemplateJSON) => {
+    onTemplateSelect(template);
+    setIsPreviewOpen(false);
+    setPreviewTemplate(null);
+    setIsOpen(false);
   };
 
   const toggleTag = (tag: string) => {
@@ -210,22 +230,37 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                 filteredTemplates.map((template, index) => (
                   <div
                     key={index}
-                    className="p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleTemplateSelect(template)}
+                    className="p-3 border-b last:border-b-0 hover:bg-gray-50"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">{template.title}</h4>
-                      {template.complexity && (
-                        <Badge 
-                          variant="outline" 
-                          className={cn("text-xs", getComplexityColor(template.complexity))}
+                      <h4 className="font-medium text-sm cursor-pointer" onClick={() => handleTemplateSelect(template)}>
+                        {template.title}
+                      </h4>
+                      <div className="flex items-center space-x-2">
+                        {template.complexity && (
+                          <Badge 
+                            variant="outline" 
+                            className={cn("text-xs", getComplexityColor(template.complexity))}
+                          >
+                            {template.complexity}
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewTemplate(template);
+                          }}
+                          className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
+                          title="Preview template"
                         >
-                          {template.complexity}
-                        </Badge>
-                      )}
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                    <p className="text-xs text-gray-600 mb-2 line-clamp-2 cursor-pointer" onClick={() => handleTemplateSelect(template)}>
                       {template.content.substring(0, 100)}...
                     </p>
                     
@@ -255,6 +290,18 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Template Preview Modal */}
+      {previewTemplate && (
+        <TemplatePreview
+          template={previewTemplate}
+          isOpen={isPreviewOpen}
+          onClose={handleClosePreview}
+          onSelect={handleSelectFromPreview}
+          currentSection={currentSection}
+          currentLanguage={currentLanguage}
+        />
       )}
     </div>
   );
