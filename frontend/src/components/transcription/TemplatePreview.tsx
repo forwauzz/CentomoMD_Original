@@ -38,8 +38,17 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   const [compliance, setCompliance] = useState({
     cnesst: false,
     medical_terms: false,
-    structure: false
+    structure: false,
+    terminology: false,
+    chronology: false
   });
+  const [statistics, setStatistics] = useState({
+    wordCount: 0,
+    sentenceCount: 0,
+    medicalTermsCount: 0,
+    complianceScore: 0
+  });
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isFormatting, setIsFormatting] = useState(false);
 
   // Auto-format template content when preview opens
@@ -66,6 +75,8 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
       setFormattedContent(result.formatted);
       setFormattingChanges(result.changes);
       setCompliance(result.compliance);
+      setStatistics(result.statistics);
+      setSuggestions(result.suggestions);
     } catch (error) {
       console.error('Error formatting template for preview:', error);
       // Use basic formatting as fallback
@@ -76,9 +87,11 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
           language: template.language || currentLanguage
         }
       );
-      setFormattedContent(basicFormatted);
-      setFormattingChanges(['Basic formatting applied']);
-      setCompliance({ cnesst: false, medical_terms: false, structure: false });
+             setFormattedContent(basicFormatted);
+       setFormattingChanges(['Basic formatting applied']);
+       setCompliance({ cnesst: false, medical_terms: false, structure: false, terminology: false, chronology: false });
+       setStatistics({ wordCount: 0, sentenceCount: 0, medicalTermsCount: 0, complianceScore: 0 });
+       setSuggestions(['Basic formatting applied - advanced features unavailable']);
     } finally {
       setIsFormatting(false);
     }
@@ -186,30 +199,70 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
             </div>
           </div>
 
-          {/* Compliance Indicators */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">CNESST Compliance</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.cnesst)}`}>
-                {getComplianceIcon(compliance.cnesst)}
-                <span className="text-sm font-medium">
-                  {getComplianceText(compliance.cnesst, 'CNESST')}
-                </span>
-              </div>
-              <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.medical_terms)}`}>
-                {getComplianceIcon(compliance.medical_terms)}
-                <span className="text-sm font-medium">
-                  {getComplianceText(compliance.medical_terms, 'Medical Terms')}
-                </span>
-              </div>
-              <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.structure)}`}>
-                {getComplianceIcon(compliance.structure)}
-                <span className="text-sm font-medium">
-                  {getComplianceText(compliance.structure, 'Structure')}
-                </span>
-              </div>
-            </div>
-          </div>
+                     {/* Enhanced Compliance Indicators */}
+           <div className="bg-gray-50 p-4 rounded-lg">
+             <h3 className="text-sm font-medium text-gray-700 mb-3">CNESST Compliance</h3>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+               <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.cnesst)}`}>
+                 {getComplianceIcon(compliance.cnesst)}
+                 <span className="text-sm font-medium">
+                   {getComplianceText(compliance.cnesst, 'CNESST')}
+                 </span>
+               </div>
+               <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.medical_terms)}`}>
+                 {getComplianceIcon(compliance.medical_terms)}
+                 <span className="text-sm font-medium">
+                   {getComplianceText(compliance.medical_terms, 'Medical Terms')}
+                 </span>
+               </div>
+               <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.structure)}`}>
+                 {getComplianceIcon(compliance.structure)}
+                 <span className="text-sm font-medium">
+                   {getComplianceText(compliance.structure, 'Structure')}
+                 </span>
+               </div>
+               <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.terminology)}`}>
+                 {getComplianceIcon(compliance.terminology)}
+                 <span className="text-sm font-medium">
+                   {getComplianceText(compliance.terminology, 'Terminology')}
+                 </span>
+               </div>
+               <div className={`flex items-center space-x-2 p-2 rounded ${getComplianceColor(compliance.chronology)}`}>
+                 {getComplianceIcon(compliance.chronology)}
+                 <span className="text-sm font-medium">
+                   {getComplianceText(compliance.chronology, 'Chronology')}
+                 </span>
+               </div>
+               <div className="flex items-center space-x-2 p-2 rounded bg-blue-100 text-blue-800">
+                 <span className="text-sm font-medium">
+                   Score: {statistics.complianceScore}%
+                 </span>
+               </div>
+             </div>
+           </div>
+
+           {/* Content Statistics */}
+           <div className="bg-blue-50 p-4 rounded-lg">
+             <h3 className="text-sm font-medium text-blue-800 mb-3">Content Statistics</h3>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+               <div className="text-center">
+                 <div className="text-lg font-bold text-blue-600">{statistics.wordCount}</div>
+                 <div className="text-xs text-blue-700">Words</div>
+               </div>
+               <div className="text-center">
+                 <div className="text-lg font-bold text-blue-600">{statistics.sentenceCount}</div>
+                 <div className="text-xs text-blue-700">Sentences</div>
+               </div>
+               <div className="text-center">
+                 <div className="text-lg font-bold text-blue-600">{statistics.medicalTermsCount}</div>
+                 <div className="text-xs text-blue-700">Medical Terms</div>
+               </div>
+               <div className="text-center">
+                 <div className="text-lg font-bold text-blue-600">{statistics.complianceScore}%</div>
+                 <div className="text-xs text-blue-700">Compliance</div>
+               </div>
+             </div>
+           </div>
 
           {/* Content Toggle */}
           <div className="flex items-center justify-between">
@@ -255,10 +308,25 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                       ))}
                     </ul>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                                 )}
+               </div>
+             )}
+           </div>
+
+           {/* Suggestions */}
+           {suggestions.length > 0 && (
+             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+               <h4 className="text-sm font-medium text-yellow-800 mb-2">Suggestions for Improvement</h4>
+               <ul className="space-y-1">
+                 {suggestions.map((suggestion, index) => (
+                   <li key={index} className="text-sm text-yellow-700 flex items-center space-x-2">
+                     <span className="text-yellow-600">•</span>
+                     <span>{suggestion}</span>
+                   </li>
+                 ))}
+               </ul>
+             </div>
+           )}
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t">

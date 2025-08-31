@@ -95,7 +95,7 @@ app.get('/api/templates/:section', (req, res) => {
 // AI Formatting API Endpoint
 app.post('/api/templates/format', (req, res) => {
   try {
-    const { content, section, language, complexity } = req.body;
+    const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
     
     if (!content || !section || !language) {
       return res.status(400).json({ 
@@ -115,7 +115,9 @@ app.post('/api/templates/format', (req, res) => {
     const formattingOptions = {
       section: section as "7" | "8" | "11",
       language: language as "fr" | "en",
-      complexity: complexity as "low" | "medium" | "high" || "medium"
+      complexity: complexity as "low" | "medium" | "high" || "medium",
+      formattingLevel: formattingLevel as "basic" | "standard" | "advanced" || "standard",
+      includeSuggestions: includeSuggestions || false
     };
     
     const formattedContent = AIFormattingService.formatTemplateContent(content, formattingOptions);

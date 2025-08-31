@@ -2,16 +2,27 @@ export interface FormattingOptions {
   section: "7" | "8" | "11";
   language: "fr" | "en";
   complexity?: "low" | "medium" | "high";
+  formattingLevel?: "basic" | "standard" | "advanced";
+  includeSuggestions?: boolean;
 }
 
 export interface FormattedContent {
   original: string;
   formatted: string;
   changes: string[];
+  suggestions: string[];
   compliance: {
     cnesst: boolean;
     medical_terms: boolean;
     structure: boolean;
+    terminology: boolean;
+    chronology: boolean;
+  };
+  statistics: {
+    wordCount: number;
+    sentenceCount: number;
+    medicalTermsCount: number;
+    complianceScore: number;
   };
 }
 
@@ -22,18 +33,19 @@ export class AIFormattingService {
   static formatTemplateContent(content: string, options: FormattingOptions): FormattedContent {
     try {
       const changes: string[] = [];
+      const suggestions: string[] = [];
       let formattedContent = content;
 
       // Section-specific formatting rules
       switch (options.section) {
         case "7":
-          formattedContent = this.formatSection7(formattedContent, changes);
+          formattedContent = this.formatSection7(formattedContent, changes, options);
           break;
         case "8":
-          formattedContent = this.formatSection8(formattedContent, changes);
+          formattedContent = this.formatSection8(formattedContent, changes, options);
           break;
         case "11":
-          formattedContent = this.formatSection11(formattedContent, changes);
+          formattedContent = this.formatSection11(formattedContent, changes, options);
           break;
         default:
           console.warn(`Unknown section: ${options.section}`);
@@ -41,21 +53,32 @@ export class AIFormattingService {
 
       // Language-specific formatting
       if (options.language === "fr") {
-        formattedContent = this.formatFrenchContent(formattedContent, changes);
+        formattedContent = this.formatFrenchContent(formattedContent, changes, options);
       }
 
-      // Medical terminology validation
-      const medicalTermsValid = this.validateMedicalTerms(formattedContent, options.language);
+      // Advanced formatting based on level
+      if (options.formattingLevel === "advanced") {
+        formattedContent = this.applyAdvancedFormatting(formattedContent, changes, options);
+      }
+
+      // Generate suggestions if requested
+      if (options.includeSuggestions) {
+        suggestions.push(...this.generateSuggestions(formattedContent, options));
+      }
+
+      // Calculate statistics
+      const statistics = this.calculateStatistics(formattedContent, options.language);
+
+      // Enhanced compliance validation
+      const compliance = this.validateCompliance(formattedContent, options);
 
       return {
         original: content,
         formatted: formattedContent,
         changes,
-        compliance: {
-          cnesst: true, // Basic compliance check
-          medical_terms: medicalTermsValid,
-          structure: this.validateStructure(formattedContent, options.section)
-        }
+        suggestions,
+        compliance,
+        statistics
       };
     } catch (error) {
       console.error('Error in formatTemplateContent:', error);
@@ -65,10 +88,19 @@ export class AIFormattingService {
         original: content,
         formatted: content,
         changes: [`Error during formatting: ${error}`],
+        suggestions: ['Check content format and try again'],
         compliance: {
           cnesst: false,
           medical_terms: false,
-          structure: false
+          structure: false,
+          terminology: false,
+          chronology: false
+        },
+        statistics: {
+          wordCount: 0,
+          sentenceCount: 0,
+          medicalTermsCount: 0,
+          complianceScore: 0
         }
       };
     }
@@ -77,7 +109,7 @@ export class AIFormattingService {
   /**
    * Format Section 7 content (Historique de faits et évolution)
    */
-  private static formatSection7(content: string, changes: string[]): string {
+  private static formatSection7(content: string, changes: string[], options: FormattingOptions): string {
     let formatted = content;
 
     // Ensure proper section header
@@ -86,16 +118,68 @@ export class AIFormattingService {
       changes.push("Added Section 7 header");
     }
 
-    // Ensure chronological order indicators
-    if (!formatted.includes("Le travailleur") && !formatted.includes("La travailleuse")) {
-      formatted = formatted.replace(/Le patient/g, "Le travailleur");
-      formatted = formatted.replace(/La patiente/g, "La travailleuse");
-      changes.push("Standardized worker terminology");
+    // Enhanced worker terminology standardization
+    const workerTerminology = {
+      'patient': 'travailleur',
+      'patiente': 'travailleuse',
+      'client': 'travailleur',
+      'cliente': 'travailleuse',
+      'usager': 'travailleur',
+      'usagère': 'travailleuse'
+    };
+
+    Object.entries(workerTerminology).forEach(([oldTerm, newTerm]) => {
+      const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+      if (formatted.match(regex)) {
+        formatted = formatted.replace(regex, newTerm);
+        changes.push(`Standardized terminology: ${oldTerm} → ${newTerm}`);
+      }
+    });
+
+    // Enhanced date formatting
+    const datePatterns = [
+      { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "le $1 $2 $3" },
+      { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "le $1 $2 $3" },
+      { pattern: /(\d{1,2})\.(\d{1,2})\.(\d{4})/g, replacement: "le $1 $2 $3" }
+    ];
+
+    datePatterns.forEach(({ pattern, replacement }) => {
+      if (formatted.match(pattern)) {
+        formatted = formatted.replace(pattern, replacement);
+        changes.push("Standardized date format to French convention");
+      }
+    });
+
+    // Add chronological indicators if missing
+    if (!formatted.includes("le ") && !formatted.includes("Le ") && options.formattingLevel === "advanced") {
+      const sentences = formatted.split(/[.!?]+/);
+      const enhancedSentences = sentences.map((sentence, index) => {
+        if (sentence.trim() && index > 0) {
+          return sentence.replace(/^(\s*)(.+)/, '$1Le $2');
+        }
+        return sentence;
+      });
+      formatted = enhancedSentences.join('.');
+      changes.push("Added chronological indicators");
     }
 
-    // Ensure proper date formatting
-    formatted = formatted.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, "le $1 $2 $3");
-    changes.push("Standardized date format");
+    // Ensure proper medical terminology
+    const medicalTerms = {
+      'blessure': 'lésion',
+      'douleur': 'symptomatologie douloureuse',
+      'accident': 'événement traumatique',
+      'traitement': 'prise en charge thérapeutique'
+    };
+
+    if (options.formattingLevel === "advanced") {
+      Object.entries(medicalTerms).forEach(([oldTerm, newTerm]) => {
+        const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, newTerm);
+          changes.push(`Enhanced medical terminology: ${oldTerm} → ${newTerm}`);
+        }
+      });
+    }
 
     return formatted;
   }
@@ -103,7 +187,7 @@ export class AIFormattingService {
   /**
    * Format Section 8 content (Questionnaire subjectif/Résultats d'examens)
    */
-  private static formatSection8(content: string, changes: string[]): string {
+  private static formatSection8(content: string, changes: string[], options: FormattingOptions): string {
     let formatted = content;
 
     // Ensure proper section structure
@@ -112,10 +196,60 @@ export class AIFormattingService {
       changes.push("Added Section 8 header");
     }
 
-    // Ensure clinical examination structure
+    // Enhanced clinical examination structure
+    const clinicalStructure = {
+      'Examen:': 'Examen clinique:',
+      'Examen clinique:': 'Examen clinique:',
+      'Examens:': 'Examens paracliniques:',
+      'Examens paracliniques:': 'Examens paracliniques:'
+    };
+
+    Object.entries(clinicalStructure).forEach(([oldTerm, newTerm]) => {
+      if (formatted.includes(oldTerm)) {
+        formatted = formatted.replace(new RegExp(oldTerm, 'g'), newTerm);
+        changes.push(`Standardized clinical structure: ${oldTerm} → ${newTerm}`);
+      }
+    });
+
+    // Ensure proper subsections
     if (!formatted.includes("Examen clinique") && !formatted.includes("Examens paracliniques")) {
       formatted = formatted.replace(/Examen:/g, "Examen clinique:");
-      changes.push("Standardized clinical examination format");
+      changes.push("Added missing clinical examination structure");
+    }
+
+    // Enhanced medical terminology for Section 8
+    const medicalTerms = {
+      'douleur': 'symptomatologie douloureuse',
+      'mobilité': 'amplitude articulaire',
+      'force': 'force musculaire',
+      'sensibilité': 'sensibilité cutanée',
+      'réflexes': 'réflexes ostéotendineux'
+    };
+
+    if (options.formattingLevel === "advanced") {
+      Object.entries(medicalTerms).forEach(([oldTerm, newTerm]) => {
+        const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, newTerm);
+          changes.push(`Enhanced medical terminology: ${oldTerm} → ${newTerm}`);
+        }
+      });
+    }
+
+    // Add measurement units if missing
+    if (options.formattingLevel === "advanced") {
+      const measurementPatterns = [
+        { pattern: /(\d+)\s*degrés?/gi, replacement: "$1°" },
+        { pattern: /(\d+)\s*centimètres?/gi, replacement: "$1 cm" },
+        { pattern: /(\d+)\s*kilogrammes?/gi, replacement: "$1 kg" }
+      ];
+
+      measurementPatterns.forEach(({ pattern, replacement }) => {
+        if (formatted.match(pattern)) {
+          formatted = formatted.replace(pattern, replacement);
+          changes.push("Standardized measurement units");
+        }
+      });
     }
 
     return formatted;
@@ -124,7 +258,7 @@ export class AIFormattingService {
   /**
    * Format Section 11 content (Conclusion médicale/Résumé et conclusion)
    */
-  private static formatSection11(content: string, changes: string[]): string {
+  private static formatSection11(content: string, changes: string[], options: FormattingOptions): string {
     let formatted = content;
 
     // Ensure proper section header
@@ -133,10 +267,58 @@ export class AIFormattingService {
       changes.push("Added Section 11 header");
     }
 
+    // Enhanced conclusion structure
+    const conclusionStructure = {
+      'Conclusion:': 'Résumé et conclusion:',
+      'Résumé:': 'Résumé et conclusion:',
+      'Résumé et conclusion:': 'Résumé et conclusion:'
+    };
+
+    Object.entries(conclusionStructure).forEach(([oldTerm, newTerm]) => {
+      if (formatted.includes(oldTerm)) {
+        formatted = formatted.replace(new RegExp(oldTerm, 'g'), newTerm);
+        changes.push(`Standardized conclusion structure: ${oldTerm} → ${newTerm}`);
+      }
+    });
+
     // Ensure proper conclusion structure
     if (!formatted.includes("Résumé et conclusion")) {
       formatted = formatted.replace(/Conclusion:/g, "Résumé et conclusion:");
-      changes.push("Standardized conclusion format");
+      changes.push("Added missing conclusion structure");
+    }
+
+    // Enhanced medical-legal terminology for Section 11
+    const medicalLegalTerms = {
+      'diagnostic': 'diagnostic médical',
+      'pronostic': 'pronostic fonctionnel',
+      'incapacité': 'incapacité fonctionnelle',
+      'handicap': 'limitation fonctionnelle',
+      'invalidité': 'invalidité permanente'
+    };
+
+    if (options.formattingLevel === "advanced") {
+      Object.entries(medicalLegalTerms).forEach(([oldTerm, newTerm]) => {
+        const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, newTerm);
+          changes.push(`Enhanced medical-legal terminology: ${oldTerm} → ${newTerm}`);
+        }
+      });
+    }
+
+    // Add percentage formatting for disability ratings
+    if (options.formattingLevel === "advanced") {
+      const percentagePatterns = [
+        { pattern: /(\d+)\s*pour\s*cent/gi, replacement: "$1%" },
+        { pattern: /(\d+)\s*%/gi, replacement: "$1%" }
+      ];
+
+      percentagePatterns.forEach(({ pattern, replacement }) => {
+        if (formatted.match(pattern)) {
+          formatted = formatted.replace(pattern, replacement);
+          changes.push("Standardized percentage format");
+        }
+      });
     }
 
     return formatted;
@@ -145,19 +327,200 @@ export class AIFormattingService {
   /**
    * Format French-specific content
    */
-  private static formatFrenchContent(content: string, changes: string[]): string {
+  private static formatFrenchContent(content: string, changes: string[], options: FormattingOptions): string {
     let formatted = content;
 
-    // Ensure proper French medical terminology
-    formatted = formatted.replace(/patient/g, "travailleur");
-    formatted = formatted.replace(/patiente/g, "travailleuse");
-    changes.push("Applied French medical terminology");
+    // Enhanced French medical terminology
+    const frenchMedicalTerms = {
+      'patient': 'travailleur',
+      'patiente': 'travailleuse',
+      'client': 'travailleur',
+      'cliente': 'travailleuse',
+      'usager': 'travailleur',
+      'usagère': 'travailleuse'
+    };
 
-    // Ensure proper French date format
-    formatted = formatted.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, "le $1 $2 $3");
-    changes.push("Applied French date format");
+    Object.entries(frenchMedicalTerms).forEach(([oldTerm, newTerm]) => {
+      const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+      if (formatted.match(regex)) {
+        formatted = formatted.replace(regex, newTerm);
+        changes.push(`Applied French medical terminology: ${oldTerm} → ${newTerm}`);
+      }
+    });
+
+    // Enhanced French date format
+    const datePatterns = [
+      { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "le $1 $2 $3" },
+      { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "le $1 $2 $3" },
+      { pattern: /(\d{1,2})\.(\d{1,2})\.(\d{4})/g, replacement: "le $1 $2 $3" }
+    ];
+
+    datePatterns.forEach(({ pattern, replacement }) => {
+      if (formatted.match(pattern)) {
+        formatted = formatted.replace(pattern, replacement);
+        changes.push("Applied French date format");
+      }
+    });
+
+    // French capitalization rules
+    if (options.formattingLevel === "advanced") {
+      // Capitalize medical terms
+      const medicalTerms = ['diagnostic', 'pronostic', 'traitement', 'examen', 'symptôme'];
+      medicalTerms.forEach(term => {
+        const regex = new RegExp(`\\b${term}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, term.charAt(0).toUpperCase() + term.slice(1));
+          changes.push(`Applied French capitalization: ${term}`);
+        }
+      });
+    }
 
     return formatted;
+  }
+
+  /**
+   * Apply advanced formatting rules
+   */
+  private static applyAdvancedFormatting(content: string, changes: string[], options: FormattingOptions): string {
+    let formatted = content;
+
+    // Advanced punctuation and spacing
+    formatted = formatted.replace(/\s+/g, ' '); // Normalize spaces
+    formatted = formatted.replace(/\s+([.!?])/g, '$1'); // Remove spaces before punctuation
+    formatted = formatted.replace(/([.!?])\s*([A-Z])/g, '$1 $2'); // Ensure space after punctuation
+
+    // Advanced medical terminology enhancement
+    if (options.language === "fr") {
+      const advancedTerms = {
+        'douleur': 'symptomatologie douloureuse',
+        'mobilité': 'amplitude articulaire',
+        'force': 'force musculaire',
+        'sensibilité': 'sensibilité cutanée',
+        'réflexes': 'réflexes ostéotendineux'
+      };
+
+      Object.entries(advancedTerms).forEach(([oldTerm, newTerm]) => {
+        const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, newTerm);
+          changes.push(`Advanced terminology enhancement: ${oldTerm} → ${newTerm}`);
+        }
+      });
+    }
+
+    changes.push("Applied advanced formatting rules");
+    return formatted;
+  }
+
+  /**
+   * Generate formatting suggestions
+   */
+  private static generateSuggestions(content: string, options: FormattingOptions): string[] {
+    const suggestions: string[] = [];
+
+    // Check for missing section headers
+    const sectionHeaders = {
+      "7": "7. Historique de faits et évolution",
+      "8": "8. Questionnaire subjectif", 
+      "11": "11. Conclusion médicale"
+    };
+
+    if (!content.includes(sectionHeaders[options.section])) {
+      suggestions.push(`Add section header: "${sectionHeaders[options.section]}"`);
+    }
+
+    // Check for proper terminology
+    if (options.language === "fr" && content.includes("patient")) {
+      suggestions.push("Replace 'patient' with 'travailleur/travailleuse'");
+    }
+
+    // Check for chronological order
+    if (options.section === "7" && !content.includes("le ")) {
+      suggestions.push("Add chronological indicators (le + date)");
+    }
+
+    // Check for medical terminology
+    if (!content.match(/\b(diagnostic|traitement|examen|symptôme)\b/i)) {
+      suggestions.push("Consider adding medical terminology");
+    }
+
+    // Check for proper structure
+    if (options.section === "8" && !content.includes("Examen clinique")) {
+      suggestions.push("Add 'Examen clinique' section");
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * Calculate content statistics
+   */
+  private static calculateStatistics(content: string, language: "fr" | "en"): {
+    wordCount: number;
+    sentenceCount: number;
+    medicalTermsCount: number;
+    complianceScore: number;
+  } {
+    const words = content.split(/\s+/).filter(word => word.length > 0);
+    const sentences = content.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
+    
+    const medicalTerms = [
+      "travailleur", "travailleuse", "accident", "blessure", "douleur", 
+      "diagnostic", "traitement", "médical", "clinique", "examen",
+      "symptôme", "pronostic", "incapacité", "handicap", "invalidité"
+    ];
+
+    const medicalTermsCount = medicalTerms.filter(term => 
+      content.toLowerCase().includes(term)
+    ).length;
+
+    // Calculate compliance score (0-100)
+    let complianceScore = 0;
+    if (content.includes("7. Historique de faits et évolution") || 
+        content.includes("8. Questionnaire subjectif") || 
+        content.includes("11. Conclusion médicale")) {
+      complianceScore += 25;
+    }
+    if (medicalTermsCount > 0) complianceScore += 25;
+    if (content.includes("travailleur") || content.includes("travailleuse")) complianceScore += 25;
+    if (content.includes("le ") || content.includes("Le ")) complianceScore += 25;
+
+    return {
+      wordCount: words.length,
+      sentenceCount: sentences.length,
+      medicalTermsCount,
+      complianceScore
+    };
+  }
+
+  /**
+   * Enhanced compliance validation
+   */
+  private static validateCompliance(content: string, options: FormattingOptions): {
+    cnesst: boolean;
+    medical_terms: boolean;
+    structure: boolean;
+    terminology: boolean;
+    chronology: boolean;
+  } {
+    const sectionHeaders = {
+      "7": "7. Historique de faits et évolution",
+      "8": "8. Questionnaire subjectif",
+      "11": "11. Conclusion médicale"
+    };
+
+    const hasStructure = content.includes(sectionHeaders[options.section]);
+    const hasMedicalTerms = this.validateMedicalTerms(content, options.language);
+    const hasProperTerminology = !content.includes("patient") && !content.includes("patiente");
+    const hasChronology = content.includes("le ") || content.includes("Le ");
+
+    return {
+      cnesst: hasStructure && hasMedicalTerms,
+      medical_terms: hasMedicalTerms,
+      structure: hasStructure,
+      terminology: hasProperTerminology,
+      chronology: hasChronology
+    };
   }
 
   /**

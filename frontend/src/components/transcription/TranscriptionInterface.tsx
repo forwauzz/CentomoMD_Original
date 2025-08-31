@@ -174,12 +174,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     console.log('Injecting template content:', template.title);
     
     try {
-      // Apply AI formatting to template content
-      const formattingOptions: FormattingOptions = {
-        section: template.section,
-        language: template.language || 'fr',
-        complexity: template.complexity || 'medium'
-      };
+             // Apply AI formatting to template content
+       const formattingOptions: FormattingOptions = {
+         section: template.section,
+         language: template.language || 'fr',
+         complexity: template.complexity || 'medium',
+         formattingLevel: 'advanced',
+         includeSuggestions: true
+       };
       
       const formattedResult = await FormattingService.formatTemplateContent(
         template.content, 

@@ -2,16 +2,27 @@ export interface FormattingOptions {
   section: "7" | "8" | "11";
   language: "fr" | "en";
   complexity?: "low" | "medium" | "high";
+  formattingLevel?: "basic" | "standard" | "advanced";
+  includeSuggestions?: boolean;
 }
 
 export interface FormattedContent {
   original: string;
   formatted: string;
   changes: string[];
+  suggestions: string[];
   compliance: {
     cnesst: boolean;
     medical_terms: boolean;
     structure: boolean;
+    terminology: boolean;
+    chronology: boolean;
+  };
+  statistics: {
+    wordCount: number;
+    sentenceCount: number;
+    medicalTermsCount: number;
+    complianceScore: number;
   };
 }
 
@@ -35,7 +46,9 @@ export class FormattingService {
           content,
           section: options.section,
           language: options.language,
-          complexity: options.complexity || 'medium'
+          complexity: options.complexity || 'medium',
+          formattingLevel: options.formattingLevel || 'standard',
+          includeSuggestions: options.includeSuggestions || false
         }),
       });
 
@@ -58,10 +71,19 @@ export class FormattingService {
         original: content,
         formatted: content,
         changes: ['Formatting failed - using original content'],
+        suggestions: ['Check content format and try again'],
         compliance: {
           cnesst: false,
           medical_terms: false,
-          structure: false
+          structure: false,
+          terminology: false,
+          chronology: false
+        },
+        statistics: {
+          wordCount: 0,
+          sentenceCount: 0,
+          medicalTermsCount: 0,
+          complianceScore: 0
         }
       };
     }
