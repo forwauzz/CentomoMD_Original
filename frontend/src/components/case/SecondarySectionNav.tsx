@@ -58,7 +58,7 @@ export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExpo
               key={section.id}
               onClick={() => setActiveSection(section.id)}
               className={cn(
-                'w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-sm',
+                'w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-sm cursor-pointer',
                 activeSectionId === section.id
                   ? 'bg-blue-50 border-blue-300 text-blue-700'
                   : getStatusColor(section.id)

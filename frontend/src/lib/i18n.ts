@@ -60,6 +60,14 @@ export const translations = {
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
     dictationInfo: 'La dictée pour cette section est gérée sur la page dédiée à la dictée.',
+    live: 'En direct',
+    history: 'Historique',
+    dictationHistory: 'Historique des dictées',
+    historyComingSoon: 'Historique bientôt disponible',
+    historyDescription: 'Consultez vos sessions de dictée précédentes et accédez aux transcriptions sauvegardées.',
+    currentSection: 'Section actuelle',
+    realTimeTranscription: 'Transcription en temps réel',
+    aiAccuracy: 'Précision IA de',
     
     // Settings
     general: 'Général',
@@ -173,6 +181,14 @@ export const translations = {
     goToDictation: 'Go to Dictation',
     goToDictationPage: 'Go to Dictation page',
     dictationInfo: 'Dictation for this section is managed on the dedicated Dictation page.',
+    live: 'Live',
+    history: 'History',
+    dictationHistory: 'Dictation History',
+    historyComingSoon: 'History Coming Soon',
+    historyDescription: 'View your previous dictation sessions and access saved transcriptions.',
+    currentSection: 'Current Section',
+    realTimeTranscription: 'Real-time transcription',
+    aiAccuracy: 'AI accuracy',
     
     // Settings
     general: 'General',

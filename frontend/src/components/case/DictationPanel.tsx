@@ -32,23 +32,23 @@ export const DictationPanel: React.FC<DictationPanelProps> = ({ sectionTitle }) 
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              Cette section nécessite une dictée audio pour compléter le rapport.
+              {t('dictationInfo')}
             </p>
             
             <div className="bg-blue-50 p-3 rounded-lg">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-blue-700">
-                  <p className="font-medium mb-1">Section actuelle:</p>
+                  <p className="font-medium mb-1">{t('currentSection')}:</p>
                   <p>{sectionTitle}</p>
                 </div>
               </div>
             </div>
 
             <div className="text-xs text-gray-500 space-y-1">
-              <p>• Transcription en temps réel</p>
-              <p>• Précision IA de 98.5%</p>
-              <p>• Sauvegarde automatique</p>
+              <p>• {t('realTimeTranscription')}</p>
+              <p>• {t('aiAccuracy')} 98.5%</p>
+              <p>• {t('autoSave')}</p>
             </div>
           </div>
 

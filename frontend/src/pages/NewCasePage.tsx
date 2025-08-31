@@ -29,7 +29,7 @@ export const NewCasePage: React.FC = () => {
     if (!activeSectionId && sections.length > 0) {
       setActiveSection(sections[0].id);
     }
-  }, [initializeCase, setActiveSection, activeSectionId, language]);
+  }, [initializeCase, setActiveSection, language]); // Removed activeSectionId from dependencies
 
   // Update section titles when language changes
   useEffect(() => {
@@ -42,6 +42,8 @@ export const NewCasePage: React.FC = () => {
   }, [language, updateSectionTitles]);
 
   const currentSection = CNESST_SECTIONS.find(s => s.id === activeSectionId);
+
+
 
   const handleExport = (format: string, bilingual: boolean) => {
     // TODO: Implement export functionality
