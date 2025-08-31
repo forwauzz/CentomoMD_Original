@@ -1,25 +1,21 @@
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
-import cors from 'cors';
 
 import { transcriptionService } from './services/transcriptionService.js';
 import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
+import { securityMiddleware } from './server/security.js';
 
 const app = express();
 const server = http.createServer(app);
 
-// Apply CORS middleware to all routes
-app.use(cors({
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
-}));
+// TODO: Apply security middleware
+app.use(securityMiddleware);
 
-// Body parsing middleware
+// TODO: Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
