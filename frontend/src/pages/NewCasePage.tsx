@@ -1,25 +1,87 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { SecondarySectionNav } from '@/components/case/SecondarySectionNav';
+import { SectionForm } from '@/components/case/SectionForm';
+import { DictationPanel } from '@/components/case/DictationPanel';
+import { ExportModal } from '@/components/case/ExportModal';
 import { useI18n } from '@/lib/i18n';
+import { useCaseStore } from '@/stores/caseStore';
+import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
 
 export const NewCasePage: React.FC = () => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const { activeSectionId, initializeCase, setActiveSection, updateSectionTitles } = useCaseStore();
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  // Initialize case with all sections when component mounts
+  useEffect(() => {
+    const sections = CNESST_SECTIONS.map(section => ({
+      id: section.id,
+      title: getSectionTitle(section, language),
+      status: 'not_started' as const,
+      data: {},
+      lastModified: new Date().toISOString(),
+      audioRequired: section.audioRequired,
+    }));
+    
+    initializeCase(sections);
+    
+    // Set first section as active if none is selected
+    if (!activeSectionId && sections.length > 0) {
+      setActiveSection(sections[0].id);
+    }
+  }, [initializeCase, setActiveSection, activeSectionId, language]);
+
+  // Update section titles when language changes
+  useEffect(() => {
+    const sectionTitles = CNESST_SECTIONS.reduce((acc, section) => {
+      acc[section.id] = getSectionTitle(section, language);
+      return acc;
+    }, {} as Record<string, string>);
+    
+    updateSectionTitles(sectionTitles);
+  }, [language, updateSectionTitles]);
+
+  const currentSection = CNESST_SECTIONS.find(s => s.id === activeSectionId);
+
+  const handleExport = (format: string, bilingual: boolean) => {
+    // TODO: Implement export functionality
+    console.log('Exporting:', { format, bilingual });
+  };
+
+  if (!activeSectionId || !currentSection) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-700">
-          {t('newCase')}
-        </h1>
-      </div>
+    <div className="h-full flex">
+      {/* Secondary Navigation */}
+      <SecondarySectionNav onExport={() => setShowExportModal(true)} />
       
-      <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-        <p className="text-lg text-gray-600">
-          Nouveau dossier CNESST - Page en cours de développement
-        </p>
-        <p className="text-gray-500 mt-2">
-          Cette page contiendra le workspace avec la navigation secondaire et les formulaires de sections.
-        </p>
+      {/* Main Form Area */}
+      <div className="flex-1 flex">
+        <div className="flex-1">
+          <SectionForm sectionId={activeSectionId} />
+        </div>
+        
+        {/* Dictation Panel - Only show for audio-required sections */}
+        {currentSection.audioRequired && (
+          <DictationPanel sectionTitle={getSectionTitle(currentSection, language)} />
+        )}
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+      />
     </div>
   );
 };

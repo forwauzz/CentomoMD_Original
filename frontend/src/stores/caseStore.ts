@@ -22,6 +22,7 @@ interface CaseState {
   saveSection: (sectionId: string) => void;
   initializeCase: (sections: Section[]) => void;
   resetCase: () => void;
+  updateSectionTitles: (sectionTitles: Record<string, string>) => void;
   getSectionStatus: (sectionId: string) => Section['status'];
   getAutosaveTimestamp: (sectionId: string) => string | null;
 }
@@ -93,6 +94,17 @@ export const useCaseStore = create<CaseState>()(
           activeSectionId: '',
           sections: [],
           autosaveTimestamps: {},
+        });
+      },
+      
+      updateSectionTitles: (sectionTitles) => {
+        set((state) => {
+          const updatedSections = state.sections.map((section) => ({
+            ...section,
+            title: sectionTitles[section.id] || section.title,
+          }));
+          
+          return { sections: updatedSections };
         });
       },
       

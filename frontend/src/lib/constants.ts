@@ -167,3 +167,8 @@ export const DEFAULTS = {
   SIDEBAR_COLLAPSED: false,
   TOAST_DURATION: 5000,
 } as const;
+
+// Helper function to get section title based on language
+export const getSectionTitle = (section: typeof CNESST_SECTIONS[number], language: string): string => {
+  return language === LANGUAGES.EN ? section.titleEn : section.title;
+};

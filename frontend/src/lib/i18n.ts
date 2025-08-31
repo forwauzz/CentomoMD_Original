@@ -1,4 +1,5 @@
 import { LANGUAGES } from './constants';
+import { useUIStore } from '@/stores/uiStore';
 
 // Translation keys
 export const translations = {
@@ -20,6 +21,15 @@ export const translations = {
     patients: 'Patients',
     managePatients: 'Gérer les patients',
     startDictation: 'Commencer la dictée',
+    
+    // CNESST Form
+    cnesstForm204: 'Formulaire CNESST 204',
+    formSections: 'Sections du formulaire',
+    audioRequired: 'Dictée requise',
+    exportForm: 'Exporter le formulaire',
+    exportFormat: 'Format d\'export',
+    bilingualExport: 'Export bilingue',
+    preview: 'Aperçu',
     
     // Case sections
     sectionA: 'A. Renseignements sur le travailleur',
@@ -47,6 +57,7 @@ export const translations = {
     ago: 'il y a',
     
     // Dictation
+    goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
     dictationInfo: 'La dictée pour cette section est gérée sur la page dédiée à la dictée.',
     
@@ -124,6 +135,15 @@ export const translations = {
     managePatients: 'Manage patients',
     startDictation: 'Start dictation',
     
+    // CNESST Form
+    cnesstForm204: 'CNESST Form 204',
+    formSections: 'Form sections',
+    audioRequired: 'Audio required',
+    exportForm: 'Export form',
+    exportFormat: 'Export format',
+    bilingualExport: 'Bilingual export',
+    preview: 'Preview',
+    
     // Case sections
     sectionA: 'A. Worker Information',
     sectionB: 'B. Physician Information',
@@ -150,6 +170,7 @@ export const translations = {
     ago: 'ago',
     
     // Dictation
+    goToDictation: 'Go to Dictation',
     goToDictationPage: 'Go to Dictation page',
     dictationInfo: 'Dictation for this section is managed on the dedicated Dictation page.',
     
@@ -243,6 +264,3 @@ export const useI18n = () => {
     language,
   };
 };
-
-// Import the UI store
-import { useUIStore } from '@/stores/uiStore';
