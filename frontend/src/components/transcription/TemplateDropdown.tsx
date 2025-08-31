@@ -74,7 +74,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
            setLoading(true);
            try {
              // First try to fetch templates with language filter
-             let response = await fetch(`http://localhost:3001/api/templates/${currentSection}?language=${currentLanguage}`);
+             let response = await fetch(`/api/templates/${currentSection}?language=${currentLanguage}`);
              if (response.ok) {
                const data = await response.json();
                                 if (data.success && data.data.length > 0) {
@@ -83,7 +83,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                  } else {
                  // If no templates found with language filter, try without language filter
                  console.log(`No ${currentLanguage} templates found for section ${currentSection}, trying without language filter`);
-                 response = await fetch(`http://localhost:3001/api/templates/${currentSection}`);
+                 response = await fetch(`/api/templates/${currentSection}`);
                  if (response.ok) {
                    const dataWithoutLanguage = await response.json();
                    if (dataWithoutLanguage.success) {

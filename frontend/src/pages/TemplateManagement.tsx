@@ -114,7 +114,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
       for (const section of sections) {
         console.log('Loading templates for section:', section);
-        const response = await fetch(`http://localhost:3001/api/templates/${section}`);
+        const response = await fetch(`/api/templates/${section}`);
         console.log('Response for section', section, ':', response.status);
         
         if (response.ok) {
@@ -137,7 +137,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/templates/analytics');
+              const response = await fetch('/api/templates/analytics');
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -186,7 +186,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const performAdvancedSearch = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/templates/search', {
+              const response = await fetch('/api/templates/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
   const handleDeleteTemplate = async (template: TemplateJSON) => {
     if (window.confirm(`Are you sure you want to delete "${template.title}"?`)) {
       try {
-        const response = await fetch(`http://localhost:3001/api/templates/${template.id}?section=${template.section}`, {
+        const response = await fetch(`/api/templates/${template.id}?section=${template.section}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const handleExportTemplates = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/templates/export${selectedSection !== 'all' ? `?section=${selectedSection}` : ''}`);
+              const response = await fetch(`/api/templates/export${selectedSection !== 'all' ? `?section=${selectedSection}` : ''}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -322,7 +322,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
           const text = await file.text();
           const templates = JSON.parse(text);
           
-          const response = await fetch('http://localhost:3001/api/templates/import', {
+          const response = await fetch('/api/templates/import', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -354,7 +354,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
     if (bulkAction === 'status') {
       try {
-        const response = await fetch('http://localhost:3001/api/templates/bulk/status', {
+        const response = await fetch('/api/templates/bulk/status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -380,7 +380,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
     } else if (bulkAction === 'delete') {
       if (window.confirm(`Are you sure you want to delete ${selectedVersions.length} templates?`)) {
         try {
-          const response = await fetch('http://localhost:3001/api/templates/bulk/delete', {
+          const response = await fetch('/api/templates/bulk/delete', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

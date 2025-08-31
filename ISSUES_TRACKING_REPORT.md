@@ -233,13 +233,12 @@ router.post('/', async (_req, res) => {
 - **Phase 0: Red Flag Checks - ALL PASSED** ✅
 - **Phase 1: Build Blockers - ALL FIXED** ✅
 
-**🔴 Next: Phase 2 Frontend ↔ Backend Connectivity**
-- Fix API connection issues
-- Configure CORS properly
-- Test API endpoints
+**✅ Phase 2: Frontend ↔ Backend Connectivity - COMPLETED**
+- ✅ Fixed API connection issues (standardized to use proxy)
+- ✅ Configured CORS properly (Vite proxy working)
+- ✅ Tested API endpoints (all working via proxy)
 
-**🟡 Blocked by:**
-- Frontend ↔ Backend connectivity issues
+**🟡 Next: Phase 3 Template Library Deduplication**
 - Template library deduplication (P1)
 
 ---
@@ -283,7 +282,7 @@ router.post('/', async (_req, res) => {
 ---
 
 ### **Phase 2: Frontend ↔ Backend Connectivity - P0**
-**Status:** 🔴 **CRITICAL - CAN'T TEST**
+**Status:** ✅ **COMPLETED**
 **Priority:** P0
 
 **Why:** Your FE can't talk to BE; everything else feels "broken."
@@ -299,6 +298,8 @@ router.post('/', async (_req, res) => {
 - ✅ `curl -i http://localhost:3001/api/config` works
 - ✅ FE call to `/api/config` succeeds (no ECONNRESET)
 - ✅ `/api/profile GET` returns 200 (or 401 if intentionally gated)
+- ✅ All API endpoints working via Vite proxy
+- ✅ Standardized all frontend API calls to use proxy instead of hardcoded URLs
 
 ---
 
@@ -414,4 +415,13 @@ When fixing issues:
 ### Template Library __dirname Issue
 **Resolved:** 2025-08-31 18:10 EST  
 **Fix:** Changed `__dirname` to `process.cwd()` in template library  
+**Status:** ✅ **COMPLETE**
+
+### Frontend ↔ Backend Connectivity Issues
+**Resolved:** 2025-08-31 23:20 EST  
+**Fix:** Standardized all frontend API calls to use Vite proxy instead of hardcoded URLs  
+**Files Fixed:**
+- `frontend/src/services/formattingService.ts` - Changed API_BASE from hardcoded URL to `/api`
+- `frontend/src/pages/TemplateManagement.tsx` - Updated all fetch calls to use proxy
+- `frontend/src/components/transcription/TemplateDropdown.tsx` - Updated fetch calls to use proxy
 **Status:** ✅ **COMPLETE**

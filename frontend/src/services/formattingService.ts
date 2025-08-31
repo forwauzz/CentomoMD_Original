@@ -27,7 +27,7 @@ export interface FormattedContent {
 }
 
 export class FormattingService {
-  private static API_BASE = 'http://localhost:3001/api';
+  private static API_BASE = '/api';
 
   /**
    * Format template content using AI formatting service
