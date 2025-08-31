@@ -238,8 +238,11 @@ router.post('/', async (_req, res) => {
 - ✅ Configured CORS properly (Vite proxy working)
 - ✅ Tested API endpoints (all working via proxy)
 
-**🟡 Next: Phase 3 Template Library Deduplication**
-- Template library deduplication (P1)
+**✅ Phase 3: Template Library Deduplication - COMPLETED**
+- ✅ Removed duplicate template library directory
+- ✅ Consolidated to single source: `backend/src/template-library/`
+- ✅ All imports working correctly
+- ✅ Template endpoints functioning properly
 
 ---
 
@@ -304,7 +307,7 @@ router.post('/', async (_req, res) => {
 ---
 
 ### **Phase 3: Template Library Deduplication - P1**
-**Status:** 🟡 **HIGH PRIORITY**
+**Status:** ✅ **COMPLETED**
 **Priority:** P1
 
 **Why:** Type/name conflicts create flaky builds.
@@ -316,6 +319,9 @@ router.post('/', async (_req, res) => {
 
 #### 3.2 Acceptance Criteria
 - ✅ Startup logs "Template Library loaded: 66…"
+- ✅ No duplicate template library directories
+- ✅ Single source of truth: `backend/src/template-library/`
+- ✅ All template endpoints working correctly
 
 ---
 
@@ -424,4 +430,13 @@ When fixing issues:
 - `frontend/src/services/formattingService.ts` - Changed API_BASE from hardcoded URL to `/api`
 - `frontend/src/pages/TemplateManagement.tsx` - Updated all fetch calls to use proxy
 - `frontend/src/components/transcription/TemplateDropdown.tsx` - Updated fetch calls to use proxy
+**Status:** ✅ **COMPLETE**
+
+### Template Library Deduplication Issues
+**Resolved:** 2025-08-31 23:30 EST  
+**Fix:** Removed duplicate template library directory and consolidated to single source  
+**Files Fixed:**
+- Removed `backend/template-library/` (old directory with compiled JS files)
+- Kept `backend/src/template-library/` (single source of truth)
+- All imports already pointing to correct location
 **Status:** ✅ **COMPLETE**
