@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/lib/i18n';
 import { ROUTES } from '@/lib/constants';
+import { useAuth } from '@/lib/authClient';
+import { useUserStore } from '@/stores/userStore';
 
 interface AppHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -15,6 +17,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const { language, setLanguage } = useUIStore();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const { profile } = useUserStore();
 
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -52,6 +56,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   };
 
   const breadcrumbs = getBreadcrumbs();
+
+  // Get display name from profile or auth user
+  const getDisplayName = () => {
+    if (profile?.display_name) {
+      return profile.display_name;
+    }
+    if (user?.name) {
+      return user.name;
+    }
+    return 'Unknown User';
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -129,7 +144,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
               className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
             >
               <User className="h-4 w-4" />
-              <span className="hidden lg:inline">Dr. Smith</span>
+              <span className="hidden lg:inline">{getDisplayName()}</span>
             </Button>
           </div>
 
