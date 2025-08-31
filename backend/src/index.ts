@@ -9,6 +9,7 @@ import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import { securityMiddleware } from './server/security.js';
+import { authMiddleware } from './auth.js';
 import jwt from 'jsonwebtoken';
 import { env } from './config/environment.js';
 
@@ -66,8 +67,11 @@ app.get('/api/templates/stats', (req, res) => {
   }
 });
 
+// TODO: Apply auth middleware to high-risk endpoints when AUTH_REQUIRED=true
 // AI Formatting API Endpoint
-app.post('/api/templates/format', (req, res) => {
+app.post('/api/templates/format', 
+  env.AUTH_REQUIRED ? authMiddleware : (req, res, next) => next(),
+  (req, res) => {
   try {
     const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
     

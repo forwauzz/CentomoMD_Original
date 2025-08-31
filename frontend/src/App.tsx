@@ -7,6 +7,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
 import { LoginPage } from '@/pages/LoginPage';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -20,27 +21,35 @@ function App() {
         {/* TODO: Add login route */}
         <Route path="/login" element={<LoginPage />} />
         
-        {/* TODO: App layout with existing routes (not protected yet) */}
+        {/* TODO: App layout with protected routes (incremental rollout) */}
         <Route path="/" element={<AppLayout />}>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Dashboard */}
+          {/* Dashboard - TODO: Protect after verification */}
           <Route path="/dashboard" element={<DashboardPage />} />
           
-          {/* New Case */}
+          {/* New Case - TODO: Protect after verification */}
           <Route path="/case/new" element={<NewCasePage />} />
           
-          {/* Templates */}
-          <Route path="/templates" element={<TemplateManagement />} />
+          {/* Templates - PROTECTED (PR5) */}
+          <Route path="/templates" element={
+            <ProtectedRoute>
+              <TemplateManagement />
+            </ProtectedRoute>
+          } />
           
-          {/* Dictation */}
-          <Route path="/dictation" element={<DictationPage />} />
+          {/* Dictation - PROTECTED (PR5) */}
+          <Route path="/dictation" element={
+            <ProtectedRoute>
+              <DictationPage />
+            </ProtectedRoute>
+          } />
           
-          {/* Settings */}
+          {/* Settings - TODO: Protect after verification */}
           <Route path="/settings" element={<SettingsPage />} />
           
-          {/* Profile */}
+          {/* Profile - TODO: Protect after verification */}
           <Route path="/profile" element={<ProfilePage />} />
           
           {/* Legacy route for backward compatibility */}
