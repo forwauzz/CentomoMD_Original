@@ -99,6 +99,8 @@ export const PrimarySidebar: React.FC = () => {
           !isActive && 'hover:bg-blue-50 text-slate-700'
         )}
         onClick={() => handleItemClick(item.href)}
+        aria-current={isActive ? 'page' : undefined}
+        aria-label={sidebarCollapsed ? item.label : undefined}
       >
         <Icon className="h-4 w-4 flex-shrink-0" />
         {!sidebarCollapsed && (
@@ -150,6 +152,8 @@ export const PrimarySidebar: React.FC = () => {
           size="sm"
           onClick={toggleSidebar}
           className="h-8 w-8 p-0 hover:bg-blue-50"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!sidebarCollapsed}
         >
           {sidebarCollapsed ? (
             <ChevronRight className="h-4 w-4" />

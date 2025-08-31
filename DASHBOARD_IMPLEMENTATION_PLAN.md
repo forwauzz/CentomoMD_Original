@@ -107,42 +107,42 @@ Transform the existing CentomoMD app into a comprehensive dashboard with collaps
 **Priority**: Medium
 
 #### 4.1 Dictation Panel
-- [ ] Create `DictationPanel.tsx` - Minimal right-side panel
-- [ ] Show only for sections with `audioRequired: true`
-- [ ] Single button: "Go to Dictation page" → `/dictation`
-- [ ] Info text about dedicated dictation workflow
+- [x] Create `DictationPanel.tsx` - Minimal right-side panel
+- [x] Show only for sections with `audioRequired: true`
+- [x] Single button: "Go to Dictation page" → `/dictation`
+- [x] Info text about dedicated dictation workflow
 
 #### 4.2 Dictation Page
-- [ ] Create `DictationPage.tsx` - Dedicated dictation experience
-- [ ] Move existing `TranscriptionInterface` here
-- [ ] Add tabs: Live | History (stubs)
-- [ ] Ensure all dictation CTAs route here
+- [x] Create `DictationPage.tsx` - Dedicated dictation experience
+- [x] Move existing `TranscriptionInterface` here
+- [x] Add tabs: Live | History (stubs)
+- [x] Ensure all dictation CTAs route here
 
 ### Phase 5: Settings & Profile
 **Duration**: 2-3 days
 **Priority**: Medium
 
 #### 5.1 Settings Page
-- [ ] Create `SettingsPage.tsx`
-- [ ] General settings (language, timezone, clinic logo)
-- [ ] Compliance toggles (Quebec Law 25, PIPEDA, Zero-retention)
-- [ ] Dictation defaults, Export defaults, Data settings
+- [x] Create `SettingsPage.tsx`
+- [x] General settings (language, timezone, clinic logo)
+- [x] Compliance toggles (Quebec Law 25, PIPEDA, Zero-retention)
+- [x] Dictation defaults, Export defaults, Data settings
 
 #### 5.2 Profile Page
-- [ ] Create `ProfilePage.tsx`
-- [ ] Basic user info display
-- [ ] Change password functionality (stub)
+- [x] Create `ProfilePage.tsx`
+- [x] Basic user info display
+- [x] Change password functionality (stub)
 
 ### Phase 6: Polish & Integration
 **Duration**: 2-3 days
 **Priority**: Medium
 
 #### 6.1 UI/UX Enhancements
-- [ ] Smooth sidebar collapse animations
-- [ ] Tooltip labels for collapsed sidebar
-- [ ] Breadcrumb navigation
-- [ ] Mobile responsive design
-- [ ] WCAG AA accessibility compliance
+- [x] Smooth sidebar collapse animations
+- [x] Tooltip labels for collapsed sidebar
+- [x] Breadcrumb navigation
+- [x] Mobile responsive design
+- [x] WCAG AA accessibility compliance
 
 #### 6.2 i18n Integration
 - [x] Create i18n helper if not exists
