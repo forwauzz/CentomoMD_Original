@@ -18,10 +18,11 @@ export interface AuthState {
 }
 
 // TODO: Create Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Only throw error in production
+if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
   throw new Error('Missing Supabase environment variables');
 }
 
@@ -32,6 +33,9 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     detectSessionInUrl: true,
   },
 });
+
+// TODO: Mock auth for development when Supabase is not configured
+export const isAuthConfigured = supabaseUrl !== 'https://placeholder.supabase.co' && supabaseAnonKey !== 'placeholder-anon-key';
 
 // TODO: Auth hook for session management
 export const useAuth = () => {
@@ -46,6 +50,15 @@ export const useAuth = () => {
     // TODO: Get initial session
     const getInitialSession = async () => {
       try {
+        if (!isAuthConfigured) {
+          // TODO: Mock auth for development
+          setState(prev => ({
+            ...prev,
+            loading: false,
+          }));
+          return;
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
         
@@ -67,24 +80,36 @@ export const useAuth = () => {
     getInitialSession();
 
     // TODO: Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setState(prev => ({
-          ...prev,
-          session,
-          user: session?.user ? mapSupabaseUser(session.user) : null,
-          loading: false,
-        }));
-      }
-    );
+    if (isAuthConfigured) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          setState(prev => ({
+            ...prev,
+            session,
+            user: session?.user ? mapSupabaseUser(session.user) : null,
+            loading: false,
+          }));
+        }
+      );
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   // TODO: Auth methods
   const signInWithMagicLink = async (email: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
+      if (!isAuthConfigured) {
+        // TODO: Mock sign in for development
+        setState(prev => ({
+          ...prev,
+          error: 'Supabase not configured. Please set up VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY',
+          loading: false,
+        }));
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -104,6 +129,16 @@ export const useAuth = () => {
   const signInWithGoogle = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
+      if (!isAuthConfigured) {
+        // TODO: Mock sign in for development
+        setState(prev => ({
+          ...prev,
+          error: 'Supabase not configured. Please set up VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY',
+          loading: false,
+        }));
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -123,6 +158,15 @@ export const useAuth = () => {
   const signOut = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
+      if (!isAuthConfigured) {
+        // TODO: Mock sign out for development
+        setState(prev => ({
+          ...prev,
+          loading: false,
+        }));
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {

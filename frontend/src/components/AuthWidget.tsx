@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, LogOut, Loader2, Eye, EyeOff, Lock, Shield } from 'lucide-react';
+import { LogOut, Loader2, Eye, EyeOff, Lock, Shield } from 'lucide-react';
 
 export const AuthWidget: React.FC = () => {
   const { user, session, loading, error, signInWithMagicLink, signInWithGoogle, signOut } = useAuth();

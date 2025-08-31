@@ -46,8 +46,14 @@ export const apiFetch = async <T = any>(
   const config = await getConfig();
   
   // TODO: Get access token if available
-  const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token;
+  let accessToken: string | undefined;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    accessToken = session?.access_token;
+  } catch (error) {
+    // TODO: Handle case when Supabase is not configured
+    console.warn('Supabase not configured, proceeding without auth token');
+  }
   
   // TODO: Prepare headers
   const headers = new Headers(init.headers);
@@ -63,7 +69,7 @@ export const apiFetch = async <T = any>(
   });
   
   // TODO: Handle 401 responses
-  if (response.status === 401 && config.authRequired) {
+  if (response.status === 401 && config?.authRequired) {
     // TODO: Redirect to login if auth is required
     window.location.href = '/login';
     throw new ApiError('Authentication required', 401);

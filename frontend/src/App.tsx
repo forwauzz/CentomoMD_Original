@@ -21,7 +21,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         
         {/* TODO: App layout with existing routes (not protected yet) */}
-        <Route path="/" element={<AppLayout>}>
+        <Route path="/" element={<AppLayout />}>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           

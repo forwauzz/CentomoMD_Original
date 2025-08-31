@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { PrimarySidebar } from './PrimarySidebar';
 import { AppHeader } from './AppHeader';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+export const AppLayout: React.FC = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
@@ -38,7 +34,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
           <div className="container mx-auto px-4 lg:px-6 py-4 lg:py-6">
-            {children}
+            <Outlet />
           </div>
         </main>
       </div>
