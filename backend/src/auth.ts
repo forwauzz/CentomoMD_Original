@@ -1,10 +1,8 @@
-import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { env } from './config/environment.js';
 import { logger } from './utils/logger.js';
 
-// TODO: Import JWKS verification utilities
-// import { verifyJWTWithJWKS } from './utils/jwks.js';
+// Import JWKS verification utilities
+import { verifyJWTWithJWKS } from './utils/jwks.js';
 
 // TODO: Define user context interface
 export interface UserContext {
@@ -17,45 +15,65 @@ export interface UserContext {
   iat: number;
 }
 
-// TODO: Define auth middleware interface
+// Define auth middleware interface
 export interface AuthMiddleware {
-  (req: Request, res: Response, next: NextFunction): Promise<void>;
+  (req: Request, res: Response, next: NextFunction): Promise<void | Response>;
 }
 
-// TODO: JWT verification function using Supabase JWKS
+// JWT verification function using Supabase JWKS
 export const verifySupabaseJWT = async (token: string): Promise<UserContext | null> => {
   try {
-    // TODO: Implement JWKS verification
-    // 1. Extract issuer from token header
-    // 2. Fetch JWKS from https://<REF>.supabase.co/auth/v1/keys
-    // 3. Verify token signature and claims
-    // 4. Return UserContext or null
+    // Verify token with Supabase JWKS
+    const payload = await verifyJWTWithJWKS(token);
     
-    // TODO: Remove this mock implementation
-    const decoded = jwt.decode(token) as any;
-    if (!decoded) return null;
+    if (!payload) {
+      logger.warn('JWT verification returned null payload');
+      return null;
+    }
     
-    return {
-      user_id: decoded.sub || 'mock-user-id',
-      clinic_id: decoded.clinic_id,
-      role: decoded.role || 'physician',
-      email: decoded.email || 'mock@example.com',
-      aud: decoded.aud || 'authenticated',
-      exp: decoded.exp || 0,
-      iat: decoded.iat || 0
+    // Extract user information from payload
+    const userContext: UserContext = {
+      user_id: payload.sub as string,
+      clinic_id: payload.clinic_id as string,
+      role: payload.role as string || 'physician',
+      email: payload.email as string,
+      aud: payload.aud as string,
+      exp: payload.exp as number,
+      iat: payload.iat as number
     };
+    
+    // Validate required fields
+    if (!userContext.user_id || !userContext.email) {
+      logger.warn('JWT payload missing required fields', { 
+        hasUserId: !!userContext.user_id, 
+        hasEmail: !!userContext.email 
+      });
+      return null;
+    }
+    
+    return userContext;
   } catch (error) {
-    logger.error('JWT verification failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+    logger.error('JWT verification failed', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      token: token.substring(0, 20) + '...' // Log first 20 chars for debugging
+    });
     return null;
   }
 };
 
-// TODO: Export auth middleware for HTTP endpoints
+// Export auth middleware for HTTP endpoints
 export const authMiddleware: AuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('Missing or invalid authorization header', {
+        endpoint: req.path,
+        method: req.method,
+        hasAuthHeader: !!authHeader,
+        authHeaderPrefix: authHeader?.substring(0, 7)
+      });
+      
       return res.status(401).json({
         error: 'UNAUTHORIZED',
         message: 'Missing or invalid authorization header',
@@ -65,10 +83,16 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
-    // TODO: Verify token with Supabase JWKS
+    // Verify token with Supabase JWKS
     const userContext = await verifySupabaseJWT(token);
     
     if (!userContext) {
+      logger.warn('Invalid or expired token', {
+        endpoint: req.path,
+        method: req.method,
+        tokenLength: token.length
+      });
+      
       return res.status(401).json({
         error: 'UNAUTHORIZED',
         message: 'Invalid or expired token',
@@ -76,8 +100,16 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
       });
     }
 
-    // TODO: Check token expiration
+    // Check token expiration
     if (userContext.exp < Date.now() / 1000) {
+      logger.warn('Token has expired', {
+        endpoint: req.path,
+        method: req.method,
+        userId: userContext.user_id,
+        tokenExp: new Date(userContext.exp * 1000).toISOString(),
+        currentTime: new Date().toISOString()
+      });
+      
       return res.status(401).json({
         error: 'UNAUTHORIZED',
         message: 'Token has expired',
@@ -85,12 +117,14 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
       });
     }
 
-    // TODO: Attach user context to request
+    // Attach user context to request
     (req as any).user = userContext;
     
-    // TODO: Log successful authentication
+    // Log successful authentication
     logger.info('User authenticated', { 
-      userId: userContext.user_id, 
+      userId: userContext.user_id,
+      userEmail: userContext.email,
+      userRole: userContext.role,
       endpoint: req.path,
       method: req.method 
     });
@@ -99,7 +133,8 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
   } catch (error) {
     logger.error('Auth middleware error', { 
       error: error instanceof Error ? error.message : 'Unknown error',
-      endpoint: req.path 
+      endpoint: req.path,
+      method: req.method
     });
     
     return res.status(500).json({
@@ -110,8 +145,8 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
   }
 };
 
-// TODO: Optional auth middleware for endpoints that work with or without auth
-export const optionalAuthMiddleware: AuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+// Optional auth middleware for endpoints that work with or without auth
+export const optionalAuthMiddleware: AuthMiddleware = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -125,21 +160,42 @@ export const optionalAuthMiddleware: AuthMiddleware = async (req: Request, res: 
     
     if (userContext && userContext.exp >= Date.now() / 1000) {
       (req as any).user = userContext;
+      logger.debug('Optional auth: User context attached', {
+        userId: userContext.user_id,
+        endpoint: req.path,
+        method: req.method
+      });
+    } else if (userContext) {
+      logger.debug('Optional auth: Token expired, no user context attached', {
+        endpoint: req.path,
+        method: req.method
+      });
     }
 
     next();
   } catch (error) {
     // Error in optional auth, continue without user context
+    logger.debug('Optional auth: Error occurred, continuing without user context', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      endpoint: req.path,
+      method: req.method
+    });
     next();
   }
 };
 
-// TODO: Role-based authorization middleware
+// Role-based authorization middleware
 export const requireRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
     
     if (!user) {
+      logger.warn('Role check failed: User not authenticated', {
+        endpoint: req.path,
+        method: req.method,
+        requiredRoles: allowedRoles
+      });
+      
       return res.status(401).json({
         error: 'UNAUTHORIZED',
         message: 'User not authenticated',
@@ -150,9 +206,11 @@ export const requireRole = (allowedRoles: string[]) => {
     if (!allowedRoles.includes(user.role)) {
       logger.warn('Insufficient permissions', {
         userId: user.user_id,
+        userEmail: user.email,
         userRole: user.role,
         requiredRoles: allowedRoles,
-        endpoint: req.path
+        endpoint: req.path,
+        method: req.method
       });
 
       return res.status(403).json({
@@ -162,15 +220,28 @@ export const requireRole = (allowedRoles: string[]) => {
       });
     }
 
+    logger.debug('Role check passed', {
+      userId: user.user_id,
+      userRole: user.role,
+      requiredRoles: allowedRoles,
+      endpoint: req.path,
+      method: req.method
+    });
+
     next();
   };
 };
 
-// TODO: Clinic-based authorization middleware
+// Clinic-based authorization middleware
 export const requireClinicAccess = (req: Request, res: Response, next: NextFunction) => {
   const user = (req as any).user;
   
   if (!user) {
+    logger.warn('Clinic access check failed: User not authenticated', {
+      endpoint: req.path,
+      method: req.method
+    });
+    
     return res.status(401).json({
       error: 'UNAUTHORIZED',
       message: 'User not authenticated',
@@ -178,19 +249,27 @@ export const requireClinicAccess = (req: Request, res: Response, next: NextFunct
     });
   }
 
-  // TODO: Admin users can access all clinics
+  // Admin users can access all clinics
   if (user.role === 'admin') {
+    logger.debug('Clinic access granted: Admin user', {
+      userId: user.user_id,
+      userRole: user.role,
+      endpoint: req.path,
+      method: req.method
+    });
     return next();
   }
 
-  const requestedClinicId = req.params.clinicId || req.body.clinic_id;
+  const requestedClinicId = req.params['clinicId'] || req.body.clinic_id;
   
   if (requestedClinicId && user.clinic_id !== requestedClinicId) {
     logger.warn('Clinic access denied', {
       userId: user.user_id,
+      userEmail: user.email,
       userClinicId: user.clinic_id,
       requestedClinicId,
-      endpoint: req.path
+      endpoint: req.path,
+      method: req.method
     });
 
     return res.status(403).json({
@@ -199,6 +278,14 @@ export const requireClinicAccess = (req: Request, res: Response, next: NextFunct
       code: 'CLINIC_ACCESS_DENIED'
     });
   }
+
+  logger.debug('Clinic access granted', {
+    userId: user.user_id,
+    userClinicId: user.clinic_id,
+    requestedClinicId,
+    endpoint: req.path,
+    method: req.method
+  });
 
   next();
 };

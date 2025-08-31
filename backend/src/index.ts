@@ -3,7 +3,7 @@ import { WebSocketServer } from 'ws';
 import http from 'http';
 
 import { transcriptionService } from './services/transcriptionService.js';
-import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
+
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
@@ -23,7 +23,7 @@ app.use(securityMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -57,7 +57,7 @@ app.get('/api/templates', (req, res) => {
   }
 });
 
-app.get('/api/templates/stats', (req, res) => {
+app.get('/api/templates/stats', (_req, res) => {
   try {
     const stats = templateLibrary.getTemplateStats();
     res.json({ success: true, data: stats });
@@ -70,7 +70,7 @@ app.get('/api/templates/stats', (req, res) => {
 // TODO: Apply auth middleware to high-risk endpoints when AUTH_REQUIRED=true
 // AI Formatting API Endpoint
 app.post('/api/templates/format', 
-  env.AUTH_REQUIRED ? authMiddleware : (req, res, next) => next(),
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   (req, res) => {
   try {
     const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
@@ -111,7 +111,9 @@ app.post('/api/templates/format',
 });
 
 // Template CRUD Operations
-app.post('/api/templates', async (req, res) => {
+app.post('/api/templates', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { title, content, section, language, complexity, category, tags, version } = req.body;
     
@@ -166,7 +168,9 @@ app.post('/api/templates', async (req, res) => {
   }
 });
 
-app.put('/api/templates/:id', async (req, res) => {
+app.put('/api/templates/:id', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content, section, language, complexity, category, tags, version } = req.body;
@@ -208,7 +212,9 @@ app.put('/api/templates/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/templates/:id', async (req, res) => {
+app.delete('/api/templates/:id', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { section } = req.query;
@@ -254,7 +260,7 @@ app.get('/api/templates/:id/versions', (req, res) => {
 });
 
 // Get template analytics
-app.get('/api/templates/analytics', (req, res) => {
+app.get('/api/templates/analytics', (_req, res) => {
   try {
     const analytics = templateLibrary.getAnalytics();
     
@@ -359,7 +365,9 @@ app.post('/api/templates/search', (req, res) => {
 });
 
 // Export templates
-app.get('/api/templates/export', (req, res) => {
+app.get('/api/templates/export', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  (req, res) => {
   try {
     const { section } = req.query;
     const templates = templateLibrary.exportTemplates(section as "7" | "8" | "11");
@@ -375,7 +383,9 @@ app.get('/api/templates/export', (req, res) => {
 });
 
 // Import templates
-app.post('/api/templates/import', async (req, res) => {
+app.post('/api/templates/import', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { templates } = req.body;
     
@@ -399,7 +409,9 @@ app.post('/api/templates/import', async (req, res) => {
 });
 
 // Bulk operations
-app.post('/api/templates/bulk/status', async (req, res) => {
+app.post('/api/templates/bulk/status', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { templateIds, status } = req.body;
     
@@ -429,7 +441,9 @@ app.post('/api/templates/bulk/status', async (req, res) => {
   }
 });
 
-app.post('/api/templates/bulk/delete', async (req, res) => {
+app.post('/api/templates/bulk/delete', 
+  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  async (req, res) => {
   try {
     const { templateIds } = req.body;
     
