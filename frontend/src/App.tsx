@@ -7,40 +7,53 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
 import { LoginPage } from '@/pages/LoginPage';
+import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
+import { SelectClinicPage } from '@/pages/SelectClinicPage';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* TODO: Add login route */}
+        {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/select-clinic" element={<SelectClinicPage />} />
         
-        {/* TODO: App layout with existing routes (not protected yet) */}
+        {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Dashboard */}
+          {/* Dashboard - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/dashboard" element={<DashboardPage />} />
           
-          {/* New Case */}
+          {/* New Case - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/case/new" element={<NewCasePage />} />
           
-          {/* Templates */}
-          <Route path="/templates" element={<TemplateManagement />} />
+          {/* Templates - PROTECTED */}
+          <Route path="/templates" element={
+            <ProtectedRoute>
+              <TemplateManagement />
+            </ProtectedRoute>
+          } />
           
-          {/* Dictation */}
-          <Route path="/dictation" element={<DictationPage />} />
+          {/* Dictation - PROTECTED */}
+          <Route path="/dictation" element={
+            <ProtectedRoute>
+              <DictationPage />
+            </ProtectedRoute>
+          } />
           
-          {/* Settings */}
+          {/* Settings - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/settings" element={<SettingsPage />} />
           
-          {/* Profile */}
+          {/* Profile - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/profile" element={<ProfilePage />} />
           
           {/* Legacy route for backward compatibility */}
