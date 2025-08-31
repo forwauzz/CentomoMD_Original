@@ -132,6 +132,131 @@ app.post('/api/templates/format', (req, res) => {
   }
 });
 
+// Template CRUD Operations
+app.post('/api/templates', async (req, res) => {
+  try {
+    const { title, content, section, language, complexity, category, tags, version } = req.body;
+    
+    if (!title || !content || !section || !language || !complexity) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: title, content, section, language, complexity' 
+      });
+    }
+    
+    if (!['7', '8', '11'].includes(section)) {
+      return res.status(400).json({ success: false, error: 'Invalid section' });
+    }
+    
+    if (!['fr', 'en'].includes(language)) {
+      return res.status(400).json({ success: false, error: 'Invalid language' });
+    }
+    
+    if (!['low', 'medium', 'high'].includes(complexity)) {
+      return res.status(400).json({ success: false, error: 'Invalid complexity' });
+    }
+    
+    // Create new template
+    const newTemplate = {
+      id: `template_${Date.now()}`,
+      title,
+      content,
+      section,
+      language,
+      complexity,
+      category: category || 'General',
+      tags: tags || [],
+      version: version || '1.0',
+      source_file: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Creating new template:', newTemplate);
+    
+    // Add template to the template library
+    await templateLibrary.addTemplate(newTemplate);
+    
+    res.json({ 
+      success: true, 
+      data: newTemplate,
+      message: 'Template created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating template:', error);
+    res.status(500).json({ success: false, error: 'Failed to create template' });
+  }
+});
+
+app.put('/api/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, section, language, complexity, category, tags, version } = req.body;
+    
+    if (!title || !content || !section || !language || !complexity) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: title, content, section, language, complexity' 
+      });
+    }
+    
+    const updatedTemplate = {
+      id,
+      title,
+      content,
+      section,
+      language,
+      complexity,
+      category: category || 'General',
+      tags: tags || [],
+      version: version || '1.0',
+      source_file: '',
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Updating template:', updatedTemplate);
+    
+    // Update template in the template library
+    await templateLibrary.updateTemplate(id, updatedTemplate);
+    
+    res.json({ 
+      success: true, 
+      data: updatedTemplate,
+      message: 'Template updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating template:', error);
+    res.status(500).json({ success: false, error: 'Failed to update template' });
+  }
+});
+
+app.delete('/api/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { section } = req.query;
+    
+    if (!section || !['7', '8', '11'].includes(section as string)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing or invalid section parameter' 
+      });
+    }
+    
+    console.log('Deleting template:', id, 'from section:', section);
+    
+    // Delete template from the template library
+    await templateLibrary.deleteTemplate(id, section as "7" | "8" | "11");
+    
+    res.json({ 
+      success: true, 
+      message: 'Template deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting template:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete template' });
+  }
+});
+
 const wss = new WebSocketServer({ server });
 
 // Store active transcription sessions - integrated with AWS Transcribe

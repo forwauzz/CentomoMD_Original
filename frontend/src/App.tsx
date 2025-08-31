@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
+import { TemplateManagement } from '@/pages/TemplateManagement';
 import { Button } from '@/components/ui/button';
-import { Settings, Globe, LogOut, Mic } from 'lucide-react';
+import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
 
 function App() {
   const [language, setLanguage] = useState<'fr' | 'en'>('en');
   const [sessionId, setSessionId] = useState<string | undefined>();
+  const [currentPage, setCurrentPage] = useState<'dictation' | 'templates'>('dictation');
 
   const handleSessionUpdate = (newSessionId: string) => {
     setSessionId(newSessionId);
@@ -24,6 +26,28 @@ function App() {
             <div className="flex items-center space-x-2">
               <Mic className="h-8 w-8" />
               <h1 className="text-2xl font-bold">CentomoMD</h1>
+            </div>
+            
+            {/* Navigation */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={currentPage === 'dictation' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setCurrentPage('dictation')}
+                className="text-white hover:bg-blue-800 flex items-center space-x-1"
+              >
+                <Home className="h-4 w-4" />
+                <span>Dictation</span>
+              </Button>
+              <Button
+                variant={currentPage === 'templates' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setCurrentPage('templates')}
+                className="text-white hover:bg-blue-800 flex items-center space-x-1"
+              >
+                <FileText className="h-4 w-4" />
+                <span>Templates</span>
+              </Button>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -53,12 +77,15 @@ function App() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          {/* Transcription Interface */}
-          <TranscriptionInterface
-            sessionId={sessionId}
-            onSessionUpdate={handleSessionUpdate}
-            language={language}
-          />
+          {currentPage === 'dictation' ? (
+            <TranscriptionInterface
+              sessionId={sessionId}
+              onSessionUpdate={handleSessionUpdate}
+              language={language}
+            />
+          ) : (
+            <TemplateManagement />
+          )}
         </div>
       </main>
 

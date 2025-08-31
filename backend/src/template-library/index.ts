@@ -208,6 +208,100 @@ export class TemplateLibraryService {
   }
 
   /**
+   * Add a new template to the library
+   */
+  public async addTemplate(template: TemplateJSON & { id: string }): Promise<void> {
+    try {
+      // Add template to the appropriate section
+      const sectionKey = `section${template.section}` as keyof TemplateLibrary;
+      this.templates[sectionKey].push(template);
+      
+      // Save the updated templates to disk
+      await this.saveTemplatesToDisk(template.section);
+      
+      console.log(`Template "${template.title}" added to section ${template.section}`);
+    } catch (error) {
+      console.error('Error adding template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing template
+   */
+  public async updateTemplate(templateId: string, updatedTemplate: TemplateJSON & { id: string }): Promise<void> {
+    try {
+      const sectionKey = `section${updatedTemplate.section}` as keyof TemplateLibrary;
+      const templateIndex = this.templates[sectionKey].findIndex(t => t.id === templateId);
+      
+      if (templateIndex === -1) {
+        throw new Error(`Template with ID ${templateId} not found`);
+      }
+      
+      this.templates[sectionKey][templateIndex] = updatedTemplate;
+      
+      // Save the updated templates to disk
+      await this.saveTemplatesToDisk(updatedTemplate.section);
+      
+      console.log(`Template "${updatedTemplate.title}" updated in section ${updatedTemplate.section}`);
+    } catch (error) {
+      console.error('Error updating template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a template from the library
+   */
+  public async deleteTemplate(templateId: string, section: "7" | "8" | "11"): Promise<void> {
+    try {
+      const sectionKey = `section${section}` as keyof TemplateLibrary;
+      const templateIndex = this.templates[sectionKey].findIndex(t => t.id === templateId);
+      
+      if (templateIndex === -1) {
+        throw new Error(`Template with ID ${templateId} not found`);
+      }
+      
+      const deletedTemplate = this.templates[sectionKey].splice(templateIndex, 1)[0];
+      
+      // Save the updated templates to disk
+      await this.saveTemplatesToDisk(section);
+      
+      console.log(`Template "${deletedTemplate.title}" deleted from section ${section}`);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save templates to disk for a specific section
+   */
+  private async saveTemplatesToDisk(section: "7" | "8" | "11"): Promise<void> {
+    try {
+      const { writeFileSync, mkdirSync } = await import('fs');
+      const sectionKey = `section${section}` as keyof TemplateLibrary;
+      const templates = this.templates[sectionKey];
+      
+      // Create directory if it doesn't exist
+      const jsonPath = join(process.cwd(), 'template-library', 'json', `section${section}`);
+      mkdirSync(jsonPath, { recursive: true });
+      
+      // Save each template as a separate JSON file
+      for (const template of templates) {
+        const fileName = `${template.id}.json`;
+        const filePath = join(jsonPath, fileName);
+        writeFileSync(filePath, JSON.stringify(template, null, 2), 'utf-8');
+      }
+      
+      console.log(`Saved ${templates.length} templates to disk for section ${section}`);
+    } catch (error) {
+      console.error(`Error saving templates to disk for section ${section}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Reload templates from disk
    */
   public reloadTemplates(): void {
