@@ -37,16 +37,16 @@ export const TranscriptionsCard: React.FC = () => {
         <div className="space-y-2">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-blue-600">{stats.total}</span>
-            <span className="text-sm text-gray-500">transcriptions</span>
+            <span className="text-sm text-gray-500">{t('transcriptionsTotal')}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Mic className="h-4 w-4 text-purple-500" />
-            <span>Précision: {stats.accuracy}</span>
+            <span>{t('transcriptionsAccuracy')}: {stats.accuracy}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Clock className="h-3 w-3" />
-          <span>{stats.thisMonth} ce mois-ci</span>
+          <span>{stats.thisMonth} {t('transcriptionsThisMonth')}</span>
         </div>
         <Button 
           onClick={handleViewTranscriptions}

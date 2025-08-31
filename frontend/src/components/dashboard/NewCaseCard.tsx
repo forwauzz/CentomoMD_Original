@@ -28,11 +28,11 @@ export const NewCaseCard: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-gray-600 text-sm">
-          Commencer un nouveau dossier CNESST avec tous les formulaires requis
+          {t('newCaseDescription')}
         </p>
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <FileText className="h-3 w-3" />
-          <span>15 sections disponibles</span>
+          <span>{t('sectionsAvailable')}</span>
         </div>
         <Button 
           onClick={handleNewCase}

@@ -1,390 +1,354 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/authClient';
+import { apiFetch } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Building, 
-  MapPin, 
-  Calendar,
-  Lock,
-  Eye,
-  EyeOff,
-  Save,
-  Edit
-} from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Select } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Save, User, Globe, Shield, Mail } from 'lucide-react';
+import { useUIStore } from '@/stores/uiStore';
+import { useUserStore } from '@/stores/userStore';
+
+// TODO: Profile types - matches backend API response
+interface ProfileData {
+  display_name: string;
+  locale: 'en-CA' | 'fr-CA';
+  consent_pipeda: boolean;
+  consent_marketing: boolean;
+}
+
+interface ProfileUpdate {
+  display_name?: string;
+  locale?: 'en-CA' | 'fr-CA';
+  consent_pipeda?: boolean;
+  consent_marketing?: boolean;
+}
+
+// TODO: Profile API service functions
+const profileService = {
+  async getProfile(): Promise<ProfileData> {
+    const response = await apiFetch<{ success: boolean; data: ProfileData }>('/api/profile');
+    return response.data;
+  },
+
+  async updateProfile(updates: ProfileUpdate): Promise<ProfileData> {
+    const response = await apiFetch<{ success: boolean; data: ProfileData }>('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+    return response.data;
+  },
+};
+
+// Language options for the select component
+const languageOptions = [
+  { label: 'English (Canada)', value: 'en-CA' as const },
+  { label: 'Français (Canada)', value: 'fr-CA' as const },
+];
 
 export const ProfilePage: React.FC = () => {
+  const { user } = useAuth();
+  const { addToast, setLanguage } = useUIStore();
+  const { setProfile: setUserProfile, updateProfile: updateUserProfile } = useUserStore();
   const { t } = useI18n();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const [profile, setProfile] = useState({
-    firstName: 'Dr. Marie',
-    lastName: 'Dubois',
-    email: 'marie.dubois@clinique.ca',
-    phone: '+1 (514) 555-0123',
-    clinic: 'Clinique Médicale Centomo',
-    address: '1234 Rue de la Santé, Montréal, QC H2K 1A1',
-    license: 'MD-12345',
-    specialization: 'Médecine du travail',
-    joinDate: '2023-01-15',
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // TODO: Form state for editing
+  const [formData, setFormData] = useState<ProfileData>({
+    display_name: '',
+    locale: 'en-CA',
+    consent_pipeda: false,
+    consent_marketing: false,
   });
 
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  // TODO: Load profile data on component mount
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
-  const handleProfileChange = (key: string, value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handlePasswordChange = (key: string, value: string) => {
-    setPasswordForm(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleSaveProfile = () => {
-    // TODO: Implement profile save to backend
-    console.log('Saving profile:', profile);
-    
-    setIsSaving(true);
-    
-    // Simulate save operation
-    setTimeout(() => {
-      // Show success feedback
-      alert('Profil sauvegardé avec succès!');
-      setIsEditing(false);
-      setIsSaving(false);
-      // In a real app, you would:
-      // 1. Call API to save profile
-      // 2. Update global state if needed
-      // 3. Show toast notification
-    }, 500);
-  };
-
-  const handleChangePassword = () => {
-    // TODO: Implement password change
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
-      return;
-    }
-    
-    if (passwordForm.newPassword.length < 8) {
-      alert('Le nouveau mot de passe doit contenir au moins 8 caractères');
-      return;
-    }
-    
-    console.log('Changing password...');
-    
-    setIsChangingPassword(true);
-    
-    // Simulate password change
-    setTimeout(() => {
-      alert('Mot de passe changé avec succès!');
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await profileService.getProfile();
+      setProfile(data);
+      setFormData(data);
+      setErrors({});
+      
+      // TODO: Update platform language based on profile
+      if (data.locale === 'fr-CA') {
+        setLanguage('fr');
+      } else {
+        setLanguage('en');
+      }
+      
+      // TODO: Update user store with profile data
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load profile data'
       });
-      setIsChangingPassword(false);
-    }, 500);
+      
+      // TODO: Show fallback data for development
+      const fallbackData: ProfileData = {
+        display_name: user?.name || 'Unknown User',
+        locale: 'en-CA',
+        consent_pipeda: false,
+        consent_marketing: false,
+      };
+      setProfile(fallbackData);
+      setFormData(fallbackData);
+      setUserProfile(fallbackData);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // TODO: Handle form field changes
+  const handleFieldChange = (field: keyof ProfileData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear field-specific error
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // TODO: Validate form data
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.display_name.trim()) {
+      newErrors.display_name = 'Display name is required';
+    }
+
+    if (formData.display_name.length > 100) {
+      newErrors.display_name = 'Display name must be less than 100 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // TODO: Save profile changes
+  const handleSave = async () => {
+    if (!validateForm()) {
+      addToast({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Please fix the errors before saving'
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // TODO: Only send changed fields
+      const changes: ProfileUpdate = {};
+      if (formData.display_name !== profile?.display_name) {
+        changes.display_name = formData.display_name;
+      }
+      if (formData.locale !== profile?.locale) {
+        changes.locale = formData.locale;
+      }
+      if (formData.consent_pipeda !== profile?.consent_pipeda) {
+        changes.consent_pipeda = formData.consent_pipeda;
+      }
+      if (formData.consent_marketing !== profile?.consent_marketing) {
+        changes.consent_marketing = formData.consent_marketing;
+      }
+
+      if (Object.keys(changes).length === 0) {
+        addToast({
+          type: 'info',
+          title: 'No Changes',
+          message: 'No changes to save'
+        });
+        return;
+      }
+
+      const updatedProfile = await profileService.updateProfile(changes);
+      setProfile(updatedProfile);
+      setFormData(updatedProfile);
+      
+      // TODO: Update platform language if locale changed
+      if (changes.locale) {
+        if (updatedProfile.locale === 'fr-CA') {
+          setLanguage('fr');
+        } else {
+          setLanguage('en');
+        }
+      }
+      
+      // TODO: Update user store with new profile data
+      setUserProfile(updatedProfile);
+      
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Profile updated successfully'
+      });
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      
+      // TODO: Handle validation errors from backend
+      if (error.status === 400 && error.details) {
+        const backendErrors: Record<string, string> = {};
+        error.details.forEach((err: any) => {
+          backendErrors[err.path[0]] = err.message;
+        });
+        setErrors(backendErrors);
+        addToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: 'Please fix the validation errors'
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update profile'
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // TODO: Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center space-x-3">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span>Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-700">
-          {t('profile')}
-        </h1>
-        {isEditing ? (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
-              {t('cancel')}
-            </Button>
-            <Button 
-              onClick={handleSaveProfile} 
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={isSaving}
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <User className="h-6 w-6" />
+            <span>{t('profileSettings')}</span>
+          </CardTitle>
+          <CardDescription>
+            {t('basicInformation')}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* TODO: Display Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="display_name">{t('displayName')}</Label>
+            <Input
+              id="display_name"
+              value={formData.display_name}
+              onChange={(e) => handleFieldChange('display_name', e.target.value)}
+              placeholder={t('displayNamePlaceholder')}
+              className={errors.display_name ? 'border-red-500' : ''}
+            />
+            {errors.display_name && (
+              <p className="text-sm text-red-500">{errors.display_name}</p>
+            )}
+          </div>
+
+          {/* TODO: Language/Locale Field */}
+          <div className="space-y-2">
+            <Label htmlFor="locale" className="flex items-center space-x-2">
+              <Globe className="h-4 w-4" />
+              <span>{t('language')}</span>
+            </Label>
+            <p className="text-sm text-gray-600">{t('languageDescription')}</p>
+            <Select
+              value={formData.locale}
+              onValueChange={(value: 'en-CA' | 'fr-CA') => handleFieldChange('locale', value)}
+              items={[
+                { label: t('englishCanada'), value: 'en-CA' as const },
+                { label: t('frenchCanada'), value: 'fr-CA' as const },
+              ]}
+              className="w-full"
+            />
+          </div>
+
+          {/* TODO: Privacy Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>{t('privacySettings')}</span>
+            </h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="consent_pipeda">{t('pipedaConsent')}</Label>
+                <p className="text-sm text-gray-500">
+                  {t('pipedaDescription')}
+                </p>
+              </div>
+              <Switch
+                id="consent_pipeda"
+                checked={formData.consent_pipeda}
+                onCheckedChange={(checked: boolean) => handleFieldChange('consent_pipeda', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="consent_marketing" className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4" />
+                  <span>{t('marketingConsent')}</span>
+                </Label>
+                <p className="text-sm text-gray-500">
+                  {t('marketingDescription')}
+                </p>
+              </div>
+              <Switch
+                id="consent_marketing"
+                checked={formData.consent_marketing}
+                onCheckedChange={(checked: boolean) => handleFieldChange('consent_marketing', checked)}
+              />
+            </div>
+          </div>
+
+          {/* TODO: Save Button */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={loadProfile}
+              disabled={saving}
             >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Sauvegarde...' : t('save')}
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center space-x-2"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              <span>{saving ? 'Saving...' : t('saveProfile')}</span>
             </Button>
           </div>
-        ) : (
-          <Button onClick={() => setIsEditing(true)} variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            {t('edit')}
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
-              {t('basicInfo')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">Prénom</Label>
-                <Input
-                  id="firstName"
-                  value={profile.firstName}
-                  onChange={(e) => handleProfileChange('firstName', e.target.value)}
-                  disabled={!isEditing}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Nom de famille</Label>
-                <Input
-                  id="lastName"
-                  value={profile.lastName}
-                  onChange={(e) => handleProfileChange('lastName', e.target.value)}
-                  disabled={!isEditing}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.email}
-                onChange={(e) => handleProfileChange('email', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Téléphone
-              </Label>
-              <Input
-                id="phone"
-                value={profile.phone}
-                onChange={(e) => handleProfileChange('phone', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="clinic" className="flex items-center gap-2">
-                <Building className="h-4 w-4" />
-                Clinique
-              </Label>
-              <Input
-                id="clinic"
-                value={profile.clinic}
-                onChange={(e) => handleProfileChange('clinic', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="address" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Adresse
-              </Label>
-              <Input
-                id="address"
-                value={profile.address}
-                onChange={(e) => handleProfileChange('address', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Professional Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-green-600" />
-              Informations professionnelles
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="license">Numéro de licence</Label>
-              <Input
-                id="license"
-                value={profile.license}
-                onChange={(e) => handleProfileChange('license', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="specialization">Spécialisation</Label>
-              <Input
-                id="specialization"
-                value={profile.specialization}
-                onChange={(e) => handleProfileChange('specialization', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="joinDate" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Date d'adhésion
-              </Label>
-              <Input
-                id="joinDate"
-                type="date"
-                value={profile.joinDate}
-                onChange={(e) => handleProfileChange('joinDate', e.target.value)}
-                disabled={!isEditing}
-                className="mt-1"
-              />
-            </div>
-
-            <div className="pt-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Statut du compte</h4>
-                <div className="space-y-1 text-sm text-blue-700">
-                  <p>• Compte actif</p>
-                  <p>• Accès complet aux fonctionnalités</p>
-                  <p>• Dernière connexion: Aujourd'hui</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Change Password */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-red-600" />
-              {t('changePassword')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="currentPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={passwordForm.newPassword}
-                    onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button 
-                onClick={handleChangePassword} 
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isChangingPassword}
-              >
-                <Lock className="h-4 w-4 mr-2" />
-                {isChangingPassword ? 'Changement...' : 'Changer le mot de passe'}
-              </Button>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h4 className="font-medium text-yellow-900 mb-2">Conseils de sécurité</h4>
-              <div className="space-y-1 text-sm text-yellow-700">
-                <p>• Utilisez au moins 8 caractères</p>
-                <p>• Incluez des lettres majuscules et minuscules</p>
-                <p>• Ajoutez des chiffres et des symboles</p>
-                <p>• Évitez les informations personnelles</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

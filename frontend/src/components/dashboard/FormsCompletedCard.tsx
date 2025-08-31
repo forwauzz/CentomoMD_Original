@@ -37,16 +37,16 @@ export const FormsCompletedCard: React.FC = () => {
         <div className="space-y-2">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-blue-600">{stats.completed}</span>
-            <span className="text-sm text-gray-500">total</span>
+            <span className="text-sm text-gray-500">{t('formsCompletedTotal')}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <TrendingUp className="h-4 w-4 text-green-500" />
-            <span>{stats.trend} ce mois</span>
+            <span>{stats.trend} {t('formsCompletedThisMonth')}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <BarChart3 className="h-3 w-3" />
-          <span>{stats.thisMonth} formulaires ce mois-ci</span>
+          <span>{stats.thisMonth} {t('formsCompletedCount')}</span>
         </div>
         <Button 
           onClick={handleShowStatistics}

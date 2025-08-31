@@ -22,6 +22,22 @@ export const translations = {
     managePatients: 'Gérer les patients',
     startDictation: 'Commencer la dictée',
     
+    // Dashboard descriptions
+    newCaseDescription: 'Commencer un nouveau dossier CNESST avec tous les formulaires requis',
+    sectionsAvailable: '15 sections disponibles',
+    formsCompletedTotal: 'total',
+    formsCompletedThisMonth: 'ce mois',
+    formsCompletedCount: 'formulaires ce mois-ci',
+    transcriptionsTotal: 'transcriptions',
+    transcriptionsAccuracy: 'Précision',
+    transcriptionsThisMonth: 'ce mois-ci',
+    patientsTotal: 'patients',
+    patientsActive: 'actifs',
+    patientsNewThisMonth: 'nouveaux ce mois',
+    dictationDescription: 'Commencer une session de dictée en temps réel avec transcription IA',
+    dictationAvgDuration: 'Durée moy',
+    dictationSessionsToday: 'aujourd\'hui',
+    
     // CNESST Form
     cnesstForm204: 'Formulaire CNESST 204',
     formSections: 'Sections du formulaire',
@@ -56,6 +72,19 @@ export const translations = {
     saved: 'Enregistré',
     ago: 'il y a',
     
+    // Form content
+    generalInformation: 'Informations générales',
+    patientName: 'Nom du patient',
+    enterPatientName: 'Entrez le nom du patient',
+    dateOfBirth: 'Date de naissance',
+    mainDiagnosis: 'Diagnostic principal',
+    describeMainDiagnosis: 'Décrivez le diagnostic principal...',
+    sectionContent: 'Contenu de la section',
+    observationsAndNotes: 'Observations et notes',
+    describeObservations: 'Décrivez les observations pour',
+    additionalNotes: 'Notes additionnelles',
+    additionalNotesPlaceholder: 'Notes additionnelles, commentaires...',
+    
     // Dictation
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
@@ -85,39 +114,28 @@ export const translations = {
     clearCache: 'Vider le cache',
     
     // Profile
-    basicInfo: 'Informations de base',
-    changePassword: 'Changer le mot de passe',
-    
-    // Common
-    loading: 'Chargement...',
-    error: 'Erreur',
-    success: 'Succès',
-    cancel: 'Annuler',
-    confirm: 'Confirmer',
-    close: 'Fermer',
-    edit: 'Modifier',
-    delete: 'Supprimer',
-    create: 'Créer',
-    update: 'Mettre à jour',
-    search: 'Rechercher',
-    filter: 'Filtrer',
-    sort: 'Trier',
-    view: 'Voir',
-    download: 'Télécharger',
-    upload: 'Téléverser',
-    preview: 'Aperçu',
-    save: 'Enregistrer',
-    
-    // Status
-    notStarted: 'Non commencé',
-    inProgress: 'En cours',
-    completed: 'Terminé',
-    
-    // Time
-    minutes: 'minutes',
-    hours: 'heures',
-    days: 'jours',
-    justNow: 'à l\'instant',
+    profileSettings: 'Paramètres du profil',
+    basicInformation: 'Informations de base',
+    displayName: 'Nom d\'affichage',
+    displayNamePlaceholder: 'Entrez votre nom d\'affichage',
+    displayNameRequired: 'Le nom d\'affichage est requis',
+    displayNameTooLong: 'Le nom d\'affichage doit contenir moins de 100 caractères',
+    language: 'Langue',
+    languageDescription: 'Langue préférée pour l\'interface',
+    englishCanada: 'Anglais (Canada)',
+    frenchCanada: 'Français (Canada)',
+    privacySettings: 'Paramètres de confidentialité',
+    pipedaConsent: 'Consentement PIPEDA',
+    pipedaDescription: 'J\'accepte le traitement de mes données selon la LPRPDE',
+    marketingConsent: 'Consentement marketing',
+    marketingDescription: 'J\'accepte de recevoir des communications marketing',
+    saveProfile: 'Enregistrer le profil',
+    profileUpdated: 'Profil mis à jour avec succès',
+    profileUpdateError: 'Erreur lors de la mise à jour du profil',
+    loadingProfile: 'Chargement du profil...',
+    noChanges: 'Aucun changement à enregistrer',
+    validationError: 'Erreur de validation',
+    fixErrors: 'Veuillez corriger les erreurs avant d\'enregistrer',
     
     // Breadcrumbs
     home: 'Accueil',
@@ -143,6 +161,22 @@ export const translations = {
     patients: 'Patients',
     managePatients: 'Manage patients',
     startDictation: 'Start dictation',
+    
+    // Dashboard descriptions
+    newCaseDescription: 'Start a new CNESST case with all required forms',
+    sectionsAvailable: '15 sections available',
+    formsCompletedTotal: 'total',
+    formsCompletedThisMonth: 'this month',
+    formsCompletedCount: 'forms this month',
+    transcriptionsTotal: 'transcriptions',
+    transcriptionsAccuracy: 'Accuracy',
+    transcriptionsThisMonth: 'this month',
+    patientsTotal: 'patients',
+    patientsActive: 'active',
+    patientsNewThisMonth: 'new this month',
+    dictationDescription: 'Start a real-time dictation session with AI transcription',
+    dictationAvgDuration: 'Avg Duration',
+    dictationSessionsToday: 'today',
     
     // CNESST Form
     cnesstForm204: 'CNESST Form 204',
@@ -178,6 +212,19 @@ export const translations = {
     saved: 'Saved',
     ago: 'ago',
     
+    // Form content
+    generalInformation: 'General Information',
+    patientName: 'Patient Name',
+    enterPatientName: 'Enter patient name',
+    dateOfBirth: 'Date of Birth',
+    mainDiagnosis: 'Main Diagnosis',
+    describeMainDiagnosis: 'Describe the main diagnosis...',
+    sectionContent: 'Section Content',
+    observationsAndNotes: 'Observations and Notes',
+    describeObservations: 'Describe observations for',
+    additionalNotes: 'Additional Notes',
+    additionalNotesPlaceholder: 'Additional notes, comments...',
+    
     // Dictation
     goToDictation: 'Go to Dictation',
     goToDictationPage: 'Go to Dictation page',
@@ -207,8 +254,28 @@ export const translations = {
     clearCache: 'Clear cache',
     
     // Profile
-    basicInfo: 'Basic information',
-    changePassword: 'Change password',
+    profileSettings: 'Profile Settings',
+    basicInformation: 'Basic Information',
+    displayName: 'Display Name',
+    displayNamePlaceholder: 'Enter your display name',
+    displayNameRequired: 'Display name is required',
+    displayNameTooLong: 'Display name must be less than 100 characters',
+    language: 'Language',
+    languageDescription: 'Preferred language for the interface',
+    englishCanada: 'English (Canada)',
+    frenchCanada: 'French (Canada)',
+    privacySettings: 'Privacy Settings',
+    pipedaConsent: 'PIPEDA Consent',
+    pipedaDescription: 'I consent to the processing of my data in accordance with the LPRPDE',
+    marketingConsent: 'Marketing Consent',
+    marketingDescription: 'I consent to receive marketing communications',
+    saveProfile: 'Save Profile',
+    profileUpdated: 'Profile updated successfully',
+    profileUpdateError: 'Error updating profile',
+    loadingProfile: 'Loading profile...',
+    noChanges: 'No changes to save',
+    validationError: 'Validation error',
+    fixErrors: 'Please fix errors before saving',
     
     // Common
     loading: 'Loading...',

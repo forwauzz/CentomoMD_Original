@@ -98,21 +98,21 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           {/* Basic Form Fields */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Informations générales</CardTitle>
+              <CardTitle className="text-lg">{t('generalInformation')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="patientName">Nom du patient</Label>
+                  <Label htmlFor="patientName">{t('patientName')}</Label>
                   <Input
                     id="patientName"
                     value={formData.patientName || ''}
                     onChange={(e) => handleInputChange('patientName', e.target.value)}
-                    placeholder="Entrez le nom du patient"
+                    placeholder={t('enterPatientName')}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dateOfBirth">Date de naissance</Label>
+                  <Label htmlFor="dateOfBirth">{t('dateOfBirth')}</Label>
                   <Input
                     id="dateOfBirth"
                     type="date"
@@ -123,12 +123,12 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
               </div>
               
               <div>
-                <Label htmlFor="diagnosis">Diagnostic principal</Label>
+                <Label htmlFor="diagnosis">{t('mainDiagnosis')}</Label>
                 <Textarea
                   id="diagnosis"
                   value={formData.diagnosis || ''}
                   onChange={(e) => handleInputChange('diagnosis', e.target.value)}
-                  placeholder="Décrivez le diagnostic principal..."
+                  placeholder={t('describeMainDiagnosis')}
                   rows={3}
                 />
               </div>
@@ -138,32 +138,34 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           {/* Section-specific content */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Contenu de la section</CardTitle>
+              <CardTitle className="text-lg">{t('sectionContent')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="observations">{t('observationsAndNotes')}</Label>
+                <Textarea
+                  id="observations"
+                  value={formData.observations || ''}
+                  onChange={(e) => handleInputChange('observations', e.target.value)}
+                  placeholder={`${t('describeObservations')} ${getSectionTitle(section, language)}...`}
+                  rows={6}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Additional Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t('additionalNotes')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="sectionContent">Observations et notes</Label>
-                  <Textarea
-                    id="sectionContent"
-                    value={formData.sectionContent || ''}
-                    onChange={(e) => handleInputChange('sectionContent', e.target.value)}
-                    placeholder={`Décrivez les observations pour ${getSectionTitle(section, language).toLowerCase()}...`}
-                    rows={8}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="additionalNotes">Notes additionnelles</Label>
-                  <Textarea
-                    id="additionalNotes"
-                    value={formData.additionalNotes || ''}
-                    onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
-                    placeholder="Notes additionnelles, commentaires..."
-                    rows={4}
-                  />
-                </div>
-              </div>
+              <Textarea
+                value={formData.additionalNotes || ''}
+                onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
+                placeholder={t('additionalNotesPlaceholder')}
+                rows={4}
+              />
             </CardContent>
           </Card>
 

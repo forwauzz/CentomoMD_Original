@@ -37,16 +37,16 @@ export const PatientsCard: React.FC = () => {
         <div className="space-y-2">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-blue-600">{stats.total}</span>
-            <span className="text-sm text-gray-500">patients</span>
+            <span className="text-sm text-gray-500">{t('patientsTotal')}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Activity className="h-4 w-4 text-green-500" />
-            <span>{stats.active} actifs</span>
+            <span>{stats.active} {t('patientsActive')}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <UserPlus className="h-3 w-3" />
-          <span>{stats.newThisMonth} nouveaux ce mois</span>
+          <span>{stats.newThisMonth} {t('patientsNewThisMonth')}</span>
         </div>
         <Button 
           onClick={handleManagePatients}

@@ -8,6 +8,7 @@ import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
+import { profileRoutes } from './routes/profile.js';
 import { securityMiddleware } from './server/security.js';
 import { authMiddleware } from './auth.js';
 import jwt from 'jsonwebtoken';
@@ -32,6 +33,9 @@ app.get('/health', (_req, res) => {
   
   // Auth endpoints
   app.post('/api/auth/ws-token', getWsToken);
+
+// Profile routes
+profileRoutes(app);
 
 // Template Library API Endpoints
 app.get('/api/templates', (req, res) => {

@@ -34,16 +34,16 @@ export const StartDictationCard: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-gray-600 text-sm">
-          Commencer une session de dictée en temps réel avec transcription IA
+          {t('dictationDescription')}
         </p>
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>Durée moy: {stats.avgDuration}</span>
+            <span>{t('dictationAvgDuration')}: {stats.avgDuration}</span>
           </div>
           <div className="flex items-center gap-1">
             <Play className="h-3 w-3" />
-            <span>{stats.sessionsToday} aujourd'hui</span>
+            <span>{stats.sessionsToday} {t('dictationSessionsToday')}</span>
           </div>
         </div>
         <Button 
