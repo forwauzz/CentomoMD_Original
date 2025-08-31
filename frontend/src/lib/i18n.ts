@@ -106,6 +106,7 @@ export const translations = {
     download: 'Télécharger',
     upload: 'Téléverser',
     preview: 'Aperçu',
+    save: 'Enregistrer',
     
     // Status
     notStarted: 'Non commencé',
@@ -227,6 +228,7 @@ export const translations = {
     download: 'Download',
     upload: 'Upload',
     preview: 'Preview',
+    save: 'Save',
     
     // Status
     notStarted: 'Not started',
