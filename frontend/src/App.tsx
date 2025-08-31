@@ -1,13 +1,56 @@
-import { useState } from 'react';
-import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { NewCasePage } from '@/pages/NewCasePage';
+import { DictationPage } from '@/pages/DictationPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
+import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
+import { useUIStore } from '@/stores/uiStore';
 
 function App() {
-  const [language, setLanguage] = useState<'fr' | 'en'>('en');
+  return (
+    <BrowserRouter>
+      <AppLayout>
+        <Routes>
+          {/* Default route redirects to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          
+          {/* New Case */}
+          <Route path="/case/new" element={<NewCasePage />} />
+          
+          {/* Templates */}
+          <Route path="/templates" element={<TemplateManagement />} />
+          
+          {/* Dictation */}
+          <Route path="/dictation" element={<DictationPage />} />
+          
+          {/* Settings */}
+          <Route path="/settings" element={<SettingsPage />} />
+          
+          {/* Profile */}
+          <Route path="/profile" element={<ProfilePage />} />
+          
+          {/* Legacy route for backward compatibility */}
+          <Route path="/legacy" element={<LegacyApp />} />
+        </Routes>
+      </AppLayout>
+    </BrowserRouter>
+  );
+}
+
+// Legacy App component for backward compatibility
+function LegacyApp() {
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [currentPage, setCurrentPage] = useState<'dictation' | 'templates'>('dictation');
+  const { language, setLanguage } = useUIStore();
 
   const handleSessionUpdate = (newSessionId: string) => {
     setSessionId(newSessionId);
