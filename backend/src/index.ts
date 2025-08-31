@@ -7,6 +7,7 @@ import { transcriptionService } from './services/transcriptionService.js';
 import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
+import { getConfig } from './routes/config.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// Config endpoint to expose flags to frontend
+app.get('/api/config', getConfig);
 
 // Template Library API Endpoints
 app.get('/api/templates', (req, res) => {
