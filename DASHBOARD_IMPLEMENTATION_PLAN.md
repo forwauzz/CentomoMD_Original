@@ -58,19 +58,19 @@ Transform the existing CentomoMD app into a comprehensive dashboard with collaps
 **Priority**: High
 
 #### 2.1 Dashboard Components
-- [ ] Create `DashboardPage.tsx` - Main dashboard
-- [ ] Create `DashboardCards.tsx` - 5-card grid layout
-- [ ] Create individual card components:
-  - `NewCaseCard.tsx` - CTA to /case/new
-  - `FormsCompletedCard.tsx` - Statistics stub
-  - `TranscriptionsCard.tsx` - AI transcriptions count
-  - `PatientsCard.tsx` - Patient management stub
-  - `StartDictationCard.tsx` - CTA to /dictation
+- [x] Create `DashboardPage.tsx` - Main dashboard
+- [x] Create `DashboardCards.tsx` - 5-card grid layout
+- [x] Create individual card components:
+  - [x] `NewCaseCard.tsx` - CTA to /case/new
+  - [x] `FormsCompletedCard.tsx` - Statistics stub
+  - [x] `TranscriptionsCard.tsx` - AI transcriptions count
+  - [x] `PatientsCard.tsx` - Patient management stub
+  - [x] `StartDictationCard.tsx` - CTA to /dictation
 
 #### 2.2 Dashboard Data
-- [ ] Create mock data for dashboard statistics
-- [ ] Add seed counts for development
-- [ ] Prepare for future backend integration
+- [x] Create mock data for dashboard statistics
+- [x] Add seed counts for development
+- [x] Prepare for future backend integration
 
 ### Phase 3: New Case Workspace
 **Duration**: 4-5 days
