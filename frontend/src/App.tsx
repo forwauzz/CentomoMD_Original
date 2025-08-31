@@ -6,6 +6,7 @@ import { DictationPage } from '@/pages/DictationPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
+import { LoginPage } from '@/pages/LoginPage';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,12 @@ import { useUIStore } from '@/stores/uiStore';
 function App() {
   return (
     <BrowserRouter>
-      <AppLayout>
-        <Routes>
+      <Routes>
+        {/* TODO: Add login route */}
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* TODO: App layout with existing routes (not protected yet) */}
+        <Route path="/" element={<AppLayout>}>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
@@ -40,8 +45,8 @@ function App() {
           
           {/* Legacy route for backward compatibility */}
           <Route path="/legacy" element={<LegacyApp />} />
-        </Routes>
-      </AppLayout>
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }
