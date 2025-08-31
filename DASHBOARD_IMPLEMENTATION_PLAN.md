@@ -77,7 +77,7 @@ Transform the existing CentomoMD app into a comprehensive dashboard with collaps
 **Priority**: High
 
 #### 3.1 CNESST Form Structure
-- [ ] Define exact CNESST Form 204 sections:
+- [x] Define exact CNESST Form 204 sections:
   ```typescript
   const CNESST_SECTIONS = [
     { id: 'section_a', title: 'A. Renseignements sur le travailleur', audioRequired: false },
@@ -90,17 +90,17 @@ Transform the existing CentomoMD app into a comprehensive dashboard with collaps
   ```
 
 #### 3.2 New Case Components
-- [ ] Create `NewCasePage.tsx` - Main workspace
-- [ ] Create `SecondarySectionNav.tsx` - Left sidebar with sections
-- [ ] Create `SectionForm.tsx` - Individual section form
-- [ ] Create `SectionFooter.tsx` - Sticky footer with navigation
-- [ ] Create `ExportModal.tsx` - Export options modal
+- [x] Create `NewCasePage.tsx` - Main workspace
+- [x] Create `SecondarySectionNav.tsx` - Left sidebar with sections
+- [x] Create `SectionForm.tsx` - Individual section form
+- [x] Create `SectionFooter.tsx` - Sticky footer with navigation
+- [x] Create `ExportModal.tsx` - Export options modal
 
 #### 3.3 Form Integration
-- [ ] Use existing `react-hook-form` + `zod` patterns
-- [ ] Create form schemas for each section
-- [ ] Implement autosave with Zustand persistence
-- [ ] Add validation and error handling
+- [x] Use existing `react-hook-form` + `zod` patterns
+- [x] Create form schemas for each section
+- [x] Implement autosave with Zustand persistence
+- [x] Add validation and error handling
 
 ### Phase 4: Minimal Dictation Integration
 **Duration**: 2-3 days
@@ -145,10 +145,13 @@ Transform the existing CentomoMD app into a comprehensive dashboard with collaps
 - [ ] WCAG AA accessibility compliance
 
 #### 6.2 i18n Integration
-- [ ] Create i18n helper if not exists
-- [ ] Add French/English translations
-- [ ] Persist language preference in localStorage
-- [ ] Use French as default (Quebec clinics)
+- [x] Create i18n helper if not exists
+- [x] Add French/English translations
+- [x] Persist language preference in localStorage
+- [x] Use French as default (Quebec clinics)
+- [x] Ensure language toggle affects all components
+- [x] Update CNESST section titles based on language
+- [x] Add missing translation keys for new components
 
 ## 🛠️ Technical Implementation Details
 
