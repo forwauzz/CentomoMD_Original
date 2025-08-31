@@ -79,8 +79,8 @@ export class TemplateLibraryService {
    */
   private loadTemplates(): void {
     try {
-      // Use relative path from the original template-library directory
-      const jsonPath = join(process.cwd(), 'template-library', 'json');
+      // Use relative path from the backend directory
+      const jsonPath = join(process.cwd(), 'src', 'template-library', 'json');
       
       // Load Section 7 templates (if they exist)
       const section7Path = join(jsonPath, 'section7');

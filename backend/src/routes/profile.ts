@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { authMiddleware } from '../middleware/authMiddleware.js';
-import { config } from '../config/environment.js';
 
 // TODO: Profile types - will be replaced with DB schema in PR7
 export interface Profile {
@@ -81,7 +79,7 @@ export const getProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch profile'
     });
@@ -119,6 +117,10 @@ export const updateProfile = async (req: Request, res: Response) => {
     const updatedProfile: Profile = {
       ...existingProfile,
       ...updates,
+      display_name: updates.display_name ?? existingProfile.display_name,
+      locale: updates.locale ?? existingProfile.locale,
+      consent_pipeda: updates.consent_pipeda ?? existingProfile.consent_pipeda,
+      consent_marketing: updates.consent_marketing ?? existingProfile.consent_marketing,
       updated_at: new Date(),
     };
     
@@ -135,7 +137,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error updating profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update profile'
     });
