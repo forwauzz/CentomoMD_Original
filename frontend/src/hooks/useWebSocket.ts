@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { WebSocketMessage, UseWebSocketReturn } from '@/types';
 import { createWebSocketUrl } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
@@ -13,9 +14,27 @@ export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketRe
   const maxReconnectAttempts = 3;
   const reconnectDelay = 2000;
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     try {
-      const wsUrl = createWebSocketUrl('/ws/transcription');
+      // TODO: Get WS token if auth is required
+      let wsUrl = createWebSocketUrl('/ws/transcription');
+      
+      try {
+        const config = await apiFetch('/api/config');
+        if (config.wsRequireAuth) {
+          // TODO: Get WS token from auth endpoint
+          const tokenResponse = await apiFetch('/api/auth/ws-token', {
+            method: 'POST',
+          });
+          
+          if (tokenResponse.wsToken) {
+            wsUrl += `?token=${encodeURIComponent(tokenResponse.wsToken)}`;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to get WS token, proceeding without auth:', error);
+      }
+      
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

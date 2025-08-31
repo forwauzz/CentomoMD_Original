@@ -7,7 +7,10 @@ import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
+import { getWsToken } from './routes/auth.js';
 import { securityMiddleware } from './server/security.js';
+import jwt from 'jsonwebtoken';
+import { env } from './config/environment.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -23,8 +26,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Config endpoint to expose flags to frontend
-app.get('/api/config', getConfig);
+  // Config endpoint to expose flags to frontend
+  app.get('/api/config', getConfig);
+  
+  // Auth endpoints
+  app.post('/api/auth/ws-token', getWsToken);
 
 // Template Library API Endpoints
 app.get('/api/templates', (req, res) => {
@@ -454,6 +460,47 @@ wss.on('connection', (ws, req) => {
   let endAudio: (() => void) | null = null;
 
   console.log("WebSocket connection established", { sessionId });
+  
+  // TODO: Add authentication here when WS_REQUIRE_AUTH is enabled
+  let authenticatedUser: { userId: string; userEmail: string } | null = null;
+  
+  if (env.WS_REQUIRE_AUTH) {
+    // TODO: Extract token from query params or headers
+    const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const token = url.searchParams.get('token');
+    
+    if (!token) {
+      console.log('WebSocket connection rejected: No token provided');
+      ws.close(1008, 'Authentication required');
+      return;
+    }
+    
+    try {
+      // TODO: Verify WS token
+      const decoded = jwt.verify(token, env.WS_JWT_SECRET || env.JWT_SECRET) as any;
+      
+      if (decoded.type !== 'ws_token') {
+        console.log('WebSocket connection rejected: Invalid token type');
+        ws.close(1008, 'Invalid token type');
+        return;
+      }
+      
+      authenticatedUser = {
+        userId: decoded.userId,
+        userEmail: decoded.userEmail,
+      };
+      
+      console.log(`WebSocket authenticated for user: ${authenticatedUser.userEmail}`);
+      
+    } catch (error) {
+      console.log('WebSocket connection rejected: Invalid token');
+      ws.close(1008, 'Invalid token');
+      return;
+    }
+  }
+  
+  // TODO: Add user context to connection
+  (ws as any).user = authenticatedUser;
 
   ws.on('message', async (data, isBinary) => {
     if (!started) {
