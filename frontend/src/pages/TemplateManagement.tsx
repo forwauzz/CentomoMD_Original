@@ -18,11 +18,44 @@ import {
   Clock,
   Star,
   Download,
-  Upload
+  Upload,
+  BarChart3,
+  History,
+  Settings,
+  CheckSquare,
+  Square,
+  MoreHorizontal,
+  TrendingUp,
+  Users,
+  Activity
 } from 'lucide-react';
 import { TemplateJSON } from '@/components/transcription/TemplateDropdown';
 import { TemplateModal } from '@/components/templates/TemplateModal';
 import { TemplatePreview } from '@/components/transcription/TemplatePreview';
+
+interface TemplateAnalytics {
+  total_usage: number;
+  average_performance: number;
+  usage_by_section: Record<string, number>;
+  usage_by_language: Record<string, number>;
+  recent_usage: Array<{
+    templateId: string;
+    section: string;
+    language: string;
+    used_at: string;
+    performance_rating?: number;
+  }>;
+  top_templates: Array<{ id: string; title: string; usage_count: number }>;
+}
+
+interface TemplateVersion {
+  id: string;
+  templateId: string;
+  version: string;
+  content: string;
+  changes: string[];
+  created_at: string;
+}
 
 interface TemplateManagementProps {
   // Add any props if needed
@@ -36,21 +69,40 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
   const [selectedSection, setSelectedSection] = useState<'all' | '7' | '8' | '11'>('all');
   const [selectedLanguage, setSelectedLanguage] = useState<'all' | 'fr' | 'en'>('all');
   const [selectedComplexity, setSelectedComplexity] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+  
+  // Advanced features state
+  const [analytics, setAnalytics] = useState<TemplateAnalytics | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<'none' | 'status' | 'delete'>('none');
+  const [bulkStatus, setBulkStatus] = useState<'active' | 'inactive' | 'draft'>('active');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedSearchCriteria, setAdvancedSearchCriteria] = useState({
+    section: '',
+    language: '',
+    complexity: '',
+    tags: [] as string[],
+    query: '',
+    status: '',
+    is_default: undefined as boolean | undefined
+  });
 
   // Load templates on component mount
   useEffect(() => {
     loadTemplates();
+    loadAnalytics();
   }, []);
 
   // Filter templates when search or filters change
   useEffect(() => {
     filterTemplates();
-  }, [templates, searchTerm, selectedSection, selectedLanguage, selectedComplexity]);
+  }, [templates, searchTerm, selectedSection, selectedLanguage, selectedComplexity, selectedStatus]);
 
   const loadTemplates = async () => {
     setLoading(true);
@@ -83,6 +135,20 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
     }
   };
 
+  const loadAnalytics = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/templates/analytics');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setAnalytics(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    }
+  };
+
   const filterTemplates = () => {
     let filtered = templates;
 
@@ -110,7 +176,33 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
       filtered = filtered.filter(template => template.complexity === selectedComplexity);
     }
 
+    // Apply status filter
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(template => template.status === selectedStatus);
+    }
+
     setFilteredTemplates(filtered);
+  };
+
+  const performAdvancedSearch = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/templates/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(advancedSearchCriteria),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setFilteredTemplates(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error performing advanced search:', error);
+    }
   };
 
   const handleCreateTemplate = () => {
@@ -197,14 +289,137 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
     }
   };
 
-  const handleExportTemplates = () => {
-    // TODO: Implement export functionality
-    console.log('Exporting templates...');
+  const handleExportTemplates = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/templates/export${selectedSection !== 'all' ? `?section=${selectedSection}` : ''}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const dataStr = JSON.stringify(result.data, null, 2);
+          const dataBlob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(dataBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `templates_export_${new Date().toISOString().split('T')[0]}.json`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+    } catch (error) {
+      console.error('Error exporting templates:', error);
+      alert('Failed to export templates. Please try again.');
+    }
   };
 
   const handleImportTemplates = () => {
-    // TODO: Implement import functionality
-    console.log('Importing templates...');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          const text = await file.text();
+          const templates = JSON.parse(text);
+          
+          const response = await fetch('http://localhost:3001/api/templates/import', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ templates }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              await loadTemplates();
+            }
+          }
+        } catch (error) {
+          console.error('Error importing templates:', error);
+          alert('Failed to import templates. Please check the file format.');
+        }
+      }
+    };
+    input.click();
+  };
+
+  const handleBulkAction = async () => {
+    if (selectedVersions.length === 0) {
+      alert('Please select templates to perform bulk action.');
+      return;
+    }
+
+    if (bulkAction === 'status') {
+      try {
+        const response = await fetch('http://localhost:3001/api/templates/bulk/status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            templateIds: selectedVersions,
+            status: bulkStatus
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            alert(result.message);
+            setSelectedVersions([]);
+            await loadTemplates();
+          }
+        }
+      } catch (error) {
+        console.error('Error performing bulk status update:', error);
+        alert('Failed to update templates. Please try again.');
+      }
+    } else if (bulkAction === 'delete') {
+      if (window.confirm(`Are you sure you want to delete ${selectedVersions.length} templates?`)) {
+        try {
+          const response = await fetch('http://localhost:3001/api/templates/bulk/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              templateIds: selectedVersions
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              setSelectedVersions([]);
+              await loadTemplates();
+            }
+          }
+        } catch (error) {
+          console.error('Error performing bulk delete:', error);
+          alert('Failed to delete templates. Please try again.');
+        }
+      }
+    }
+  };
+
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedVersions(prev => 
+      prev.includes(templateId) 
+        ? prev.filter(id => id !== templateId)
+        : [...prev, templateId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedVersions.length === filteredTemplates.length) {
+      setSelectedVersions([]);
+    } else {
+      setSelectedVersions(filteredTemplates.map(t => t.id!));
+    }
   };
 
   const getComplexityColor = (complexity: string) => {
@@ -221,6 +436,15 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
       case '7': return 'bg-blue-100 text-blue-800';
       case '8': return 'bg-purple-100 text-purple-800';
       case '11': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -247,6 +471,14 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
         <div className="flex items-center space-x-3">
           <Button
             variant="outline"
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className="flex items-center space-x-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Analytics</span>
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleImportTemplates}
             className="flex items-center space-x-2"
           >
@@ -271,10 +503,79 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
         </div>
       </div>
 
+      {/* Analytics Dashboard */}
+      {showAnalytics && analytics && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>Template Analytics</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm text-blue-600">Total Usage</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-900">{analytics.total_usage}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  <span className="text-sm text-green-600">Avg Performance</span>
+                </div>
+                <p className="text-2xl font-bold text-green-900">{analytics.average_performance.toFixed(1)}%</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  <span className="text-sm text-purple-600">Active Templates</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-900">{templates.filter(t => t.status === 'active').length}</p>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                  <span className="text-sm text-orange-600">Recent Usage</span>
+                </div>
+                <p className="text-2xl font-bold text-orange-900">{analytics.recent_usage.length}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold mb-3">Top Templates</h4>
+                <div className="space-y-2">
+                  {analytics.top_templates.slice(0, 5).map((template, index) => (
+                    <div key={template.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{index + 1}. {template.title}</span>
+                      <Badge variant="secondary">{template.usage_count} uses</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">Usage by Section</h4>
+                <div className="space-y-2">
+                  {Object.entries(analytics.usage_by_section).map(([section, count]) => (
+                    <div key={section} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">Section {section}</span>
+                      <Badge variant="secondary">{count} uses</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters and Search */}
       <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
@@ -329,6 +630,20 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
               </select>
             </div>
 
+            {/* Status Filter */}
+            <div>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as any)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+
             {/* View Mode Toggle */}
             <div className="flex items-center space-x-2">
               <Button
@@ -347,11 +662,108 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
               </Button>
             </div>
           </div>
+
+          {/* Advanced Search Toggle */}
+          <div className="mt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+              className="flex items-center space-x-2"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Advanced Search</span>
+            </Button>
+          </div>
+
+          {/* Advanced Search Panel */}
+          {showAdvancedSearch && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  placeholder="Search query..."
+                  value={advancedSearchCriteria.query}
+                  onChange={(e) => setAdvancedSearchCriteria(prev => ({ ...prev, query: e.target.value }))}
+                />
+                <Input
+                  placeholder="Tags (comma-separated)"
+                  value={advancedSearchCriteria.tags.join(', ')}
+                  onChange={(e) => setAdvancedSearchCriteria(prev => ({ 
+                    ...prev, 
+                    tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
+                  }))}
+                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_default"
+                    checked={advancedSearchCriteria.is_default}
+                    onChange={(e) => setAdvancedSearchCriteria(prev => ({ 
+                      ...prev, 
+                      is_default: e.target.checked ? true : undefined
+                    }))}
+                  />
+                  <label htmlFor="is_default" className="text-sm">Default templates only</label>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Button onClick={performAdvancedSearch} size="sm">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* Bulk Operations */}
+      {selectedVersions.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  {selectedVersions.length} template(s) selected
+                </span>
+                <select
+                  value={bulkAction}
+                  onChange={(e) => setBulkAction(e.target.value as any)}
+                  className="p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="none">Select Action</option>
+                  <option value="status">Update Status</option>
+                  <option value="delete">Delete</option>
+                </select>
+                {bulkAction === 'status' && (
+                  <select
+                    value={bulkStatus}
+                    onChange={(e) => setBulkStatus(e.target.value as any)}
+                    className="p-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="draft">Draft</option>
+                  </select>
+                )}
+                <Button onClick={handleBulkAction} size="sm" variant="destructive">
+                  Apply
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedVersions([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -402,6 +814,19 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {templates.filter(t => t.status === 'active').length}
+                </p>
+              </div>
+              <Badge className="bg-green-100 text-green-800">Active</Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Templates Grid/List */}
@@ -412,10 +837,18 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-2">
-                      {template.title}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2 mt-2">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedVersions.includes(template.id!)}
+                        onChange={() => handleSelectTemplate(template.id!)}
+                        className="rounded"
+                      />
+                      <CardTitle className="text-lg font-semibold text-gray-900 line-clamp-2">
+                        {template.title}
+                      </CardTitle>
+                    </div>
+                    <div className="flex items-center space-x-2">
                       <Badge className={getSectionColor(template.section)}>
                         Section {template.section}
                       </Badge>
@@ -425,6 +858,11 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
                       <Badge className={`text-xs ${getComplexityColor(template.complexity)}`}>
                         {template.complexity}
                       </Badge>
+                      {template.status && (
+                        <Badge className={`text-xs ${getStatusColor(template.status)}`}>
+                          {template.status}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
@@ -477,7 +915,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
                   <span>{template.category || 'General'}</span>
                   <div className="flex items-center space-x-1">
                     <Clock className="h-3 w-3" />
-                    <span>Updated recently</span>
+                    <span>{template.usage_count || 0} uses</span>
                   </div>
                 </div>
               </CardContent>
@@ -486,12 +924,29 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
         </div>
       ) : (
         <div className="space-y-4">
+          {/* List Header */}
+          <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+            <input
+              type="checkbox"
+              checked={selectedVersions.length === filteredTemplates.length && filteredTemplates.length > 0}
+              onChange={handleSelectAll}
+              className="rounded"
+            />
+            <span className="text-sm font-medium text-gray-600">Select All</span>
+          </div>
+          
           {filteredTemplates.map((template, index) => (
             <Card key={index} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedVersions.includes(template.id!)}
+                        onChange={() => handleSelectTemplate(template.id!)}
+                        className="rounded"
+                      />
                       <h3 className="text-lg font-semibold text-gray-900">
                         {template.title}
                       </h3>
@@ -504,6 +959,11 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
                       <Badge className={`text-xs ${getComplexityColor(template.complexity)}`}>
                         {template.complexity}
                       </Badge>
+                      {template.status && (
+                        <Badge className={`text-xs ${getStatusColor(template.status)}`}>
+                          {template.status}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                       {template.content}
@@ -571,35 +1031,35 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
         </Card>
       )}
 
-             {/* Modals */}
-       <TemplateModal
-         isOpen={showCreateModal}
-         onClose={() => setShowCreateModal(false)}
-         onSave={handleSaveTemplate}
-         mode="create"
-       />
+      {/* Modals */}
+      <TemplateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleSaveTemplate}
+        mode="create"
+      />
 
-       <TemplateModal
-         isOpen={showEditModal}
-         onClose={() => setShowEditModal(false)}
-         onSave={handleSaveTemplate}
-         template={selectedTemplate}
-         mode="edit"
-       />
+      <TemplateModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveTemplate}
+        template={selectedTemplate}
+        mode="edit"
+      />
 
-       {selectedTemplate && (
-         <TemplatePreview
-           template={selectedTemplate}
-           isOpen={showPreviewModal}
-           onClose={() => setShowPreviewModal(false)}
-           onSelect={(template) => {
-             setShowPreviewModal(false);
-             // Handle template selection if needed
-           }}
-           currentSection={selectedTemplate.section}
-           currentLanguage={selectedTemplate.language}
-         />
-       )}
+      {selectedTemplate && (
+        <TemplatePreview
+          template={selectedTemplate}
+          isOpen={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
+          onSelect={(template) => {
+            setShowPreviewModal(false);
+            // Handle template selection if needed
+          }}
+          currentSection={selectedTemplate.section}
+          currentLanguage={selectedTemplate.language}
+        />
+      )}
     </div>
   );
 };

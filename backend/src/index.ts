@@ -60,38 +60,6 @@ app.get('/api/templates/stats', (req, res) => {
   }
 });
 
-app.get('/api/templates/:section', (req, res) => {
-  try {
-    const { section } = req.params;
-    const { language, search, tags } = req.query;
-    
-    if (!['7', '8', '11'].includes(section)) {
-      return res.status(400).json({ success: false, error: 'Invalid section' });
-    }
-    
-    let templates = templateLibrary.getTemplatesBySection(section as "7" | "8" | "11");
-    
-    // Apply filters
-    if (language) {
-      templates = templates.filter(t => !t.language || t.language === language);
-    }
-    
-    if (search) {
-      templates = templateLibrary.searchTemplates(section as "7" | "8" | "11", search as string);
-    }
-    
-    if (tags) {
-      const tagArray = Array.isArray(tags) ? tags : [tags];
-      templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
-    }
-    
-    res.json({ success: true, data: templates });
-  } catch (error) {
-    console.error('Error fetching templates by section:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
-  }
-});
-
 // AI Formatting API Endpoint
 app.post('/api/templates/format', (req, res) => {
   try {
@@ -254,6 +222,223 @@ app.delete('/api/templates/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting template:', error);
     res.status(500).json({ success: false, error: 'Failed to delete template' });
+  }
+});
+
+// Advanced Template Features API Endpoints
+
+// Get template versions
+app.get('/api/templates/:id/versions', (req, res) => {
+  try {
+    const { id } = req.params;
+    const versions = templateLibrary.getTemplateVersions(id);
+    
+    res.json({ 
+      success: true, 
+      data: versions 
+    });
+  } catch (error) {
+    console.error('Error fetching template versions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch template versions' });
+  }
+});
+
+// Get template analytics
+app.get('/api/templates/analytics', (req, res) => {
+  try {
+    const analytics = templateLibrary.getAnalytics();
+    
+    res.json({ 
+      success: true, 
+      data: analytics 
+    });
+  } catch (error) {
+    console.error('Error fetching template analytics:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch template analytics' });
+  }
+});
+
+// Get templates by section (must come after /analytics to avoid route conflict)
+app.get('/api/templates/:section', (req, res) => {
+  try {
+    const { section } = req.params;
+    const { language, search, tags } = req.query;
+    
+    if (!['7', '8', '11'].includes(section)) {
+      return res.status(400).json({ success: false, error: 'Invalid section' });
+    }
+    
+    let templates = templateLibrary.getTemplatesBySection(section as "7" | "8" | "11");
+    
+    // Apply filters
+    if (language) {
+      templates = templates.filter(t => !t.language || t.language === language);
+    }
+    
+    if (search) {
+      templates = templateLibrary.searchTemplates(section as "7" | "8" | "11", search as string);
+    }
+    
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : [tags];
+      templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
+    }
+    
+    res.json({ success: true, data: templates });
+  } catch (error) {
+    console.error('Error fetching templates by section:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+  }
+});
+
+// Track template usage
+app.post('/api/templates/:id/usage', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { section, language, user_id, session_id, performance_rating } = req.body;
+    
+    if (!section || !language) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: section, language' 
+      });
+    }
+    
+    await templateLibrary.trackUsage({
+      templateId: id,
+      section,
+      language,
+      user_id,
+      session_id,
+      performance_rating
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Usage tracked successfully'
+    });
+  } catch (error) {
+    console.error('Error tracking template usage:', error);
+    res.status(500).json({ success: false, error: 'Failed to track usage' });
+  }
+});
+
+// Advanced search
+app.post('/api/templates/search', (req, res) => {
+  try {
+    const { section, language, complexity, tags, query, status, is_default } = req.body;
+    
+    const templates = templateLibrary.advancedSearch({
+      section,
+      language,
+      complexity,
+      tags,
+      query,
+      status,
+      is_default
+    });
+    
+    res.json({ 
+      success: true, 
+      data: templates 
+    });
+  } catch (error) {
+    console.error('Error performing advanced search:', error);
+    res.status(500).json({ success: false, error: 'Failed to perform search' });
+  }
+});
+
+// Export templates
+app.get('/api/templates/export', (req, res) => {
+  try {
+    const { section } = req.query;
+    const templates = templateLibrary.exportTemplates(section as "7" | "8" | "11");
+    
+    res.json({ 
+      success: true, 
+      data: templates 
+    });
+  } catch (error) {
+    console.error('Error exporting templates:', error);
+    res.status(500).json({ success: false, error: 'Failed to export templates' });
+  }
+});
+
+// Import templates
+app.post('/api/templates/import', async (req, res) => {
+  try {
+    const { templates } = req.body;
+    
+    if (!Array.isArray(templates)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Templates must be an array' 
+      });
+    }
+    
+    await templateLibrary.importTemplates(templates);
+    
+    res.json({ 
+      success: true, 
+      message: `${templates.length} templates imported successfully`
+    });
+  } catch (error) {
+    console.error('Error importing templates:', error);
+    res.status(500).json({ success: false, error: 'Failed to import templates' });
+  }
+});
+
+// Bulk operations
+app.post('/api/templates/bulk/status', async (req, res) => {
+  try {
+    const { templateIds, status } = req.body;
+    
+    if (!Array.isArray(templateIds) || !status) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: templateIds (array), status' 
+      });
+    }
+    
+    if (!['active', 'inactive', 'draft'].includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid status. Must be active, inactive, or draft' 
+      });
+    }
+    
+    await templateLibrary.bulkUpdateStatus(templateIds, status);
+    
+    res.json({ 
+      success: true, 
+      message: `${templateIds.length} templates updated successfully`
+    });
+  } catch (error) {
+    console.error('Error performing bulk status update:', error);
+    res.status(500).json({ success: false, error: 'Failed to update templates' });
+  }
+});
+
+app.post('/api/templates/bulk/delete', async (req, res) => {
+  try {
+    const { templateIds } = req.body;
+    
+    if (!Array.isArray(templateIds)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'templateIds must be an array' 
+      });
+    }
+    
+    await templateLibrary.bulkDelete(templateIds);
+    
+    res.json({ 
+      success: true, 
+      message: `${templateIds.length} templates deleted successfully`
+    });
+  } catch (error) {
+    console.error('Error performing bulk delete:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete templates' });
   }
 });
 
