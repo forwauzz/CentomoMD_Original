@@ -6,6 +6,7 @@ import cors from 'cors';
 import { transcriptionService } from './services/transcriptionService.js';
 import { TranscriptionConfig, TranscriptionResult } from './types/index.js';
 import { templateLibrary } from './template-library/index.js';
+import { AIFormattingService } from './services/aiFormattingService.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -16,6 +17,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
 }));
+
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
@@ -84,6 +89,44 @@ app.get('/api/templates/:section', (req, res) => {
   } catch (error) {
     console.error('Error fetching templates by section:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+  }
+});
+
+// AI Formatting API Endpoint
+app.post('/api/templates/format', (req, res) => {
+  try {
+    const { content, section, language, complexity } = req.body;
+    
+    if (!content || !section || !language) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: content, section, language' 
+      });
+    }
+    
+    if (!['7', '8', '11'].includes(section)) {
+      return res.status(400).json({ success: false, error: 'Invalid section' });
+    }
+    
+    if (!['fr', 'en'].includes(language)) {
+      return res.status(400).json({ success: false, error: 'Invalid language' });
+    }
+    
+    const formattingOptions = {
+      section: section as "7" | "8" | "11",
+      language: language as "fr" | "en",
+      complexity: complexity as "low" | "medium" | "high" || "medium"
+    };
+    
+    const formattedContent = AIFormattingService.formatTemplateContent(content, formattingOptions);
+    
+    res.json({ 
+      success: true, 
+      data: formattedContent 
+    });
+  } catch (error) {
+    console.error('Error formatting template content:', error);
+    res.status(500).json({ success: false, error: 'Failed to format template content' });
   }
 });
 

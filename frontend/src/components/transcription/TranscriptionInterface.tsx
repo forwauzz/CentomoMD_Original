@@ -8,7 +8,8 @@ import { useTranscription } from '@/hooks/useTranscription';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
-import { TemplateDropdown } from './TemplateDropdown';
+import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
+import { FormattingService, FormattingOptions } from '@/services/formattingService';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -27,6 +28,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [audioLevel, setAudioLevel] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTranscript, setEditedTranscript] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+  const [templateContent, setTemplateContent] = useState<string>('');
 
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
@@ -166,6 +169,62 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
   }, []);
 
+  // Template content injection with AI formatting
+  const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
+    console.log('Injecting template content:', template.title);
+    
+    try {
+      // Apply AI formatting to template content
+      const formattingOptions: FormattingOptions = {
+        section: template.section,
+        language: template.language || 'fr',
+        complexity: template.complexity || 'medium'
+      };
+      
+      const formattedResult = await FormattingService.formatTemplateContent(
+        template.content, 
+        formattingOptions
+      );
+      
+      console.log('AI formatting applied:', formattedResult.changes);
+      
+      // Use formatted content
+      const formattedContent = `[Template: ${template.title}]\n\n${formattedResult.formatted}\n\n`;
+      
+      if (isEditing) {
+        setEditedTranscript(prev => prev + formattedContent);
+      } else {
+        setTemplateContent(formattedContent);
+      }
+      
+      // Show success message with formatting info
+      console.log('Template content injected successfully with AI formatting');
+      console.log('Compliance:', formattedResult.compliance);
+      
+    } catch (error) {
+      console.error('Error applying AI formatting:', error);
+      
+      // Fallback to basic formatting
+      const basicFormatted = FormattingService.applyBasicFormatting(
+        template.content,
+        {
+          section: template.section,
+          language: template.language || 'fr'
+        }
+      );
+      
+      const formattedContent = `[Template: ${template.title}]\n\n${basicFormatted}\n\n`;
+      
+      if (isEditing) {
+        setEditedTranscript(prev => prev + formattedContent);
+      } else {
+        setTemplateContent(formattedContent);
+      }
+      
+      console.log('Template content injected with basic formatting (fallback)');
+    }
+  }, [isEditing]);
+
   // Debug: Check recording state
   console.log('TranscriptionInterface: isRecording =', isRecording, 'selectedLanguage =', selectedLanguage);
 
@@ -207,9 +266,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 <TemplateDropdown
                   currentSection={activeSection.replace('section_', '') as "7" | "8" | "11"}
                   currentLanguage={selectedLanguage === 'fr-CA' ? 'fr' : 'en'}
+                  selectedTemplate={selectedTemplate}
                   onTemplateSelect={(template) => {
                     console.log('Template selected:', template);
-                    // TODO: Implement template content injection
+                    setSelectedTemplate(template);
+                    setTemplateContent(template.content);
+                    
+                    // Inject template content into the transcript
+                    injectTemplateContent(template);
                   }}
                 />
               </div>
@@ -348,6 +412,44 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Template Content Display */}
+              {selectedTemplate && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">
+                        Template Selected: {selectedTemplate.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => injectTemplateContent(selectedTemplate)}
+                        className="h-6 px-2 text-xs bg-green-100 text-green-700 hover:bg-green-200"
+                      >
+                        Format
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTemplate(null);
+                          setTemplateContent('');
+                        }}
+                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-700 bg-white p-2 rounded border max-h-32 overflow-y-auto">
+                    {templateContent}
+                  </div>
+                </div>
+              )}
+
               {/* Final Transcript Text Area */}
               <div className="min-h-[200px] bg-gray-50 rounded-md p-4">
                 {isEditing ? (
