@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '../database/connection.js';
@@ -163,10 +163,14 @@ export const updateProfile = async (req: Request, res: Response) => {
 };
 
 // Profile routes - apply auth middleware only when AUTH_REQUIRED=true
-export const profileRoutes = (router: any) => {
+export const profileRoutes = (app: any) => {
   console.log('Registering profile routes - AUTH DISABLED FOR TESTING');
   
+  const router = Router();
+  
   // TODO: Temporarily disable auth for testing
-  router.get('/api/profile', getProfile);
-  router.patch('/api/profile', updateProfile);
+  router.get('/', getProfile);
+  router.patch('/', updateProfile);
+  
+  app.use('/api/profile', router);
 };

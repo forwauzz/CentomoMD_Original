@@ -1,3 +1,4 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { client } from './connection.js';
 import * as fs from 'fs';
@@ -8,8 +9,11 @@ async function runMigrations() {
   try {
     console.log('Running database migrations...');
     
+    // Create drizzle instance for migrations
+    const db = drizzle(client);
+    
     // Run Drizzle migrations
-    await migrate(client, { migrationsFolder: './drizzle' });
+    await migrate(db, { migrationsFolder: './drizzle' });
     console.log('✅ Database migrations completed successfully');
     
     // Apply RLS policies
