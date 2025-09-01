@@ -120,7 +120,7 @@ export const translations = {
     displayNamePlaceholder: 'Entrez votre nom d\'affichage',
     displayNameRequired: 'Le nom d\'affichage est requis',
     displayNameTooLong: 'Le nom d\'affichage doit contenir moins de 100 caractères',
-    language: 'Langue',
+    profileLanguage: 'Langue',
     languageDescription: 'Langue préférée pour l\'interface',
     englishCanada: 'Anglais (Canada)',
     frenchCanada: 'Français (Canada)',
@@ -139,7 +139,7 @@ export const translations = {
     
     // Breadcrumbs
     home: 'Accueil',
-    newCase: 'Nouveau dossier',
+    breadcrumbNewCase: 'Nouveau dossier',
     section: 'Section',
   },
   
@@ -260,7 +260,7 @@ export const translations = {
     displayNamePlaceholder: 'Enter your display name',
     displayNameRequired: 'Display name is required',
     displayNameTooLong: 'Display name must be less than 100 characters',
-    language: 'Language',
+    profileLanguage: 'Language',
     languageDescription: 'Preferred language for the interface',
     englishCanada: 'English (Canada)',
     frenchCanada: 'French (Canada)',
@@ -294,8 +294,8 @@ export const translations = {
     view: 'View',
     download: 'Download',
     upload: 'Upload',
-    preview: 'Preview',
-    save: 'Save',
+    commonPreview: 'Preview',
+    commonSave: 'Save',
     
     // Status
     notStarted: 'Not started',
@@ -310,7 +310,7 @@ export const translations = {
     
     // Breadcrumbs
     home: 'Home',
-    newCase: 'New Case',
+    breadcrumbNewCase: 'New Case',
     section: 'Section',
   },
 } as const;
