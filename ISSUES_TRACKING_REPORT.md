@@ -349,36 +349,52 @@ router.post('/', async (_req, res) => {
 
 ---
 
-### **Phase 5: RLS Implementation (PR7) - P1**
+### **Phase 5: RLS Staging Validation & Auth Flag Testing - P1**
 **Status:** 🟡 **HIGH PRIORITY**
-**Priority:** P1 (after Phases 1-3)
+**Priority:** P1 (after Phases 1-4)
 
-**Why:** Data isolation is core, but don't block yourself before FE/BE talk.
+**Why:** Test the implemented RLS system and gradually enable security features.
 
-#### 5.1 Staging RLS Setup
+#### 5.1 RLS Staging Validation
 - **Task:** Run RLS SQL (choose Global templates for now)
 - **Task:** Seed memberships for test users
 - **Task:** Ensure session inserts always include `clinic_id`
 
-#### 5.2 Acceptance Criteria
+#### 5.2 Gradual Auth Flag Testing
+- **Task:** Test `WS_REQUIRE_AUTH=true` in staging (PR3 validation)
+- **Task:** Test `AUTH_REQUIRED=true` in staging (PR4-PR5 validation)
+- **Task:** Verify dictation path and API protection work correctly
+
+#### 5.3 Acceptance Criteria
 - ✅ As User A: `select * from sessions` → only Clinic A rows
 - ✅ As User A: `select * from transcripts` → only Clinic A (via session)
+- ✅ Unauthorized calls 401 on gated routes; others unchanged
 
 ---
 
-### **Phase 6: Gradual Auth Flags - P2**
+### **Phase 6: PR8 - Expand HTTP Protection + Cleanups - P2**
 **Status:** 🟡 **MEDIUM PRIORITY**
 **Priority:** P2
 
-**Why:** Keep rollouts reversible.
+**Why:** Widen auth surface after confidence and remove legacy code.
 
-#### 6.1 Auth Implementation Strategy
-- **Task:** Keep `AUTH_REQUIRED=false`, `WS_REQUIRE_AUTH=false` until staging is green
-- **Task:** PR3 (WS token) ON in staging; verify dictation path
-- **Task:** PR4-PR5 (HTTP + FE guards) on highest-risk endpoints/pages first
+#### 6.1 Expand HTTP Protection
+- **Task:** Protect all `/api/templates*` endpoints with `authMiddleware`
+- **Task:** Protect `/api/profile` always
+- **Task:** Ensure comprehensive API coverage
 
-#### 6.2 Acceptance Criteria
-- ✅ Unauthorized calls 401 on gated routes; others unchanged
+#### 6.2 Legacy Cleanup
+- **Task:** Remove legacy envs: `JWT_SECRET`, `BCRYPT_ROUNDS` from `env.example`
+- **Task:** Clean up unused authentication code
+
+#### 6.3 Audit Logging
+- **Task:** Ensure audit logs redact PII
+- **Task:** Add event logging for login/logout, dictation start/stop, template access
+
+#### 6.4 Acceptance Criteria
+- ✅ All `/api/templates*` 401 without Bearer when `AUTH_REQUIRED=true`
+- ✅ No tokens or query strings in logs
+- ✅ Comprehensive audit trail implemented
 
 ---
 
@@ -391,16 +407,21 @@ router.post('/', async (_req, res) => {
 - **Task:** Helmet + strict CORS allowlist
 - **Task:** Audit logs (no PII), redact tokens/queries in logs
 
+#### 7.2 Rollback Strategy
+- **Task:** Restrict `authMiddleware` to smaller set if issues arise
+- **Task:** Set `AUTH_REQUIRED=false` flag for emergency rollback
+
 ---
 
 ## 📋 **TL;DR Priority List**
 
-1. **Fix TS errors + env wrapper** (can't build)
-2. **Fix FE↔BE connectivity** (can't test)
-3. **Dedupe template library** (remove conflicts)
-4. **Staging RLS (PR7)** with memberships + clinic_id on session writes
-5. **Gradual auth flags** (PR3→PR5)
-6. **Warnings & ops hardening**
+1. **Fix TS errors + env wrapper** ✅ (can't build)
+2. **Fix FE↔BE connectivity** ✅ (can't test)
+3. **Dedupe template library** ✅ (remove conflicts)
+4. **Frontend warning cleanup** ✅ (cleaner development)
+5. **RLS staging validation** (test implemented PR7)
+6. **PR8: Expand HTTP protection** (widen auth surface)
+7. **Hygiene & ops hardening** (rate limiting, audit logs)
 
 ---
 

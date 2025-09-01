@@ -21,8 +21,18 @@ console.log('  - S3_BUCKET_NAME length:', process.env['S3_BUCKET_NAME'] ? proces
 console.log('  - S3_BUCKET_NAME raw:', JSON.stringify(process.env['S3_BUCKET_NAME']));
 console.log('  - ENCRYPTION_KEY:', process.env['ENCRYPTION_KEY'] ? `${process.env['ENCRYPTION_KEY'].length} chars` : 'NOT SET');
 
+// PostgreSQL URL validation function
+const isPgUrl = (u: string) => {
+  try { 
+    const p = new URL(u); 
+    return /^(postgres|postgresql):$/.test(p.protocol); 
+  } catch { 
+    return false; 
+  }
+};
+
 // Environment schema validation
-const envSchema = z.object({
+export const envSchema = z.object({
   // Application Configuration
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number).default('3001'),
@@ -30,32 +40,32 @@ const envSchema = z.object({
 
   // AWS Configuration
   AWS_REGION: z.string().default('ca-central-1'),
-  AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS_ACCESS_KEY_ID is required'),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS_SECRET_ACCESS_KEY is required'),
+  AWS_ACCESS_KEY_ID: z.string().min(1),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1),
 
-  // Supabase Configuration (optional for development)
-  SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL').optional().default('https://placeholder.supabase.co'),
-  SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY is required').optional().default('placeholder-key'),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required').optional().default('placeholder-service-key'),
-  SUPABASE_JWT_SECRET: z.string().min(1, 'SUPABASE_JWT_SECRET is required').optional().default('placeholder-jwt-secret'),
+  // Supabase Configuration
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_JWT_SECRET: z.string().min(1),
 
-  // Auth Feature Flags (default to false for safe rollout)
-  AUTH_REQUIRED: z.enum(['true', 'false']).default('false'),
-  WS_REQUIRE_AUTH: z.enum(['true', 'false']).default('false'),
+  // Feature Flags
+  AUTH_REQUIRED: z.string().transform(val => val === 'true').default('false'),
+  WS_REQUIRE_AUTH: z.string().transform(val => val === 'true').default('false'),
 
   // WebSocket Configuration
-  WS_JWT_SECRET: z.string().min(32, 'WS_JWT_SECRET must be at least 32 characters').optional(),
-  PUBLIC_WS_URL: z.string().url().default('ws://localhost:3001'),
-  USE_WSS: z.enum(['true', 'false']).default('false'),
+  WS_JWT_SECRET: z.string().optional(),
+  PUBLIC_WS_URL: z.string().default('ws://localhost:3001'),
+  USE_WSS: z.string().transform(val => val === 'true').default('false'),
 
   // Security Configuration
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters').transform(val => val.substring(0, 32)),
+  JWT_SECRET: z.string().min(1),
+  ENCRYPTION_KEY: z.string().min(1),
   CORS_ALLOWED_ORIGINS: z.string().default('http://localhost:5173'),
-  RATE_LIMIT_ENABLED: z.enum(['true', 'false']).default('false'),
+  RATE_LIMIT_ENABLED: z.string().transform(val => val === 'true').default('true'),
 
   // S3 Configuration
-  S3_BUCKET_NAME: z.string().min(1, 'S3_BUCKET_NAME is required').default('centomomd-dev-bucket'),
+  S3_BUCKET_NAME: z.string().min(1),
   S3_REGION: z.string().default('ca-central-1'),
 
   // Logging Configuration
@@ -65,8 +75,9 @@ const envSchema = z.object({
   LOG_PAYLOADS: z.enum(['true', 'false']).default('false'),
   DIAG_MODE: z.enum(['true', 'false']).default('false'),
 
-  // Database Configuration (optional)
-  DATABASE_URL: z.string().optional().or(z.literal('')),
+  // Database Configuration (with PostgreSQL URL validation)
+  DATABASE_URL: z.string().refine(isPgUrl, { message: 'Database URL invalid (postgres/postgresql expected)' }),
+  DATABASE_URL_DIRECT: z.string().refine(isPgUrl).optional(),
 
   // Optional Services
   SENTRY_DSN: z.string().url().optional(),

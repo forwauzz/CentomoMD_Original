@@ -1,71 +1,46 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
+import { env } from '../config/environment.js';
 
-// Database connection configuration
-const connectionString = process.env['DATABASE_URL'] || process.env['SUPABASE_DB_URL'] || '';
+console.log('DB module loaded from:', import.meta.url || __filename);
+
+// Clean the URL to remove any invisible characters
+let url = env.DATABASE_URL.trim().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+
+console.log('🔍 DATABASE_URL length:', url.length);
+console.log('🔍 DATABASE_URL preview:', url.substring(0, 50) + '...');
+console.log('🔍 DATABASE_URL contains newlines:', url.includes('\n'));
 
 let db: any;
 let client: any;
 
-if (!connectionString) {
-  console.warn('⚠️  No DATABASE_URL or SUPABASE_DB_URL found. Database features will be disabled.');
-  console.warn('   Set DATABASE_URL in your .env file to enable database features.');
+try {
+  console.log('🔍 Parsing DATABASE_URL...');
+  const parsed = new URL(url);
+  console.log('🔍 Host:', parsed.hostname, 'Port:', parsed.port, 'Protocol:', parsed.protocol);
   
-  // Create a mock client for development without database
-  const mockClient = {
-    end: async () => console.log('Mock database client closed'),
-    unsafe: async () => { throw new Error('Database not configured'); }
-  };
-  
-  db = drizzle(mockClient as any, { schema });
-  client = mockClient;
-} else {
-  try {
-    // Validate the URL format
-    new URL(connectionString);
-    
-    // Create postgres connection
-    const postgresClient = postgres(connectionString, {
-      max: 10, // Maximum number of connections
-      idle_timeout: 20, // Close idle connections after 20 seconds
-      connect_timeout: 10, // Connection timeout
-      ssl: process.env['NODE_ENV'] === 'production' ? { rejectUnauthorized: false } : false,
-    });
-
-    // Create Drizzle instance
-    db = drizzle(postgresClient, { schema });
-    client = postgresClient;
-    
-    // Graceful shutdown
-    process.on('SIGINT', async () => {
-      console.log('Closing database connections...');
-      await postgresClient.end();
-      process.exit(0);
-    });
-
-    process.on('SIGTERM', async () => {
-      console.log('Closing database connections...');
-      await postgresClient.end();
-      process.exit(0);
-    });
-    
-    console.log('✅ Database connection configured successfully');
-  } catch (error) {
-    console.error('❌ Invalid DATABASE_URL format:', error);
-    console.error('   Current DATABASE_URL:', connectionString);
-    console.error('   Please check your .env file and ensure the URL is properly formatted.');
-    console.error('   Example format: postgresql://username:password@host:port/database');
-    
-    // Create a mock client for development
-    const mockClient = {
-      end: async () => console.log('Mock database client closed'),
-      unsafe: async () => { throw new Error('Database URL is invalid'); }
-    };
-    
-    db = drizzle(mockClient as any, { schema });
-    client = mockClient;
+  // Add SSL mode if not present
+  if (!url.includes('sslmode=')) {
+    url += '?sslmode=require';
+    console.log('🔍 Added sslmode=require to URL');
   }
+
+  const sql = postgres(url, {
+    ssl: 'require',
+    max: 5,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    prepare: false, // REQUIRED for Supavisor transaction mode (6543)
+  });
+
+  db = drizzle(sql, { schema });
+  client = sql;
+  console.log('✅ DB configured (pooled), host:', parsed.hostname);
+} catch (e) {
+  console.error('❌ Failed to configure DB:', e);
+  throw e;
 }
 
 export { db, client };
+

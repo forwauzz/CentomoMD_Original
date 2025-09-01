@@ -2,8 +2,9 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 
-import { transcriptionService } from './services/transcriptionService.js';
+console.log('🚀 Server starting - Build:', new Date().toISOString());
 
+import { transcriptionService } from './services/transcriptionService.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
@@ -28,16 +29,38 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-  // Config endpoint to expose flags to frontend
-  app.get('/api/config', getConfig);
-  
-  // Auth endpoints
-  app.post('/api/auth/ws-token', getWsToken);
+// Config endpoint to expose flags to frontend
+app.get('/api/config', getConfig);
+
+// Auth endpoints
+app.post('/api/auth/ws-token', getWsToken);
 
 // Profile routes
-profileRoutes(app);
+try { 
+  profileRoutes(app); 
+  console.log('✅ /api/profile routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/profile:', e); 
+}
 
 // Template Library API Endpoints
+
+// Function to print all registered routes
+function printRoutes(app: any) {
+  const out: string[] = [];
+  app._router?.stack?.forEach((m: any) => {
+    if (m.route?.path) { 
+      out.push(`${Object.keys(m.route.methods).join(',').toUpperCase()} ${m.route.path}`); 
+    } else if (m.name === 'router' && m.handle?.stack && m.regexp) {
+      const prefix = m.regexp.toString().match(/\\\/([^\\]+)\\\//)?.[1] ? `/${RegExp.$1}` : '';
+      m.handle.stack.forEach((h: any) => h.route?.path && out.push(`${Object.keys(h.route.methods).join(',').toUpperCase()} ${prefix}${h.route.path}`));
+    }
+  });
+  console.log('🧭 Registered routes:\n  ' + out.join('\n  '));
+}
+
+// Print routes after all are mounted
+printRoutes(app);
 app.get('/api/templates', (req, res) => {
   try {
     const { section, language } = req.query;
@@ -589,22 +612,22 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
-         try {
-       const msg = JSON.parse(data.toString());
-       if (msg?.type === 'stop_transcription') endAudio?.();
-       
-       // Handle voice commands
-       if (msg?.type === 'cmd.save') {
-         // TODO: implement save functionality
-         console.log('Save command received for session:', sessionId);
-         ws.send(JSON.stringify({ type:'cmd_ack', cmd:'save', ok:true }));
-       }
-       if (msg?.type === 'cmd.export') {
-         // TODO: implement export functionality
-         console.log('Export command received for session:', sessionId);
-         ws.send(JSON.stringify({ type:'cmd_ack', cmd:'export', ok:true }));
-       }
-     } catch {}
+    try {
+      const msg = JSON.parse(data.toString());
+      if (msg?.type === 'stop_transcription') endAudio?.();
+      
+      // Handle voice commands
+      if (msg?.type === 'cmd.save') {
+        // TODO: implement save functionality
+        console.log('Save command received for session:', sessionId);
+        ws.send(JSON.stringify({ type:'cmd_ack', cmd:'save', ok:true }));
+      }
+      if (msg?.type === 'cmd.export') {
+        // TODO: implement export functionality
+        console.log('Export command received for session:', sessionId);
+        ws.send(JSON.stringify({ type:'cmd_ack', cmd:'export', ok:true }));
+      }
+    } catch {}
   });
 
   ws.on('close', () => {
@@ -653,22 +676,28 @@ process.on('SIGINT', async () => {
   });
 });
 
-server.listen(3001, () => {
-  console.log("✅ Backend listening on http://localhost:3001");
-  console.log("📋 Phase 2: Raw PCM16 streaming implemented");
-  console.log("🚀 Phase 3: AWS Transcribe integration active");
-  console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
-  console.log("🎤 Ready for real-time transcription");
-  
-  // Template Library Status
-  try {
-    const templateStats = templateLibrary.getTemplateStats();
-    console.log("📚 Template Library loaded:", templateStats.total, "templates");
-    console.log("   - Section 7:", templateStats.bySection["7"], "templates");
-    console.log("   - Section 8:", templateStats.bySection["8"], "templates");
-    console.log("   - Section 11:", templateStats.bySection["11"], "templates");
-    console.log("🔗 Template API endpoints available at /api/templates");
-  } catch (error) {
-    console.warn("⚠️ Template Library not available:", error);
-  }
-});
+export default async function run() {
+  return new Promise<void>((resolve) => {
+    server.listen(3001, () => {
+      console.log("✅ Backend listening on http://localhost:3001");
+      console.log("📋 Phase 2: Raw PCM16 streaming implemented");
+      console.log("🚀 Phase 3: AWS Transcribe integration active");
+      console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
+      console.log("🎤 Ready for real-time transcription");
+      
+      // Template Library Status
+      try {
+        const templateStats = templateLibrary.getTemplateStats();
+        console.log("📚 Template Library loaded:", templateStats.total, "templates");
+        console.log("   - Section 7:", templateStats.bySection["7"], "templates");
+        console.log("   - Section 8:", templateStats.bySection["8"], "templates");
+        console.log("   - Section 11:", templateStats.bySection["11"], "templates");
+        console.log("🔗 Template API endpoints available at /api/templates");
+      } catch (error) {
+        console.warn("⚠️ Template Library not available:", error);
+      }
+      
+      resolve();
+    });
+  });
+}

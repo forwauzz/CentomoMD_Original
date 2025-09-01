@@ -1,19 +1,12 @@
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { client } from './connection.js';
+import { client } from './src/database/connection.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import '../config/environment.js'; // Load environment variables
 
-async function runMigrations() {
+async function applyRLSPolicies() {
   try {
-    console.log('Running database migrations...');
+    console.log('🔐 Applying RLS policies...');
     
-    // Run Drizzle migrations
-    await migrate(client, { migrationsFolder: './drizzle' });
-    console.log('✅ Database migrations completed successfully');
-    
-    // Apply RLS policies
-    console.log('Applying RLS policies...');
+    // Read RLS policies file
     const rlsPoliciesPath = path.join(process.cwd(), 'drizzle', 'rls_policies.sql');
     
     if (fs.existsSync(rlsPoliciesPath)) {
@@ -42,19 +35,14 @@ async function runMigrations() {
       console.warn('⚠️  RLS policies file not found, skipping RLS setup');
     }
     
-    console.log('🎉 Database setup completed successfully!');
+    console.log('🎉 RLS setup completed successfully!');
   } catch (error) {
-    console.error('❌ Database setup failed:', error);
+    console.error('❌ RLS setup failed:', error);
     throw error;
   } finally {
     await client.end();
   }
 }
 
-// Run setup if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.includes('setup.ts')) {
-  console.log('🚀 Starting database setup...');
-  runMigrations().catch(console.error);
-}
-
-export { runMigrations };
+// Run the script
+applyRLSPolicies().catch(console.error);
