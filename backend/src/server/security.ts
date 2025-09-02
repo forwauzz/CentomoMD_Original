@@ -1,7 +1,7 @@
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import { config } from '../config/environment.js';
+import { config } from '../config/env.js';
 
 // TODO: Configure helmet middleware with security headers
 const helmetMiddleware = helmet({

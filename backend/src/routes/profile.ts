@@ -40,11 +40,14 @@ router.get('/api/profile', async (req, res) => {
     // Use a static test id in Phase 5 if auth is disabled
     const testUserId = (req.headers['x-test-user-id'] as string) || undefined;
 
+    // Validate UUID format if provided
+    const isValidUuid = testUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testUserId);
+    
     console.time('drizzle');
     const rows = await db
       .select()
       .from(profiles)
-      .where(testUserId ? eq(profiles.user_id, testUserId) : undefined)
+      .where(isValidUuid ? eq(profiles.user_id, testUserId) : undefined)
       .limit(1);
     console.timeEnd('drizzle');
 

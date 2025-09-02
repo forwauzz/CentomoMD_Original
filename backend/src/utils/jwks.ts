@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { env } from '../config/environment.js';
+import { ENV } from '../config/env.js';
 import { logger } from './logger.js';
 
 // Cache for JWKS to avoid fetching on every request
@@ -9,7 +9,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 // Get JWKS URL from Supabase URL
 const getJWKSURL = (): string => {
-  const supabaseUrl = env.SUPABASE_URL;
+  const supabaseUrl = ENV.SUPABASE_URL;
   if (!supabaseUrl) {
     throw new Error('SUPABASE_URL is not configured');
   }
@@ -59,7 +59,7 @@ export const verifyJWTWithJWKS = async (token: string): Promise<any> => {
     
     // Verify the JWT
     const { payload } = await jwtVerify(token, jwks, {
-      issuer: env.SUPABASE_URL,
+              issuer: ENV.SUPABASE_URL,
       audience: 'authenticated'
     });
     

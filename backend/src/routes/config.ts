@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { config } from '../config/environment.js';
+import { config } from '../config/env.js';
 
 // TODO: GET /api/config endpoint to expose flags to frontend
 export const getConfig = (_req: Request, res: Response) => {

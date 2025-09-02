@@ -212,17 +212,52 @@ router.post('/', async (_req, res) => {
 
 ---
 
+## 🔗 **Database URL Configuration**
+
+### **DB URL Split Strategy**
+**Runtime (pooled)**: `DATABASE_URL` = `postgresql://postgres.kbjulpxgjqzgbkshqsme:YOUR_PASSWORD@aws-1-ca-central-1.pooler.supabase.com:6543/postgres?sslmode=require`
+
+**Migrations (direct)**: `DIRECT_DATABASE_URL` = `postgresql://postgres.kbjulpxgjqzgbkshqsme:YOUR_PASSWORD@db.kbjulpxgjqzgbkshqsme.supabase.co:5432/postgres?sslmode=require`
+
+**Driver settings needed**: `prepare:false`, `max:5`, `idle_timeout:20`, `connect_timeout:10`
+
+**Status**: 🔴 **NOT IMPLEMENTED** - Missing `DIRECT_DATABASE_URL` in `.env`
+
+---
+
+## 🔒 **RLS Phase-5 Mode**
+
+**Current Status**: 🔴 **UNKNOWN** - RLS policies not documented
+
+**Mode**: [NOT CONFIRMED] - Need to check current RLS state
+
+**Required for Phase 5**: Either disable RLS or create permissive SELECT policy
+
+**SQL to run** (once confirmed):
+```sql
+-- Option A: Disable RLS completely for testing
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+
+-- Option B: Keep RLS but allow SELECT for all
+CREATE POLICY profiles_read_all
+ON public.profiles FOR SELECT USING (true) TO PUBLIC;
+```
+
+**Status**: 🔴 **PENDING** - Must be applied before Phase 5 completion
+
+---
+
 ## 📊 Issue Summary
 
 | Category | Total | Critical | High | Medium | Low | Resolved |
 |----------|-------|----------|------|--------|-----|----------|
-| **Database** | 1 | 1 | 0 | 0 | 0 | 1 |
+| **Database** | 2 | 2 | 0 | 0 | 0 | 1 |
 | **TypeScript** | 87 | 0 | 87 | 0 | 0 | 0 |
 | **Template Library** | 2 | 0 | 0 | 2 | 0 | 1 |
 | **Frontend** | 2 | 0 | 0 | 1 | 1 | 0 |
 | **Infrastructure** | 1 | 0 | 0 | 0 | 1 | 1 |
-| **Security (RLS)** | 1 | 0 | 1 | 0 | 0 | 0 |
-| **TOTAL** | **94** | **1** | **88** | **3** | **2** | **3** |
+| **Security (RLS)** | 1 | 1 | 0 | 0 | 0 | 0 |
+| **TOTAL** | **95** | **3** | **87** | **3** | **2** | **3** |
 
 ## 🎯 **Current Status: Phase 2 Ready**
 

@@ -1,6 +1,10 @@
 // Centralized environment configuration
 // This file provides type-safe access to all environment variables
 
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config();
+
 export interface Environment {
   // Node environment
   NODE_ENV: 'development' | 'production' | 'test';
@@ -58,23 +62,23 @@ const hardcodedEnv: Environment = {
   FRONTEND_URL: 'http://localhost:5173',
   
   // Database
-  DATABASE_URL: 'YOUR_DATABASE_URL',
+  DATABASE_URL: process.env['DATABASE_URL'] || 'YOUR_DATABASE_URL',
   
   // AWS Configuration
   AWS_REGION: 'ca-central-1',
-  AWS_ACCESS_KEY_ID: 'YOUR_AWS_ACCESS_KEY_ID',
-  AWS_SECRET_ACCESS_KEY: 'YOUR_AWS_SECRET_ACCESS_KEY',
+  AWS_ACCESS_KEY_ID: process.env['AWS_ACCESS_KEY_ID'] || 'YOUR_AWS_ACCESS_KEY_ID',
+  AWS_SECRET_ACCESS_KEY: process.env['AWS_SECRET_ACCESS_KEY'] || 'YOUR_AWS_SECRET_ACCESS_KEY',
   S3_BUCKET_NAME: 'centomomd-input-2025',
   
   // Supabase Configuration
   SUPABASE_URL: 'https://kbjulpxgjqzgbkshqsme.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianVscHhnanF6Z2Jrc2hxc21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTU5NTIsImV4cCI6MjA3MjIzMTk1Mn0.i_pCn212EtcQUXge7NvRszUZUcMeHIlqg3IQRB4mr_c',
-  SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianVscHhnanF6Z2Jrc2hxc21lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjY1NTk1MiwiZXhwIjoyMDcyMjMxOTUyfQ.BrKW-xerMTnL4Tl7kr5k5jHzMFOFHcTOB8RBUvCG5-4',
-  SUPABASE_JWT_SECRET: 'TcyFylYcIgH9SnB5H4YKznCIH726QlQvGF97bLPq3/oBBq4+sqvrqsX7vNCAJbIKEOkgfWq0e3UpopXGs5VhFg==',
+  SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'] || 'YOUR_SUPABASE_ANON_KEY',
+  SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'YOUR_SUPABASE_SERVICE_ROLE_KEY',
+  SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] || 'YOUR_SUPABASE_JWT_SECRET',
   
   // Security
-  ENCRYPTION_KEY: 'de5583b949fd7da2b867e5656b618f0c',
-  JWT_SECRET: '6b6653a61b612ac9b2822521b597f7d2460f223ac68fa3f6182910de73678f90bba6610b038d506c7c6f56f2e0f33407c92fd68de57762e79a588bdc44f98130',
+  ENCRYPTION_KEY: process.env['ENCRYPTION_KEY'] || 'YOUR_ENCRYPTION_KEY',
+  JWT_SECRET: process.env['JWT_SECRET'] || 'YOUR_JWT_SECRET',
   
   // Logging
   LOG_LEVEL: 'info',

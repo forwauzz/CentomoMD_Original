@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/environment.js';
+import { ENV } from '../config/env.js';
 
 // TODO: WS token exchange endpoint
 export const getWsToken = async (req: Request, res: Response) => {
   try {
     // TODO: Check if WS auth is enabled
-    if (!env.WS_REQUIRE_AUTH) {
+    if (!ENV.WS_REQUIRE_AUTH) {
       return res.status(400).json({
         error: 'WebSocket authentication is not enabled',
         code: 'WS_AUTH_DISABLED'
@@ -27,7 +27,7 @@ export const getWsToken = async (req: Request, res: Response) => {
     // TODO: Verify Supabase JWT
     let decoded: any;
     try {
-      decoded = jwt.verify(token, env.SUPABASE_JWT_SECRET);
+              decoded = jwt.verify(token, ENV.SUPABASE_JWT_SECRET);
     } catch (error) {
       return res.status(401).json({
         error: 'Invalid or expired token',
@@ -54,7 +54,7 @@ export const getWsToken = async (req: Request, res: Response) => {
         type: 'ws_token',
         iat: Math.floor(Date.now() / 1000),
       },
-      env.WS_JWT_SECRET || env.JWT_SECRET,
+              ENV.WS_JWT_SECRET || ENV.JWT_SECRET,
       { expiresIn: '60s' }
     );
 
@@ -62,8 +62,8 @@ export const getWsToken = async (req: Request, res: Response) => {
     return res.json({
       wsToken,
       expiresIn: 60,
-      wsUrl: env.PUBLIC_WS_URL,
-      useWss: env.USE_WSS,
+              wsUrl: ENV.PUBLIC_WS_URL,
+        useWss: ENV.USE_WSS,
     });
 
   } catch (error) {

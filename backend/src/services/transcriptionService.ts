@@ -8,7 +8,7 @@ import {
   LimitExceededException,
   ServiceUnavailableException
 } from '@aws-sdk/client-transcribe-streaming';
-import { awsConfig } from '../config/environment.js';
+import { config } from '../config/env.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
 
 export class TranscriptionService {
@@ -17,10 +17,10 @@ export class TranscriptionService {
 
   constructor() {
     this.client = new TranscribeStreamingClient({
-      region: awsConfig.region,
+      region: config.aws.region,
       credentials: {
-        accessKeyId: awsConfig.credentials.accessKeyId,
-        secretAccessKey: awsConfig.credentials.secretAccessKey,
+        accessKeyId: config.aws.credentials.accessKeyId,
+        secretAccessKey: config.aws.credentials.secretAccessKey,
       }
     });
   }
@@ -234,7 +234,7 @@ export class TranscriptionService {
   getStatus(): { activeStreams: number; region: string } {
     return {
       activeStreams: this.activeStreams.size,
-      region: awsConfig.region
+      region: config.aws.region
     };
   }
 
