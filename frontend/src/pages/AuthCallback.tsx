@@ -10,6 +10,40 @@ export const AuthCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
 
+  // Function to create user profile
+  const createUserProfile = async (accessToken: string) => {
+    try {
+      console.log('🔧 Creating user profile...');
+      
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Profile created successfully:', result);
+        return true;
+      } else if (response.status === 409) {
+        // Profile already exists, that's fine
+        console.log('ℹ️ Profile already exists');
+        return true;
+      } else {
+        const error = await response.json();
+        console.warn('⚠️ Profile creation failed:', error);
+        // Don't fail the auth process if profile creation fails
+        return false;
+      }
+    } catch (error) {
+      console.warn('⚠️ Profile creation error:', error);
+      // Don't fail the auth process if profile creation fails
+      return false;
+    }
+  };
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
@@ -50,6 +84,12 @@ export const AuthCallback: React.FC = () => {
             }
             
             console.log('✅ Session established successfully');
+            
+            // Try to create profile automatically
+            if (accessToken) {
+              await createUserProfile(accessToken);
+            }
+            
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
             
@@ -68,6 +108,12 @@ export const AuthCallback: React.FC = () => {
             
             if (session) {
               console.log('✅ Session retrieved successfully');
+              
+              // Try to create profile automatically
+              if (session.access_token) {
+                await createUserProfile(session.access_token);
+              }
+              
               setStatus('success');
               setMessage('Authentication successful! Redirecting...');
               
@@ -89,6 +135,12 @@ export const AuthCallback: React.FC = () => {
           
           if (session) {
             console.log('✅ Session found, redirecting...');
+            
+            // Try to create profile automatically
+            if (session.access_token) {
+              await createUserProfile(session.access_token);
+            }
+            
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
             

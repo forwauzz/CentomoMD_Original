@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, User, Globe, Shield, Mail } from 'lucide-react';
+import { Loader2, Save, User, Globe, Shield, Mail, Plus } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useUserStore } from '@/stores/userStore';
 
@@ -77,32 +77,51 @@ export const ProfilePage: React.FC = () => {
 
   const loadProfile = async () => {
     try {
+      console.log('🔍 ProfilePage: Starting profile load...');
       setLoading(true);
       const data = await profileService.getProfile();
-      setProfile(data);
-      setFormData(data);
-      setErrors({});
+      console.log('🔍 ProfilePage: Profile data received:', data);
       
-      // TODO: Update platform language based on profile
-      if (data.locale === 'fr-CA') {
-        setLanguage('fr');
+      // Ensure we have valid profile data
+      if (data && typeof data === 'object') {
+        setProfile(data);
+        setFormData(data);
+        setErrors({});
+        
+        // Update platform language based on profile
+        if (data.locale === 'fr-CA') {
+          setLanguage('fr');
+        } else {
+          setLanguage('en');
+        }
+        
+        // Update user store with profile data
+        setUserProfile(data);
+        console.log('✅ ProfilePage: Profile loaded and form updated successfully');
       } else {
-        setLanguage('en');
+        console.warn('⚠️ ProfilePage: Invalid profile data received:', data);
+        // Set default data if profile is invalid
+        const defaultProfile: ProfileData = {
+          display_name: user?.email?.split('@')[0] || 'User',
+          locale: 'fr-CA',
+          consent_pipeda: false,
+          consent_marketing: false,
+        };
+        setProfile(defaultProfile);
+        setFormData(defaultProfile);
+        setUserProfile(defaultProfile);
       }
-      
-      // TODO: Update user store with profile data
-      setUserProfile(data);
     } catch (error) {
-      console.error('Failed to load profile:', error);
+      console.error('❌ ProfilePage: Failed to load profile:', error);
       addToast({
         type: 'error',
         title: 'Error',
         message: 'Failed to load profile data'
       });
       
-      // TODO: Show fallback data for development
+      // Show fallback data for development
       const fallbackData: ProfileData = {
-        display_name: user?.name || 'Unknown User',
+        display_name: user?.email?.split('@')[0] || 'Unknown User',
         locale: 'en-CA',
         consent_pipeda: false,
         consent_marketing: false,
@@ -112,6 +131,7 @@ export const ProfilePage: React.FC = () => {
       setUserProfile(fallbackData);
     } finally {
       setLoading(false);
+      console.log('🔍 ProfilePage: Profile loading completed');
     }
   };
 
@@ -253,6 +273,25 @@ export const ProfilePage: React.FC = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Profile Creation Notice */}
+          {!profile && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <Plus className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Welcome! Let's set up your profile
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Fill out the form below and click Save to create your profile.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TODO: Display Name Field */}
           <div className="space-y-2">
             <Label htmlFor="display_name">{t('displayName')}</Label>

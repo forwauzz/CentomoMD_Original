@@ -63,6 +63,12 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   },
 });
 
+// Make Supabase client available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).supabase = supabase;
+  console.log('🔧 Supabase client attached to window for debugging');
+}
+
 // Auth types
 export interface AuthUser {
   id: string;
@@ -97,7 +103,9 @@ export const useAuth = () => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
+        console.log('🔍 Auth: Starting initial session check...');
         if (!isAuthConfigured()) {
+          console.warn('⚠️ Auth: Supabase not configured');
           setState(prev => ({
             ...prev,
             loading: false,
@@ -106,6 +114,7 @@ export const useAuth = () => {
         }
 
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔍 Auth: Session check result:', { hasSession: !!session, hasError: !!error, sessionId: session?.user?.id });
         
         if (error) {
           console.error('❌ Supabase session error:', error);
@@ -118,6 +127,8 @@ export const useAuth = () => {
           user: session?.user ? mapSupabaseUser(session.user) : null,
           loading: false,
         }));
+        
+        console.log('✅ Auth: Initial session loaded successfully');
       } catch (error) {
         console.error('❌ Error in getInitialSession:', error);
         setState(prev => ({

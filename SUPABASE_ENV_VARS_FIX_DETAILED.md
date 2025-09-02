@@ -74,7 +74,7 @@ Create a new `frontend/.env` file with this exact content (ensure no line breaks
 
 ```bash
 VITE_SUPABASE_URL=https://kbjulpxgjqzgbkshqsme.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianVscHhnanF6Z2Jrc2hxc21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTU5NTIsImV4cCI6MjA3MjIzMTk1Mn0.i_pCn212EtcQUXge7NvRszUZUcMeHIlqg3IQRB4mr_c
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 
 **Important:** Use a text editor (VS Code, Notepad++, etc.) to create this file, not PowerShell echo commands which can cause line wrapping.

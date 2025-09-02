@@ -62,23 +62,23 @@ const hardcodedEnv: Environment = {
   FRONTEND_URL: 'http://localhost:5173',
   
   // Database
-  DATABASE_URL: process.env['DATABASE_URL'] || 'YOUR_DATABASE_URL',
-  
+  DATABASE_URL: process.env['DATABASE_URL'] || '',
+    
   // AWS Configuration
   AWS_REGION: 'ca-central-1',
-  AWS_ACCESS_KEY_ID: process.env['AWS_ACCESS_KEY_ID'] || 'YOUR_AWS_ACCESS_KEY_ID',
-  AWS_SECRET_ACCESS_KEY: process.env['AWS_SECRET_ACCESS_KEY'] || 'YOUR_AWS_SECRET_ACCESS_KEY',
+  AWS_ACCESS_KEY_ID: process.env['AWS_ACCESS_KEY_ID'] || '',
+  AWS_SECRET_ACCESS_KEY: process.env['AWS_SECRET_ACCESS_KEY'] || '',
   S3_BUCKET_NAME: 'centomomd-input-2025',
   
   // Supabase Configuration
   SUPABASE_URL: 'https://kbjulpxgjqzgbkshqsme.supabase.co',
-  SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'] || 'YOUR_SUPABASE_ANON_KEY',
-  SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'YOUR_SUPABASE_SERVICE_ROLE_KEY',
-  SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] || 'YOUR_SUPABASE_JWT_SECRET',
+  SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'] || '',
+  SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'] || '',
+  SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] || '',
   
   // Security
-  ENCRYPTION_KEY: process.env['ENCRYPTION_KEY'] || 'YOUR_ENCRYPTION_KEY',
-  JWT_SECRET: process.env['JWT_SECRET'] || 'YOUR_JWT_SECRET',
+  ENCRYPTION_KEY: process.env['ENCRYPTION_KEY'] || '',
+  JWT_SECRET: process.env['JWT_SECRET'] || '',
   
   // Logging
   LOG_LEVEL: 'info',
@@ -89,7 +89,7 @@ const hardcodedEnv: Environment = {
   RATE_LIMIT_ENABLED: false,
   
   // WebSocket Configuration
-  WS_JWT_SECRET: 'your_ws_jwt_secret_here_make_it_long_and_random_32_chars_min',
+  WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
   PUBLIC_WS_URL: 'ws://localhost:3001',
   USE_WSS: false,
   
