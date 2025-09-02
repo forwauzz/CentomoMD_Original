@@ -84,7 +84,7 @@ const hardcodedEnv: Environment = {
   LOG_LEVEL: 'info',
   
   // Feature Flags
-  AUTH_REQUIRED: false,
+  AUTH_REQUIRED: true,
   WS_REQUIRE_AUTH: false,
   RATE_LIMIT_ENABLED: false,
   

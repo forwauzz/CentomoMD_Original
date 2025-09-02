@@ -16,6 +16,7 @@ import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
 import { bootProbe } from './database/connection.js';
 import dbRouter from './routes/db.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -62,7 +63,7 @@ try {
   }
 })();
 
-// Template Library API Endpoints
+// Template Library API Endpoints - All Protected with Auth
 
 // Function to print all registered routes
 function printRoutes(app: any) {
@@ -80,8 +81,24 @@ function printRoutes(app: any) {
 
 // Print routes after all are mounted
 printRoutes(app);
-app.get('/api/templates', (req, res) => {
+
+// All template endpoints are now protected with authMiddleware
+app.get('/api/templates', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Templates access requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      query: req.query,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { section, language } = req.query;
     let templates;
     
@@ -96,29 +113,98 @@ app.get('/api/templates', (req, res) => {
       };
     }
     
+    // Audit logging for successful access
+    logger.info('Templates access successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesReturned: Array.isArray(templates) ? templates.length : Object.keys(templates).length
+    });
+    
     res.json({ success: true, data: templates });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Templates access failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error fetching templates:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch templates' });
   }
 });
 
-app.get('/api/templates/stats', (_req, res) => {
+app.get('/api/templates/stats', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template stats access requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const stats = templateLibrary.getTemplateStats();
+    
+    // Audit logging for successful access
+    logger.info('Template stats access successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      statsReturned: Object.keys(stats).length
+    });
+    
     res.json({ success: true, data: stats });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template stats access failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error fetching template stats:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch template stats' });
   }
 });
 
-// TODO: Apply auth middleware to high-risk endpoints when AUTH_REQUIRED=true
-// AI Formatting API Endpoint
-app.post('/api/templates/format', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  (req, res) => {
+// AI Formatting API Endpoint - Protected with Auth
+app.post('/api/templates/format', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template formatting requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.body.section,
+      language: req.body.language,
+      complexity: req.body.complexity,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
     
     if (!content || !section || !language) {
@@ -146,21 +232,60 @@ app.post('/api/templates/format',
     
     const formattedContent = AIFormattingService.formatTemplateContent(content, formattingOptions);
     
+    // Audit logging for successful formatting
+    logger.info('Template formatting successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section,
+      language,
+      complexity,
+      contentLength: content.length
+    });
+    
     return res.json({ 
       success: true, 
       data: formattedContent 
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template formatting failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error formatting template content:', error);
     return res.status(500).json({ success: false, error: 'Failed to format template content' });
   }
 });
 
-// Template CRUD Operations
-app.post('/api/templates', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+// Template CRUD Operations - Protected with Auth
+app.post('/api/templates', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template creation requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.body.section,
+      language: req.body.language,
+      complexity: req.body.complexity,
+      title: req.body.title,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { title, content, section, language, complexity, category, tags, version } = req.body;
     
     if (!title || !content || !section || !language || !complexity) {
@@ -203,23 +328,71 @@ app.post('/api/templates',
     // Add template to the template library
     await templateLibrary.addTemplate(newTemplate);
     
+    // Audit logging for successful creation
+    logger.info('Template creation successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: newTemplate.id,
+      section,
+      language,
+      complexity,
+      title
+    });
+    
     return res.json({ 
       success: true, 
       data: newTemplate,
       message: 'Template created successfully'
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template creation failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error creating template:', error);
     return res.status(500).json({ success: false, error: 'Failed to create template' });
   }
 });
 
-app.put('/api/templates/:id', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+app.put('/api/templates/:id', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
     const { id } = req.params;
     const { title, content, section, language, complexity, category, tags, version } = req.body;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing template ID' 
+      });
+    }
+    
+    // Audit logging for secure event tracking
+    logger.info('Template update requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section: req.body.section,
+      language: req.body.language,
+      complexity: req.body.complexity,
+      title: req.body.title,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
     
     if (!title || !content || !section || !language || !complexity) {
       return res.status(400).json({ 
@@ -247,23 +420,69 @@ app.put('/api/templates/:id',
     // Update template in the template library
     await templateLibrary.updateTemplate(id, updatedTemplate);
     
+    // Audit logging for successful update
+    logger.info('Template update successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section,
+      language,
+      complexity,
+      title
+    });
+    
     return res.json({ 
       success: true, 
       data: updatedTemplate,
       message: 'Template updated successfully'
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template update failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: req.params['id'],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error updating template:', error);
     return res.status(500).json({ success: false, error: 'Failed to update template' });
   }
 });
 
-app.delete('/api/templates/:id', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+app.delete('/api/templates/:id', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
     const { id } = req.params;
     const { section } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing template ID' 
+      });
+    }
+    
+    // Audit logging for secure event tracking
+    logger.info('Template deletion requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section: req.query['section'],
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
     
     if (!section || !['7', '8', '11'].includes(section as string)) {
       return res.status(400).json({ 
@@ -277,11 +496,34 @@ app.delete('/api/templates/:id',
     // Delete template from the template library
     await templateLibrary.deleteTemplate(id, section as "7" | "8" | "11");
     
+    // Audit logging for successful deletion
+    logger.info('Template deletion successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section: section as string
+    });
+    
     return res.json({ 
       success: true, 
       message: 'Template deleted successfully'
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template deletion failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: req.params['id'],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error deleting template:', error);
     return res.status(500).json({ success: false, error: 'Failed to delete template' });
   }
@@ -289,42 +531,142 @@ app.delete('/api/templates/:id',
 
 // Advanced Template Features API Endpoints
 
-// Get template versions
-app.get('/api/templates/:id/versions', (req, res) => {
+// Get template versions - Protected with Auth
+app.get('/api/templates/:id/versions', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
     const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing template ID' 
+      });
+    }
+    
+    // Audit logging for secure event tracking
+    logger.info('Template versions access requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
     const versions = templateLibrary.getTemplateVersions(id);
     
-    res.json({ 
+    // Audit logging for successful access
+    logger.info('Template versions access successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      versionsReturned: versions.length
+    });
+    
+    return res.json({ 
       success: true, 
       data: versions 
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template versions access failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: req.params['id'],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error fetching template versions:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch template versions' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch template versions' });
   }
 });
 
-// Get template analytics
-app.get('/api/templates/analytics', (_req, res) => {
+// Get template analytics - Protected with Auth
+app.get('/api/templates/analytics', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template analytics access requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const analytics = templateLibrary.getAnalytics();
+    
+    // Audit logging for successful access
+    logger.info('Template analytics access successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      analyticsReturned: analytics ? Object.keys(analytics).length : 0
+    });
     
     res.json({ 
       success: true, 
-      data: analytics 
+      data: analytics || {}
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template analytics access failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error fetching template analytics:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch template analytics' });
   }
 });
 
-// Get templates by section (must come after /analytics to avoid route conflict)
-app.get('/api/templates/:section', (req, res) => {
+// Get templates by section (must come after /analytics to avoid route conflict) - Protected with Auth
+app.get('/api/templates/:section', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
     const { section } = req.params;
     const { language, search, tags } = req.query;
+    
+    if (!section) {
+      return res.status(400).json({ success: false, error: 'Missing section parameter' });
+    }
+    
+    // Audit logging for secure event tracking
+    logger.info('Templates by section access requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section,
+      language: req.query['language'],
+      search: req.query['search'],
+      tags: req.query['tags'],
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
     
     if (!['7', '8', '11'].includes(section)) {
       return res.status(400).json({ success: false, error: 'Invalid section' });
@@ -346,18 +688,64 @@ app.get('/api/templates/:section', (req, res) => {
       templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
     }
     
+    // Audit logging for successful access
+    logger.info('Templates by section access successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section,
+      templatesReturned: templates.length
+    });
+    
     return res.json({ success: true, data: templates });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Templates by section access failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.params['section'],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error fetching templates by section:', error);
     return res.status(500).json({ success: false, error: 'Failed to fetch templates' });
   }
 });
 
-// Track template usage
-app.post('/api/templates/:id/usage', async (req, res) => {
+// Track template usage - Protected with Auth
+app.post('/api/templates/:id/usage', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
     const { id } = req.params;
     const { section, language, user_id, session_id, performance_rating } = req.body;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing template ID' 
+      });
+    }
+    
+    // Audit logging for secure event tracking
+    logger.info('Template usage tracking requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section,
+      language,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
     
     if (!section || !language) {
       return res.status(400).json({ 
@@ -375,19 +763,60 @@ app.post('/api/templates/:id/usage', async (req, res) => {
       performance_rating
     });
     
+    // Audit logging for successful tracking
+    logger.info('Template usage tracking successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: id,
+      section,
+      language
+    });
+    
     return res.json({ 
       success: true, 
       message: 'Usage tracked successfully'
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template usage tracking failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateId: req.params['id'],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error tracking template usage:', error);
     return res.status(500).json({ success: false, error: 'Failed to track usage' });
   }
 });
 
-// Advanced search
-app.post('/api/templates/search', (req, res) => {
+// Advanced search - Protected with Auth
+app.post('/api/templates/search', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template advanced search requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.body.section,
+      language: req.body.language,
+      complexity: req.body.complexity,
+      query: req.body.query,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { section, language, complexity, tags, query, status, is_default } = req.body;
     
     const templates = templateLibrary.advancedSearch({
@@ -400,39 +829,106 @@ app.post('/api/templates/search', (req, res) => {
       is_default
     });
     
-    res.json({ 
-      success: true, 
-      data: templates 
+    // Audit logging for successful search
+    logger.info('Template advanced search successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesReturned: templates.length
     });
-  } catch (error) {
-    console.error('Error performing advanced search:', error);
-    res.status(500).json({ success: false, error: 'Failed to perform search' });
-  }
-});
-
-// Export templates
-app.get('/api/templates/export', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  (req, res) => {
-  try {
-    const { section } = req.query;
-    const templates = templateLibrary.exportTemplates(section as "7" | "8" | "11");
     
     res.json({ 
       success: true, 
       data: templates 
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template advanced search failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
+    console.error('Error performing advanced search:', error);
+    res.status(500).json({ success: false, error: 'Failed to perform search' });
+  }
+});
+
+// Export templates - Protected with Auth
+app.get('/api/templates/export', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+  
+  try {
+    // Audit logging for secure event tracking
+    logger.info('Template export requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.query['section'],
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
+    const { section } = req.query;
+    const templates = templateLibrary.exportTemplates(section as "7" | "8" | "11");
+    
+    // Audit logging for successful export
+    logger.info('Template export successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      section: req.query['section'],
+      templatesExported: templates.length
+    });
+    
+    res.json({ 
+      success: true, 
+      data: templates 
+    });
+  } catch (error) {
+    // Audit logging for errors
+    logger.error('Template export failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error exporting templates:', error);
     res.status(500).json({ success: false, error: 'Failed to export templates' });
   }
 });
 
-// Import templates
-app.post('/api/templates/import', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+// Import templates - Protected with Auth
+app.post('/api/templates/import', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Template import requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesCount: req.body.templates?.length || 0,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { templates } = req.body;
     
     if (!Array.isArray(templates)) {
@@ -444,21 +940,55 @@ app.post('/api/templates/import',
     
     await templateLibrary.importTemplates(templates);
     
+    // Audit logging for successful import
+    logger.info('Template import successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesImported: templates.length
+    });
+    
     return res.json({ 
       success: true, 
       message: `${templates.length} templates imported successfully`
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Template import failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error importing templates:', error);
     return res.status(500).json({ success: false, error: 'Failed to import templates' });
   }
 });
 
-// Bulk operations
-app.post('/api/templates/bulk/status', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+// Bulk operations - Protected with Auth
+app.post('/api/templates/bulk/status', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Bulk template status update requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateIdsCount: req.body.templateIds?.length || 0,
+      status: req.body.status,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { templateIds, status } = req.body;
     
     if (!Array.isArray(templateIds) || !status) {
@@ -477,20 +1007,54 @@ app.post('/api/templates/bulk/status',
     
     await templateLibrary.bulkUpdateStatus(templateIds, status);
     
+    // Audit logging for successful update
+    logger.info('Bulk template status update successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesUpdated: templateIds.length,
+      status
+    });
+    
     return res.json({ 
       success: true, 
       message: `${templateIds.length} templates updated successfully`
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Bulk template status update failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error performing bulk status update:', error);
     return res.status(500).json({ success: false, error: 'Failed to update templates' });
   }
 });
 
-app.post('/api/templates/bulk/delete', 
-  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
-  async (req, res) => {
+app.post('/api/templates/bulk/delete', authMiddleware, async (req, res) => {
+  const user = (req as any).user;
+  
   try {
+    // Audit logging for secure event tracking
+    logger.info('Bulk template deletion requested', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templateIdsCount: req.body.templateIds?.length || 0,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     const { templateIds } = req.body;
     
     if (!Array.isArray(templateIds)) {
@@ -502,11 +1066,32 @@ app.post('/api/templates/bulk/delete',
     
     await templateLibrary.bulkDelete(templateIds);
     
+    // Audit logging for successful deletion
+    logger.info('Bulk template deletion successful', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      templatesDeleted: templateIds.length
+    });
+    
     return res.json({ 
       success: true, 
       message: `${templateIds.length} templates deleted successfully`
     });
   } catch (error) {
+    // Audit logging for errors
+    logger.error('Bulk template deletion failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      endpoint: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     console.error('Error performing bulk delete:', error);
     return res.status(500).json({ success: false, error: 'Failed to delete templates' });
   }
