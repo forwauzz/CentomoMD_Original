@@ -7,6 +7,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
 import { LoginPage } from '@/pages/LoginPage';
+import { AuthCallback } from '@/pages/AuthCallback';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
 import { SelectClinicPage } from '@/pages/SelectClinicPage';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
@@ -17,11 +18,14 @@ import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 function App() {
+
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/select-clinic" element={<SelectClinicPage />} />
         

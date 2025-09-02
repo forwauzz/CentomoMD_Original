@@ -1,7 +1,69 @@
-import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient, type User, type Session } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
-// TODO: Define auth types
+/**
+ * Vite exposes client-safe vars via import.meta.env when prefixed with VITE_.
+ * We never throw at module load; we only validate on first use to avoid blank screens.
+ */
+function readSupabaseEnv() {
+  const url = (import.meta as any)?.env?.VITE_SUPABASE_URL;
+  const key = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY;
+
+  const urlStr = String(url ?? '').trim();
+  const keyStr = String(key ?? '').trim();
+
+  return {
+    ok: Boolean(urlStr) && Boolean(keyStr),
+    url: urlStr,
+    key: keyStr,
+  };
+}
+
+let _client: SupabaseClient | null = null;
+
+export function getSupabase(): SupabaseClient {
+  if (_client) return _client;
+
+  const { ok, url, key } = readSupabaseEnv();
+
+  if (!ok) {
+    // Dev-friendly breadcrumbs without leaking secrets
+    // eslint-disable-next-line no-console
+    console.error('Supabase env not configured', {
+      hasUrl: Boolean(url),
+      hasKey: Boolean(key),
+      mode: (import.meta as any)?.env?.MODE,
+      viteVars: (import.meta as any)?.env
+        ? Object.keys((import.meta as any).env).filter((k) => k.startsWith('VITE_'))
+        : [],
+      origin: typeof window !== 'undefined' ? window.location.origin : 'no-window',
+    });
+    throw new Error('Supabase environment not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+  }
+
+  _client = createClient(url, key, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+  return _client;
+}
+
+/**
+ * Back-compat export so existing call sites like `supabase.from(...)` still work.
+ */
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop, receiver) {
+    const client = getSupabase();
+    // @ts-expect-error - dynamic proxy
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
+
+// Auth types
 export interface AuthUser {
   id: string;
   email: string;
@@ -17,27 +79,13 @@ export interface AuthState {
   error: string | null;
 }
 
-// TODO: Create Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+// Check if auth is configured
+export const isAuthConfigured = () => {
+  const { ok } = readSupabaseEnv();
+  return ok;
+};
 
-// Only throw error in production
-if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
-
-// TODO: Mock auth for development when Supabase is not configured
-export const isAuthConfigured = supabaseUrl !== 'https://placeholder.supabase.co' && supabaseAnonKey !== 'placeholder-anon-key';
-
-// TODO: Auth hook for session management
+// Auth hook for session management
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -47,11 +95,9 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
-    // TODO: Get initial session
     const getInitialSession = async () => {
       try {
-        if (!isAuthConfigured) {
-          // TODO: Mock auth for development
+        if (!isAuthConfigured()) {
           setState(prev => ({
             ...prev,
             loading: false,
@@ -60,7 +106,11 @@ export const useAuth = () => {
         }
 
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        
+        if (error) {
+          console.error('❌ Supabase session error:', error);
+          throw error;
+        }
         
         setState(prev => ({
           ...prev,
@@ -69,6 +119,7 @@ export const useAuth = () => {
           loading: false,
         }));
       } catch (error) {
+        console.error('❌ Error in getInitialSession:', error);
         setState(prev => ({
           ...prev,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -77,10 +128,15 @@ export const useAuth = () => {
       }
     };
 
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Session loading timeout - forcing loading to false');
+      setState(prev => ({ ...prev, loading: false }));
+    }, 5000); // 5 second timeout
+
     getInitialSession();
 
-    // TODO: Listen for auth state changes
-    if (isAuthConfigured) {
+    if (isAuthConfigured()) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
           setState(prev => ({
@@ -92,16 +148,19 @@ export const useAuth = () => {
         }
       );
 
-      return () => subscription.unsubscribe();
+      return () => {
+        clearTimeout(timeoutId);
+        subscription.unsubscribe();
+      };
     }
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
-  // TODO: Auth methods
   const signInWithMagicLink = async (email: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      if (!isAuthConfigured) {
-        // TODO: Mock sign in for development
+      if (!isAuthConfigured()) {
         setState(prev => ({
           ...prev,
           error: 'Supabase not configured. Please set up VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY',
@@ -116,8 +175,14 @@ export const useAuth = () => {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('❌ Supabase OTP error:', error);
+        throw error;
+      }
+      setState(prev => ({ ...prev, loading: false }));
     } catch (error) {
+      console.error('❌ Error in signInWithMagicLink:', error);
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Sign in failed',
@@ -129,8 +194,7 @@ export const useAuth = () => {
   const signInWithGoogle = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      if (!isAuthConfigured) {
-        // TODO: Mock sign in for development
+      if (!isAuthConfigured()) {
         setState(prev => ({
           ...prev,
           error: 'Supabase not configured. Please set up VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY',
@@ -158,8 +222,7 @@ export const useAuth = () => {
   const signOut = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      if (!isAuthConfigured) {
-        // TODO: Mock sign out for development
+      if (!isAuthConfigured()) {
         setState(prev => ({
           ...prev,
           loading: false,
@@ -186,7 +249,7 @@ export const useAuth = () => {
   };
 };
 
-// TODO: Helper function to map Supabase user to our format
+// Helper function to map Supabase user to our format
 const mapSupabaseUser = (user: User): AuthUser => ({
   id: user.id,
   email: user.email || '',
