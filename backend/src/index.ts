@@ -9,11 +9,13 @@ import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
-import { profileRoutes } from './routes/profile.js';
+import profileRouter from './routes/profile.js';
 import { securityMiddleware } from './server/security.js';
 import { authMiddleware } from './auth.js';
 import jwt from 'jsonwebtoken';
-import { env } from './config/environment.js';
+import { ENV } from './config/env.js';
+import { bootProbe } from './database/connection.js';
+import dbRouter from './routes/db.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -37,11 +39,28 @@ app.post('/api/auth/ws-token', getWsToken);
 
 // Profile routes
 try { 
-  profileRoutes(app); 
+  app.use(profileRouter); 
   console.log('✅ /api/profile routes mounted'); 
 } catch(e) { 
   console.error('❌ mount /api/profile:', e); 
 }
+
+// Database ping route
+try {
+  app.use(dbRouter);
+  console.log('✅ /api/db routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/db:', e);
+}
+
+// Boot-time database probe
+(async () => {
+  try {
+    await bootProbe();
+  } catch (e) {
+    console.error('[boot] DB probe failed:', e);
+  }
+})();
 
 // Template Library API Endpoints
 
@@ -97,7 +116,7 @@ app.get('/api/templates/stats', (_req, res) => {
 // TODO: Apply auth middleware to high-risk endpoints when AUTH_REQUIRED=true
 // AI Formatting API Endpoint
 app.post('/api/templates/format', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   (req, res) => {
   try {
     const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
@@ -139,7 +158,7 @@ app.post('/api/templates/format',
 
 // Template CRUD Operations
 app.post('/api/templates', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { title, content, section, language, complexity, category, tags, version } = req.body;
@@ -196,7 +215,7 @@ app.post('/api/templates',
 });
 
 app.put('/api/templates/:id', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -240,7 +259,7 @@ app.put('/api/templates/:id',
 });
 
 app.delete('/api/templates/:id', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -393,7 +412,7 @@ app.post('/api/templates/search', (req, res) => {
 
 // Export templates
 app.get('/api/templates/export', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   (req, res) => {
   try {
     const { section } = req.query;
@@ -411,7 +430,7 @@ app.get('/api/templates/export',
 
 // Import templates
 app.post('/api/templates/import', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { templates } = req.body;
@@ -437,7 +456,7 @@ app.post('/api/templates/import',
 
 // Bulk operations
 app.post('/api/templates/bulk/status', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { templateIds, status } = req.body;
@@ -469,7 +488,7 @@ app.post('/api/templates/bulk/status',
 });
 
 app.post('/api/templates/bulk/delete', 
-  env.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
+  ENV.AUTH_REQUIRED ? authMiddleware : (_req, _res, next) => next(),
   async (req, res) => {
   try {
     const { templateIds } = req.body;
@@ -509,7 +528,7 @@ wss.on('connection', (ws, req) => {
   // TODO: Add authentication here when WS_REQUIRE_AUTH is enabled
   let authenticatedUser: { userId: string; userEmail: string } | null = null;
   
-  if (env.WS_REQUIRE_AUTH) {
+  if (ENV.WS_REQUIRE_AUTH) {
     // TODO: Extract token from query params or headers
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
@@ -522,7 +541,7 @@ wss.on('connection', (ws, req) => {
     
     try {
       // TODO: Verify WS token
-      const decoded = jwt.verify(token, env.WS_JWT_SECRET || env.JWT_SECRET) as any;
+      const decoded = jwt.verify(token, ENV.WS_JWT_SECRET || ENV.JWT_SECRET) as any;
       
       if (decoded.type !== 'ws_token') {
         console.log('WebSocket connection rejected: Invalid token type');
@@ -701,3 +720,24 @@ export default async function run() {
     });
   });
 }
+
+// Start the HTTP server immediately when this file is executed
+server.listen(3001, () => {
+  console.log("✅ Backend listening on http://localhost:3001");
+  console.log("📋 Phase 2: Raw PCM16 streaming implemented");
+  console.log("🚀 Phase 3: AWS Transcribe integration active");
+  console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
+  console.log("🎤 Ready for real-time transcription");
+  
+  // Template Library Status
+  try {
+    const templateStats = templateLibrary.getTemplateStats();
+    console.log("📚 Template Library loaded:", templateStats.total, "templates");
+    console.log("   - Section 7:", templateStats.bySection["7"], "templates");
+    console.log("   - Section 8:", templateStats.bySection["8"], "templates");
+    console.log("   - Section 11:", templateStats.bySection["11"], "templates");
+    console.log("🔗 Template API endpoints available at /api/templates");
+  } catch (error) {
+    console.warn("⚠️ Template Library not available:", error);
+  }
+});

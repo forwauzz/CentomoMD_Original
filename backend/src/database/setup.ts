@@ -1,16 +1,18 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { client } from './connection.js';
+import { getSql } from './connection.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import '../config/environment.js'; // Load environment variables
+import '../config/env.js'; // Load environment variables
 
 async function runMigrations() {
+  let sql: any;
   try {
     console.log('Running database migrations...');
     
     // Create drizzle instance for migrations
-    const db = drizzle(client);
+    sql = getSql();
+    const db = drizzle(sql);
     
     // Run Drizzle migrations
     await migrate(db, { migrationsFolder: './drizzle' });
@@ -32,7 +34,7 @@ async function runMigrations() {
       for (const statement of statements) {
         if (statement.trim()) {
           try {
-            await client.unsafe(statement);
+            await sql.unsafe(statement);
             console.log(`✅ Applied RLS policy: ${statement.split('\n')[0]?.substring(0, 50) || 'Unknown policy'}...`);
           } catch (error) {
             console.warn(`⚠️  Warning applying RLS policy: ${error}`);
@@ -51,7 +53,9 @@ async function runMigrations() {
     console.error('❌ Database setup failed:', error);
     throw error;
   } finally {
-    await client.end();
+    if (sql) {
+      await sql.end();
+    }
   }
 }
 
