@@ -52,6 +52,9 @@ export interface Environment {
   // Debug Configuration
   LOG_PAYLOADS: boolean;
   DIAG_MODE: boolean;
+  
+  // Authentication Strategy
+  AUTH_VERIFY_STRATEGY: 'supabase' | 'jwks';
 }
 
 // Temporary hardcoded values to bypass PowerShell line-breaking issues
@@ -99,6 +102,9 @@ const hardcodedEnv: Environment = {
   // Debug Configuration
   LOG_PAYLOADS: false,
   DIAG_MODE: false,
+  
+  // Authentication Strategy - Default to working Supabase approach
+  AUTH_VERIFY_STRATEGY: 'supabase',
 };
 
 // Export the hardcoded environment

@@ -57,12 +57,20 @@ export function validatePatientId(patientId: string): boolean {
   return patientId.length >= 3 && patientId.length <= 50;
 }
 
-// WebSocket utilities
-export function createWebSocketUrl(path: string): string {
+// WebSocket utilities - Updated to support ws_token parameter
+export function createWebSocketUrl(path: string, wsToken?: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   // Use backend port (3001) instead of frontend port (5173)
   const host = window.location.hostname + ':3001';
-  return `${protocol}//${host}${path}`;
+  
+  let url = `${protocol}//${host}${path}`;
+  
+  // Add ws_token parameter if provided
+  if (wsToken) {
+    url += `?ws_token=${encodeURIComponent(wsToken)}`;
+  }
+  
+  return url;
 }
 
 // Audio processing utilities

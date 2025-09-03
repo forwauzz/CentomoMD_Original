@@ -28,7 +28,8 @@ export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketRe
           });
           
           if (tokenResponse.wsToken) {
-            wsUrl += `?token=${encodeURIComponent(tokenResponse.wsToken)}`;
+            // Standardize on ws_token parameter
+            wsUrl += `?ws_token=${encodeURIComponent(tokenResponse.wsToken)}`;
           }
         }
       } catch (error) {

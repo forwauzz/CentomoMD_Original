@@ -1114,19 +1114,19 @@ wss.on('connection', (ws, req) => {
   let authenticatedUser: { userId: string; userEmail: string } | null = null;
   
   if (ENV.WS_REQUIRE_AUTH) {
-    // TODO: Extract token from query params or headers
+    // Standardize on ws_token parameter
     const url = new URL(req.url || '', `http://${req.headers.host}`);
-    const token = url.searchParams.get('token');
+    const wsToken = url.searchParams.get('ws_token');
     
-    if (!token) {
-      console.log('WebSocket connection rejected: No token provided');
+    if (!wsToken) {
+      console.log('WebSocket connection rejected: No ws_token provided');
       ws.close(1008, 'Authentication required');
       return;
     }
     
     try {
       // TODO: Verify WS token
-      const decoded = jwt.verify(token, ENV.WS_JWT_SECRET || ENV.JWT_SECRET) as any;
+      const decoded = jwt.verify(wsToken, ENV.WS_JWT_SECRET || ENV.JWT_SECRET) as any;
       
       if (decoded.type !== 'ws_token') {
         console.log('WebSocket connection rejected: Invalid token type');

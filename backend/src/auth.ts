@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from './utils/logger.js';
-
-// Import JWKS verification utilities
-import { verifyJWTWithJWKS } from './utils/jwks.js';
+import { createClient } from '@supabase/supabase-js';
+import { ENV } from './config/env.js';
 
 // TODO: Define user context interface
 export interface UserContext {
@@ -20,42 +19,87 @@ export interface AuthMiddleware {
   (req: Request, res: Response, next: NextFunction): Promise<void | Response>;
 }
 
-// JWT verification function using Supabase JWKS
+// Create Supabase client for token verification
+const supabase = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
+
+// JWT verification function using Supabase client
 export const verifySupabaseJWT = async (token: string): Promise<UserContext | null> => {
   try {
-    // Verify token with Supabase JWKS
-    const payload = await verifyJWTWithJWKS(token);
+    // Verify token using Supabase client
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    if (!payload) {
-      logger.warn('JWT verification returned null payload');
+    if (error || !user) {
+      logger.warn('Supabase token verification failed', { 
+        error: error?.message || 'No user data returned',
+        hasUser: !!user
+      });
       return null;
     }
     
-    // Extract user information from payload
+    // Extract user information from Supabase user
     const userContext: UserContext = {
-      user_id: payload.sub as string,
-      clinic_id: payload.clinic_id as string,
-      role: payload.role as string || 'physician',
-      email: payload.email as string,
-      aud: payload.aud as string,
-      exp: payload.exp as number,
-      iat: payload.iat as number
+      user_id: user.id,
+      clinic_id: user.user_metadata?.clinic_id as string,
+      role: user.user_metadata?.role as string || 'physician',
+      email: user.email || '',
+      aud: 'authenticated',
+      exp: Math.floor(Date.now() / 1000) + 3600, // Default expiry
+      iat: Math.floor(Date.now() / 1000)
     };
     
     // Validate required fields
     if (!userContext.user_id || !userContext.email) {
-      logger.warn('JWT payload missing required fields', { 
+      logger.warn('User data missing required fields', { 
         hasUserId: !!userContext.user_id, 
         hasEmail: !!userContext.email 
       });
       return null;
     }
     
+    logger.info('Token verification successful', {
+      userId: userContext.user_id,
+      userEmail: userContext.email,
+      userRole: userContext.role
+    });
+    
     return userContext;
   } catch (error) {
     logger.error('JWT verification failed', { 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      token: token.substring(0, 20) + '...' // Log first 20 chars for debugging
+      error: error instanceof Error ? error.message : 'Unknown error'
+      // Removed token logging for security
+    });
+    return null;
+  }
+};
+
+// Unified verification function with strategy toggle
+export const verifyAccessToken = async (token: string): Promise<UserContext | null> => {
+  const strategy = ENV.AUTH_VERIFY_STRATEGY || 'supabase';
+  
+  try {
+    if (strategy === 'jwks') {
+      const { verifyJWTWithJWKS } = await import('./utils/jwks.js');
+      const payload = await verifyJWTWithJWKS(token);
+      if (!payload) return null;
+      
+      // Convert JWKS payload to UserContext
+      return {
+        user_id: payload.sub,
+        clinic_id: payload.clinic_id,
+        role: payload.role || 'physician',
+        email: payload.email || '',
+        aud: payload.aud,
+        exp: payload.exp,
+        iat: payload.iat
+      };
+    } else {
+      // Default to Supabase strategy
+      return await verifySupabaseJWT(token);
+    }
+  } catch (error) {
+    logger.error('Token verification failed', {
+      strategy,
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
     return null;
   }
@@ -83,8 +127,8 @@ export const authMiddleware: AuthMiddleware = async (req: Request, res: Response
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
-    // Verify token with Supabase JWKS
-    const userContext = await verifySupabaseJWT(token);
+    // Use unified verification function
+    const userContext = await verifyAccessToken(token);
     
     if (!userContext) {
       logger.warn('Invalid or expired token', {

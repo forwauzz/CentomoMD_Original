@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Search, 
@@ -114,15 +115,14 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
       for (const section of sections) {
         console.log('Loading templates for section:', section);
-        const response = await fetch(`/api/templates/${section}`);
-        console.log('Response for section', section, ':', response.status);
-        
-        if (response.ok) {
-          const result = await response.json();
+        try {
+          const result = await apiFetch(`/api/templates/${section}`);
           console.log('Templates for section', section, ':', result.data?.length || 0);
           if (result.success && result.data) {
             allTemplates.push(...result.data);
           }
+        } catch (error) {
+          console.error(`Error loading section ${section}:`, error);
         }
       }
 
@@ -137,12 +137,9 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const loadAnalytics = async () => {
     try {
-              const response = await fetch('/api/templates/analytics');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setAnalytics(result.data);
-        }
+      const result = await apiFetch('/api/templates/analytics');
+      if (result.success) {
+        setAnalytics(result.data);
       }
     } catch (error) {
       console.error('Error loading analytics:', error);
@@ -186,19 +183,13 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const performAdvancedSearch = async () => {
     try {
-              const response = await fetch('/api/templates/search', {
+      const result = await apiFetch('/api/templates/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(advancedSearchCriteria),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFilteredTemplates(result.data);
-        }
+      if (result.success) {
+        setFilteredTemplates(result.data);
       }
     } catch (error) {
       console.error('Error performing advanced search:', error);
