@@ -74,7 +74,7 @@ const hardcodedEnv: Environment = {
   S3_BUCKET_NAME: 'centomomd-input-2025',
   
   // Supabase Configuration
-  SUPABASE_URL: 'https://kbjulpxgjqzgbkshqsme.supabase.co',
+  SUPABASE_URL: process.env['SUPABASE_URL'] || '',
   SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'] || '',
   SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'] || '',
   SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] || '',

@@ -1,6 +1,10 @@
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
@@ -8,6 +12,7 @@ import { transcriptionService } from './services/transcriptionService.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
+import { Mode2Formatter } from './services/formatter/mode2.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
@@ -1168,6 +1173,68 @@ app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> =>
 
   } catch (error) {
     console.error('Mode 1 formatting error:', error);
+    res.status(500).json({ 
+      error: 'Failed to format transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Mode 2 Formatting Endpoint (Smart Dictation)
+app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> => {
+  try {
+    const { transcript, section, language, case_id, selected_sections, extra_dictation } = req.body;
+    
+    if (!transcript || typeof transcript !== 'string') {
+      res.status(400).json({ 
+        error: 'Transcript is required and must be a string' 
+      });
+      return;
+    }
+
+    if (!section || !['7', '8', '11'].includes(section)) {
+      res.status(400).json({ 
+        error: 'Section must be "7", "8", or "11"' 
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    const user = (req as any).user;
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Initialize Mode 2 formatter
+    const formatter = new Mode2Formatter();
+    
+    // Format the transcript with AI
+    const result = await formatter.format(transcript, {
+      language: language as 'fr' | 'en',
+      section: section as '7' | '8' | '11',
+      case_id,
+      selected_sections,
+      extra_dictation
+    });
+
+    // Return the formatted result
+    res.json({
+      formatted: result.formatted,
+      issues: result.issues,
+      sources_used: result.sources_used,
+      confidence_score: result.confidence_score,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Mode 2 formatting error:', error);
     res.status(500).json({ 
       error: 'Failed to format transcript',
       details: error instanceof Error ? error.message : 'Unknown error'

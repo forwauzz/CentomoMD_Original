@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "section": "7",
+    "nom": "Historique de faits et évolution",
+    "locale": "fr-CA",
+    "version": "1.0.0",
+    "description": "JSON de garde-fous pour structurer et valider la Section 7 (CNESST). Sert à normaliser la terminologie, les titres, les dates et à vérifier que le récit respecte l'ordre chronologique avec priorité au travailleur."
+  },
+
+  "structure": {
+    "contrat_entree": "Chaque entrée doit décrire un événement, une consultation ou une procédure distincte.",
+    "titres_requis": [],
+    "regles_ordre": {
+      "chronologique": true,
+      "ascendant": true,
+      "meme_jour_plusieurs": true
+    },
+    "indice_modele_entree": "Le travailleur/La travailleuse [verbe] le docteur/la docteure [Nom], le [date]. [contenu]"
+  },
+
+  "regles_style": {
+    "travailleur_en_premier": true,
+    "interdire_date_en_premier": true,
+    "titre_medecin_obligatoire": true,
+    "guillemets_conserves": true,
+    "terme_patient_interdit": true,
+    "paragraphe_par_evenement": true,
+    "varier_les_verbes": true,
+    "eviter_repetition_mecanique": true,
+    "langue": "fr-CA"
+  },
+
+  "terminologie": {
+    "preferes": {
+      "patient": "le travailleur",
+      "la patiente": "la travailleuse",
+      "le patient": "le travailleur",
+      "Docteur": "docteur",
+      "Docteure": "docteure",
+      "médecin traitant": "médecin traitant"
+    },
+    "interdits": [
+      "le patient",
+      "la patiente",
+      "On [0-9]{1,2}\\s*[A-Za-zéû]+\\s*[0-9]{4},?\\s*le travailleur",
+      "Le\\s*[0-9]{1,2}\\s*[A-Za-zéû]+\\s*[0-9]{4}"
+    ],
+    "verbes_consultation": [
+      "consulte",
+      "rencontre",
+      "revoit",
+      "obtient un rendez-vous avec",
+      "se présente chez"
+    ],
+    "specialites": [
+      "chirurgien orthopédiste",
+      "physiatre",
+      "radiologiste",
+      "neurochirurgien",
+      "médecin de famille",
+      "urgentologue",
+      "omnipraticien"
+    ],
+    "lesions": [
+      "entorse cervicale",
+      "entorse lombaire",
+      "contusion",
+      "tendinite",
+      "ténosynovite",
+      "déchirure méniscale",
+      "déchirure de la coiffe",
+      "capsulite",
+      "radiculopathie",
+      "cervicobrachialgie",
+      "synovite",
+      "gonarthrose"
+    ],
+    "examens": [
+      "IRM",
+      "échographie",
+      "radiographie",
+      "arthro-IRM",
+      "EMG",
+      "scan"
+    ],
+    "traitements": [
+      "physiothérapie",
+      "ergothérapie",
+      "acupuncture",
+      "infiltration cortisonée",
+      "visco-supplémentation",
+      "orthèse",
+      "chirurgie",
+      "antibiothérapie"
+    ],
+    "mots_evolution": [
+      "améliorée",
+      "stable",
+      "détériorée",
+      "plateau thérapeutique",
+      "consolidation avec séquelles",
+      "séquelles permanentes"
+    ]
+  },
+
+  "dates": {
+    "formats_autorises": [
+      "d MMMM yyyy",
+      "d MMM yyyy",
+      "dd MMMM yyyy"
+    ],
+    "normaliser_noms_mois": true,
+    "exemples": [
+      "le 23 octobre 2022",
+      "le 1er août 2024"
+    ]
+  },
+
+  "motifs": {
+    "regex_entree": "^\\s*(Le travailleur|La travailleuse)\\s+(consulte|rencontre|revoit|obtient un rendez-vous avec|se présente chez)\\s+(le docteur|la docteure|le médecin|la médecin)\\s+[^,]+,\\s+le\\s+[0-9]{1,2}(er)?\\s+[A-Za-zéûàî]+\\s+[0-9]{4}\\.?\\s",
+    "regex_interdire_date_premier": "^\\s*Le\\s+[0-9]{1,2}",
+    "regex_titre_medecin": "\\b(le docteur|la docteure|Dr\\.|Dre\\.)\\b",
+    "regex_bloc_citation": "«[\\s\\S]*?»",
+    "regex_presence_evolution": "\\b(améliorée|stable|détériorée|plateau|consolidation|séquelles)\\b"
+  },
+
+  "normalisation": {
+    "corrections_casse": [
+      { "trouver": "\\bDocteur\\b", "remplacer": "docteur" },
+      { "trouver": "\\bDocteure\\b", "remplacer": "docteure" }
+    ],
+    "remplacements_termes_ci": [
+      { "trouver": "\\ble\\s+patient\\b", "remplacer": "le travailleur" },
+      { "trouver": "\\bla\\s+patiente\\b", "remplacer": "la travailleuse" }
+    ],
+    "titres": {
+      "toujours_exiger_titre": true,
+      "titres_preferes": ["le docteur", "la docteure", "Dr.", "Dre."]
+    },
+    "espacements": {
+      "apres_virgule": true,
+      "espaces_simples": true
+    }
+  },
+
+  "verifications_QA": {
+    "exiger_travailleur_en_premier": true,
+    "interdire_commencer_par_date": true,
+    "exiger_titre_medecin_par_entree": true,
+    "exiger_date_par_entree": true,
+    "exiger_paragraphe_par_evenement": true,
+    "exiger_variation_verbes": {
+      "minimum_verbes_distincts": 2
+    },
+    "exiger_mentions_evolution": {
+      "au_moins_une": true
+    },
+    "chronologie": {
+      "appliquer": true,
+      "direction": "ascendante"
+    },
+    "garde_fou_doublons": {
+      "activer": true,
+      "distance_min_caracteres": 50
+    },
+    "integrite_citations": {
+      "preserver_exactitude": true
+    }
+  },
+
+  "exemples": [
+    {
+      "note_entree": "première consultation, dr bussière, 23 octobre 2022, entorse cervicale, prescrit physio",
+      "extrait_sortie": "Le travailleur consulte le docteur Nicolas Bussière, le 23 octobre 2022. Il diagnostique une entorse cervicale et prescrit de la physiothérapie."
+    },
+    {
+      "note_entree": "suivi dr leclerc 1er août 2024, contusion lombaire stable, retour progressif",
+      "extrait_sortie": "Le travailleur revoit le docteur Marc Leclerc, le 1er août 2024. Il juge la condition clinique stable et prescrit un retour au travail progressif."
+    }
+  ],
+
+  "politique_injection": {
+    "toujours_injecter_sections": ["regles_style", "terminologie.verbes_consultation", "exemples"],
+    "injecter_long_exemple_conditionnel": true,
+    "etiquette_long_exemple": "EXEMPLE COMPLET (référence de forme, ne pas copier mot à mot)"
+  }
+}
