@@ -7,6 +7,10 @@ console.log('🚀 Server starting - Build:', new Date().toISOString());
 import { transcriptionService } from './services/transcriptionService.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
+import { Mode1Formatter } from './services/formatter/mode1.js';
+import { Section7Validator } from './services/formatter/validators/section7.js';
+import { Section8Validator } from './services/formatter/validators/section8.js';
+import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
@@ -1094,6 +1098,80 @@ app.post('/api/templates/bulk/delete', authMiddleware, async (req, res) => {
 
     console.error('Error performing bulk delete:', error);
     return res.status(500).json({ success: false, error: 'Failed to delete templates' });
+  }
+});
+
+// Mode 1 Formatting Endpoint
+app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> => {
+  try {
+    const { transcript, language, quote_style, radiology_mode, section } = req.body;
+    
+    if (!transcript || typeof transcript !== 'string') {
+      res.status(400).json({ 
+        error: 'Transcript is required and must be a string' 
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    const user = (req as any).user;
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Initialize Mode 1 formatter
+    const formatter = new Mode1Formatter();
+    
+    // Format the transcript
+    const result = formatter.format(transcript, {
+      language: language as 'fr' | 'en',
+      quote_style: quote_style || 'smart',
+      radiology_mode: radiology_mode || false,
+      preserve_verbatim: true
+    });
+
+    // Validate the formatted content if section is specified
+    let validationResult = null;
+    if (section && ['7', '8', '11'].includes(section)) {
+      let validator;
+      switch (section) {
+        case '7':
+          validator = new Section7Validator();
+          break;
+        case '8':
+          validator = new Section8Validator();
+          break;
+        case '11':
+          validator = new Section11Validator();
+          break;
+      }
+      
+      if (validator) {
+        validationResult = validator.validate(result.formatted, language as 'fr' | 'en');
+      }
+    }
+
+    res.json({
+      formatted: result.formatted,
+      issues: result.issues,
+      verbatim_blocks: result.verbatim_blocks,
+      validation: validationResult,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Mode 1 formatting error:', error);
+    res.status(500).json({ 
+      error: 'Failed to format transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

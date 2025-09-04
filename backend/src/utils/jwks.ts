@@ -57,7 +57,7 @@ export const verifyJWTWithJWKS = async (token: string): Promise<any> => {
     // Safe error logging - no token contents
     logger.error('JWT verification failed', { 
       error: error instanceof Error ? error.message : 'Unknown error',
-      errorClass: error.constructor.name
+      errorClass: (error as Error).constructor.name
     });
     return null;
   }
