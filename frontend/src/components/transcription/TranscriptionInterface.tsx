@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Save, FileText, Copy, Edit, Trash2, MessageSquare, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Save, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle } from 'lucide-react';
 import { t } from '@/lib/utils';
 import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -11,6 +11,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 import { TemplateSelector } from './TemplateSelector';
+import { useCaseStore } from '@/stores/caseStore';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -32,6 +33,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
   const [templateContent, setTemplateContent] = useState<string>('');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
@@ -54,6 +57,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     error,
     setActiveSection
   } = useTranscription(sessionId, selectedLanguage);
+
+  // Case store for saving to sections
+  const { updateSection } = useCaseStore();
 
   // Clear edited content when starting a new transcription session
   useEffect(() => {
@@ -182,6 +188,43 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       console.log('Transcript deleted');
     }
   }, []);
+
+  // Save to section functionality
+  const handleSaveToSection = useCallback(async () => {
+    if (!activeSection) {
+      console.error('No active section selected');
+      return;
+    }
+
+    const transcriptToSave = editedTranscript || paragraphs.join('\n\n');
+    if (!transcriptToSave.trim()) {
+      console.error('No transcript content to save');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      // Save transcript to the active section
+      updateSection(activeSection, {
+        transcript: transcriptToSave,
+        savedAt: new Date().toISOString(),
+        mode: mode,
+        language: selectedLanguage
+      });
+
+      setSaveSuccess(true);
+      console.log(`Transcript saved to section: ${activeSection}`);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving transcript to section:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [activeSection, editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
@@ -546,6 +589,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 )}
               </div>
 
+              {/* Success Message */}
+              {saveSuccess && (
+                <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-800">
+                    Transcript saved to {activeSection} successfully!
+                  </span>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex items-center space-x-3">
                 <Button 
@@ -561,9 +614,21 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   <MessageSquare className="h-4 w-4" />
                   <span>Voice Command</span>
                 </Button>
-                <Button variant="default" size="sm" className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700">
-                  <Save className="h-4 w-4" />
-                  <span>Save to Section</span>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+                  onClick={handleSaveToSection}
+                  disabled={isSaving || (!editedTranscript && paragraphs.length === 0)}
+                >
+                  {saveSuccess ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  <span>
+                    {saveSuccess ? 'Saved!' : isSaving ? 'Saving...' : 'Save to Section'}
+                  </span>
                 </Button>
               </div>
             </CardContent>
