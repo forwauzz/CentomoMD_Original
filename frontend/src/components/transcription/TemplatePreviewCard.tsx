@@ -8,9 +8,9 @@ import {
   AlertCircle, 
   Eye, 
   EyeOff, 
-  Zap,
-  Clock,
-  Tag,
+  // Zap,
+  // Clock,
+  // Tag,
   X
 } from 'lucide-react';
 import { TemplateJSON } from './TemplateDropdown';
@@ -28,7 +28,7 @@ export const TemplatePreviewCard: React.FC<TemplatePreviewCardProps> = ({
   template,
   onClose,
   onSelect,
-  currentSection,
+  // currentSection,
   currentLanguage
 }) => {
   const [showFormatted, setShowFormatted] = useState(false);

@@ -8,7 +8,7 @@ import { useCaseStore } from '@/stores/caseStore';
 import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
 
 export const NewCasePage: React.FC = () => {
-  const { t, language } = useI18n();
+  const { language } = useI18n();
   const { activeSectionId, initializeCase, setActiveSection, updateSectionTitles } = useCaseStore();
   const [showExportModal, setShowExportModal] = useState(false);
 

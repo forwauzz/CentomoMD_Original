@@ -8,7 +8,7 @@ import {
   Plus, 
   Save, 
   FileText, 
-  Tag, 
+  // Tag, 
   Zap, 
   Eye,
   CheckCircle,
@@ -40,8 +40,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     complexity: 'medium',
     category: 'General',
     tags: [],
-    source_file: '',
-    version: '1.0'
+    source_file: ''
   });
 
   const [newTag, setNewTag] = useState('');
@@ -69,7 +68,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
         category: 'General',
         tags: [],
         source_file: '',
-        version: '1.0'
+        // version: '1.0'
       });
     }
     setErrors({});
@@ -110,7 +109,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     setIsSaving(true);
     try {
       const templateData: TemplateJSON = {
-        id: template?.id || `template_${Date.now()}`,
+        // id: template?.id || `template_${Date.now()}`,
         title: formData.title!,
         content: formData.content!,
         section: formData.section as "7" | "8" | "11",
@@ -119,7 +118,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
         category: formData.category || 'General',
         tags: formData.tags || [],
         source_file: formData.source_file || '',
-        version: formData.version || '1.0'
+        // version: formData.version || '1.0'
       };
 
       await onSave(templateData);

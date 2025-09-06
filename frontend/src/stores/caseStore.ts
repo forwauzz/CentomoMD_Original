@@ -48,7 +48,7 @@ export const useCaseStore = create<CaseState>()(
                   ...section,
                   data: { ...section.data, ...data },
                   lastModified: new Date().toISOString(),
-                  status: 'in_progress',
+                  status: 'in_progress' as const,
                 }
               : section
           );
@@ -71,7 +71,7 @@ export const useCaseStore = create<CaseState>()(
             section.id === sectionId
               ? {
                   ...section,
-                  status: 'completed',
+                  status: 'completed' as const,
                   lastModified: new Date().toISOString(),
                 }
               : section

@@ -50,7 +50,7 @@ export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketRe
           if (ws.readyState === WebSocket.OPEN) {
             const pingMessage: WebSocketMessage = {
               type: 'ping',
-              timestamp: Date.now(),
+              // timestamp: Date.now(),
             };
             ws.send(JSON.stringify(pingMessage));
           }

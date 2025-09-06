@@ -1,0 +1,23 @@
+{
+  "id": "word-for-word-formatter",
+  "section": "word-for-word",
+  "title": "Word-for-Word Formatter",
+  "content": "Raw transcription formatting template",
+  "tags": ["word-for-word", "formatter", "post-processor"],
+  "source_file": "wordForWordTemplate.json",
+  "language": "fr",
+  "category": "formatter",
+  "complexity": "low",
+  "status": "active",
+  "version": "1.0.0",
+  "usage_count": 0,
+  "formatting_rules": {
+    "removeSpeakerPrefixes": true,
+    "convertSpokenCommands": true,
+    "applyMedicalFormatting": true,
+    "capitalizeSentences": true,
+    "cleanSpacing": true
+  },
+  "voice_commands": [],
+  "validation_rules": {}
+}

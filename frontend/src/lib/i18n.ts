@@ -69,6 +69,7 @@ export const translations = {
     save: 'Enregistrer',
     saveAndContinue: 'Enregistrer et continuer',
     export: 'Exporter',
+    upload: 'Téléverser',
     saved: 'Enregistré',
     ago: 'il y a',
     
@@ -141,6 +142,12 @@ export const translations = {
     home: 'Accueil',
     breadcrumbNewCase: 'Nouveau dossier',
     section: 'Section',
+    
+    // Time
+    minutes: 'minutes',
+    hours: 'heures',
+    days: 'jours',
+    justNow: 'à l\'instant',
   },
   
   [LANGUAGES.EN]: {

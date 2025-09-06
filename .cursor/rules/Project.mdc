@@ -75,6 +75,7 @@ alwaysApply: true
 
 ## Git Commits
 - Use Pull Requests for all changes.
+-Only commit once human confirms all is working - ask user to test before we implement comit, once human confirms, continue to commit
 
 ## Endpoints
 - Verify which endpoints require auth before implementing.

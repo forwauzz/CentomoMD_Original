@@ -1261,8 +1261,8 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: true,
-        partial_results_stability: 'high' as const,
-        vocabulary_name: 'medical_terms_fr'  // When available
+        partial_results_stability: 'high' as const
+        // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
       return {

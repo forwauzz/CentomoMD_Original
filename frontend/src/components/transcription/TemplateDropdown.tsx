@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { TemplatePreview } from './TemplatePreview';
 
 export interface TemplateJSON {
+  id?: string;
   section: "7" | "8" | "11";
   title: string;
   content: string;
@@ -16,6 +17,9 @@ export interface TemplateJSON {
   language?: "fr" | "en";
   category?: string;
   complexity?: "low" | "medium" | "high";
+  status?: "active" | "draft" | "archived";
+  version?: string;
+  usage_count?: number;
 }
 
 interface TemplateDropdownProps {

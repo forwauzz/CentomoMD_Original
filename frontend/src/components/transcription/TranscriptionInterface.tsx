@@ -10,6 +10,7 @@ import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
+import { TemplateSelector } from './TemplateSelector';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -30,6 +31,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [editedTranscript, setEditedTranscript] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
   const [templateContent, setTemplateContent] = useState<string>('');
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
@@ -52,6 +54,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     error,
     setActiveSection
   } = useTranscription(sessionId, selectedLanguage);
+
+  // Clear edited content when starting a new transcription session
+  useEffect(() => {
+    if (isRecording && editedTranscript) {
+      console.log('New transcription session started, clearing previous edited content');
+      setEditedTranscript('');
+      setIsEditing(false);
+    }
+  }, [isRecording, editedTranscript]);
 
   const sessionTimerRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>(0);
@@ -147,13 +158,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   // Edit functionality
   const handleEdit = useCallback(() => {
     setIsEditing(true);
-    setEditedTranscript(paragraphs.join('\n\n'));
-  }, [paragraphs]);
+    // Load current content (either previously edited or original paragraphs)
+    const currentContent = editedTranscript || paragraphs.join('\n\n');
+    setEditedTranscript(currentContent);
+  }, [paragraphs, editedTranscript]);
 
   const handleSaveEdit = useCallback(() => {
     setIsEditing(false);
-    // Here you would typically save the edited transcript back to your state/backend
-    console.log('Edited transcript saved:', editedTranscript);
+    // Save the edited transcript temporarily in UI (zero retention - no backend persistence)
+    console.log('Edited transcript saved temporarily in UI:', editedTranscript);
+    // The edited content will remain in editedTranscript state for template processing
   }, [editedTranscript]);
 
   const handleCancelEdit = useCallback(() => {
@@ -173,6 +187,38 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
     console.log('Injecting template content:', template.title);
     
+    // Check if this is a Word-for-Word formatter template
+    if (template.id === 'word-for-word-formatter') {
+      console.log('Applying Word-for-Word post-processing to current transcript');
+      
+      // Get the current raw transcript (prioritize saved edited content, then current editing, then original)
+      const rawTranscript = editedTranscript || currentTranscript;
+      
+      if (rawTranscript && rawTranscript.trim()) {
+        // Import the Word-for-Word formatter
+        const { formatWordForWordText } = await import('../../utils/wordForWordFormatter');
+        
+        // Apply Word-for-Word formatting with default config
+        const formattedTranscript = formatWordForWordText(rawTranscript);
+        
+        // Update the transcript with formatted content
+        if (isEditing) {
+          setEditedTranscript(formattedTranscript);
+        } else {
+          // For now, we'll update the edited transcript since we can't directly modify the hook's state
+          setEditedTranscript(formattedTranscript);
+          setIsEditing(true);
+        }
+        
+        console.log('Word-for-Word post-processing applied successfully');
+        return;
+      } else {
+        console.warn('No transcript content to format');
+        return;
+      }
+    }
+    
+    // Regular template processing for non-Word-for-Word templates
     try {
              // Apply AI formatting to template content
        const formattingOptions: FormattingOptions = {
@@ -225,7 +271,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       
       console.log('Template content injected with basic formatting (fallback)');
     }
-  }, [isEditing]);
+  }, [isEditing, editedTranscript, currentTranscript]);
 
   // Debug: Check recording state
   console.log('TranscriptionInterface: isRecording =', isRecording, 'selectedLanguage =', selectedLanguage);
@@ -479,6 +525,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                       </Button>
                     </div>
                   </div>
+                ) : editedTranscript ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {editedTranscript}
+                    </p>
+                  </div>
                 ) : paragraphs.length > 0 ? (
                   <div className="space-y-3">
                     {paragraphs.map((paragraph, index) => (
@@ -496,7 +548,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
               {/* Action Buttons */}
               <div className="flex items-center space-x-3">
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowTemplateModal(true)}
+                >
                   <FileText className="h-4 w-4" />
                   <span>Select Template</span>
                 </Button>
@@ -524,6 +581,22 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Template Selection Modal */}
+      {showTemplateModal && (
+        <TemplateSelector
+          isOpen={showTemplateModal}
+          onClose={() => setShowTemplateModal(false)}
+          onSelect={(template) => {
+            console.log('Template selected from modal:', template);
+            setSelectedTemplate(template);
+            injectTemplateContent(template);
+            setShowTemplateModal(false);
+          }}
+          currentSection={activeSection.replace('section_', '') as "7" | "8" | "11"}
+          currentLanguage={selectedLanguage === 'fr-CA' ? 'fr' : 'en'}
+        />
       )}
     </div>
   );

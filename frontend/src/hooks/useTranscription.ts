@@ -178,14 +178,19 @@ export const useTranscription = (sessionId?: string, language?: string) => {
         buf = []; 
       }
       
-      // Add speaker prefix if available
-      const speakerPrefix = curr.speaker ? `${curr.speaker === 'spk_0' ? 'Dr:' : 'Pt:'} ` : '';
-      buf.push(speakerPrefix + curr.text.trim());
+      // Add speaker prefix if available (skip for word-for-word mode)
+      if (state.mode === 'word_for_word') {
+        buf.push(curr.text.trim());
+      } else {
+        const speakerPrefix = curr.speaker ? `${curr.speaker === 'spk_0' ? 'Dr:' : 'Pt:'} ` : '';
+        buf.push(speakerPrefix + curr.text.trim());
+      }
     }
     if (buf.length) paragraphs.push(buf.join(' '));
     
     return paragraphs;
   }, [segments, buffers, activeSection]);
+
 
   // French typography polish (clinic-friendly)
   const tidyFr = useCallback((s: string) => {
@@ -290,9 +295,11 @@ export const useTranscription = (sessionId?: string, language?: string) => {
              };
 
                            if (seg.isFinal) {
-                // 1) verbatim start/end/custom
-                const v = detectVerbatimCmd(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
-                if (v) {
+                // Skip voice command processing for word-for-word mode
+                if (state.mode !== 'word_for_word') {
+                  // 1) verbatim start/end/custom
+                  const v = detectVerbatimCmd(seg.text, currentLanguageCode as 'fr-CA'|'en-US');
+                  if (v) {
                   addVoiceCommand({
                     type: 'verbatim',
                     command: seg.text,
@@ -374,6 +381,7 @@ export const useTranscription = (sessionId?: string, language?: string) => {
                   return; // do not add command text to transcript
                 }
               }
+                } // End of voice command processing conditional
 
              // 3) mark protected when verbatim mode is on
              if (verbatim.current.isOpen || verbatim.current.customOpen) seg.isProtected = true;
@@ -394,7 +402,11 @@ export const useTranscription = (sessionId?: string, language?: string) => {
             if (msg.isFinal) {
               // Handle final results - add to final transcripts
               const paragraphs = buildParagraphs();
-              const finalDisplay = paragraphs.map(tidyFr);
+              // Apply processing based on mode
+              console.log('Processing final transcript with mode:', state.mode);
+              const finalDisplay = state.mode === 'word_for_word' 
+                ? paragraphs  // Raw text for word-for-word mode (post-processing triggered by template)
+                : paragraphs.map(tidyFr);  // Formatted text for other modes (AWS handles punctuation naturally)
               
               // Create final transcript entry
               const newTranscript: Transcript = {

@@ -47,15 +47,15 @@ const profileService = {
 };
 
 // Language options for the select component
-const languageOptions = [
-  { label: 'English (Canada)', value: 'en-CA' as const },
-  { label: 'Français (Canada)', value: 'fr-CA' as const },
-];
+// const languageOptions = [
+//   { label: 'English (Canada)', value: 'en-CA' as const },
+//   { label: 'Français (Canada)', value: 'fr-CA' as const },
+// ];
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { addToast, setLanguage } = useUIStore();
-  const { setProfile: setUserProfile, updateProfile: updateUserProfile } = useUserStore();
+  const { setProfile: setUserProfile } = useUserStore();
   const { t } = useI18n();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
