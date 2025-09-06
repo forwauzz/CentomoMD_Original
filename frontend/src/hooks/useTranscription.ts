@@ -227,6 +227,7 @@ export const useTranscription = (sessionId?: string, language?: string) => {
           type: 'start_transcription', 
           languageCode, 
           sampleRate: 16000,
+          mode: state.mode,  // Add mode parameter for Phase 0
           sessionId 
         }));
         updateState({ isConnected: true, error: undefined });

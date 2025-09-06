@@ -1242,6 +1242,46 @@ app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> =>
   }
 });
 
+// Phase 0: Mode-specific AWS configuration function
+const getModeSpecificConfig = (mode: string, baseConfig: any) => {
+  const config = {
+    language_code: baseConfig.language_code,
+    media_sample_rate_hz: baseConfig.media_sample_rate_hz,
+  };
+
+  switch (mode) {
+    case 'word_for_word':
+      return {
+        ...config,
+        show_speaker_labels: false,
+        partial_results_stability: 'high' as const
+        // vocabulary_name omitted - will be undefined
+      };
+    case 'smart_dictation':
+      return {
+        ...config,
+        show_speaker_labels: true,
+        partial_results_stability: 'high' as const,
+        vocabulary_name: 'medical_terms_fr'  // When available
+      };
+    case 'ambient':
+      return {
+        ...config,
+        show_speaker_labels: true,
+        partial_results_stability: 'medium' as const
+        // vocabulary_name omitted - will be undefined
+      };
+    default:
+      // Fallback to current configuration
+      return {
+        ...config,
+        show_speaker_labels: false,
+        partial_results_stability: 'high' as const
+        // vocabulary_name omitted - will be undefined
+      };
+  }
+};
+
 const wss = new WebSocketServer({ server });
 
 // Store active transcription sessions - integrated with AWS Transcribe
@@ -1307,15 +1347,17 @@ wss.on('connection', (ws, req) => {
         }
         started = true;
 
+        // Phase 0: Use mode-specific configuration
+        const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
+          language_code: msg.languageCode, 
+          media_sample_rate_hz: msg.sampleRate ?? 16000
+        });
+
         // Start AWS stream (non-blocking) and expose feeder immediately
         const { pushAudio: feeder, endAudio: ender } =
           transcriptionService.startStreamingTranscription(
             sessionId,
-            { 
-              language_code: msg.languageCode, 
-              media_sample_rate_hz: msg.sampleRate ?? 16000, 
-              show_speaker_labels: false 
-            },
+            modeConfig,
             (res) => ws.send(JSON.stringify({ 
               type: 'transcription_result', 
               resultId: res.resultId,                         // stable key
