@@ -45,21 +45,36 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         }
       }
 
-      // Add Word-for-Word formatter template
+      // Word-for-Word formatter (Mode 1) with default config
       const wordForWordTemplate: TemplateJSON = {
         id: 'word-for-word-formatter',
         section: currentSection,
         title: 'Word-for-Word Formatter',
-        content: 'Post-process raw Word-for-Word transcription to clean medical text',
+        content: 'Convert spoken commands (EN/FR), strip Pt:/Dr: prefixes, clean spacing, and capitalize sentences. Light clinical fixes (dates, spine levels, doctor titles) are ON by default.',
         tags: ['word-for-word', 'formatter', 'post-processor'],
-        source_file: 'wordForWordTemplate.json',
-        language: currentLanguage,
+        source_file: 'mode1_word_for_word.config.json',
+        language: 'fr',
         category: 'formatter',
         complexity: 'low',
         status: 'active',
-        version: '1.0.0',
-        usage_count: 0
-      };
+        version: '1.1.0',
+        usage_count: 0,
+        // optional metadata for downstream apply function
+        meta: {
+          defaultConfig: {
+            removeSpeakerPrefixes: true,
+            convertSpokenCommands: true,
+            capitalizeSentences: true,
+            cleanSpacing: true,
+            applyLightClinicalFixes: true,
+            lightClinicalFixes: {
+              normalizeSpineLevels: true,
+              normalizeDoctorAbbrev: true,
+              dateHeuristics: true
+            }
+          }
+        }
+      } as TemplateJSON;
 
       // Combine backend templates with Word-for-Word formatter
       setTemplates([wordForWordTemplate, ...backendTemplates]);
@@ -70,16 +85,16 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         id: 'word-for-word-formatter',
         section: currentSection,
         title: 'Word-for-Word Formatter',
-        content: 'Post-process raw Word-for-Word transcription to clean medical text',
+        content: 'Convert spoken commands (EN/FR), strip Pt:/Dr: prefixes, clean spacing, and capitalize sentences. Light clinical fixes are ON by default.',
         tags: ['word-for-word', 'formatter', 'post-processor'],
-        source_file: 'wordForWordTemplate.json',
-        language: currentLanguage,
+        source_file: 'mode1_word_for_word.config.json',
+        language: 'fr',
         category: 'formatter',
         complexity: 'low',
         status: 'active',
-        version: '1.0.0',
+        version: '1.1.0',
         usage_count: 0
-      };
+      } as TemplateJSON;
       setTemplates([wordForWordTemplate]);
     } finally {
       setLoading(false);
@@ -182,10 +197,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   Selected: {selectedTemplate.title}
                 </p>
                 <p className="text-xs text-gray-600">
-                  {selectedTemplate.id === 'word-for-word-formatter' 
-                    ? 'This will format your Word-for-Word transcription'
-                    : 'This will be applied to your transcript'
-                  }
+                  {selectedTemplate.id === 'word-for-word-formatter'
+                    ? 'This will format your Word-for-Word transcription.'
+                    : 'This will be applied to your transcript.'}
                 </p>
               </div>
               <Button onClick={handleApply} className="bg-blue-600 hover:bg-blue-700">

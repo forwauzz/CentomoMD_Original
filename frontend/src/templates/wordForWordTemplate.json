@@ -2,22 +2,125 @@
   "id": "word-for-word-formatter",
   "section": "word-for-word",
   "title": "Word-for-Word Formatter",
-  "content": "Raw transcription formatting template",
+  "content": "Post-process raw AWS Transcribe output; convert spoken commands; do not normalize content unless explicitly enabled.",
   "tags": ["word-for-word", "formatter", "post-processor"],
-  "source_file": "wordForWordTemplate.json",
-  "language": "fr",
+  "source_file": "mode1_word_for_word.config.json",
+  "language": "multi",
   "category": "formatter",
   "complexity": "low",
   "status": "active",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "usage_count": 0,
+
   "formatting_rules": {
     "removeSpeakerPrefixes": true,
     "convertSpokenCommands": true,
-    "applyMedicalFormatting": true,
     "capitalizeSentences": true,
-    "cleanSpacing": true
+    "cleanSpacing": true,
+
+    "applyLightClinicalFixes": true,
+    "lightClinicalFixes": {
+      "normalizeSpineLevels": true,
+      "normalizeDoctorAbbrev": true,
+      "dateHeuristics": true
+    }
   },
-  "voice_commands": [],
-  "validation_rules": {}
+
+  "voice_commands": [
+    { "aliases": ["new paragraph", "paragraph break"], "replacement": "\\n\\n" },
+    { "aliases": ["new line", "newline", "line break"], "replacement": "\\n" },
+    { "aliases": ["period", "full stop"], "replacement": "." },
+    { "aliases": ["comma"], "replacement": "," },
+    { "aliases": ["colon"], "replacement": ":" },
+    { "aliases": ["semicolon", "semi colon"], "replacement": ";" },
+    { "aliases": ["exclamation", "exclamation mark"], "replacement": "!" },
+    { "aliases": ["question mark"], "replacement": "?" },
+    { "aliases": ["open parenthesis"], "replacement": "(" },
+    { "aliases": ["close parenthesis"], "replacement": ")" },
+    { "aliases": ["open quote", "open quotes", "open quotation marks"], "replacement": "\"" },
+    { "aliases": ["close quote", "close quotes", "close quotation marks"], "replacement": "\"" },
+    { "aliases": ["dash", "hyphen"], "replacement": "-" },
+
+    { "aliases": ["nouveau paragraphe", "nouvelle paragraphe"], "replacement": "\\n\\n" },
+    { "aliases": ["nouvelle ligne", "retour à la ligne"], "replacement": "\\n" },
+    { "aliases": ["point"], "replacement": "." },
+    { "aliases": ["virgule"], "replacement": "," },
+    { "aliases": ["deux points", "deux-points"], "replacement": ":" },
+    { "aliases": ["point virgule", "point-virgule"], "replacement": ";" },
+    { "aliases": ["point d'exclamation"], "replacement": "!" },
+    { "aliases": ["point d'interrogation"], "replacement": "?" },
+    { "aliases": ["ouvrir les guillemets"], "replacement": "«" },
+    { "aliases": ["fermer les guillemets"], "replacement": "»" }
+  ],
+
+  "cleanup": {
+    "strip_noise_prefixes": {
+      "pattern": "^(?:\\s*)(?:pt|dr|dre)\\s*:\\s*",
+      "flags": "gim"
+    },
+    "removeSpacesBeforePunct": true,
+    "ensureSpaceAfterPunct": true,
+    "collapseRunsOfNewlinesOver": 2,
+    "trimEachLine": true
+  },
+
+  "validation_rules": [
+    {
+      "name": "no_residual_commands",
+      "pattern": "\\b(?:new\\s+line|new\\s+paragraph|paragraph\\s*break|line\\s*break|period|full\\s*stop|comma|colon|semi\\s*colon|semicolon|nouvelle\\s+ligne|nouveau\\s+paragraphe|point|virgule|deux\\s*[- ]?points|point\\s*[- ]?virgule)\\b",
+      "should_match": false,
+      "flags": "i"
+    },
+    {
+      "name": "no_noise_prefixes",
+      "pattern": "^(?:\\s*)(?:pt|dr|dre)\\s*:\\s*",
+      "should_match": false,
+      "flags": "im"
+    },
+    {
+      "name": "no_double_punct",
+      "pattern": "([\\.,:;!?])\\1+",
+      "should_match": false,
+      "flags": "g"
+    },
+    {
+      "name": "max_two_consecutive_newlines",
+      "pattern": "\\n{3,}",
+      "should_match": false,
+      "flags": "g"
+    }
+  ],
+
+  "tests": [
+    {
+      "name": "en_basic",
+      "input": "Pt: hello period new line this is a test comma thank you",
+      "expected": "Hello.\nThis is a test, thank you"
+    },
+    {
+      "name": "fr_basic",
+      "input": "pt: bonjour point nouvelle ligne ceci est un test virgule merci",
+      "expected": "Bonjour.\nCeci est un test, merci"
+    },
+    {
+      "name": "paragraphs",
+      "input": "Pt: first sentence period new paragraph second sentence period",
+      "expected": "First sentence.\n\nSecond sentence."
+    },
+    {
+      "name": "light_clinical_on",
+      "input": "Pt: mild disc bulge at c 5 c 6 period",
+      "expected": "Mild disc bulge at C5-C6."
+    },
+    {
+      "name": "date_normalization",
+      "input": "Pt: consultation in November two thousand twenty two period",
+      "expected": "Consultation in November 2022."
+    },
+    {
+      "name": "doctor_normalization",
+      "input": "Pt: follow up with Doctor Tremblay period",
+      "expected": "Follow up with Dr. Tremblay."
+    }
+  ]
 }

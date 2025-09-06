@@ -1,143 +1,179 @@
 /**
- * Word-for-Word mode post-processor
- * Converts raw AWS Transcribe output to clean medical text
+ * Word-for-Word mode post-processor (Mode 1)
+ * Strict: converts spoken commands + spacing/caps only.
+ * Optional: light clinical fixes (OFF by default).
  */
 
 export interface WordForWordConfig {
   removeSpeakerPrefixes: boolean;
   convertSpokenCommands: boolean;
-  applyMedicalFormatting: boolean;
   capitalizeSentences: boolean;
   cleanSpacing: boolean;
+
+  applyLightClinicalFixes?: boolean;
+  lightClinicalFixes?: {
+    normalizeSpineLevels?: boolean;
+    normalizeDoctorAbbrev?: boolean;
+    dateHeuristics?: boolean;
+  };
 }
 
-const DEFAULT_CONFIG: WordForWordConfig = {
+export const DEFAULT_CONFIG: WordForWordConfig = {
   removeSpeakerPrefixes: true,
   convertSpokenCommands: true,
-  applyMedicalFormatting: true,
   capitalizeSentences: true,
   cleanSpacing: true,
+
+  applyLightClinicalFixes: true,
+  lightClinicalFixes: {
+    normalizeSpineLevels: true,
+    normalizeDoctorAbbrev: true,
+    dateHeuristics: true
+  }
 };
 
-/**
- * Post-process raw AWS Transcribe output for Word-for-Word mode
- */
-export function formatWordForWordText(rawText: string, config: WordForWordConfig = DEFAULT_CONFIG): string {
-  let formatted = rawText;
+/** Post-process raw AWS Transcribe output for Word-for-Word mode */
+export function formatWordForWordText(rawText: string, cfg: WordForWordConfig = DEFAULT_CONFIG): string {
+  let t = rawText ?? "";
 
-  // Step 1: Remove speaker prefixes (Pt:, Dr:, etc.)
-  if (config.removeSpeakerPrefixes) {
-    formatted = formatted.replace(/\b(Pt|Dr|Dre):\s*/g, '');
+  // 1) Strip speaker prefixes only at line start (Pt:, Dr:, Dre:)
+  if (cfg.removeSpeakerPrefixes) {
+    t = t.replace(/^(?:\s*)(?:pt|dr|dre)\s*:\s*/gim, "");
   }
 
-  // Step 2: Convert spoken commands to formatting
-  if (config.convertSpokenCommands) {
-    formatted = convertSpokenCommands(formatted);
+  // 2) Convert spoken commands (EN/FR)
+  if (cfg.convertSpokenCommands) {
+    t = convertSpokenCommands(t);
   }
 
-  // Step 3: Apply medical formatting
-  if (config.applyMedicalFormatting) {
-    formatted = applyMedicalFormatting(formatted);
+  // 3) Optional light clinical fixes (OFF by default)
+  if (cfg.applyLightClinicalFixes) {
+    t = applyLightClinicalFixes(t, cfg.lightClinicalFixes);
   }
 
-  // Step 4: Clean up spacing and capitalization
-  if (config.cleanSpacing) {
-    formatted = cleanSpacing(formatted);
+  // 4) Clean spacing (respect \n and \n\n)
+  if (cfg.cleanSpacing) {
+    t = cleanSpacing(t);
   }
 
-  if (config.capitalizeSentences) {
-    formatted = capitalizeSentences(formatted);
+  // 5) Capitalize sentences after ., !, ?, :, ; or newline
+  if (cfg.capitalizeSentences) {
+    t = capitalizeSentences(t);
   }
 
-  return formatted;
+  return t.trim();
 }
 
-/**
- * Convert spoken commands to actual formatting
- */
 function convertSpokenCommands(text: string): string {
-  let converted = text;
-  
-  // Line breaks
-  converted = converted.replace(/\bnew line\b/gi, '\n');
-  converted = converted.replace(/\bnew paragraph\b/gi, '\n\n');
-  
-  // Punctuation
-  converted = converted.replace(/\bperiod\b/gi, '.');
-  converted = converted.replace(/\bcomma\b/gi, ',');
-  converted = converted.replace(/\bcolon\b/gi, ':');
-  converted = converted.replace(/\bsemicolon\b/gi, ';');
-  converted = converted.replace(/\bexclamation\b/gi, '!');
-  converted = converted.replace(/\bquestion mark\b/gi, '?');
-  
-  // Parentheses and quotes
-  converted = converted.replace(/\bopen parenthesis\b/gi, '(');
-  converted = converted.replace(/\bclose parenthesis\b/gi, ')');
-  converted = converted.replace(/\bopen quotation marks\b/gi, '"');
-  converted = converted.replace(/\bclose quotation marks\b/gi, '"');
-  
-  return converted;
+  const replacements: Array<[RegExp, string]> = [
+    // Paragraphs & lines
+    [/\b(?:new\s*paragraph|paragraph\s*break)\b/gi, "\n\n"],
+    [/\b(?:new\s*line|newline|line\s*break)\b/gi, "\n"],
+    [/\b(?:nouveau\s*paragraphe|nouvelle\s*paragraphe)\b/gi, "\n\n"],
+    [/\b(?:nouvelle\s*ligne|retour\s*à\s*la\s*ligne)\b/gi, "\n"],
+
+    // Punctuation (EN)
+    [/\b(?:period|full\s*stop)\b/gi, "."],
+    [/\bcomma\b/gi, ","],
+    [/\bcolon\b/gi, ":"],
+    [/\bsemi\s*colon\b/gi, ";"],
+    [/\bsemicolon\b/gi, ";"],
+    [/\bexclamation(?:\s*mark)?\b/gi, "!"],
+    [/\bquestion\s*mark\b/gi, "?"],
+
+    // Punctuation (FR)
+    [/\bpoint\b/gi, "."],
+    [/\bvirgule\b/gi, ","],
+    [/\b(?:deux\s*[- ]?points)\b/gi, ":"],
+    [/\b(?:point\s*[- ]?virgule)\b/gi, ";"],
+    [/\bpoint\s*d['']exclamation\b/gi, "!"],
+    [/\bpoint\s*d['']interrogation\b/gi, "?"],
+
+    // Quotes & parens
+    [/\bopen\s*parenthesis\b/gi, "("],
+    [/\bclose\s*parenthesis\b/gi, ")"],
+    [/\bopen\s*quotes?(?:\s*|$)|open\s*quotation\s*marks\b/gi, "\""],
+    [/\bclose\s*quotes?(?:\s*|$)|close\s*quotation\s*marks\b/gi, "\""],
+    [/\bouvrir\s*les\s*guillemets\b/gi, "«"],
+    [/\bfermer\s*les\s*guillemets\b/gi, "»"],
+
+    // Dashes
+    [/\b(?:dash|hyphen)\b/gi, "-"]
+  ];
+
+  let out = text;
+  for (const [re, rep] of replacements) out = out.replace(re, rep);
+  return out;
 }
 
-/**
- * Apply medical-specific formatting
- */
-function applyMedicalFormatting(text: string): string {
-  let formatted = text;
-  
-  // Fix common medical terms
-  formatted = formatted.replace(/\bsea 5 C 6\b/gi, 'C5-C6');
-  formatted = formatted.replace(/\bC 5 C 6\b/gi, 'C5-C6');
-  formatted = formatted.replace(/\bC 6\b/gi, 'C6');
-  formatted = formatted.replace(/\bC 5\b/gi, 'C5');
-  
-  // Fix dates (November 200 -> November 2022)
-  formatted = formatted.replace(/\bNovember 200\b/gi, 'November 2022');
-  formatted = formatted.replace(/\bJanuary 2020\b/gi, 'January 2023');
-  formatted = formatted.replace(/\bFebruary 2023\b/gi, 'February 2023');
-  
-  // Fix common medical abbreviations
-  formatted = formatted.replace(/\bMRI\b/gi, 'MRI');
-  formatted = formatted.replace(/\bDoctor\b/gi, 'Dr.');
-  
-  return formatted;
-}
+function applyLightClinicalFixes(text: string, opts?: WordForWordConfig["lightClinicalFixes"]): string {
+  let t = text;
 
-/**
- * Clean up spacing and formatting
- */
-function cleanSpacing(text: string): string {
-  let cleaned = text;
-  
-  // Remove extra spaces around punctuation
-  cleaned = cleaned.replace(/\s+([.,:;!?])/g, '$1');
-  
-  // Remove multiple spaces
-  cleaned = cleaned.replace(/\s{2,}/g, ' ');
-  
-  // Clean up line breaks
-  cleaned = cleaned.replace(/\n\s+/g, '\n');
-  cleaned = cleaned.replace(/\s+\n/g, '\n');
-  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-  
-  return cleaned.trim();
-}
-
-/**
- * Capitalize sentences
- */
-function capitalizeSentences(text: string): string {
-  let capitalized = text;
-  
-  // Capitalize first letter of each sentence
-  capitalized = capitalized.replace(/(^|\.\s+)([a-z])/g, (_, prefix, letter) => {
-    return prefix + letter.toUpperCase();
-  });
-  
-  // Ensure first letter of text is capitalized
-  if (capitalized.length > 0) {
-    capitalized = capitalized.charAt(0).toUpperCase() + capitalized.slice(1);
+  if (opts?.normalizeSpineLevels) {
+    // Robust C/T/L level normalization: "c 5 c 6", "C5 C6", "C 5 - C 6", etc.
+    t = t.replace(/\b([ctl])\s*0*([1-7])\s*[- ]?\s*\1?\s*0*([1-7])\b/gi, (_, seg, a, b) =>
+      `${seg.toUpperCase()}${a}-${seg.toUpperCase()}${b}`
+    );
+    // Single level like "c 6" -> "C6"
+    t = t.replace(/\b([ctl])\s*0*([1-7])\b/gi, (_, seg, a) => `${seg.toUpperCase()}${a}`);
+    // Common ASR "sea 5 c 6" -> "C5-C6"
+    t = t.replace(/\bsea\s*0*([1-7])\s*c\s*0*([1-7])\b/gi, (_, a, b) => `C${a}-C${b}`);
   }
-  
-  return capitalized;
+
+  if (opts?.normalizeDoctorAbbrev) {
+    // "Doctor X" -> "Dr. X"
+    t = t.replace(/\bDoctor\b\s+(?=[A-Z])/g, "Dr. ");
+  }
+
+  if (opts?.dateHeuristics) {
+    // Convert spoken years: "two thousand twenty two" -> "2022"
+    t = t.replace(/\btwo\s+thousand\s+twenty\s+two\b/gi, "2022");
+    t = t.replace(/\btwo\s+thousand\s+twenty\s+three\b/gi, "2023");
+    t = t.replace(/\btwo\s+thousand\s+twenty\s+four\b/gi, "2024");
+    t = t.replace(/\btwo\s+thousand\s+twenty\s+five\b/gi, "2025");
+    
+    // Handle other common year patterns
+    t = t.replace(/\btwenty\s+twenty\s+two\b/gi, "2022");
+    t = t.replace(/\btwenty\s+twenty\s+three\b/gi, "2023");
+    t = t.replace(/\btwenty\s+twenty\s+four\b/gi, "2024");
+    t = t.replace(/\btwenty\s+twenty\s+five\b/gi, "2025");
+  }
+
+  return t;
+}
+
+function cleanSpacing(text: string): string {
+  let t = text;
+
+  // Remove spaces before punctuation
+  t = t.replace(/\s+([.,:;!?])/g, "$1");
+
+  // Ensure a space after punctuation if followed by a word/quote (not newline/end)
+  t = t.replace(/([.:;!?])(?!\s|\n|$)/g, "$1 ");
+
+  // Normalize spaces on lines; keep paragraph breaks
+  t = t.replace(/[ \t]{2,}/g, " ");
+
+  // Trim space around newlines
+  t = t.replace(/\n[ \t]+/g, "\n").replace(/[ \t]+\n/g, "\n");
+
+  // Collapse >2 newlines to exactly 2
+  t = t.replace(/\n{3,}/g, "\n\n");
+
+  return t.trim();
+}
+
+function capitalizeSentences(text: string): string {
+  // Capitalize start of text
+  let t = text.replace(/^\s*([a-zàâçéèêëîïôûùüÿñæœ])/iu, (_, ch) => ch.toUpperCase());
+
+  // After ., !, ?, :, ; or newline
+  t = t.replace(/([\.!?;:]\s+|\n+)([a-zàâçéèêëîïôûùüÿñæœ])/giu,
+    (_, sep, ch) => `${sep}${ch.toUpperCase()}`
+  );
+
+  // Avoid capitalizing after "Dr." (basic guard)
+  t = t.replace(/Dr\.\s+([A-Z])/g, (match) => match);
+
+  return t;
 }
