@@ -234,8 +234,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     if (template.id === 'word-for-word-formatter') {
       console.log('Applying Word-for-Word post-processing to current transcript');
       
-      // Get the current raw transcript (prioritize saved edited content, then current editing, then original)
-      const rawTranscript = editedTranscript || currentTranscript;
+      // Get the current raw transcript (prioritize saved edited content, then current editing, then paragraphs)
+      const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+      
+      console.log('Template processing - editedTranscript:', editedTranscript ? 'exists' : 'none');
+      console.log('Template processing - paragraphs length:', paragraphs.length);
+      console.log('Template processing - currentTranscript length:', currentTranscript.length);
+      console.log('Template processing - rawTranscript length:', rawTranscript.length);
+      console.log('Template processing - rawTranscript preview:', rawTranscript.substring(0, 200) + '...');
       
       if (rawTranscript && rawTranscript.trim()) {
         // Import the Word-for-Word formatter
