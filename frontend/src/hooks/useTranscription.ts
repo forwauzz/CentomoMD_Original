@@ -3,7 +3,6 @@ import { TranscriptionState, Transcript } from '@/types';
 import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
-import { formatWordForWordText } from '../utils/wordForWordFormatter';
 
 // Enhanced segment tracking for partial results
 type Segment = { 
@@ -406,7 +405,7 @@ export const useTranscription = (sessionId?: string, language?: string) => {
               // Apply processing based on mode
               console.log('Processing final transcript with mode:', state.mode);
               const finalDisplay = state.mode === 'word_for_word' 
-                ? paragraphs.map(p => formatWordForWordText(p))  // Full Word-for-Word formatting with clinical fixes
+                ? paragraphs  // Raw text for word-for-word mode (post-processing triggered by template)
                 : paragraphs.map(tidyFr);  // Formatted text for other modes (AWS handles punctuation naturally)
               
               // Create final transcript entry
