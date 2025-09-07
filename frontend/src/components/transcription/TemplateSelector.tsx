@@ -76,8 +76,45 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         }
       } as TemplateJSON;
 
-      // Combine backend templates with Word-for-Word formatter
-      setTemplates([wordForWordTemplate, ...backendTemplates]);
+      // Section 7 AI Formatter (Mode 2) for CNESST formatting
+      const section7AITemplate: TemplateJSON = {
+        id: 'section7-ai-formatter',
+        section: currentSection,
+        title: 'Section 7 AI Formatter',
+        content: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution). Enforces worker-first rule, chronological ordering, and medical terminology standards.',
+        tags: ['section7', 'ai-formatter', 'cnesst', 'medical'],
+        source_file: 'section7_master.md',
+        language: currentLanguage,
+        category: 'ai-formatter',
+        complexity: 'high',
+        status: 'active',
+        version: '1.0.0',
+        usage_count: 0,
+        // metadata for AI formatting
+        meta: {
+          aiFormatter: {
+            mode: 'mode2',
+            section: '7',
+            language: currentLanguage,
+            enforceWorkerFirst: true,
+            chronologicalOrder: true,
+            medicalTerminology: true
+          }
+        }
+      } as TemplateJSON;
+
+      // Combine templates based on current section
+      let availableTemplates = [wordForWordTemplate];
+      
+      // Add Section 7 AI formatter only for Section 7
+      if (currentSection === '7') {
+        availableTemplates.push(section7AITemplate);
+      }
+      
+      // Add backend templates
+      availableTemplates.push(...backendTemplates);
+      
+      setTemplates(availableTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
       // Still show Word-for-Word formatter even if backend fails
@@ -95,7 +132,40 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         version: '1.1.0',
         usage_count: 0
       } as TemplateJSON;
-      setTemplates([wordForWordTemplate]);
+      
+      // Section 7 AI Formatter fallback
+      const section7AITemplate: TemplateJSON = {
+        id: 'section7-ai-formatter',
+        section: currentSection,
+        title: 'Section 7 AI Formatter',
+        content: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution). Enforces worker-first rule, chronological ordering, and medical terminology standards.',
+        tags: ['section7', 'ai-formatter', 'cnesst', 'medical'],
+        source_file: 'section7_master.md',
+        language: currentLanguage,
+        category: 'ai-formatter',
+        complexity: 'high',
+        status: 'active',
+        version: '1.0.0',
+        usage_count: 0,
+        meta: {
+          aiFormatter: {
+            mode: 'mode2',
+            section: '7',
+            language: currentLanguage,
+            enforceWorkerFirst: true,
+            chronologicalOrder: true,
+            medicalTerminology: true
+          }
+        }
+      } as TemplateJSON;
+      
+      // Combine templates based on current section
+      let fallbackTemplates = [wordForWordTemplate];
+      if (currentSection === '7') {
+        fallbackTemplates.push(section7AITemplate);
+      }
+      
+      setTemplates(fallbackTemplates);
     } finally {
       setLoading(false);
     }

@@ -269,6 +269,78 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       }
     }
     
+    // Check if this is a Section 7 AI formatter template
+    if (template.id === 'section7-ai-formatter') {
+      console.log('Applying Section 7 AI formatting to current transcript');
+      
+      // Get the current raw transcript (prioritize saved edited content, then current editing, then paragraphs)
+      const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+      
+      console.log('Section 7 AI processing - rawTranscript length:', rawTranscript.length);
+      console.log('Section 7 AI processing - rawTranscript preview:', rawTranscript.substring(0, 200) + '...');
+      
+      if (rawTranscript && rawTranscript.trim()) {
+        try {
+          // Import apiFetch and auth utilities
+          const { apiFetch } = await import('../../lib/api');
+          const { supabase } = await import('../../lib/authClient');
+          
+          // Check if user is authenticated
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError || !session) {
+            console.warn('User not authenticated for Section 7 AI formatting');
+            alert('Please log in to use Section 7 AI formatting. The feature requires authentication.');
+            return;
+          }
+          
+          console.log('User authenticated, proceeding with Section 7 AI formatting');
+          
+          // Call Mode2Formatter API for Section 7 using proper authentication
+          const result = await apiFetch('/api/format/mode2', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              transcript: rawTranscript,
+              section: '7',
+              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
+            })
+          });
+          
+          console.log('Section 7 AI formatting successful');
+          console.log('Formatted result:', result.formatted);
+          console.log('Issues found:', result.issues);
+          console.log('Confidence score:', result.confidence_score);
+          
+          // Update the transcript with AI-formatted content
+          if (isEditing) {
+            setEditedTranscript(result.formatted);
+          } else {
+            setEditedTranscript(result.formatted);
+            setIsEditing(true);
+          }
+          
+          // Show any issues to the user
+          if (result.issues && result.issues.length > 0) {
+            console.warn('Section 7 formatting issues:', result.issues);
+            // TODO: Show issues in UI (could be a toast notification)
+          }
+          
+          return;
+        } catch (error) {
+          console.error('Error applying Section 7 AI formatting:', error);
+          // Fallback: show error but don't break the flow
+          alert(`Section 7 AI formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          return;
+        }
+      } else {
+        console.warn('No transcript content to format with Section 7 AI');
+        return;
+      }
+    }
+    
     // Regular template processing for non-Word-for-Word templates
     try {
              // Apply AI formatting to template content
