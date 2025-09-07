@@ -13,6 +13,7 @@ import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
 import { Mode2Formatter } from './services/formatter/mode2.js';
+import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
@@ -54,6 +55,61 @@ try {
 } catch(e) { 
   console.error('❌ mount /api/profile:', e); 
 }
+
+// Transcript Analysis endpoints
+app.post('/api/analyze/transcript', authMiddleware, async (req, res) => {
+  try {
+    const { original, formatted, language = 'fr' } = req.body;
+    
+    if (!original || !formatted) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Both original and formatted transcripts are required' 
+      });
+    }
+    
+    const analyzer = new TranscriptAnalyzer();
+    const result = await analyzer.analyzeTranscript(original, formatted, language);
+    
+    return res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error('Transcript analysis error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Analysis failed' 
+    });
+  }
+});
+
+app.post('/api/analyze/compare', authMiddleware, async (req, res) => {
+  try {
+    const { original, formatted } = req.body;
+    
+    if (!original || !formatted) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Both original and formatted transcripts are required' 
+      });
+    }
+    
+    const analyzer = new TranscriptAnalyzer();
+    const result = await analyzer.compareTranscripts(original, formatted);
+    
+    return res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error('Transcript comparison error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Comparison failed' 
+    });
+  }
+});
 
 // Database ping route
 try {
@@ -1183,7 +1239,18 @@ app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> =>
 // Mode 2 Formatting Endpoint (Smart Dictation)
 app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> => {
   try {
-    const { transcript, section, language, case_id, selected_sections, extra_dictation } = req.body;
+    const { 
+      transcript, 
+      section, 
+      language, 
+      case_id, 
+      selected_sections, 
+      extra_dictation,
+      // Template combination parameters
+      templateCombo,
+      verbatimSupport,
+      voiceCommandsSupport
+    } = req.body;
     
     if (!transcript || typeof transcript !== 'string') {
       res.status(400).json({ 
@@ -1221,7 +1288,11 @@ app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> =>
       section: section as '7' | '8' | '11',
       case_id,
       selected_sections,
-      extra_dictation
+      extra_dictation,
+      // Template combination parameters
+      templateCombo,
+      verbatimSupport,
+      voiceCommandsSupport
     });
 
     // Return the formatted result

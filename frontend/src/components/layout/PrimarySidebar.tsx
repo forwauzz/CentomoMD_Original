@@ -2,19 +2,24 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  FileText, 
   Mic, 
   Settings, 
   User, 
   ChevronLeft, 
   ChevronRight,
-  Plus
+  Plus,
+  MicIcon,
+  Quote,
+  Zap,
+  BarChart3,
+  FileText as Template
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/lib/i18n';
 import { ROUTES } from '@/lib/constants';
+import { useFeatureFlags } from '@/lib/featureFlags';
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +40,7 @@ export const PrimarySidebar: React.FC = () => {
   const location = useLocation();
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const { t } = useI18n();
+  const featureFlags = useFeatureFlags();
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -52,14 +58,39 @@ export const PrimarySidebar: React.FC = () => {
     {
       id: 'templates',
       label: t('templates'),
-      icon: FileText,
-      href: ROUTES.TEMPLATES,
+      icon: Template,
+      href: ROUTES.TEMPLATE_COMBINATIONS,
     },
     {
       id: 'dictation',
       label: t('dictation'),
       icon: Mic,
       href: ROUTES.DICTATION,
+    },
+    // Feature-flagged navigation items
+    ...(featureFlags.voiceCommands ? [{
+      id: 'voice-commands',
+      label: t('voiceCommands'),
+      icon: MicIcon,
+      href: ROUTES.VOICE_COMMANDS,
+    }] : []),
+    ...(featureFlags.verbatim ? [{
+      id: 'verbatim',
+      label: t('verbatim'),
+      icon: Quote,
+      href: ROUTES.VERBATIM,
+    }] : []),
+    ...(featureFlags.macros ? [{
+      id: 'macros',
+      label: t('macros'),
+      icon: Zap,
+      href: ROUTES.MACROS,
+    }] : []),
+    {
+      id: 'transcript-analysis',
+      label: t('transcriptAnalysis'),
+      icon: BarChart3,
+      href: ROUTES.TRANSCRIPT_ANALYSIS,
     },
     {
       id: 'settings',

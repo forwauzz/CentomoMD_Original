@@ -9,6 +9,10 @@ export const translations = {
     newCase: 'Nouveau dossier',
     templates: 'Modèles',
     dictation: 'Dictée',
+        voiceCommands: 'Commandes vocales',
+        verbatim: 'Verbatim',
+        macros: 'Macros',
+        transcriptAnalysis: 'Analyse de transcription',
     settings: 'Paramètres',
     profile: 'Profil',
     
@@ -156,6 +160,10 @@ export const translations = {
     newCase: 'New Case',
     templates: 'Templates',
     dictation: 'Dictation',
+        voiceCommands: 'Voice Commands',
+        verbatim: 'Verbatim',
+        macros: 'Macros',
+        transcriptAnalysis: 'Transcript Analysis',
     settings: 'Settings',
     profile: 'Profile',
     

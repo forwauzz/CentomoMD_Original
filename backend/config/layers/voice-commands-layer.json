@@ -1,0 +1,31 @@
+{
+  "name": "voice-commands-layer",
+  "version": "1.0.0",
+  "description": "Voice commands processing layer for converting spoken commands to text replacements",
+  "enabled": true,
+  "priority": 2,
+  "dependencies": [],
+  "commands": {
+    "source": "database",
+    "fallback": "default-commands.json"
+  },
+  "processing": {
+    "preProcessing": {
+      "enabled": true,
+      "description": "Convert voice commands to their replacements before AI processing",
+      "function": "processVoiceCommands"
+    }
+  },
+  "fallback": {
+    "enabled": true,
+    "description": "If voice command processing fails, return transcript unchanged",
+    "action": "return_original"
+  },
+  "validation": {
+    "enabled": true,
+    "checks": [
+      "commands_processed",
+      "no_orphaned_triggers"
+    ]
+  }
+}

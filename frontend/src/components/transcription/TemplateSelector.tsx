@@ -4,13 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, X } from 'lucide-react';
 import { TemplateJSON } from './TemplateDropdown';
+import { TEMPLATE_CONFIGS, TemplateConfig } from '@/config/template-config';
 
 interface TemplateSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (template: TemplateJSON) => void;
-  currentSection: "7" | "8" | "11";
-  currentLanguage: "fr" | "en";
+  currentSection: string;
+  currentLanguage: string;
+  isFormatting?: boolean;
 }
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
@@ -18,11 +20,45 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onClose,
   onSelect,
   currentSection,
-  currentLanguage
+  currentLanguage,
+  isFormatting = false
 }) => {
   const [templates, setTemplates] = useState<TemplateJSON[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+
+  // Convert TemplateConfig to TemplateJSON format
+  const convertTemplateConfigToJSON = (config: TemplateConfig, currentSection: string, currentLanguage: string): TemplateJSON => {
+    const isFrench = currentLanguage === 'fr';
+    
+    const converted = {
+      id: config.id,
+      section: currentSection as "7" | "8" | "11",
+      title: isFrench ? config.nameFr : config.name,
+      content: isFrench ? config.descriptionFr : config.description,
+      tags: config.tags,
+      source_file: `${config.id}.config.json`,
+      language: currentLanguage as "fr" | "en",
+      category: config.type,
+      complexity: config.complexity,
+      status: config.isActive ? 'active' : 'inactive',
+      version: '1.0.0',
+      usage_count: config.usage.count,
+      last_used: config.usage.lastUsed,
+      is_default: config.isDefault,
+      // Add metadata for downstream processing
+      meta: {
+        templateConfig: config,
+        aiFormatter: config.type === 'ai-formatter' ? {
+          prompt: isFrench ? config.promptFr : config.prompt,
+          config: config.config
+        } : undefined
+      }
+    } as TemplateJSON;
+    
+    console.log('TemplateSelector - Converting template config:', config.id, 'to:', converted.id, 'category:', converted.category);
+    return converted;
+  };
 
   // Load templates when modal opens
   useEffect(() => {
@@ -34,138 +70,28 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load templates from backend
-      const response = await fetch(`/api/templates/${currentSection}?language=${currentLanguage}`);
-      let backendTemplates: TemplateJSON[] = [];
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          backendTemplates = data.data;
+      // Load templates from Template Combinations configuration
+      const availableTemplates = TEMPLATE_CONFIGS.filter(config => {
+        // Filter by section (all or specific section)
+        if (config.section !== 'all' && config.section !== currentSection) {
+          return false;
         }
-      }
+        
+        // Filter by language (both or specific language)
+        if (config.language !== 'both' && config.language !== currentLanguage) {
+          return false;
+        }
+        
+        // Only show active templates
+        return config.isActive;
+      });
 
-      // Word-for-Word formatter (Mode 1) with default config
-      const wordForWordTemplate: TemplateJSON = {
-        id: 'word-for-word-formatter',
-        section: currentSection,
-        title: 'Word-for-Word Formatter',
-        content: 'Convert spoken commands (EN/FR), strip Pt:/Dr: prefixes, clean spacing, and capitalize sentences. Light clinical fixes (dates, spine levels, doctor titles) are ON by default.',
-        tags: ['word-for-word', 'formatter', 'post-processor'],
-        source_file: 'mode1_word_for_word.config.json',
-        language: 'fr',
-        category: 'formatter',
-        complexity: 'low',
-        status: 'active',
-        version: '1.1.0',
-        usage_count: 0,
-        // optional metadata for downstream apply function
-        meta: {
-          defaultConfig: {
-            removeSpeakerPrefixes: true,
-            convertSpokenCommands: true,
-            capitalizeSentences: true,
-            cleanSpacing: true,
-            applyLightClinicalFixes: true,
-            lightClinicalFixes: {
-              normalizeSpineLevels: true,
-              normalizeDoctorAbbrev: true,
-              dateHeuristics: true
-            }
-          }
-        }
-      } as TemplateJSON;
-
-      // Section 7 AI Formatter (Mode 2) for CNESST formatting
-      const section7AITemplate: TemplateJSON = {
-        id: 'section7-ai-formatter',
-        section: currentSection,
-        title: 'Section 7 AI Formatter',
-        content: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution). Enforces worker-first rule, chronological ordering, and medical terminology standards.',
-        tags: ['section7', 'ai-formatter', 'cnesst', 'medical'],
-        source_file: 'section7_master.md',
-        language: currentLanguage,
-        category: 'ai-formatter',
-        complexity: 'high',
-        status: 'active',
-        version: '1.0.0',
-        usage_count: 0,
-        // metadata for AI formatting
-        meta: {
-          aiFormatter: {
-            mode: 'mode2',
-            section: '7',
-            language: currentLanguage,
-            enforceWorkerFirst: true,
-            chronologicalOrder: true,
-            medicalTerminology: true
-          }
-        }
-      } as TemplateJSON;
-
-      // Combine templates based on current section
-      let availableTemplates = [wordForWordTemplate];
+      // Convert TemplateConfig to TemplateJSON format
+      const convertedTemplates = availableTemplates.map(config => 
+        convertTemplateConfigToJSON(config, currentSection, currentLanguage)
+      );
       
-      // Add Section 7 AI formatter only for Section 7
-      if (currentSection === '7') {
-        availableTemplates.push(section7AITemplate);
-      }
-      
-      // Add backend templates
-      availableTemplates.push(...backendTemplates);
-      
-      setTemplates(availableTemplates);
-    } catch (error) {
-      console.error('Error loading templates:', error);
-      // Still show Word-for-Word formatter even if backend fails
-      const wordForWordTemplate: TemplateJSON = {
-        id: 'word-for-word-formatter',
-        section: currentSection,
-        title: 'Word-for-Word Formatter',
-        content: 'Convert spoken commands (EN/FR), strip Pt:/Dr: prefixes, clean spacing, and capitalize sentences. Light clinical fixes are ON by default.',
-        tags: ['word-for-word', 'formatter', 'post-processor'],
-        source_file: 'mode1_word_for_word.config.json',
-        language: 'fr',
-        category: 'formatter',
-        complexity: 'low',
-        status: 'active',
-        version: '1.1.0',
-        usage_count: 0
-      } as TemplateJSON;
-      
-      // Section 7 AI Formatter fallback
-      const section7AITemplate: TemplateJSON = {
-        id: 'section7-ai-formatter',
-        section: currentSection,
-        title: 'Section 7 AI Formatter',
-        content: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution). Enforces worker-first rule, chronological ordering, and medical terminology standards.',
-        tags: ['section7', 'ai-formatter', 'cnesst', 'medical'],
-        source_file: 'section7_master.md',
-        language: currentLanguage,
-        category: 'ai-formatter',
-        complexity: 'high',
-        status: 'active',
-        version: '1.0.0',
-        usage_count: 0,
-        meta: {
-          aiFormatter: {
-            mode: 'mode2',
-            section: '7',
-            language: currentLanguage,
-            enforceWorkerFirst: true,
-            chronologicalOrder: true,
-            medicalTerminology: true
-          }
-        }
-      } as TemplateJSON;
-      
-      // Combine templates based on current section
-      let fallbackTemplates = [wordForWordTemplate];
-      if (currentSection === '7') {
-        fallbackTemplates.push(section7AITemplate);
-      }
-      
-      setTemplates(fallbackTemplates);
+      setTemplates(convertedTemplates);
     } finally {
       setLoading(false);
     }
@@ -188,96 +114,121 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-xl font-semibold">Select Template</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+          >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <CardContent className="space-y-6">
           {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Loading templates...</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading templates...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.map((template) => (
-                <Card 
-                  key={template.id} 
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    selectedTemplate?.id === template.id 
-                      ? 'ring-2 ring-blue-500 bg-blue-50' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => handleSelect(template)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-medium text-sm text-gray-900 line-clamp-2">
-                        {template.title}
-                      </h3>
-                      {template.id === 'word-for-word-formatter' && (
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          Formatter
-                        </Badge>
-                      )}
-                    </div>
+            <>
+              {/* Template Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                {templates.map((template) => (
+                  <Card
+                    key={template.id}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedTemplate?.id === template.id
+                        ? 'ring-2 ring-blue-500 bg-blue-50'
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleSelect(template)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-sm font-medium text-gray-900 mb-1">
+                            {template.title}
+                          </CardTitle>
+                          <p className="text-xs text-gray-600 line-clamp-2">
+                            {template.content}
+                          </p>
+                        </div>
+                        {template.meta?.templateConfig && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            Template Combo
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
                     
-                    <p className="text-xs text-gray-600 mb-3 line-clamp-3">
-                      {template.content}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {template.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {template.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{template.tags.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Section {template.section}</span>
-                      <span className="capitalize">{template.complexity || 'medium'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-          
-          {templates.length === 0 && !loading && (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
-              <p className="text-gray-600">No templates are available for this section and language.</p>
-            </div>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1">
+                          {template.tags.slice(0, 3).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-xs px-2 py-0.5"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                          {template.tags.length > 3 && (
+                            <Badge variant="outline" className="text-xs px-2 py-0.5">
+                              +{template.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Template Info */}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Section {template.section}</span>
+                          <span className="capitalize">{template.complexity}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* No Templates Message */}
+              {templates.length === 0 && (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No templates available</h3>
+                  <p className="text-gray-600">
+                    No templates are configured for Section {currentSection} in {currentLanguage === 'fr' ? 'French' : 'English'}.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {templates.length > 0 && (
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <Button variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleApply}
+                    disabled={!selectedTemplate || isFormatting}
+                    className="min-w-[120px]"
+                  >
+                    {isFormatting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Applying...
+                      </>
+                    ) : (
+                      'Apply Template'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
-        
-        {selectedTemplate && (
-          <div className="border-t p-4 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Selected: {selectedTemplate.title}
-                </p>
-                <p className="text-xs text-gray-600">
-                  {selectedTemplate.id === 'word-for-word-formatter'
-                    ? 'This will format your Word-for-Word transcription.'
-                    : 'This will be applied to your transcript.'}
-                </p>
-              </div>
-              <Button onClick={handleApply} className="bg-blue-600 hover:bg-blue-700">
-                Apply Template
-              </Button>
-            </div>
-          </div>
-        )}
       </Card>
     </div>
   );

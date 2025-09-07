@@ -1,0 +1,36 @@
+{
+  "name": "verbatim-layer",
+  "version": "1.0.0",
+  "description": "Verbatim text processing layer for preserving exact quotes and specific text",
+  "enabled": false,
+  "priority": 1,
+  "dependencies": [],
+  "markers": {
+    "start": "___VERBATIM_START___",
+    "end": "___VERBATIM_END___"
+  },
+  "processing": {
+    "preProcessing": {
+      "enabled": true,
+      "description": "Convert verbatim markers to placeholders before AI processing",
+      "function": "processVerbatimMarkers"
+    },
+    "postProcessing": {
+      "enabled": true,
+      "description": "Restore verbatim content after AI processing",
+      "function": "restoreVerbatimContent"
+    }
+  },
+  "fallback": {
+    "enabled": true,
+    "description": "If verbatim processing fails, return original transcript unchanged",
+    "action": "return_original"
+  },
+  "validation": {
+    "enabled": true,
+    "checks": [
+      "marker_pairs_complete",
+      "content_preserved"
+    ]
+  }
+}
