@@ -248,7 +248,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         const { formatWordForWordText } = await import('../../utils/wordForWordFormatter');
         
         // Apply Word-for-Word formatting with default config
+        console.log('Raw transcript before formatting:', rawTranscript);
         const formattedTranscript = formatWordForWordText(rawTranscript);
+        console.log('Formatted transcript after formatting:', formattedTranscript);
         
         // Update the transcript with formatted content
         if (isEditing) {

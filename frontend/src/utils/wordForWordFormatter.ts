@@ -36,9 +36,9 @@ export const DEFAULT_CONFIG: WordForWordConfig = {
 export function formatWordForWordText(rawText: string, cfg: WordForWordConfig = DEFAULT_CONFIG): string {
   let t = rawText ?? "";
 
-  // 1) Strip speaker prefixes only at line start (Pt:, Dr:, Dre:)
+  // 1) Strip speaker prefixes (Pt:, Dr:, Dre:) - anywhere in text
   if (cfg.removeSpeakerPrefixes) {
-    t = t.replace(/^(?:\s*)(?:pt|dr|dre)\s*:\s*/gim, "");
+    t = t.replace(/(?:^|\s)(?:pt|dr|dre)\s*:\s*/gim, " ");
   }
 
   // 2) Convert spoken commands (EN/FR)
@@ -66,20 +66,19 @@ export function formatWordForWordText(rawText: string, cfg: WordForWordConfig = 
 
 function convertSpokenCommands(text: string): string {
   const replacements: Array<[RegExp, string]> = [
-    // Paragraphs & lines
-    [/\b(?:new\s*paragraph|paragraph\s*break)\b/gi, "\n\n"],
-    [/\b(?:new\s*line|newline|line\s*break)\b/gi, "\n"],
+    // Paragraphs & lines - more comprehensive patterns
+    [/\b(?:new\s*paragraph|paragraph\s*break|new\s*para)\b/gi, "\n\n"],
+    [/\b(?:new\s*line|newline|line\s*break|new\s*line)\b/gi, "\n"],
     [/\b(?:nouveau\s*paragraphe|nouvelle\s*paragraphe)\b/gi, "\n\n"],
     [/\b(?:nouvelle\s*ligne|retour\s*à\s*la\s*ligne)\b/gi, "\n"],
 
-    // Punctuation (EN)
-    [/\b(?:period|full\s*stop)\b/gi, "."],
+    // Punctuation (EN) - more comprehensive patterns
+    [/\b(?:period|full\s*stop|fullstop)\b/gi, "."],
     [/\bcomma\b/gi, ","],
     [/\bcolon\b/gi, ":"],
-    [/\bsemi\s*colon\b/gi, ";"],
-    [/\bsemicolon\b/gi, ";"],
-    [/\bexclamation(?:\s*mark)?\b/gi, "!"],
-    [/\bquestion\s*mark\b/gi, "?"],
+    [/\b(?:semi\s*colon|semicolon)\b/gi, ";"],
+    [/\b(?:exclamation(?:\s*mark)?|exclamation\s*point)\b/gi, "!"],
+    [/\b(?:question\s*mark|question\s*point)\b/gi, "?"],
 
     // Punctuation (FR)
     [/\bpoint\b/gi, "."],
@@ -90,10 +89,10 @@ function convertSpokenCommands(text: string): string {
     [/\bpoint\s*d['']interrogation\b/gi, "?"],
 
     // Quotes & parens
-    [/\bopen\s*parenthesis\b/gi, "("],
-    [/\bclose\s*parenthesis\b/gi, ")"],
-    [/\bopen\s*quotes?(?:\s*|$)|open\s*quotation\s*marks\b/gi, "\""],
-    [/\bclose\s*quotes?(?:\s*|$)|close\s*quotation\s*marks\b/gi, "\""],
+    [/\b(?:open\s*parenthesis|open\s*paren)\b/gi, "("],
+    [/\b(?:close\s*parenthesis|close\s*paren)\b/gi, ")"],
+    [/\b(?:open\s*quotes?(?:\s*|$)|open\s*quotation\s*marks)\b/gi, "\""],
+    [/\b(?:close\s*quotes?(?:\s*|$)|close\s*quotation\s*marks)\b/gi, "\""],
     [/\bouvrir\s*les\s*guillemets\b/gi, "«"],
     [/\bfermer\s*les\s*guillemets\b/gi, "»"],
 
@@ -148,6 +147,9 @@ function cleanSpacing(text: string): string {
   // Remove spaces before punctuation
   t = t.replace(/\s+([.,:;!?])/g, "$1");
 
+  // Fix double/multiple punctuation (e.g., ",," -> ",")
+  t = t.replace(/([.,:;!?])\1+/g, "$1");
+
   // Ensure a space after punctuation if followed by a word/quote (not newline/end)
   t = t.replace(/([.:;!?])(?!\s|\n|$)/g, "$1 ");
 
@@ -159,6 +161,9 @@ function cleanSpacing(text: string): string {
 
   // Collapse >2 newlines to exactly 2
   t = t.replace(/\n{3,}/g, "\n\n");
+
+  // Clean up any remaining "Pt:" artifacts that might have been missed
+  t = t.replace(/\s+Pt:\s*/g, " ");
 
   return t.trim();
 }
