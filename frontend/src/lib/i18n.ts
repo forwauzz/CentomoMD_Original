@@ -9,6 +9,10 @@ export const translations = {
     newCase: 'Nouveau dossier',
     templates: 'Modèles',
     dictation: 'Dictée',
+        voiceCommands: 'Commandes vocales',
+        verbatim: 'Verbatim',
+        macros: 'Macros',
+        transcriptAnalysis: 'Analyse de transcription',
     settings: 'Paramètres',
     profile: 'Profil',
     
@@ -69,6 +73,7 @@ export const translations = {
     save: 'Enregistrer',
     saveAndContinue: 'Enregistrer et continuer',
     export: 'Exporter',
+    upload: 'Téléverser',
     saved: 'Enregistré',
     ago: 'il y a',
     
@@ -141,6 +146,12 @@ export const translations = {
     home: 'Accueil',
     breadcrumbNewCase: 'Nouveau dossier',
     section: 'Section',
+    
+    // Time
+    minutes: 'minutes',
+    hours: 'heures',
+    days: 'jours',
+    justNow: 'à l\'instant',
   },
   
   [LANGUAGES.EN]: {
@@ -149,6 +160,10 @@ export const translations = {
     newCase: 'New Case',
     templates: 'Templates',
     dictation: 'Dictation',
+        voiceCommands: 'Voice Commands',
+        verbatim: 'Verbatim',
+        macros: 'Macros',
+        transcriptAnalysis: 'Transcript Analysis',
     settings: 'Settings',
     profile: 'Profile',
     

@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TemplatePreview } from './TemplatePreview';
+import { TEMPLATE_CONFIGS, TemplateConfig } from '@/config/template-config';
 
 export interface TemplateJSON {
+  id?: string;
   section: "7" | "8" | "11";
   title: string;
   content: string;
@@ -16,6 +18,24 @@ export interface TemplateJSON {
   language?: "fr" | "en";
   category?: string;
   complexity?: "low" | "medium" | "high";
+  status?: "active" | "draft" | "archived";
+  version?: string;
+  usage_count?: number;
+  meta?: {
+    defaultConfig?: any;
+    templateConfig?: TemplateConfig;
+    aiFormatter?: {
+      mode?: string;
+      section?: string;
+      language?: string;
+      enforceWorkerFirst?: boolean;
+      chronologicalOrder?: boolean;
+      medicalTerminology?: boolean;
+      templateCombo?: string;
+      verbatimSupport?: boolean;
+      voiceCommandsSupport?: boolean;
+    };
+  };
 }
 
 interface TemplateDropdownProps {
@@ -41,6 +61,39 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   const [loading, setLoading] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateJSON | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Convert TemplateConfig to TemplateJSON format
+  const convertTemplateConfigToJSON = (config: TemplateConfig, currentSection: string, currentLanguage: string): TemplateJSON => {
+    const isFrench = currentLanguage === 'fr';
+    
+    const converted = {
+      id: config.id,
+      section: currentSection as "7" | "8" | "11",
+      title: isFrench ? config.nameFr : config.name,
+      content: isFrench ? config.descriptionFr : config.description,
+      tags: config.tags,
+      source_file: `${config.id}.config.json`,
+      language: currentLanguage as "fr" | "en",
+      category: config.type,
+      complexity: config.complexity,
+      status: config.isActive ? 'active' : 'inactive',
+      version: '1.0.0',
+      usage_count: config.usage.count,
+      last_used: config.usage.lastUsed,
+      is_default: config.isDefault,
+      // Add metadata for downstream processing
+      meta: {
+        templateConfig: config,
+        aiFormatter: config.type === 'ai-formatter' ? {
+          prompt: isFrench ? config.promptFr : config.prompt,
+          config: config.config
+        } : undefined
+      }
+    } as TemplateJSON;
+    
+    console.log('Converting template config:', config.id, 'to:', converted.id, 'category:', converted.category);
+    return converted;
+  };
 
   // Load templates for current section
   useEffect(() => {
@@ -70,45 +123,39 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
     setFilteredTemplates(filtered);
   }, [templates, searchQuery, selectedTags]);
 
-           const loadTemplates = async () => {
-           setLoading(true);
-           try {
-             // First try to fetch templates with language filter
-             let response = await fetch(`/api/templates/${currentSection}?language=${currentLanguage}`);
-             if (response.ok) {
-               const data = await response.json();
-                                if (data.success && data.data.length > 0) {
-                   console.log(`Loaded ${data.data.length} templates for section ${currentSection} with language ${currentLanguage}`);
-                   setTemplates(data.data);
-                 } else {
-                 // If no templates found with language filter, try without language filter
-                 console.log(`No ${currentLanguage} templates found for section ${currentSection}, trying without language filter`);
-                 response = await fetch(`/api/templates/${currentSection}`);
-                 if (response.ok) {
-                   const dataWithoutLanguage = await response.json();
-                   if (dataWithoutLanguage.success) {
-                     console.log(`Loaded ${dataWithoutLanguage.data.length} templates for section ${currentSection} without language filter`);
-                     setTemplates(dataWithoutLanguage.data);
-                   } else {
-                     console.error('Failed to load templates:', dataWithoutLanguage.error);
-                     setTemplates([]);
-                   }
-                 } else {
-                   console.error('Failed to fetch templates without language filter:', response.statusText);
-                   setTemplates([]);
-                 }
-               }
-             } else {
-               console.error('Failed to fetch templates:', response.statusText);
-               setTemplates([]);
-             }
-           } catch (error) {
-             console.error('Error loading templates:', error);
-             setTemplates([]);
-           } finally {
-             setLoading(false);
-           }
-         };
+  const loadTemplates = async () => {
+    setLoading(true);
+    try {
+      // Load templates from Template Combinations configuration
+      const availableTemplates = TEMPLATE_CONFIGS.filter(config => {
+        // Filter by section (all or specific section)
+        if (config.section !== 'all' && config.section !== currentSection) {
+          return false;
+        }
+        
+        // Filter by language (both or specific language)
+        if (config.language !== 'both' && config.language !== currentLanguage) {
+          return false;
+        }
+        
+        // Only show active templates
+        return config.isActive;
+      });
+
+      // Convert TemplateConfig to TemplateJSON format
+      const convertedTemplates = availableTemplates.map(config => 
+        convertTemplateConfigToJSON(config, currentSection, currentLanguage)
+      );
+      
+      console.log(`Loaded ${convertedTemplates.length} templates for section ${currentSection} with language ${currentLanguage}`);
+      setTemplates(convertedTemplates);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      setTemplates([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTemplateSelect = (template: TemplateJSON) => {
     onTemplateSelect(template);

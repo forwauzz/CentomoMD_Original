@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Settings, 
-  Globe, 
-  Clock, 
+  // Globe,
+  // Clock,
   Image, 
   Shield, 
   Mic, 

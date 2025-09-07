@@ -1,12 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { Users, UserPlus, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 
 export const PatientsCard: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { t } = useI18n();
 
   // Mock data - in real app this would come from API

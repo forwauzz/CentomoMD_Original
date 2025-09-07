@@ -112,7 +112,12 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   NEW_CASE: '/case/new',
   TEMPLATES: '/templates',
+  TEMPLATE_COMBINATIONS: '/template-combinations',
   DICTATION: '/dictation',
+  VOICE_COMMANDS: '/voice-commands',
+  VERBATIM: '/verbatim',
+  MACROS: '/macros',
+  TRANSCRIPT_ANALYSIS: '/transcript-analysis',
   SETTINGS: '/settings',
   PROFILE: '/profile',
 } as const;

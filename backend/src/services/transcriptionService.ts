@@ -53,16 +53,16 @@ export class TranscriptionService {
       }
     })();
 
-    // Prepare AWS Transcribe configuration - simplified for single language
+    // Phase 0: Prepare AWS Transcribe configuration with mode-specific parameters
     const cmdInput: StartStreamTranscriptionCommandInput = {
       LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
       MediaEncoding: 'pcm',
       MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
-      ShowSpeakerLabel: true,     // Enable speaker attribution
+      ShowSpeakerLabel: config.show_speaker_labels || false,     // Mode-specific speaker attribution
       // MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN - not supported in this version
       EnablePartialResultsStabilization: true,
-      PartialResultsStability: 'high',
+      PartialResultsStability: (config.partial_results_stability || 'high') as any,  // Mode-specific stability
       // Custom vocabulary for medical terms (when available)
       ...(config.vocabulary_name && { VocabularyName: config.vocabulary_name }),
     };

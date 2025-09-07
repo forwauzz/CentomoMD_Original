@@ -29,7 +29,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   isOpen,
   onClose,
   onSelect,
-  currentSection,
+  // currentSection,
   currentLanguage
 }) => {
   const [showFormatted, setShowFormatted] = useState(false);

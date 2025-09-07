@@ -7,25 +7,25 @@ import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Search, 
-  Filter, 
+  // Filter, 
   Grid, 
   List, 
   Edit, 
   Trash2, 
   Eye,
   FileText,
-  Tag,
-  Zap,
+  // Tag,
+  // Zap,
   Clock,
-  Star,
+  // Star,
   Download,
   Upload,
   BarChart3,
-  History,
+  // History,
   Settings,
-  CheckSquare,
-  Square,
-  MoreHorizontal,
+  // CheckSquare,
+  // Square,
+  // MoreHorizontal,
   TrendingUp,
   Users,
   Activity
@@ -49,14 +49,14 @@ interface TemplateAnalytics {
   top_templates: Array<{ id: string; title: string; usage_count: number }>;
 }
 
-interface TemplateVersion {
-  id: string;
-  templateId: string;
-  version: string;
-  content: string;
-  changes: string[];
-  created_at: string;
-}
+// interface TemplateVersion {
+//   id: string;
+//   templateId: string;
+//   version: string;
+//   content: string;
+//   changes: string[];
+//   created_at: string;
+// }
 
 interface TemplateManagementProps {
   // Add any props if needed
@@ -846,7 +846,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
                       <Badge variant="outline" className="text-xs">
                         {template.language}
                       </Badge>
-                      <Badge className={`text-xs ${getComplexityColor(template.complexity)}`}>
+                      <Badge className={`text-xs ${getComplexityColor(template.complexity || 'medium')}`}>
                         {template.complexity}
                       </Badge>
                       {template.status && (
@@ -947,7 +947,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
                       <Badge variant="outline" className="text-xs">
                         {template.language}
                       </Badge>
-                      <Badge className={`text-xs ${getComplexityColor(template.complexity)}`}>
+                      <Badge className={`text-xs ${getComplexityColor(template.complexity || 'medium')}`}>
                         {template.complexity}
                       </Badge>
                       {template.status && (
@@ -1043,12 +1043,12 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
           template={selectedTemplate}
           isOpen={showPreviewModal}
           onClose={() => setShowPreviewModal(false)}
-          onSelect={(template) => {
+          onSelect={(_template) => {
             setShowPreviewModal(false);
             // Handle template selection if needed
           }}
           currentSection={selectedTemplate.section}
-          currentLanguage={selectedTemplate.language}
+          currentLanguage={selectedTemplate.language || 'fr'}
         />
       )}
     </div>

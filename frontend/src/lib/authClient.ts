@@ -57,7 +57,7 @@ export function getSupabase(): SupabaseClient {
 export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   get(_target, prop, receiver) {
     const client = getSupabase();
-    // @ts-expect-error - dynamic proxy
+    // @ts-ignore - dynamic proxy
     const value = Reflect.get(client, prop, receiver);
     return typeof value === 'function' ? value.bind(client) : value;
   },

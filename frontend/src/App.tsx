@@ -6,6 +6,11 @@ import { DictationPage } from '@/pages/DictationPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { TemplateManagement } from '@/pages/TemplateManagement';
+import { TemplateCombinationManagement } from '@/pages/TemplateCombinationManagement';
+import { VoiceCommandsPage } from '@/pages/VoiceCommandsPage';
+import { VerbatimPage } from '@/pages/VerbatimPage';
+import { MacrosPage } from '@/pages/MacrosPage';
+import { TranscriptAnalysisPage } from '@/pages/TranscriptAnalysisPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
@@ -16,9 +21,10 @@ import { Button } from '@/components/ui/button';
 import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useFeatureFlags } from '@/lib/featureFlags';
 
 function App() {
-
+  const featureFlags = useFeatureFlags();
 
   return (
     <BrowserRouter>
@@ -47,10 +53,51 @@ function App() {
             </ProtectedRoute>
           } />
           
+          {/* Template Combinations - PROTECTED */}
+          <Route path="/template-combinations" element={
+            <ProtectedRoute>
+              <TemplateCombinationManagement />
+            </ProtectedRoute>
+          } />
+          
           {/* Dictation - PROTECTED */}
           <Route path="/dictation" element={
             <ProtectedRoute>
               <DictationPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Voice Commands - Feature Flagged */}
+          {featureFlags.voiceCommands && (
+            <Route path="/voice-commands" element={
+              <ProtectedRoute>
+                <VoiceCommandsPage />
+              </ProtectedRoute>
+            } />
+          )}
+          
+          {/* Verbatim - Feature Flagged */}
+          {featureFlags.verbatim && (
+            <Route path="/verbatim" element={
+              <ProtectedRoute>
+                <VerbatimPage />
+              </ProtectedRoute>
+            } />
+          )}
+          
+          {/* Macros - Feature Flagged */}
+          {featureFlags.macros && (
+            <Route path="/macros" element={
+              <ProtectedRoute>
+                <MacrosPage />
+              </ProtectedRoute>
+            } />
+          )}
+          
+          {/* Transcript Analysis */}
+          <Route path="/transcript-analysis" element={
+            <ProtectedRoute>
+              <TranscriptAnalysisPage />
             </ProtectedRoute>
           } />
           

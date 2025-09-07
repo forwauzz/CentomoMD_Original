@@ -39,8 +39,8 @@ export const verifySupabaseJWT = async (token: string): Promise<UserContext | nu
     // Extract user information from Supabase user
     const userContext: UserContext = {
       user_id: user.id,
-      clinic_id: user.user_metadata?.clinic_id as string,
-      role: user.user_metadata?.role as string || 'physician',
+      clinic_id: user.user_metadata?.['clinic_id'] as string,
+      role: user.user_metadata?.['role'] as string || 'physician',
       email: user.email || '',
       aud: 'authenticated',
       exp: Math.floor(Date.now() / 1000) + 3600, // Default expiry

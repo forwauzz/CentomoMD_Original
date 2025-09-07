@@ -89,6 +89,8 @@ export interface TranscriptionConfig {
   vocabulary_filter_name?: string;
   show_speaker_labels?: boolean;
   max_speaker_labels?: number;
+  // Phase 0: Mode-specific configuration fields
+  partial_results_stability?: 'low' | 'medium' | 'high';
 }
 
 export interface AudioChunk {

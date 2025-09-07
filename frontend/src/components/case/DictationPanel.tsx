@@ -48,7 +48,7 @@ export const DictationPanel: React.FC<DictationPanelProps> = ({ sectionTitle }) 
             <div className="text-xs text-gray-500 space-y-1">
               <p>• {t('realTimeTranscription')}</p>
               <p>• {t('aiAccuracy')} 98.5%</p>
-              <p>• {t('autoSave')}</p>
+              <p>• {t('autosave')}</p>
             </div>
           </div>
 

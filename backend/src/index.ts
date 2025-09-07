@@ -1,12 +1,22 @@
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
 import { transcriptionService } from './services/transcriptionService.js';
 import { templateLibrary } from './template-library/index.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
+import { Mode1Formatter } from './services/formatter/mode1.js';
+import { Mode2Formatter } from './services/formatter/mode2.js';
+import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
+import { Section7Validator } from './services/formatter/validators/section7.js';
+import { Section8Validator } from './services/formatter/validators/section8.js';
+import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
@@ -45,6 +55,61 @@ try {
 } catch(e) { 
   console.error('❌ mount /api/profile:', e); 
 }
+
+// Transcript Analysis endpoints
+app.post('/api/analyze/transcript', authMiddleware, async (req, res) => {
+  try {
+    const { original, formatted, language = 'fr' } = req.body;
+    
+    if (!original || !formatted) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Both original and formatted transcripts are required' 
+      });
+    }
+    
+    const analyzer = new TranscriptAnalyzer();
+    const result = await analyzer.analyzeTranscript(original, formatted, language);
+    
+    return res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error('Transcript analysis error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Analysis failed' 
+    });
+  }
+});
+
+app.post('/api/analyze/compare', authMiddleware, async (req, res) => {
+  try {
+    const { original, formatted } = req.body;
+    
+    if (!original || !formatted) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Both original and formatted transcripts are required' 
+      });
+    }
+    
+    const analyzer = new TranscriptAnalyzer();
+    const result = await analyzer.compareTranscripts(original, formatted);
+    
+    return res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error('Transcript comparison error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Comparison failed' 
+    });
+  }
+});
 
 // Database ping route
 try {
@@ -1097,6 +1162,197 @@ app.post('/api/templates/bulk/delete', authMiddleware, async (req, res) => {
   }
 });
 
+// Mode 1 Formatting Endpoint
+app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> => {
+  try {
+    const { transcript, language, quote_style, radiology_mode, section } = req.body;
+    
+    if (!transcript || typeof transcript !== 'string') {
+      res.status(400).json({ 
+        error: 'Transcript is required and must be a string' 
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    const user = (req as any).user;
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Initialize Mode 1 formatter
+    const formatter = new Mode1Formatter();
+    
+    // Format the transcript
+    const result = formatter.format(transcript, {
+      language: language as 'fr' | 'en',
+      quote_style: quote_style || 'smart',
+      radiology_mode: radiology_mode || false,
+      preserve_verbatim: true
+    });
+
+    // Validate the formatted content if section is specified
+    let validationResult = null;
+    if (section && ['7', '8', '11'].includes(section)) {
+      let validator;
+      switch (section) {
+        case '7':
+          validator = new Section7Validator();
+          break;
+        case '8':
+          validator = new Section8Validator();
+          break;
+        case '11':
+          validator = new Section11Validator();
+          break;
+      }
+      
+      if (validator) {
+        validationResult = validator.validate(result.formatted, language as 'fr' | 'en');
+      }
+    }
+
+    res.json({
+      formatted: result.formatted,
+      issues: result.issues,
+      verbatim_blocks: result.verbatim_blocks,
+      validation: validationResult,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Mode 1 formatting error:', error);
+    res.status(500).json({ 
+      error: 'Failed to format transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Mode 2 Formatting Endpoint (Smart Dictation)
+app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> => {
+  try {
+    const { 
+      transcript, 
+      section, 
+      language, 
+      case_id, 
+      selected_sections, 
+      extra_dictation,
+      // Template combination parameters
+      templateCombo,
+      verbatimSupport,
+      voiceCommandsSupport
+    } = req.body;
+    
+    if (!transcript || typeof transcript !== 'string') {
+      res.status(400).json({ 
+        error: 'Transcript is required and must be a string' 
+      });
+      return;
+    }
+
+    if (!section || !['7', '8', '11'].includes(section)) {
+      res.status(400).json({ 
+        error: 'Section must be "7", "8", or "11"' 
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    const user = (req as any).user;
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Initialize Mode 2 formatter
+    const formatter = new Mode2Formatter();
+    
+    // Format the transcript with AI
+    const result = await formatter.format(transcript, {
+      language: language as 'fr' | 'en',
+      section: section as '7' | '8' | '11',
+      case_id,
+      selected_sections,
+      extra_dictation,
+      // Template combination parameters
+      templateCombo,
+      verbatimSupport,
+      voiceCommandsSupport
+    });
+
+    // Return the formatted result
+    res.json({
+      formatted: result.formatted,
+      issues: result.issues,
+      sources_used: result.sources_used,
+      confidence_score: result.confidence_score,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Mode 2 formatting error:', error);
+    res.status(500).json({ 
+      error: 'Failed to format transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Phase 0: Mode-specific AWS configuration function
+const getModeSpecificConfig = (mode: string, baseConfig: any) => {
+  const config = {
+    language_code: baseConfig.language_code,
+    media_sample_rate_hz: baseConfig.media_sample_rate_hz,
+  };
+
+  switch (mode) {
+    case 'word_for_word':
+      return {
+        ...config,
+        show_speaker_labels: false,
+        partial_results_stability: 'high' as const
+        // vocabulary_name omitted - will be undefined
+      };
+    case 'smart_dictation':
+      return {
+        ...config,
+        show_speaker_labels: true,
+        partial_results_stability: 'high' as const
+        // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
+      };
+    case 'ambient':
+      return {
+        ...config,
+        show_speaker_labels: true,
+        partial_results_stability: 'medium' as const
+        // vocabulary_name omitted - will be undefined
+      };
+    default:
+      // Fallback to current configuration
+      return {
+        ...config,
+        show_speaker_labels: false,
+        partial_results_stability: 'high' as const
+        // vocabulary_name omitted - will be undefined
+      };
+  }
+};
+
 const wss = new WebSocketServer({ server });
 
 // Store active transcription sessions - integrated with AWS Transcribe
@@ -1162,15 +1418,17 @@ wss.on('connection', (ws, req) => {
         }
         started = true;
 
+        // Phase 0: Use mode-specific configuration
+        const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
+          language_code: msg.languageCode, 
+          media_sample_rate_hz: msg.sampleRate ?? 16000
+        });
+
         // Start AWS stream (non-blocking) and expose feeder immediately
         const { pushAudio: feeder, endAudio: ender } =
           transcriptionService.startStreamingTranscription(
             sessionId,
-            { 
-              language_code: msg.languageCode, 
-              media_sample_rate_hz: msg.sampleRate ?? 16000, 
-              show_speaker_labels: false 
-            },
+            modeConfig,
             (res) => ws.send(JSON.stringify({ 
               type: 'transcription_result', 
               resultId: res.resultId,                         // stable key
