@@ -88,6 +88,12 @@
       "pattern": "\\n{3,}",
       "should_match": false,
       "flags": "g"
+    },
+    {
+      "name": "no_triple_spaces",
+      "pattern": "\\s{3,}",
+      "should_match": false,
+      "flags": "g"
     }
   ],
 
@@ -121,6 +127,31 @@
       "name": "doctor_normalization",
       "input": "Pt: follow up with Doctor Tremblay period",
       "expected": "Follow up with Dr. Tremblay."
+    },
+    {
+      "name": "fr_decimal",
+      "input": "Pt: glycémie 3 point 5 mmol slash L point nouvelle ligne",
+      "expected": "Glycémie 3.5 mmol/L.\n"
+    },
+    {
+      "name": "anatomy_colon_guard",
+      "input": "Pt: douleur au colon transverse point",
+      "expected": "Douleur au colon transverse."
+    },
+    {
+      "name": "range_with_fr_joins",
+      "input": "Pt: douleur cervicale C 5 à C 6 point",
+      "expected": "Douleur cervicale C5-C6."
+    },
+    {
+      "name": "thoracic_bound",
+      "input": "Pt: sensibilité T 12 point",
+      "expected": "Sensibilité T12."
+    },
+    {
+      "name": "abbrev_no_false_caps",
+      "input": "Pt: suivi avec Dr. Tremblay en janvier point puis ex. clinique normal point",
+      "expected": "Suivi avec Dr. Tremblay en janvier. puis ex. clinique normal."
     }
   ]
 }
