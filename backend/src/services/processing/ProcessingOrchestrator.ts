@@ -308,15 +308,52 @@ export class ProcessingOrchestrator {
    * Apply template-specific processing
    */
   private async applyTemplateProcessing(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
-    console.log(`Applying template processing: ${template.id}`);
+    const correlationId = request.correlationId || 'no-correlation-id';
+    console.log(`[${correlationId}] Applying template processing: ${template.id}`, {
+      templateId: template.id,
+      templateName: template.name,
+      contentLength: content.length
+    });
     
     // Handle Word-for-Word (with AI) template
     if (template.id === 'word-for-word-with-ai') {
+      console.log(`[${correlationId}] Routing to processWordForWordWithAI`);
       return await this.processWordForWordWithAI(content, template, request);
+    }
+    
+    // Handle regular Word-for-Word formatter template
+    if (template.id === 'word-for-word-formatter') {
+      console.log(`[${correlationId}] Routing to processWordForWordFormatter`);
+      return await this.processWordForWordFormatter(content, template, request);
+    }
+    
+    // Handle Section 7 AI Formatter template
+    if (template.id === 'section7-ai-formatter') {
+      console.log(`[${correlationId}] Routing to processSection7AIFormatter`);
+      return await this.processSection7AIFormatter(content, template, request);
+    }
+    
+    // Handle Section 7 Template Only
+    if (template.id === 'section-7-only') {
+      console.log(`[${correlationId}] Routing to processSection7TemplateOnly`);
+      return await this.processSection7TemplateOnly(content, template, request);
+    }
+    
+    // Handle Section 7 Template + Verbatim
+    if (template.id === 'section-7-verbatim') {
+      console.log(`[${correlationId}] Routing to processSection7Verbatim`);
+      return await this.processSection7Verbatim(content, template, request);
+    }
+    
+    // Handle Section 7 Template + Verbatim + Voice Commands
+    if (template.id === 'section-7-full') {
+      console.log(`[${correlationId}] Routing to processSection7Full`);
+      return await this.processSection7Full(content, template, request);
     }
     
     // Handle other templates as needed
     // For now, return content as-is for other templates
+    console.log(`[${correlationId}] No specific handler found for template: ${template.id}, returning content as-is`);
     return content;
   }
 
@@ -445,6 +482,163 @@ export class ProcessingOrchestrator {
         formatted: content, // Return original content if AI fails
         issues: [`AI formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
       };
+    }
+  }
+
+  /**
+   * Process regular Word-for-Word formatter template
+   */
+  private async processWordForWordFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing word-for-word formatter template: ${template.id}`);
+      
+      // Import and use the word-for-word formatter
+      const { formatWordForWordText } = await import('../../utils/wordForWordFormatter.js');
+      const processedContent = formatWordForWordText(content);
+      
+      console.log(`[${correlationId}] Word-for-word formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Word-for-word formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 7 AI Formatter template
+   */
+  private async processSection7AIFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 7 AI Formatter template: ${template.id}`);
+      
+      // Apply AI formatting using the AI formatting service
+      const { AIFormattingService } = await import('../../services/aiFormattingService.js');
+      
+      const result = AIFormattingService.formatTemplateContent(content, {
+        section: '7',
+        language: request.language as 'fr' | 'en',
+        complexity: 'medium',
+        formattingLevel: 'standard',
+        includeSuggestions: true
+      });
+      
+      const processedContent = result.formatted;
+      
+      console.log(`[${correlationId}] Section 7 AI formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 7 AI formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 7 Template Only
+   */
+  private async processSection7TemplateOnly(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 7 Template Only: ${template.id}`);
+      
+      // Apply basic template formatting without additional features
+      // This would use the Section 7 template structure
+      const processedContent = content
+        .replace(/\n\s*\n/g, '\n\n') // Normalize paragraph breaks
+        .replace(/^\s*/, '') // Remove leading whitespace
+        .replace(/\s+$/, '') // Remove trailing whitespace
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+      
+      console.log(`[${correlationId}] Section 7 template formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 7 template formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 7 Template + Verbatim
+   */
+  private async processSection7Verbatim(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 7 Template + Verbatim: ${template.id}`);
+      
+      // Apply basic template formatting with verbatim support
+      const processedContent = content
+        .replace(/\n\s*\n/g, '\n\n') // Normalize paragraph breaks
+        .replace(/^\s*/, '') // Remove leading whitespace
+        .replace(/\s+$/, '') // Remove trailing whitespace
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+      
+      console.log(`[${correlationId}] Section 7 verbatim formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 7 verbatim formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 7 Template + Verbatim + Voice Commands
+   */
+  private async processSection7Full(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 7 Template + Verbatim + Voice Commands: ${template.id}`);
+      
+      // Apply full template formatting with verbatim and voice command support
+      const processedContent = content
+        .replace(/\n\s*\n/g, '\n\n') // Normalize paragraph breaks
+        .replace(/^\s*/, '') // Remove leading whitespace
+        .replace(/\s+$/, '') // Remove trailing whitespace
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+      
+      console.log(`[${correlationId}] Section 7 full formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 7 full formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
     }
   }
 

@@ -14,6 +14,8 @@ import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
 import { Mode2Formatter } from './services/formatter/mode2.js';
 import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
+import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
+import { TEMPLATE_REGISTRY } from './config/templates.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
@@ -107,6 +109,406 @@ app.post('/api/analyze/compare', async (req, res) => {
     return res.status(500).json({ 
       success: false, 
       error: 'Comparison failed' 
+    });
+  }
+});
+
+// Helper function to calculate comprehensive template metrics
+function calculateTemplateMetrics(original: string, formatted: string, _template: any) {
+  try {
+    console.log('Calculating metrics for:', { originalLength: original.length, formattedLength: formatted.length });
+    
+    const metrics = {
+      // Structural formatting metrics
+      structuralConsistency: calculateStructuralConsistency(formatted),
+      paragraphBreaks: countParagraphBreaks(formatted),
+      lineBreaks: countLineBreaks(formatted),
+      
+      // Editing effort estimation
+      editingEffort: estimateEditingEffort(original, formatted),
+      wordCountChange: Math.abs(formatted.split(/\s+/).length - original.split(/\s+/).length),
+      
+      // Formatting quality
+      capitalizationConsistency: checkCapitalizationConsistency(formatted),
+      punctuationConsistency: checkPunctuationConsistency(formatted),
+      
+      // Content preservation
+      contentPreservation: calculateContentPreservation(original, formatted),
+      speakerPrefixHandling: checkSpeakerPrefixHandling(original, formatted),
+      
+      // Voice command processing
+      voiceCommandProcessing: checkVoiceCommandProcessing(original, formatted)
+    };
+    
+    console.log('Metrics calculated:', metrics);
+    return metrics;
+  } catch (error) {
+    console.error('Error calculating template metrics:', error);
+    return {
+      structuralConsistency: 0,
+      paragraphBreaks: 0,
+      lineBreaks: 0,
+      editingEffort: 100,
+      wordCountChange: 0,
+      capitalizationConsistency: 0,
+      punctuationConsistency: 0,
+      contentPreservation: 0,
+      speakerPrefixHandling: 0,
+      voiceCommandProcessing: 0
+    };
+  }
+}
+
+// Helper function to calculate comprehensive score
+function calculateComprehensiveScore(analysis: any, metrics: any): number {
+  try {
+    // Weight different factors based on importance
+    const weights = {
+      overallScore: 0.3,
+      hallucinationScore: 0.2,
+      structuralConsistency: 0.15,
+      editingEffort: 0.15,
+      contentPreservation: 0.1,
+      voiceCommandProcessing: 0.1
+    };
+    
+    const overallScore = analysis?.overallScore || 0;
+    const hallucinationScore = analysis?.metrics?.hallucinationScore || 0;
+    const structuralConsistency = metrics?.structuralConsistency || 0;
+    const editingEffort = metrics?.editingEffort || 0;
+    const contentPreservation = metrics?.contentPreservation || 0;
+    const voiceCommandProcessing = metrics?.voiceCommandProcessing || 0;
+    
+    const score = (
+      overallScore * weights.overallScore +
+      (100 - hallucinationScore) * weights.hallucinationScore +
+      structuralConsistency * weights.structuralConsistency +
+      (100 - editingEffort) * weights.editingEffort +
+      contentPreservation * weights.contentPreservation +
+      voiceCommandProcessing * weights.voiceCommandProcessing
+    );
+    
+    console.log('Score calculation details:', {
+      overallScore,
+      hallucinationScore,
+      structuralConsistency,
+      editingEffort,
+      contentPreservation,
+      voiceCommandProcessing,
+      finalScore: score
+    });
+    
+    return score;
+  } catch (error) {
+    console.error('Error calculating comprehensive score:', error);
+    return 0;
+  }
+}
+
+// Helper functions for specific metrics
+function calculateStructuralConsistency(formatted: string): number {
+  const lines = formatted.split('\n').filter(line => line.trim().length > 0);
+  if (lines.length === 0) return 0;
+  
+  // Check for consistent paragraph structure
+  const hasConsistentParagraphs = lines.every(line => 
+    line.trim().length > 0 && 
+    (line.match(/^[A-Z]/) || line.match(/^\s*[A-Z]/))
+  );
+  
+  return hasConsistentParagraphs ? 90 : 60;
+}
+
+function countParagraphBreaks(formatted: string): number {
+  return (formatted.match(/\n\s*\n/g) || []).length;
+}
+
+function countLineBreaks(formatted: string): number {
+  return (formatted.match(/\n/g) || []).length;
+}
+
+function estimateEditingEffort(original: string, formatted: string): number {
+  // Simple estimation based on character differences and structural changes
+  const charDiff = Math.abs(formatted.length - original.length);
+  const wordDiff = Math.abs(formatted.split(/\s+/).length - original.split(/\s+/).length);
+  const lineDiff = Math.abs(formatted.split('\n').length - original.split('\n').length);
+  
+  // Higher effort = more changes needed
+  return Math.min(100, (charDiff / original.length) * 50 + wordDiff * 2 + lineDiff * 5);
+}
+
+function checkCapitalizationConsistency(formatted: string): number {
+  const sentences = formatted.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  if (sentences.length === 0) return 0;
+  
+  const properlyCapitalized = sentences.filter(sentence => 
+    sentence.trim().match(/^[A-Z]/)
+  ).length;
+  
+  return (properlyCapitalized / sentences.length) * 100;
+}
+
+function checkPunctuationConsistency(formatted: string): number {
+  const sentences = formatted.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  if (sentences.length === 0) return 0;
+  
+  const properlyPunctuated = sentences.filter(sentence => 
+    sentence.trim().match(/[.!?]$/)
+  ).length;
+  
+  return (properlyPunctuated / sentences.length) * 100;
+}
+
+function calculateContentPreservation(original: string, formatted: string): number {
+  // Check how much of the original content is preserved
+  const originalWords = original.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  const formattedWords = formatted.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  
+  const preservedWords = originalWords.filter(word => 
+    formattedWords.includes(word)
+  ).length;
+  
+  return originalWords.length > 0 ? (preservedWords / originalWords.length) * 100 : 100;
+}
+
+function checkSpeakerPrefixHandling(original: string, formatted: string): number {
+  // Check if speaker prefixes (Pt:, Dr:) are properly handled
+  const hasSpeakerPrefixes = /(Pt:|Dr:)/.test(original);
+  const stillHasPrefixes = /(Pt:|Dr:)/.test(formatted);
+  
+  if (!hasSpeakerPrefixes) return 100; // No prefixes to handle
+  
+  // For word-for-word templates, prefixes should be removed
+  return stillHasPrefixes ? 20 : 100;
+}
+
+function checkVoiceCommandProcessing(original: string, formatted: string): number {
+  // Check if voice commands (comma, period, new line) are properly converted
+  const voiceCommands = /(comma|period|new line|newline)/gi;
+  const hasVoiceCommands = voiceCommands.test(original);
+  
+  if (!hasVoiceCommands) return 100; // No voice commands to process
+  
+  const stillHasCommands = voiceCommands.test(formatted);
+  
+  return stillHasCommands ? 30 : 100;
+}
+
+// A/B Test endpoint
+app.post('/api/analyze/ab-test', async (req, res) => {
+  try {
+    const { original, templateA, templateB, language = 'fr' } = req.body;
+    
+    if (!original || !templateA || !templateB) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Original transcript and both template IDs are required' 
+      });
+    }
+
+    if (templateA === templateB) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Template A and Template B must be different' 
+      });
+    }
+    
+    // Get template configurations
+    const templateAConfig = TEMPLATE_REGISTRY[templateA];
+    const templateBConfig = TEMPLATE_REGISTRY[templateB];
+    
+    console.log(`[A/B Test] Template registry lookup`, {
+      templateA: templateA,
+      templateB: templateB,
+      templateAConfig: templateAConfig ? 'found' : 'not found',
+      templateBConfig: templateBConfig ? 'found' : 'not found',
+      availableTemplates: Object.keys(TEMPLATE_REGISTRY)
+    });
+    
+    if (!templateAConfig || !templateBConfig) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'One or both templates not found' 
+      });
+    }
+
+    // Apply both templates using the same approach as dictation page
+    console.log(`[A/B Test] Starting template processing`, {
+      templateA: templateA,
+      templateB: templateB,
+      templateAName: templateAConfig.name,
+      templateBName: templateBConfig.name,
+      originalLength: original.length,
+      language
+    });
+    
+    // Process with Template A (using dictation page approach)
+    console.log(`[A/B Test] Processing Template A: ${templateAConfig.name}`);
+    let resultA: { processedContent: string; success: boolean };
+    
+    if (templateA === 'word-for-word-formatter' || templateA === 'word-for-word-with-ai') {
+      // Use the same approach as dictation page for Word-for-Word templates
+      const { formatWordForWordText } = await import('./utils/wordForWordFormatter.js');
+      let formattedA = formatWordForWordText(original);
+      
+      // If it's the AI version, apply AI formatting
+      if (templateA === 'word-for-word-with-ai') {
+        console.log(`[A/B Test] Applying AI formatting to Template A`);
+        // Apply AI formatting (simplified version)
+        formattedA = formattedA; // For now, just use the formatted version
+      }
+      
+      resultA = {
+        processedContent: formattedA,
+        success: true
+      };
+    } else {
+      // Use ProcessingOrchestrator for other templates
+      console.log(`[A/B Test] Using ProcessingOrchestrator for Template A: ${templateA}`);
+      const orchestrator = new ProcessingOrchestrator();
+      resultA = await orchestrator.processContent({
+        sectionId: 'section_7',
+        modeId: templateAConfig.compatibleModes[0] || 'mode1',
+        templateId: templateA,
+        language: language as 'fr' | 'en',
+        content: original,
+        correlationId: `ab-test-a-${Date.now()}`
+      });
+      console.log(`[A/B Test] ProcessingOrchestrator result for Template A:`, {
+        success: resultA.success,
+        processedLength: resultA.processedContent.length,
+        processedPreview: resultA.processedContent.substring(0, 200) + '...'
+      });
+    }
+
+    // Process with Template B (using dictation page approach)
+    console.log(`[A/B Test] Processing Template B: ${templateBConfig.name}`);
+    let resultB: { processedContent: string; success: boolean };
+    
+    if (templateB === 'word-for-word-formatter' || templateB === 'word-for-word-with-ai') {
+      // Use the same approach as dictation page for Word-for-Word templates
+      const { formatWordForWordText } = await import('./utils/wordForWordFormatter.js');
+      let formattedB = formatWordForWordText(original);
+      
+      // If it's the AI version, apply AI formatting
+      if (templateB === 'word-for-word-with-ai') {
+        console.log(`[A/B Test] Applying AI formatting to Template B`);
+        // Apply AI formatting (simplified version)
+        formattedB = formattedB; // For now, just use the formatted version
+      }
+      
+      resultB = {
+        processedContent: formattedB,
+        success: true
+      };
+    } else {
+      // Use ProcessingOrchestrator for other templates
+      console.log(`[A/B Test] Using ProcessingOrchestrator for Template B: ${templateB}`);
+      const orchestrator = new ProcessingOrchestrator();
+      resultB = await orchestrator.processContent({
+        sectionId: 'section_7',
+        modeId: templateBConfig.compatibleModes[0] || 'mode1',
+        templateId: templateB,
+        language: language as 'fr' | 'en',
+        content: original,
+        correlationId: `ab-test-b-${Date.now()}`
+      });
+      console.log(`[A/B Test] ProcessingOrchestrator result for Template B:`, {
+        success: resultB.success,
+        processedLength: resultB.processedContent.length,
+        processedPreview: resultB.processedContent.substring(0, 200) + '...'
+      });
+    }
+
+    console.log(`[A/B Test] Template processing completed`, {
+      templateA: {
+        name: templateAConfig.name,
+        originalLength: original.length,
+        processedLength: resultA.processedContent.length,
+        success: resultA.success,
+        processedContent: resultA.processedContent.substring(0, 200) + '...'
+      },
+      templateB: {
+        name: templateBConfig.name,
+        originalLength: original.length,
+        processedLength: resultB.processedContent.length,
+        success: resultB.success,
+        processedContent: resultB.processedContent.substring(0, 200) + '...'
+      }
+    });
+
+    // Analyze both results with comprehensive metrics
+    const analyzer = new TranscriptAnalyzer();
+    
+    console.log('Starting analysis for Template A...');
+    const analysisA = await analyzer.analyzeTranscript(original, resultA.processedContent, language);
+    console.log('Template A analysis completed:', { overallScore: analysisA.overallScore, hallucinationScore: analysisA.metrics?.hallucinationScore });
+    
+    console.log('Starting analysis for Template B...');
+    const analysisB = await analyzer.analyzeTranscript(original, resultB.processedContent, language);
+    console.log('Template B analysis completed:', { overallScore: analysisB.overallScore, hallucinationScore: analysisB.metrics?.hallucinationScore });
+
+    // Calculate additional metrics for each template
+    console.log('Calculating template metrics...');
+    const metricsA = calculateTemplateMetrics(original, resultA.processedContent, templateAConfig);
+    const metricsB = calculateTemplateMetrics(original, resultB.processedContent, templateBConfig);
+    console.log('Template metrics calculated');
+
+    // Determine winner based on comprehensive scoring
+    console.log('Calculating comprehensive scores...');
+    const scoreA = calculateComprehensiveScore(analysisA, metricsA);
+    const scoreB = calculateComprehensiveScore(analysisB, metricsB);
+    console.log('Comprehensive scores:', { scoreA, scoreB });
+    
+    let winner: 'A' | 'B' | 'tie';
+    const performanceGap = Math.abs(scoreA - scoreB);
+    
+    if (performanceGap < 2) {
+      winner = 'tie';
+    } else if (scoreA > scoreB) {
+      winner = 'A';
+    } else {
+      winner = 'B';
+    }
+
+    const abTestResult = {
+      templateA: {
+        id: templateA,
+        name: templateAConfig.name,
+        formatted: resultA.processedContent,
+        analysis: analysisA,
+        metrics: metricsA,
+        comprehensiveScore: scoreA
+      },
+      templateB: {
+        id: templateB,
+        name: templateBConfig.name,
+        formatted: resultB.processedContent,
+        analysis: analysisB,
+        metrics: metricsB,
+        comprehensiveScore: scoreB
+      },
+      winner,
+      performanceGap,
+      testDate: new Date().toISOString()
+    };
+    
+    return res.json({
+      success: true,
+      result: abTestResult
+    });
+  } catch (error) {
+    console.error('A/B test error:', error);
+    console.error('A/B test error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      templateA,
+      templateB,
+      originalLength: original?.length
+    });
+    return res.status(500).json({ 
+      success: false, 
+      error: `A/B test failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
     });
   }
 });

@@ -3,7 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
+import { TEMPLATE_CONFIGS } from '@/config/template-config';
+
+// Fallback for when TEMPLATE_CONFIGS is not loaded
+const getTemplateConfigs = () => {
+  return TEMPLATE_CONFIGS || [];
+};
+
+// Helper function to detect language from content
+const detectLanguage = (content: string): 'fr' | 'en' => {
+  if (!content) return 'fr'; // Default to French
+  
+  const frenchWords = ['le', 'la', 'les', 'de', 'du', 'des', 'et', 'ou', 'avec', 'pour', 'dans', 'sur', 'par', 'travailleur', 'travailleuse', 'accident', 'blessure', 'douleur', 'traitement'];
+  const englishWords = ['the', 'and', 'or', 'with', 'for', 'in', 'on', 'by', 'worker', 'patient', 'accident', 'injury', 'pain', 'treatment'];
+  
+  const contentLower = content.toLowerCase();
+  const frenchCount = frenchWords.filter(word => contentLower.includes(word)).length;
+  const englishCount = englishWords.filter(word => contentLower.includes(word)).length;
+  
+  return englishCount > frenchCount ? 'en' : 'fr';
+};
 import { 
   FileText, 
   AlertTriangle, 
@@ -17,7 +38,10 @@ import {
   Shield,
   Clock,
   Target,
-  Zap
+  Zap,
+  GitCompare,
+  Trophy,
+  History
 } from 'lucide-react';
 
 interface AnalysisResult {
@@ -70,14 +94,87 @@ interface ComparisonResult {
   sentenceCountChange: number;
 }
 
+interface TemplateMetrics {
+  structuralConsistency: number;
+  paragraphBreaks: number;
+  lineBreaks: number;
+  editingEffort: number;
+  wordCountChange: number;
+  capitalizationConsistency: number;
+  punctuationConsistency: number;
+  contentPreservation: number;
+  speakerPrefixHandling: number;
+  voiceCommandProcessing: number;
+}
+
+interface ABTestResult {
+  templateA: {
+    id: string;
+    name: string;
+    formatted: string;
+    analysis: AnalysisResult;
+    metrics: TemplateMetrics;
+    comprehensiveScore: number;
+  };
+  templateB: {
+    id: string;
+    name: string;
+    formatted: string;
+    analysis: AnalysisResult;
+    metrics: TemplateMetrics;
+    comprehensiveScore: number;
+  };
+  winner: 'A' | 'B' | 'tie';
+  performanceGap: number;
+  testDate: string;
+}
+
+interface TemplatePerformance {
+  templateId: string;
+  templateName: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  averageScore: number;
+  totalTests: number;
+  lastTestDate: string;
+}
+
 export const TranscriptAnalysisPage: React.FC = () => {
   const [originalTranscript, setOriginalTranscript] = useState('');
   const [formattedTranscript, setFormattedTranscript] = useState('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<'quality' | 'comparison' | 'hallucination'>('quality');
+  const [selectedAnalysis, setSelectedAnalysis] = useState<'quality' | 'comparison' | 'hallucination' | 'ab-test'>('quality');
   const [templateName, setTemplateName] = useState('');
+  
+  // A/B Test state
+  const [templateA, setTemplateA] = useState('');
+  const [templateB, setTemplateB] = useState('');
+  const [abTestResult, setAbTestResult] = useState<ABTestResult | null>(null);
+  const [isRunningABTest, setIsRunningABTest] = useState(false);
+  const [templatePerformance, setTemplatePerformance] = useState<TemplatePerformance[]>([]);
+
+  // Load template performance history
+  React.useEffect(() => {
+    const storedPerformance = localStorage.getItem('templatePerformance');
+    if (storedPerformance) {
+      try {
+        setTemplatePerformance(JSON.parse(storedPerformance));
+      } catch (error) {
+        console.error('Error loading template performance:', error);
+      }
+    }
+  }, []);
+
+  // Debug: Check if TEMPLATE_CONFIGS is loaded
+  React.useEffect(() => {
+    const configs = getTemplateConfigs();
+    console.log('TEMPLATE_CONFIGS:', configs);
+    console.log('TEMPLATE_CONFIGS length:', configs.length);
+    console.log('Active templates:', configs.filter(t => t.isActive).length);
+  }, []);
 
   // Auto-populate from sessionStorage if available
   React.useEffect(() => {
@@ -145,6 +242,110 @@ export const TranscriptAnalysisPage: React.FC = () => {
       setIsAnalyzing(false);
     }
   }, [originalTranscript, formattedTranscript]);
+
+  // A/B Test function
+  const runABTest = useCallback(async () => {
+    if (!originalTranscript.trim() || !templateA || !templateB) {
+      alert('Please provide a raw transcript and select both templates for A/B testing');
+      return;
+    }
+
+    if (templateA === templateB) {
+      alert('Please select different templates for A/B testing');
+      return;
+    }
+
+    console.log('Starting A/B test with:', {
+      templateA,
+      templateB,
+      originalLength: originalTranscript.length,
+      language: detectLanguage(originalTranscript)
+    });
+
+    setIsRunningABTest(true);
+    
+    try {
+      // Call A/B test API
+      console.log('Calling A/B test API...');
+      const response = await apiFetch('/api/analyze/ab-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          original: originalTranscript,
+          templateA,
+          templateB,
+          language: detectLanguage(originalTranscript)
+        })
+      });
+      
+      console.log('A/B test API response:', response);
+      
+      if (response.success) {
+        console.log('A/B test successful, setting results:', response.result);
+        setAbTestResult(response.result);
+        
+        // Update template performance tracking
+        updateTemplatePerformance(response.result);
+      } else {
+        console.error('A/B test failed with response:', response);
+        throw new Error(`A/B test failed: ${response.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('A/B test error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      alert(`A/B test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningABTest(false);
+    }
+  }, [originalTranscript, templateA, templateB]);
+
+  // Update template performance tracking
+  const updateTemplatePerformance = useCallback((result: ABTestResult) => {
+    const updatePerformance = (templateId: string, templateName: string, won: boolean, tied: boolean, score: number) => {
+      setTemplatePerformance(prev => {
+        const existing = prev.find(p => p.templateId === templateId);
+        const updated = existing ? {
+          ...existing,
+          wins: won ? existing.wins + 1 : existing.wins,
+          losses: won ? existing.losses : existing.losses + 1,
+          ties: tied ? existing.ties + 1 : existing.ties,
+          totalTests: existing.totalTests + 1,
+          averageScore: (existing.averageScore * existing.totalTests + score) / (existing.totalTests + 1),
+          lastTestDate: result.testDate
+        } : {
+          templateId,
+          templateName,
+          wins: won ? 1 : 0,
+          losses: won ? 0 : 1,
+          ties: tied ? 1 : 0,
+          totalTests: 1,
+          averageScore: score,
+          lastTestDate: result.testDate
+        };
+
+        const newPerformance = existing 
+          ? prev.map(p => p.templateId === templateId ? updated : p)
+          : [...prev, updated];
+
+        // Save to localStorage
+        localStorage.setItem('templatePerformance', JSON.stringify(newPerformance));
+        return newPerformance;
+      });
+    };
+
+    // Update performance for both templates
+    const templateAWon = result.winner === 'A';
+    const templateBWon = result.winner === 'B';
+    const tied = result.winner === 'tie';
+
+    updatePerformance(result.templateA.id, result.templateA.name, templateAWon, tied, result.templateA.comprehensiveScore || 0);
+    updatePerformance(result.templateB.id, result.templateB.name, templateBWon, tied, result.templateB.comprehensiveScore || 0);
+  }, []);
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600 bg-green-100';
@@ -255,27 +456,103 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <Shield className="h-4 w-4" />
                 <span>Hallucination Detection</span>
               </Button>
+              <Button
+                variant={selectedAnalysis === 'ab-test' ? 'default' : 'outline'}
+                onClick={() => setSelectedAnalysis('ab-test')}
+                className="flex items-center space-x-2"
+              >
+                <GitCompare className="h-4 w-4" />
+                <span>A/B Test Templates</span>
+              </Button>
             </div>
-            <Button
-              onClick={analyzeTranscript}
-              disabled={isAnalyzing || !originalTranscript.trim() || !formattedTranscript.trim()}
-              className="flex items-center space-x-2"
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Analyzing...</span>
-                </>
-              ) : (
-                <>
-                  <Brain className="h-4 w-4" />
-                  <span>Analyze Transcripts</span>
-                </>
-              )}
-            </Button>
+            {selectedAnalysis === 'ab-test' ? (
+              <Button
+                onClick={runABTest}
+                disabled={isRunningABTest || !originalTranscript.trim() || !templateA || !templateB}
+                className="flex items-center space-x-2"
+              >
+                {isRunningABTest ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Running A/B Test...</span>
+                  </>
+                ) : (
+                  <>
+                    <GitCompare className="h-4 w-4" />
+                    <span>Run A/B Test</span>
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={analyzeTranscript}
+                disabled={isAnalyzing || !originalTranscript.trim() || !formattedTranscript.trim()}
+                className="flex items-center space-x-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4" />
+                    <span>Analyze Transcripts</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* A/B Test Configuration */}
+      {selectedAnalysis === 'ab-test' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <GitCompare className="h-5 w-5" />
+              <span>A/B Test Configuration</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Template A
+                </label>
+                <Select 
+                  value={templateA} 
+                  onValueChange={setTemplateA}
+                  items={getTemplateConfigs().filter(t => t.isActive).map((template) => ({
+                    label: template.name,
+                    value: template.id
+                  }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Template B
+                </label>
+                <Select 
+                  value={templateB} 
+                  onValueChange={setTemplateB}
+                  items={getTemplateConfigs().filter(t => t.isActive).map((template) => ({
+                    label: template.name,
+                    value: template.id
+                  }))}
+                />
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>How it works:</strong> Paste a raw transcript above, select two templates, and click "Run A/B Test". 
+                The system will apply both templates (just like in the dictation page) and compare their performance to determine which produces better results.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Analysis Results */}
       {analysisResult && (
@@ -588,6 +865,312 @@ export const TranscriptAnalysisPage: React.FC = () => {
                             <div className="truncate" title={item.suggestion}>
                               {item.suggestion || 'No suggestion'}
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* A/B Test Results */}
+      {abTestResult && selectedAnalysis === 'ab-test' && (
+        <div className="space-y-6">
+          {/* Winner Announcement */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Trophy className="h-5 w-5" />
+                <span>A/B Test Results</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                {abTestResult.winner === 'tie' ? (
+                  <div className="text-2xl font-bold text-yellow-600 mb-2">
+                    🤝 It's a Tie!
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-green-600 mb-2">
+                    🏆 Template {abTestResult.winner} Wins!
+                  </div>
+                )}
+                <div className="text-lg text-gray-600 mb-4">
+                  {abTestResult.templateA.name} vs {abTestResult.templateB.name}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Performance Gap: {abTestResult.performanceGap?.toFixed(1) || 'N/A'} points
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Side-by-Side Comparison */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Template A Results */}
+            <Card className={`${abTestResult.winner === 'A' ? 'ring-2 ring-green-500 bg-green-50' : 'bg-blue-50'} transition-all duration-200`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-lg">
+                  <span className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-mono">A</span>
+                    <span>{abTestResult.templateA.name}</span>
+                  </span>
+                  {abTestResult.winner === 'A' && <Trophy className="h-5 w-5 text-green-600" />}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className={`text-3xl font-bold ${getScoreColor(abTestResult.templateA.comprehensiveScore || 0)}`}>
+                      {abTestResult.templateA.comprehensiveScore?.toFixed(1) || 'N/A'}
+                    </div>
+                    <div className="text-sm text-gray-500">Comprehensive Score</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Overall: {abTestResult.templateA.analysis?.overallScore || 'N/A'} | 
+                      Hallucination: {abTestResult.templateA.analysis?.metrics?.hallucinationScore || 'N/A'}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600 max-h-60 overflow-y-auto">
+                    <strong>Formatted Output:</strong>
+                    <div className="mt-2 p-4 bg-white border rounded-lg shadow-sm">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {abTestResult.templateA.formatted}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Template B Results */}
+            <Card className={`${abTestResult.winner === 'B' ? 'ring-2 ring-green-500 bg-green-50' : 'bg-purple-50'} transition-all duration-200`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-lg">
+                  <span className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-purple-600 text-white text-xs rounded font-mono">B</span>
+                    <span>{abTestResult.templateB.name}</span>
+                  </span>
+                  {abTestResult.winner === 'B' && <Trophy className="h-5 w-5 text-green-600" />}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className={`text-3xl font-bold ${getScoreColor(abTestResult.templateB.comprehensiveScore || 0)}`}>
+                      {abTestResult.templateB.comprehensiveScore?.toFixed(1) || 'N/A'}
+                    </div>
+                    <div className="text-sm text-gray-500">Comprehensive Score</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Overall: {abTestResult.templateB.analysis?.overallScore || 'N/A'} | 
+                      Hallucination: {abTestResult.templateB.analysis?.metrics?.hallucinationScore || 'N/A'}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600 max-h-60 overflow-y-auto">
+                    <strong>Formatted Output:</strong>
+                    <div className="mt-2 p-4 bg-white border rounded-lg shadow-sm">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {abTestResult.templateB.formatted}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Metrics Comparison */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5" />
+                <span>Detailed Metrics Comparison</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Template A Metrics */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-blue-600 flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-mono">A</span>
+                    <span>{abTestResult.templateA.name}</span>
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Structural Consistency:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.structuralConsistency >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.structuralConsistency.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Editing Effort:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.editingEffort <= 20 ? 'text-green-600' : 'text-red-600'}`}>
+                        {abTestResult.templateA.metrics.editingEffort.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Content Preservation:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.contentPreservation >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.contentPreservation.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Voice Commands:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.voiceCommandProcessing >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.voiceCommandProcessing.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Speaker Prefixes:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.speakerPrefixHandling >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.speakerPrefixHandling.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Capitalization:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.capitalizationConsistency >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.capitalizationConsistency.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paragraph Breaks:</span>
+                      <span className="font-medium text-gray-600">
+                        {abTestResult.templateA.metrics.paragraphBreaks}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Word Count Change:</span>
+                      <span className={`font-medium ${abTestResult.templateA.metrics.wordCountChange <= 5 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateA.metrics.wordCountChange > 0 ? '+' : ''}{abTestResult.templateA.metrics.wordCountChange}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template B Metrics */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-purple-600 flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-purple-600 text-white text-xs rounded font-mono">B</span>
+                    <span>{abTestResult.templateB.name}</span>
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Structural Consistency:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.structuralConsistency >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.structuralConsistency.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Editing Effort:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.editingEffort <= 20 ? 'text-green-600' : 'text-red-600'}`}>
+                        {abTestResult.templateB.metrics.editingEffort.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Content Preservation:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.contentPreservation >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.contentPreservation.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Voice Commands:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.voiceCommandProcessing >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.voiceCommandProcessing.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Speaker Prefixes:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.speakerPrefixHandling >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.speakerPrefixHandling.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Capitalization:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.capitalizationConsistency >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.capitalizationConsistency.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paragraph Breaks:</span>
+                      <span className="font-medium text-gray-600">
+                        {abTestResult.templateB.metrics.paragraphBreaks}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Word Count Change:</span>
+                      <span className={`font-medium ${abTestResult.templateB.metrics.wordCountChange <= 5 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {abTestResult.templateB.metrics.wordCountChange > 0 ? '+' : ''}{abTestResult.templateB.metrics.wordCountChange}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Template Performance History */}
+          {templatePerformance.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <History className="h-5 w-5" />
+                  <span>Template Performance History</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Template
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Wins
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Losses
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ties
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Win Rate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Avg Score
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Test
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {templatePerformance.map((perf) => (
+                        <tr key={perf.templateId} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {perf.templateName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {perf.wins}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {perf.losses}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {perf.ties}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {((perf.wins / perf.totalTests) * 100).toFixed(1)}%
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {perf.averageScore.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(perf.lastTestDate).toLocaleDateString()}
                           </td>
                         </tr>
                       ))}

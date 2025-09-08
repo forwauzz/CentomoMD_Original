@@ -220,6 +220,146 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       version: '1.0.0',
       author: 'system'
     }
+  },
+  'section7-ai-formatter': {
+    id: 'section7-ai-formatter',
+    name: 'Section 7 AI Formatter',
+    nameEn: 'Section 7 AI Formatter',
+    description: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution)',
+    descriptionEn: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution)',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'ai-cnesst-formatting',
+      placeholders: ['chronological_order', 'worker_first', 'medical_terminology'],
+      validationRules: ['cnesst_compliance', 'chronological_validation', 'medical_accuracy']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 3,
+      timeout: 45,
+      retryAttempts: 2
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'ai', 'medical'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      lastModified: '2024-12-19'
+    }
+  },
+  'section-7-only': {
+    id: 'section-7-only',
+    name: 'Section 7 Template Only',
+    nameEn: 'Section 7 Template Only',
+    description: 'Apply Section 7 AI formatting template only. Basic AI-powered CNESST formatting',
+    descriptionEn: 'Apply Section 7 AI formatting template only. Basic AI-powered CNESST formatting',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'basic-cnesst-formatting',
+      placeholders: ['basic_formatting', 'medical_terms'],
+      validationRules: ['basic_validation', 'medical_terminology']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: false,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 4,
+      timeout: 30,
+      retryAttempts: 3
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'basic', 'template'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      lastModified: '2024-12-19'
+    }
+  },
+  'section-7-verbatim': {
+    id: 'section-7-verbatim',
+    name: 'Section 7 Template + Verbatim',
+    nameEn: 'Section 7 Template + Verbatim',
+    description: 'Apply Section 7 AI formatting with verbatim text support',
+    descriptionEn: 'Apply Section 7 AI formatting with verbatim text support',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'cnesst-formatting-verbatim',
+      placeholders: ['verbatim_markers', 'basic_formatting', 'medical_terms'],
+      validationRules: ['verbatim_preservation', 'basic_validation', 'medical_terminology']
+    },
+    features: {
+      verbatimSupport: true,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 5,
+      timeout: 60,
+      retryAttempts: 2
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'verbatim', 'template'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      lastModified: '2024-12-19'
+    }
+  },
+  'section-7-full': {
+    id: 'section-7-full',
+    name: 'Section 7 Template + Verbatim + Voice Commands',
+    nameEn: 'Section 7 Template + Verbatim + Voice Commands',
+    description: 'Apply Section 7 AI formatting with full feature set',
+    descriptionEn: 'Apply Section 7 AI formatting with full feature set',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'cnesst-formatting-full',
+      placeholders: ['verbatim_markers', 'voice_commands', 'basic_formatting', 'medical_terms'],
+      validationRules: ['verbatim_preservation', 'command_processing', 'basic_validation', 'medical_terminology']
+    },
+    features: {
+      verbatimSupport: true,
+      voiceCommandsSupport: true,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 6,
+      timeout: 90,
+      retryAttempts: 2
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'verbatim', 'voice-commands', 'template'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      lastModified: '2024-12-19'
+    }
   }
 };
 
