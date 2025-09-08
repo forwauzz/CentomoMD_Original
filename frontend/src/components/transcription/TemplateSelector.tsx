@@ -4,14 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, X } from 'lucide-react';
 import { TemplateJSON } from './TemplateDropdown';
-import { TEMPLATE_CONFIGS, TemplateConfig } from '@/config/template-config';
+import { TemplateConfig } from '@/config/template-config';
+import { useTemplates } from '@/contexts/TemplateContext';
 
 interface TemplateSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (template: TemplateJSON) => void;
   currentSection: string;
-  currentLanguage: string;
+  currentLanguage: 'fr-CA' | 'en-US';
   isFormatting?: boolean;
 }
 
@@ -23,13 +24,14 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   currentLanguage,
   isFormatting = false
 }) => {
+  const { getTemplatesBySection } = useTemplates();
   const [templates, setTemplates] = useState<TemplateJSON[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
 
   // Convert TemplateConfig to TemplateJSON format
   const convertTemplateConfigToJSON = (config: TemplateConfig, currentSection: string, currentLanguage: string): TemplateJSON => {
-    const isFrench = currentLanguage === 'fr';
+    const isFrench = (currentLanguage as string) === 'fr-CA';
     
     const converted = {
       id: config.id,
@@ -65,20 +67,17 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     if (isOpen) {
       loadTemplates();
     }
-  }, [isOpen, currentSection, currentLanguage]);
+  }, [isOpen, currentSection, currentLanguage, getTemplatesBySection]);
 
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load templates from Template Combinations configuration
-      const availableTemplates = TEMPLATE_CONFIGS.filter(config => {
-        // Filter by section (all or specific section)
-        if (config.section !== 'all' && config.section !== currentSection) {
-          return false;
-        }
-        
+      // Load templates from Template Combinations configuration using context
+      const availableTemplates = getTemplatesBySection(currentSection).filter(config => {
         // Filter by language (both or specific language)
-        if (config.language !== 'both' && config.language !== currentLanguage) {
+        // Convert currentLanguage (fr-CA/en-US) to template language format (fr/en)
+        const templateLanguage = (currentLanguage as string) === 'fr-CA' ? 'fr' : 'en';
+        if (config.language !== 'both' && config.language !== templateLanguage) {
           return false;
         }
         
@@ -91,6 +90,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         convertTemplateConfigToJSON(config, currentSection, currentLanguage)
       );
       
+      console.log(`TemplateSelector: Loaded ${convertedTemplates.length} templates for section ${currentSection} with language ${currentLanguage}`);
+      console.log('TemplateSelector: Template titles:', convertedTemplates.map(t => t.title));
       setTemplates(convertedTemplates);
     } finally {
       setLoading(false);
@@ -184,7 +185,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                         
                         {/* Template Info */}
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Section {template.section}</span>
+                          <span>Section {currentSection.replace('section_', '')}</span>
                           <span className="capitalize">{template.complexity}</span>
                         </div>
                       </div>
@@ -199,7 +200,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No templates available</h3>
                   <p className="text-gray-600">
-                    No templates are configured for Section {currentSection} in {currentLanguage === 'fr' ? 'French' : 'English'}.
+                    No templates are configured for Section {currentSection} in {currentLanguage === 'fr-CA' ? 'French' : 'English'}.
                   </p>
                 </div>
               )}

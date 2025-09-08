@@ -22,12 +22,14 @@ import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFeatureFlags } from '@/lib/featureFlags';
+import { TemplateProvider } from '@/contexts/TemplateContext';
 
 function App() {
   const featureFlags = useFeatureFlags();
 
   return (
-    <BrowserRouter>
+    <TemplateProvider>
+      <BrowserRouter>
       <Routes>
         {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -112,6 +114,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </TemplateProvider>
   );
 }
 

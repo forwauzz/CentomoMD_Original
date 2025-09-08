@@ -1,5 +1,9 @@
 # SHIPLOG
 
+## 2024-12-19 23:45 — [feat/save-to-section-from-dictation] fix(language-ui): fix language settings synchronization across application - connect Settings page and Profile page to UI store, fix template language display, ensure consistent language flow from Settings → UI Store → Dictation pages, and disable AI processing in Word-for-Word template for pure Dragon Dictation behavior — commit:in-progress
+
+## 2024-12-19 23:30 — [feat/decouple-sections-modes-templates] feat(architecture): implement fully decoupled architecture - sections, modes, and templates now operate independently with compatibility-based design, dynamic configuration, and comprehensive processing orchestrator — commit:in-progress
+
 ## 2024-12-19 23:00 — [feat/voice-commands-verbatim-management] fix(template-processing): fix Section 7 template spoken command processing - resolve template combination name mapping, enable voice commands layer, implement backend processing, and fix frontend configuration mapping — commit:in-progress
 
 ## 2024-12-19 22:30 — [feat/voice-commands-verbatim-management] feat(template-consolidation): consolidate template systems - Template Combinations now primary template management system — commit:in-progress

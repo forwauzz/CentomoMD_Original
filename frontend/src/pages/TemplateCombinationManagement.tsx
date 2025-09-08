@@ -29,20 +29,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { 
-  TEMPLATE_CONFIGS, 
-  TemplateConfig, 
-  updateTemplateConfig, 
-  deleteTemplateConfig 
-} from '@/config/template-config';
+import { TemplateConfig } from '@/config/template-config';
+import { useTemplates } from '@/contexts/TemplateContext';
+import { useUIStore } from '@/stores/uiStore';
 
 interface TemplateCombinationManagementProps {
   // Add any props if needed
 }
 
 export const TemplateCombinationManagement: React.FC<TemplateCombinationManagementProps> = () => {
-  const [templates, setTemplates] = useState<TemplateConfig[]>(TEMPLATE_CONFIGS);
-  const [filteredTemplates, setFilteredTemplates] = useState<TemplateConfig[]>(TEMPLATE_CONFIGS);
+  const { templates, updateTemplate, deleteTemplate, loading, error } = useTemplates();
+  const { language } = useUIStore();
+  const [filteredTemplates, setFilteredTemplates] = useState<TemplateConfig[]>(templates);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSection, setSelectedSection] = useState<'all' | '7' | '8' | '11'>('all');
   const [selectedType, setSelectedType] = useState<'all' | 'formatter' | 'ai-formatter' | 'template-combo'>('all');
@@ -69,7 +67,7 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
 
     // Section filter
     if (selectedSection !== 'all') {
-      filtered = filtered.filter(template => template.section === selectedSection);
+      filtered = filtered.filter(template => template.compatibleSections.includes(selectedSection));
     }
 
     // Type filter
@@ -91,11 +89,10 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
     setShowEditModal(true);
   };
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     if (selectedTemplate && editingTemplate.id) {
-      const success = updateTemplateConfig(editingTemplate.id, editingTemplate);
+      const success = await updateTemplate(editingTemplate.id, editingTemplate);
       if (success) {
-        setTemplates([...TEMPLATE_CONFIGS]);
         setShowEditModal(false);
         setSelectedTemplate(null);
         setEditingTemplate({});
@@ -103,22 +100,16 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
     }
   };
 
-  const handleDeleteTemplate = (templateId: string) => {
+  const handleDeleteTemplate = async (templateId: string) => {
     if (window.confirm('Are you sure you want to delete this template?')) {
-      const success = deleteTemplateConfig(templateId);
-      if (success) {
-        setTemplates([...TEMPLATE_CONFIGS]);
-      }
+      await deleteTemplate(templateId);
     }
   };
 
-  const handleToggleActive = (templateId: string) => {
+  const handleToggleActive = async (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
-      const success = updateTemplateConfig(templateId, { isActive: !template.isActive });
-      if (success) {
-        setTemplates([...TEMPLATE_CONFIGS]);
-      }
+      await updateTemplate(templateId, { isActive: !template.isActive });
     }
   };
 
@@ -163,6 +154,33 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
           <span>Add Template</span>
         </Button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <X className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-sm text-blue-700">Loading templates...</span>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
@@ -243,11 +261,8 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg font-semibold text-gray-900">
-                    {template.name}
+                    {language === 'fr' ? template.nameFr : template.name}
                   </CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {template.nameFr}
-                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -264,7 +279,7 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
             <CardContent className="space-y-4">
               {/* Description */}
               <p className="text-sm text-gray-700 line-clamp-3">
-                {template.description}
+                {language === 'fr' ? template.descriptionFr : template.description}
               </p>
 
               {/* Tags and Badges */}
@@ -276,7 +291,7 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
                   {template.complexity}
                 </Badge>
                 <Badge variant="outline">
-                  Section {template.section}
+                  Sections {template.compatibleSections.map(s => s.replace('section_', '')).join(', ')}
                 </Badge>
                 <Badge variant="outline">
                   <Globe className="w-3 h-3 mr-1" />
@@ -425,12 +440,15 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
                   <div>
                     <Label htmlFor="section">Section</Label>
                     <Select
-                      value={editingTemplate.section || '7'}
-                      onValueChange={(value: any) => setEditingTemplate({ ...editingTemplate, section: value })}
+                      value={editingTemplate.compatibleSections?.[0] || 'section_7'}
+                      onValueChange={(value: any) => setEditingTemplate({ 
+                        ...editingTemplate, 
+                        compatibleSections: [value] 
+                      })}
                       items={[
-                        { label: 'Section 7', value: '7' },
-                        { label: 'Section 8', value: '8' },
-                        { label: 'Section 11', value: '11' },
+                        { label: 'Section 7', value: 'section_7' },
+                        { label: 'Section 8', value: 'section_8' },
+                        { label: 'Section 11', value: 'section_11' },
                         { label: 'All Sections', value: 'all' }
                       ]}
                     />

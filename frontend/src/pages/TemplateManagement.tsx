@@ -1048,7 +1048,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
             // Handle template selection if needed
           }}
           currentSection={selectedTemplate.section}
-          currentLanguage={selectedTemplate.language || 'fr'}
+          currentLanguage={selectedTemplate.language === 'fr' ? 'fr-CA' : 'en-US'}
         />
       )}
     </div>
