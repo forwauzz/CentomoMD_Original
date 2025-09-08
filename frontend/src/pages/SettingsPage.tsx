@@ -34,8 +34,8 @@ export const SettingsPage: React.FC = () => {
     pipeda: true,
     zeroRetention: false,
     
-    // Dictation defaults
-    defaultLanguage: 'fr-CA',
+    // Dictation defaults - sync with UI store
+    defaultLanguage: language === 'fr' ? 'fr-CA' : 'en-US',
     autoSave: true,
     transcriptionMode: 'smart_dictation',
     
@@ -55,6 +55,13 @@ export const SettingsPage: React.FC = () => {
       ...prev,
       [key]: value
     }));
+    
+    // Update UI store language when defaultLanguage changes
+    if (key === 'defaultLanguage') {
+      const uiLanguageFormat = value === 'fr-CA' ? 'fr' : 'en';
+      setLanguage(uiLanguageFormat);
+      console.log('SettingsPage: UI language updated to:', uiLanguageFormat, 'from defaultLanguage:', value);
+    }
   };
 
   const handleSaveSettings = () => {

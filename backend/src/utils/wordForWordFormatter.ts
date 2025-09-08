@@ -27,11 +27,11 @@ export const DEFAULT_CONFIG: WordForWordConfig = {
   capitalizeSentences: true,
   cleanSpacing: true,
 
-  applyLightClinicalFixes: true,
+  applyLightClinicalFixes: false,  // NO AI processing - pure Dragon Dictation behavior
   lightClinicalFixes: {
-    normalizeSpineLevels: true,
-    normalizeDoctorAbbrev: true,
-    dateHeuristics: true
+    normalizeSpineLevels: false,
+    normalizeDoctorAbbrev: false,
+    dateHeuristics: false
   }
 };
 

@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TemplatePreview } from './TemplatePreview';
-import { TEMPLATE_CONFIGS, TemplateConfig } from '@/config/template-config';
+import { TemplateConfig } from '@/config/template-config';
+import { useTemplates } from '@/contexts/TemplateContext';
 
 export interface TemplateJSON {
   id?: string;
@@ -39,8 +40,8 @@ export interface TemplateJSON {
 }
 
 interface TemplateDropdownProps {
-  currentSection: "7" | "8" | "11";
-  currentLanguage: 'fr' | 'en';
+  currentSection: string;
+  currentLanguage: 'fr-CA' | 'en-US';
   onTemplateSelect: (template: TemplateJSON) => void;
   selectedTemplate?: TemplateJSON | null;
   className?: string;
@@ -53,6 +54,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   selectedTemplate,
   className
 }) => {
+  const { getTemplatesBySection } = useTemplates();
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<TemplateJSON[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<TemplateJSON[]>([]);
@@ -64,7 +66,9 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
 
   // Convert TemplateConfig to TemplateJSON format
   const convertTemplateConfigToJSON = (config: TemplateConfig, currentSection: string, currentLanguage: string): TemplateJSON => {
-    const isFrench = currentLanguage === 'fr';
+    const isFrench = (currentLanguage as string) === 'fr-CA';
+    console.log(`TemplateDropdown: Converting ${config.id}, currentLanguage: ${currentLanguage}, isFrench: ${isFrench}`);
+    console.log(`TemplateDropdown: English name: ${config.name}, French name: ${config.nameFr}`);
     
     const converted = {
       id: config.id,
@@ -98,7 +102,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   // Load templates for current section
   useEffect(() => {
     loadTemplates();
-  }, [currentSection, currentLanguage]);
+  }, [currentSection, currentLanguage, getTemplatesBySection]);
 
   // Filter templates based on search and tags
   useEffect(() => {
@@ -126,15 +130,12 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load templates from Template Combinations configuration
-      const availableTemplates = TEMPLATE_CONFIGS.filter(config => {
-        // Filter by section (all or specific section)
-        if (config.section !== 'all' && config.section !== currentSection) {
-          return false;
-        }
-        
+      // Load templates from Template Combinations configuration using context
+      const availableTemplates = getTemplatesBySection(currentSection).filter(config => {
         // Filter by language (both or specific language)
-        if (config.language !== 'both' && config.language !== currentLanguage) {
+        // Convert currentLanguage (fr-CA/en-US) to template language format (fr/en)
+        const templateLanguage = (currentLanguage as string) === 'fr-CA' ? 'fr' : 'en';
+        if (config.language !== 'both' && config.language !== templateLanguage) {
           return false;
         }
         
@@ -147,7 +148,8 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
         convertTemplateConfigToJSON(config, currentSection, currentLanguage)
       );
       
-      console.log(`Loaded ${convertedTemplates.length} templates for section ${currentSection} with language ${currentLanguage}`);
+      console.log(`TemplateDropdown: Loaded ${convertedTemplates.length} templates for section ${currentSection} with language ${currentLanguage}`);
+      console.log('TemplateDropdown: Template titles:', convertedTemplates.map(t => t.title));
       setTemplates(convertedTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);

@@ -20,8 +20,8 @@ interface TemplatePreviewProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (template: TemplateJSON) => void;
-  currentSection: "7" | "8" | "11";
-  currentLanguage: "fr" | "en";
+  currentSection: string;
+  currentLanguage: "fr-CA" | "en-US";
 }
 
 export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
@@ -63,7 +63,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     try {
       const formattingOptions: FormattingOptions = {
         section: template.section,
-        language: template.language || currentLanguage,
+        language: template.language || (currentLanguage === 'fr-CA' ? 'fr' : 'en'),
         complexity: template.complexity || 'medium'
       };
 
@@ -84,7 +84,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         template.content,
         {
           section: template.section,
-          language: template.language || currentLanguage
+          language: template.language || (currentLanguage === 'fr-CA' ? 'fr' : 'en')
         }
       );
              setFormattedContent(basicFormatted);

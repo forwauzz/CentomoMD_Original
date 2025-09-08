@@ -13,6 +13,7 @@ import { FormattingService, FormattingOptions } from '@/services/formattingServi
 import { TemplateSelector } from './TemplateSelector';
 import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
+import { useUIStore } from '@/stores/uiStore';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -25,8 +26,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const featureFlags = useFeatureFlags();
+  const { language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr-CA');
+  
+  // Convert UI store language (fr/en) to dictation format (fr-CA/en-US)
+  const selectedLanguage = uiLanguage === 'fr' ? 'fr-CA' : 'en-US';
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -78,14 +82,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
-    setSelectedLanguage(newLanguage);
-    console.log('TranscriptionInterface: selectedLanguage state updated to:', newLanguage);
+    // Convert dictation format (fr-CA/en-US) to UI store format (fr/en)
+    const uiLanguageFormat = newLanguage === 'fr-CA' ? 'fr' : 'en';
+    setUILanguage(uiLanguageFormat);
+    console.log('TranscriptionInterface: UI language updated to:', uiLanguageFormat);
   };
 
   // Debug: Monitor selectedLanguage changes
   useEffect(() => {
-    console.log('TranscriptionInterface: selectedLanguage state changed to:', selectedLanguage);
-  }, [selectedLanguage]);
+    console.log('TranscriptionInterface: selectedLanguage derived from UI store:', selectedLanguage, 'uiLanguage:', uiLanguage);
+  }, [selectedLanguage, uiLanguage]);
 
   const {
     isRecording,
@@ -460,7 +466,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       
       // Apply AI formatting to template content
       const formattingOptions: FormattingOptions = {
-        section: template.section,
+        section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
         language: template.language || 'fr',
         complexity: template.complexity || 'medium',
         formattingLevel: 'advanced',
@@ -507,7 +513,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       const basicFormatted = FormattingService.applyBasicFormatting(
         template.content,
         {
-          section: template.section,
+          section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
           language: template.language || 'fr'
         }
       );
@@ -565,8 +571,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Template</label>
                 <TemplateDropdown
-                  currentSection={activeSection.replace('section_', '') as "7" | "8" | "11"}
-                  currentLanguage={selectedLanguage === 'fr-CA' ? 'fr' : 'en'}
+                  currentSection={activeSection || 'section_7'}
+                  currentLanguage={selectedLanguage}
                   selectedTemplate={selectedTemplate}
                   onTemplateSelect={(template) => {
                     console.log('Template selected:', template);
@@ -889,8 +895,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             injectTemplateContent(template);
             setShowTemplateModal(false);
           }}
-          currentSection={activeSection.replace('section_', '') as "7" | "8" | "11"}
-          currentLanguage={selectedLanguage === 'fr-CA' ? 'fr' : 'en'}
+          currentSection={activeSection || 'section_7'}
+          currentLanguage={selectedLanguage}
           isFormatting={isFormatting}
         />
       )}
