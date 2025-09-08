@@ -7,75 +7,121 @@ alwaysApply: true
 
 
 # Project-Specific Cursor Rules (Generalized)
+---
+description: Project-Specific Rules for this Repo
+globs:
+ - "**/*"
+alwaysApply: true
+---
 
-## Repo Standards
-- Detect the stack automatically (Node, Python, etc.) and adapt to project config:
-  - If `package.json` exists → run `npm run lint && npm run typecheck && npm test` (or equivalents defined in scripts).
-  - If `pyproject.toml` / `requirements.txt` exists → run `pytest`, `ruff` (or `flake8`), and `mypy` (or `pyright`) if available.
-  - If other test/lint/type tools exist in config, prefer those over inventing new commands.
+# 🧩 Project-Specific Cursor Rules (Generalized for All Projects)
 
-## Conventions
-- Use **Conventional Commits**:  
-  `feat|fix|refactor|perf|chore|docs(scope): summary`
-- Branch names: `type/scope-shorttopic` (e.g., `feat/login-ui`).
-- Every commit must pass lint, typecheck, and tests locally before merge.
+## 🧠 Repo Standards
 
-## SHIPLOG
-- Maintain `docs/SHIPLOG.md`.  
-- On every `feat|fix|refactor|perf` commit, append one line:  
-  `YYYY-MM-DD HH:mm — [branch] type(scope): summary — commit:<shortsha>`
+- Automatically detect and adapt to stack tooling:
+  - If `package.json` exists → run: `npm run lint && npm run typecheck && npm test`
+  - If `pyproject.toml` or `requirements.txt` exists → run: `pytest`, `ruff` or `flake8`, `mypy` or `pyright`
+  - Always prefer existing scripts in the project over inventing new ones
 
-## Escalation Protocol (3-Try Rule)
-- If the same task cannot be solved after **3 attempts**:
-  - **Stop coding.**
-  - Create `/docs/contextual_summary.md` with:
-    - Problem description
-    - Current architecture (high-level)
-    - Repro steps
-    - Logs/artifacts/errors
-    - Attempts so far
-    - Constraints/non-negotiables
-    - Suspected causes
-    - Narrow fix proposal
-  - Request human review.
+---
 
-## Feature Flags & Safety
-- New functionality must be **feature-flagged** with default OFF.
-- Do not commit `.env`, `.pem`, `.key`, `.crt`, or `secrets/` directories.
-- Use `.env.example` to document required environment variables.
-- Never log or print secret values or sensitive data.
+## 🧱 Conventions
 
-## Dependencies
-- Before adding a new dependency:
-  1. Justify why it’s needed.
-  2. Suggest at least one lighter alternative.
-  3. Note expected impact on lockfile size or bundle.
+- **Commits:** `feat|fix|refactor|perf|chore|docs(scope): summary`
+- **Branches:** `type/scope-shorttopic` (e.g., `feat/transcription-mode2`)
+- All commits must pass lint, typecheck, and tests locally before merge
 
-## File Safety & Compliance
-- Avoid committing secrets, credentials, or tokens.
-- Respect compliance constraints (HIPAA, PIPEDA, Law 25, GDPR) if the project involves personal or health data.
-- Handle PHI/PII with zero retention unless explicitly required and documented.
+---
 
-## Execution Protocol (per task)
-**Before coding**
-1. Confirm acceptance criteria (bullets).
-2. List impacted files and why.
-3. Propose a minimal 3–6 step plan.
-4. State tests to add/update.
+## 📜 SHIPLOG
 
-**During coding**
-- Keep changes minimal, scoped, and reversible.
-- Add or update tests for both success and failure cases.
-- Run lint, typecheck, and tests locally before committing.
+- Maintain `docs/SHIPLOG.md`
+- For every merged PR (`feat|fix|refactor|perf`), append a single line:
 
-**After coding**
-- Update `docs/SHIPLOG.md`.
-- Provide a clear PR description with checklist.
-- If stuck after 3 tries, escalate with contextual summary.
+YYYY-MM-DD HH:mm — [branch] type(scope): summary — commit:<shortsha>
 
-## Git Commits
-- Use Pull Requests for all changes.
--Only commit once human confirms all is working - ask user to test before we implement comit, once human confirms, continue to commit
 
-## Endpoints
-- Verify which endpoints require auth before implementing.
+---
+
+## 🔁 Escalation Protocol – "3-Try Rule"
+
+If the same task fails after **3 development attempts**:
+
+1. **STOP coding**
+2. Create `/docs/contextual_summary.md` with:
+ - Problem summary
+ - High-level architecture
+ - Reproduction steps, logs, errors
+ - All attempts so far
+ - Constraints / non-negotiables
+ - Suspected root cause(s)
+ - Narrow fix proposal
+3. Request human review before proceeding
+
+---
+
+## 🔐 Feature Flags & Authentication Deferral
+
+- All new features must be **feature-flagged** (default OFF)
+- **Authentication (e.g., Supabase, middleware, RLS)** is **deferred by default**
+- Only implement authentication after explicit **human confirmation**
+- Build all logic assuming auth is coming later
+- Each endpoint must be audited for auth needs before implementation
+
+---
+
+## 📁 File Safety & Compliance
+
+- Never commit `.env`, `.key`, `.pem`, `.crt`, or `secrets/` folders
+- Use `.env.example` to document all required environment variables
+- Do not log or print PHI, PII, or secrets in any environment
+- Enforce compliance from day one:
+- ✅ HIPAA
+- ✅ PIPEDA
+- ✅ Law 25 (Quebec)
+- ✅ GDPR
+- Design with **zero-retention** by default unless otherwise documented
+
+---
+
+## 🧼 Code Hygiene – Modular by Default
+
+- All files must remain **lean and scoped**
+- Max 300 LOC per file  
+- Max 5 responsibilities per module  
+- Split logic into composable utilities or handlers
+- Avoid deep nesting and unrelated logic in the same file
+- Apply clean code principles to keep future changes safe and testable
+
+---
+
+## ⚙️ Execution Protocol – Per Task
+
+### 🟡 Before Coding
+
+1. Confirm acceptance criteria (bullets)
+2. List impacted files + justification
+3. Propose 3–6 step implementation plan
+4. State test plan (happy/unhappy paths)
+5. Confirm whether authentication is required — **skip unless explicitly approved**
+
+### 🛠️ During Coding
+
+- Keep diffs minimal and scoped
+- Add/update tests (happy + failure scenarios)
+- Run lint, typecheck, and test suite locally
+
+### ✅ After Coding
+
+- Submit PR with clean checklist
+- Update SHIPLOG with **PR merge**, not individual commits
+- If 3 failed attempts → escalate using contextual summary
+
+---
+
+## 🔒 Endpoint Guidance
+
+- Do **not** implement endpoint authentication until core logic is stable and approved
+- Confirm route-by-route which endpoints require auth vs. are public for dev/test
+- Gate protected routes only after human confirms readiness for auth
+
