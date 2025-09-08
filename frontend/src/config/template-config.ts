@@ -28,6 +28,8 @@ export interface TemplateConfig {
     chronologicalOrder?: boolean;
     medicalTerminology?: boolean;
     templateCombo?: string;
+    aiFormattingEnabled?: boolean;
+    deterministicFirst?: boolean;
   };
   usage: {
     count: number;
@@ -66,6 +68,39 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     usage: {
       count: 0,
       successRate: 95,
+    },
+    created: '2024-12-19',
+    updated: '2024-12-19',
+  },
+  {
+    id: 'word-for-word-with-ai',
+    name: 'Word-for-Word (with AI)',
+    nameFr: 'Mot-à-Mot (avec IA)',
+    description: 'Deterministic word-for-word formatting with optional GPT cleanup. Preserves every spoken word exactly while converting voice commands to proper formatting.',
+    descriptionFr: 'Formatage mot-à-mot déterministe avec nettoyage GPT optionnel. Préserve chaque mot prononcé exactement tout en convertissant les commandes vocales en formatage approprié.',
+    type: 'ai-formatter',
+    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    language: 'both',
+    complexity: 'medium',
+    tags: ['word-for-word', 'ai-formatter', 'deterministic', 'voice-commands'],
+    isActive: true,
+    isDefault: false,
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: true,
+      aiFormatting: true,
+      postProcessing: true,
+    },
+    prompt: 'You are a deterministic Word-for-Word transcription formatter. Do exactly this: Preserve spoken words (no paraphrasing). Apply spoken formatting commands (punctuation/structure). Auto-capitalize only at sentence starts. Normalize dates (EN & FR) without changing meaning. Strip speaker prefixes at line starts. Never invent, remove, or reorder medical facts, names, numbers, meds, or findings. If unsure, leave text unchanged.',
+    promptFr: 'Vous êtes un formateur de transcription mot-à-mot déterministe. Faites exactement ceci: Préservez les mots prononcés (pas de paraphrase). Appliquez les commandes de formatage vocal (ponctuation/structure). Capitalisez automatiquement seulement au début des phrases. Normalisez les dates (EN & FR) sans changer le sens. Supprimez les préfixes de locuteur au début des lignes. N\'inventez jamais, ne supprimez jamais ou ne réorganisez jamais les faits médicaux, noms, nombres, médicaments ou résultats. En cas de doute, laissez le texte inchangé.',
+    config: {
+      mode: 'word-for-word-ai',
+      aiFormattingEnabled: true, // Enable AI formatting for this template
+      deterministicFirst: true,
+    },
+    usage: {
+      count: 0,
+      successRate: 98,
     },
     created: '2024-12-19',
     updated: '2024-12-19',

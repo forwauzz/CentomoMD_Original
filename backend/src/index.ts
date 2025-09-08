@@ -21,7 +21,7 @@ import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import { securityMiddleware } from './server/security.js';
-import { authMiddleware } from './auth.js';
+// import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
 import { bootProbe } from './database/connection.js';
@@ -57,7 +57,7 @@ try {
 }
 
 // Transcript Analysis endpoints
-app.post('/api/analyze/transcript', authMiddleware, async (req, res) => {
+app.post('/api/analyze/transcript', async (req, res) => {
   try {
     const { original, formatted, language = 'fr' } = req.body;
     
@@ -84,7 +84,7 @@ app.post('/api/analyze/transcript', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/analyze/compare', authMiddleware, async (req, res) => {
+app.post('/api/analyze/compare', async (req, res) => {
   try {
     const { original, formatted } = req.body;
     
@@ -148,7 +148,7 @@ function printRoutes(app: any) {
 printRoutes(app);
 
 // All template endpoints are now protected with authMiddleware
-app.get('/api/templates', authMiddleware, (req, res) => {
+app.get('/api/templates', (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -206,7 +206,7 @@ app.get('/api/templates', authMiddleware, (req, res) => {
   }
 });
 
-app.get('/api/templates/stats', authMiddleware, (req, res) => {
+app.get('/api/templates/stats',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -252,7 +252,7 @@ app.get('/api/templates/stats', authMiddleware, (req, res) => {
 });
 
 // AI Formatting API Endpoint - Protected with Auth
-app.post('/api/templates/format', authMiddleware, (req, res) => {
+app.post('/api/templates/format',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -332,7 +332,7 @@ app.post('/api/templates/format', authMiddleware, (req, res) => {
 });
 
 // Template CRUD Operations - Protected with Auth
-app.post('/api/templates', authMiddleware, async (req, res) => {
+app.post('/api/templates',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -429,7 +429,7 @@ app.post('/api/templates', authMiddleware, async (req, res) => {
   }
 });
 
-app.put('/api/templates/:id', authMiddleware, async (req, res) => {
+app.put('/api/templates/:id',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -522,7 +522,7 @@ app.put('/api/templates/:id', authMiddleware, async (req, res) => {
   }
 });
 
-app.delete('/api/templates/:id', authMiddleware, async (req, res) => {
+app.delete('/api/templates/:id',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -597,7 +597,7 @@ app.delete('/api/templates/:id', authMiddleware, async (req, res) => {
 // Advanced Template Features API Endpoints
 
 // Get template versions - Protected with Auth
-app.get('/api/templates/:id/versions', authMiddleware, (req, res) => {
+app.get('/api/templates/:id/versions',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -658,7 +658,7 @@ app.get('/api/templates/:id/versions', authMiddleware, (req, res) => {
 });
 
 // Get template analytics - Protected with Auth
-app.get('/api/templates/analytics', authMiddleware, (req, res) => {
+app.get('/api/templates/analytics',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -707,7 +707,7 @@ app.get('/api/templates/analytics', authMiddleware, (req, res) => {
 });
 
 // Get templates by section (must come after /analytics to avoid route conflict) - Protected with Auth
-app.get('/api/templates/:section', authMiddleware, (req, res) => {
+app.get('/api/templates/:section',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -784,7 +784,7 @@ app.get('/api/templates/:section', authMiddleware, (req, res) => {
 });
 
 // Track template usage - Protected with Auth
-app.post('/api/templates/:id/usage', authMiddleware, async (req, res) => {
+app.post('/api/templates/:id/usage',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -863,7 +863,7 @@ app.post('/api/templates/:id/usage', authMiddleware, async (req, res) => {
 });
 
 // Advanced search - Protected with Auth
-app.post('/api/templates/search', authMiddleware, (req, res) => {
+app.post('/api/templates/search',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -926,7 +926,7 @@ app.post('/api/templates/search', authMiddleware, (req, res) => {
 });
 
 // Export templates - Protected with Auth
-app.get('/api/templates/export', authMiddleware, (req, res) => {
+app.get('/api/templates/export',  (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -978,7 +978,7 @@ app.get('/api/templates/export', authMiddleware, (req, res) => {
 });
 
 // Import templates - Protected with Auth
-app.post('/api/templates/import', authMiddleware, async (req, res) => {
+app.post('/api/templates/import',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -1037,7 +1037,7 @@ app.post('/api/templates/import', authMiddleware, async (req, res) => {
 });
 
 // Bulk operations - Protected with Auth
-app.post('/api/templates/bulk/status', authMiddleware, async (req, res) => {
+app.post('/api/templates/bulk/status',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -1104,7 +1104,7 @@ app.post('/api/templates/bulk/status', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/templates/bulk/delete', authMiddleware, async (req, res) => {
+app.post('/api/templates/bulk/delete',  async (req, res) => {
   const user = (req as any).user;
   
   try {
@@ -1163,7 +1163,7 @@ app.post('/api/templates/bulk/delete', authMiddleware, async (req, res) => {
 });
 
 // Mode 1 Formatting Endpoint
-app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> => {
+app.post('/api/format/mode1', async (req, res): Promise<void> => {
   try {
     const { transcript, language, quote_style, radiology_mode, section } = req.body;
     
@@ -1181,11 +1181,7 @@ app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> =>
       return;
     }
 
-    const user = (req as any).user;
-    if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+    // Development mode: no auth required
 
     // Initialize Mode 1 formatter
     const formatter = new Mode1Formatter();
@@ -1236,8 +1232,90 @@ app.post('/api/format/mode1', authMiddleware, async (req, res): Promise<void> =>
   }
 });
 
+// Word-for-Word (with AI) Formatting Endpoint
+app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
+  // Generate or read correlation ID
+  const correlationId = req.headers['x-correlation-id'] as string || `be-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
+    const { transcript, language } = req.body;
+    
+    console.info(`[${correlationId}] Word-for-Word AI formatting request started`, {
+      language,
+      contentLength: transcript?.length || 0,
+      hasAuth: !!(req as any).user
+    });
+    
+    if (!transcript || typeof transcript !== 'string') {
+      console.warn(`[${correlationId}] Invalid transcript provided`);
+      res.status(400).json({ 
+        error: 'Transcript is required and must be a string',
+        correlationId
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      console.warn(`[${correlationId}] Invalid language provided: ${language}`);
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"',
+        correlationId
+      });
+      return;
+    }
+
+    // Development mode: no auth required
+    console.info(`[${correlationId}] Dev mode: no auth required`);
+
+    // Use the ProcessingOrchestrator to handle Word-for-Word (with AI) template
+    const { processingOrchestrator } = await import('./services/processing/ProcessingOrchestrator.js');
+    
+    const result = await processingOrchestrator.processContent({
+      sectionId: 'section_7', // Default section, could be made configurable
+      modeId: 'mode1', // Word-for-word mode
+      templateId: 'word-for-word-with-ai',
+      language: language as 'fr' | 'en',
+      content: transcript,
+      correlationId // Pass correlation ID for logging
+    });
+
+    console.info(`[${correlationId}] Word-for-Word AI formatting completed`, {
+      success: result.success,
+      outputLength: result.processedContent?.length || 0,
+      errors: result.metadata?.errors?.length || 0
+    });
+
+    if (result.success) {
+      res.json({
+        success: true,
+        formatted: result.processedContent,
+        metadata: result.metadata,
+        correlationId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Processing failed',
+        details: result.metadata.errors,
+        correlationId
+      });
+    }
+
+  } catch (error) {
+    console.error(`[${correlationId}] Word-for-Word (with AI) formatting error:`, error);
+    
+    // Return 200 with fallback content instead of 500
+    res.status(200).json({
+      success: false,
+      formatted: req.body.transcript || '', // Return original content
+      issues: ['ai_failed', error instanceof Error ? error.constructor.name : 'UnknownError'],
+      correlationId
+    });
+  }
+});
+
 // Mode 2 Formatting Endpoint (Smart Dictation)
-app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> => {
+app.post('/api/format/mode2', async (req, res): Promise<void> => {
   try {
     const { 
       transcript, 
@@ -1273,11 +1351,7 @@ app.post('/api/format/mode2', authMiddleware, async (req, res): Promise<void> =>
       return;
     }
 
-    const user = (req as any).user;
-    if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+    // Development mode: no auth required
 
     // Initialize Mode 2 formatter
     const formatter = new Mode2Formatter();

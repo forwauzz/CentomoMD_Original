@@ -12,6 +12,7 @@ export interface WordForWordConfig {
   convertSpokenCommands: boolean;
   capitalizeSentences: boolean;
   cleanSpacing: boolean;
+  removeFillerWords?: boolean;
 
   applyLightClinicalFixes?: boolean;
   lightClinicalFixes?: {
@@ -26,6 +27,7 @@ export const DEFAULT_CONFIG: WordForWordConfig = {
   convertSpokenCommands: true,
   capitalizeSentences: true,
   cleanSpacing: true,
+  removeFillerWords: false, // Let AI handle this for better context awareness
 
   applyLightClinicalFixes: false,  // NO AI processing - pure Dragon Dictation behavior
   lightClinicalFixes: {
@@ -41,7 +43,12 @@ export function formatWordForWordText(rawText: string, cfg: WordForWordConfig = 
 
   // 1) Strip speaker prefixes (Pt:, Dr:, Dre:, Pat:, Patient:, MD:) - anywhere in text
   if (cfg.removeSpeakerPrefixes) {
+    // More aggressive pattern to catch all variations
     t = t.replace(/(?:^|\s)(?:pt|dr|dre|pat|patient|md)\s*:\s*/gim, " ");
+    // Also handle cases where it appears at start of line
+    t = t.replace(/^(?:pt|dr|dre|pat|patient|md)\s*:\s*/gim, "");
+    // Handle multiple occurrences in sequence
+    t = t.replace(/(?:pt|dr|dre|pat|patient|md)\s*:\s*(?:pt|dr|dre|pat|patient|md)\s*:\s*/gim, "");
   }
 
   // 2) Convert spoken commands (EN/FR)
@@ -49,17 +56,22 @@ export function formatWordForWordText(rawText: string, cfg: WordForWordConfig = 
     t = convertSpokenCommands(t);
   }
 
-  // 3) Optional light clinical fixes (OFF by default)
+  // 3) Remove filler words (if enabled)
+  if (cfg.removeFillerWords) {
+    t = removeFillerWords(t);
+  }
+
+  // 4) Optional light clinical fixes (OFF by default)
   if (cfg.applyLightClinicalFixes) {
     t = applyLightClinicalFixes(t, cfg.lightClinicalFixes);
   }
 
-  // 4) Clean spacing (respect \n and \n\n)
+  // 5) Clean spacing (respect \n and \n\n)
   if (cfg.cleanSpacing) {
     t = cleanSpacing(t);
   }
 
-  // 5) Capitalize sentences after ., !, ?, :, ; or newline
+  // 6) Capitalize sentences after ., !, ?, :, ; or newline
   if (cfg.capitalizeSentences) {
     t = capitalizeSentences(t);
   }
@@ -80,13 +92,13 @@ function convertSpokenCommands(text: string): string {
   const protectedText = t.replace(anatomicalColonTerms, (match) => match.replace('colon', 'COLON_PROTECTED'));
   
   const replacements: Array<[RegExp, string]> = [
-    // Paragraphs & lines - comprehensive patterns
+    // Paragraphs & lines - comprehensive patterns (do these first)
     [/\b(?:new\s*paragraph|paragraph\s*break|new\s*para)\b/gi, "\n\n"],
     [/\b(?:new\s*line|newline|line\s*break)\b/gi, "\n"],
     [/\b(?:nouveau\s*paragraphe|nouvelle\s*paragraphe)\b/gi, "\n\n"],
     [/\b(?:nouvelle\s*ligne|retour\s*à\s*la\s*ligne)\b/gi, "\n"],
 
-    // Punctuation (EN) - comprehensive patterns
+    // Punctuation (EN) - comprehensive patterns with word boundaries
     [/\b(?:period|full\s*stop|fullstop)\b/gi, "."],
     [/\bcomma\b/gi, ","],
     [/\bcolon\b/gi, ":"],
@@ -102,11 +114,19 @@ function convertSpokenCommands(text: string): string {
     [/\bpoint\s*d['']exclamation\b/gi, "!"],
     [/\bpoint\s*d['']interrogation\b/gi, "?"],
 
+    // Additional common spoken commands
+    [/\b(?:dot|stop)\b/gi, "."],
+    [/\b(?:dash|hyphen)\b/gi, "-"],
+    [/\b(?:underscore|underline)\b/gi, "_"],
+    
+    // Handle common abbreviations and typos
+    [/\bcom\b/gi, ","], // "com" -> comma
+
     // Quotes & parens
     [/\b(?:open\s*parenthesis|open\s*paren)\b/gi, "("],
     [/\b(?:close\s*parenthesis|close\s*paren)\b/gi, ")"],
-    [/\b(?:open\s*quotes?(?:\s*|$)|open\s*quotation\s*marks)\b/gi, "\""],
-    [/\b(?:close\s*quotes?(?:\s*|$)|close\s*quotation\s*marks)\b/gi, "\""],
+    [/\b(?:open\s*quotes?|open\s*quotation\s*marks|quote)\b/gi, "\""],
+    [/\b(?:close\s*quotes?|close\s*quotation\s*marks|close\s*quote)\b/gi, "\""],
     [/\bouvrir\s*les\s*guillemets\b/gi, "«"],
     [/\bfermer\s*les\s*guillemets\b/gi, "»"],
     
@@ -236,8 +256,14 @@ function cleanSpacing(text: string): string {
   // Remove spaces before punctuation
   t = t.replace(/\s+([.,:;!?])/g, "$1");
 
-  // Fix double/multiple punctuation (e.g., ",," -> ",")
+  // Fix double/multiple punctuation (e.g., ",," -> "," or ".." -> ".")
   t = t.replace(/([.,:;!?])\1+/g, "$1");
+
+  // Fix specific patterns like ", ," or ". ." -> "," or "."
+  t = t.replace(/([.,:;!?])\s+\1/g, "$1");
+
+  // Fix patterns like "head, ,." -> "head,."
+  t = t.replace(/([.,:;!?])\s*,\s*\./g, "$1.");
 
   // Ensure a space after punctuation if followed by a word (not newline/end/quote/paren)
   t = t.replace(/([.:;!?])(?!\s|\n|$|["'»\)])/g, "$1 ");
@@ -273,5 +299,42 @@ function capitalizeSentences(text: string): string {
     t = t.replace(regex, (match) => match);
   }
 
+  return t;
+}
+
+/**
+ * Remove common filler words and speech artifacts
+ */
+function removeFillerWords(text: string): string {
+  let t = text;
+  
+  // English filler words
+  const englishFillers = [
+    /\b(um|uh|er|ah|like|you know|actually|basically|literally)\b/gi,
+    /\b(so|well|okay|ok|right|yeah|yep|nope)\b/gi
+  ];
+  
+  // French filler words
+  const frenchFillers = [
+    /\b(euh|ben|alors|donc|en fait|genre|quoi|là|hein)\b/gi,
+    /\b(bon|voilà|bref|enfin|bien sûr|évidemment)\b/gi
+  ];
+  
+  // Remove English fillers
+  for (const pattern of englishFillers) {
+    t = t.replace(pattern, '');
+  }
+  
+  // Remove French fillers
+  for (const pattern of frenchFillers) {
+    t = t.replace(pattern, '');
+  }
+  
+  // Remove repeated words (speech artifacts)
+  t = t.replace(/\b(\w+)\s+\1\b/gi, '$1');
+  
+  // Clean up multiple spaces that might result from filler removal
+  t = t.replace(/\s+/g, ' ');
+  
   return t;
 }

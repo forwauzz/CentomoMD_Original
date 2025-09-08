@@ -13,6 +13,7 @@ export interface ProcessingRequest {
   templateId?: string;
   language: string;
   content: string;
+  correlationId?: string;
   options?: {
     timeout?: number;
     retryAttempts?: number;
@@ -211,11 +212,20 @@ export class ProcessingOrchestrator {
     const startTime = Date.now();
     const warnings: string[] = [];
     const errors: string[] = [];
+    const correlationId = request.correlationId || 'no-correlation-id';
+
+    console.info(`[${correlationId}] ProcessingOrchestrator.processContent started`, {
+      templateId: request.templateId,
+      modeId: request.modeId,
+      language: request.language,
+      contentLength: request.content.length
+    });
 
     try {
       // Check compatibility first
       const compatibility = this.checkCompatibility(request);
       if (!compatibility.compatible) {
+        console.warn(`[${correlationId}] Compatibility check failed:`, compatibility.issues);
         return {
           success: false,
           processedContent: request.content,
@@ -297,11 +307,145 @@ export class ProcessingOrchestrator {
   /**
    * Apply template-specific processing
    */
-  private async applyTemplateProcessing(content: string, template: TemplateConfig, _request: ProcessingRequest): Promise<string> {
-    // This would integrate with the existing template processing logic
-    // For now, return content as-is
+  private async applyTemplateProcessing(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
     console.log(`Applying template processing: ${template.id}`);
+    
+    // Handle Word-for-Word (with AI) template
+    if (template.id === 'word-for-word-with-ai') {
+      return await this.processWordForWordWithAI(content, template, request);
+    }
+    
+    // Handle other templates as needed
+    // For now, return content as-is for other templates
     return content;
+  }
+
+  /**
+   * Process Word-for-Word (with AI) template
+   */
+  private async processWordForWordWithAI(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.info(`[${correlationId}] processWordForWordWithAI started`, {
+        templateId: template.id,
+        contentLength: content.length
+      });
+      
+      // Step 1: Apply deterministic word-for-word formatting first
+      const { formatWordForWordText } = await import('../../utils/wordForWordFormatter.js');
+      let processedContent = formatWordForWordText(content);
+      
+      console.info(`[${correlationId}] deterministic_ok`, {
+        inputLength: content.length,
+        outputLength: processedContent.length
+      });
+      
+      // Step 2: Check if AI formatting is enabled (from frontend config)
+      // For now, we'll enable it by default since the template is designed for AI formatting
+      const aiFormattingEnabled = true; // TODO: Get this from template config
+      
+      if (aiFormattingEnabled && template.features.aiFormatting) {
+        console.info(`[${correlationId}] ai_start`);
+        
+        // Step 3: Apply AI formatting using the custom Word-for-Word AI prompt
+        const result = await this.applyWordForWordAIFormatting(processedContent, request.language as 'fr' | 'en', correlationId);
+        processedContent = result.formatted;
+        
+        console.info(`[${correlationId}] ai_ok`, {
+          inputLength: processedContent.length,
+          outputLength: result.formatted.length,
+          issues: result.issues.length
+        });
+      }
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] ai_error:`, error);
+      // Fallback to basic word-for-word formatting
+      const { formatWordForWordText } = await import('../../utils/wordForWordFormatter.js');
+      return formatWordForWordText(content);
+    }
+  }
+
+  /**
+   * Apply Word-for-Word AI formatting using the custom prompt
+   */
+  private async applyWordForWordAIFormatting(content: string, _language: 'fr' | 'en', correlationId: string): Promise<{ formatted: string; issues: string[] }> {
+    try {
+      console.info(`[${correlationId}] applyWordForWordAIFormatting started`, {
+        contentLength: content.length
+      });
+      
+      const OpenAI = (await import('openai')).default;
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Initialize OpenAI client
+      const openai = new OpenAI({
+        apiKey: process.env['OPENAI_API_KEY'],
+      });
+
+      // Load the Word-for-Word AI formatting prompt
+      const promptPath = path.join(process.cwd(), 'prompts', 'word-for-word-ai-formatting.md');
+      let systemPrompt: string;
+      
+      try {
+        systemPrompt = fs.readFileSync(promptPath, 'utf8');
+        console.info(`[${correlationId}] AI prompt loaded successfully`, {
+          promptLength: systemPrompt.length,
+          promptPreview: systemPrompt.substring(0, 60) + '...'
+        });
+      } catch (promptError) {
+        console.warn(`[${correlationId}] Failed to load AI prompt, using fallback:`, promptError);
+        // Fallback prompt
+        systemPrompt = `You are a deterministic Word-for-Word transcription formatter. Strip speaker prefixes (Pt:, Dr:, etc.) from line starts. Convert spoken commands (period, comma, new line, etc.) to actual formatting. Preserve all medical information exactly. Return only the cleaned transcript.`;
+      }
+
+      // Prepare the user message
+      const userMessage = `RAW TRANSCRIPT:\n${content}`;
+
+      console.info(`[${correlationId}] Calling OpenAI API`, {
+        model: 'gpt-4o-mini',
+        inputLength: content.length,
+        promptLength: systemPrompt.length
+      });
+
+      // Call OpenAI with the custom prompt
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        temperature: 0.1, // Low temperature for deterministic formatting
+        max_tokens: 4000
+      });
+
+      const formatted = completion.choices[0]?.message?.content?.trim() || content;
+      
+      console.info(`[${correlationId}] OpenAI API response received`, {
+        outputLength: formatted.length,
+        usage: completion.usage
+      });
+      
+      return {
+        formatted,
+        issues: []
+      };
+    } catch (error) {
+      console.error(`[${correlationId}] Word-for-Word AI formatting failed:`, error);
+      return {
+        formatted: content, // Return original content if AI fails
+        issues: [`AI formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
   }
 
   /**
