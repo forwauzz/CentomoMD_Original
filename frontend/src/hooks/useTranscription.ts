@@ -3,6 +3,7 @@ import { TranscriptionState, Transcript } from '@/types';
 import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
+import { useFeatureFlags } from '@/lib/featureFlags';
 
 // Enhanced segment tracking for partial results
 type Segment = { 
@@ -15,6 +16,7 @@ type Segment = {
 };
 
 export const useTranscription = (sessionId?: string, language?: string) => {
+  const featureFlags = useFeatureFlags();
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
     isConnected: false,
@@ -178,12 +180,17 @@ export const useTranscription = (sessionId?: string, language?: string) => {
         buf = []; 
       }
       
-      // Add speaker prefix if available (skip for word-for-word mode)
-      if (state.mode === 'word_for_word') {
+      // Add speaker prefix based on mode and feature flag
+      if (state.mode === 'word_for_word' || state.mode === 'smart_dictation') {
+        // Raw text only - no speaker labels
         buf.push(curr.text.trim());
-      } else {
-        const speakerPrefix = curr.speaker ? `${curr.speaker === 'spk_0' ? 'Dr:' : 'Pt:'} ` : '';
+      } else if (state.mode === 'ambient' && featureFlags.speakerLabeling) {
+        // Ambient mode with feature flag ON: show neutral speaker labels
+        const speakerPrefix = curr.speaker ? `${curr.speaker}: ` : '';
         buf.push(speakerPrefix + curr.text.trim());
+      } else {
+        // Ambient mode with feature flag OFF: raw text only
+        buf.push(curr.text.trim());
       }
     }
     if (buf.length) paragraphs.push(buf.join(' '));
