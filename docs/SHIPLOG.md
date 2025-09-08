@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-01-08 19:15 — [feat/word-for-word-with-ai] feat(auth): remove development auth blocks from formatting endpoints - remove auth checks from /api/format/mode1 and /api/format/mode2 endpoints, preserve WebSocket auth (controlled by ENV.WS_REQUIRE_AUTH), enable seamless development workflow while maintaining production security — commit:ce8a32e
+
 ## 2024-12-19 23:45 — [feat/save-to-section-from-dictation] fix(language-ui): fix language settings synchronization across application - connect Settings page and Profile page to UI store, fix template language display, ensure consistent language flow from Settings → UI Store → Dictation pages, and disable AI processing in Word-for-Word template for pure Dragon Dictation behavior — commit:in-progress
 
 ## 2024-12-19 23:30 — [feat/decouple-sections-modes-templates] feat(architecture): implement fully decoupled architecture - sections, modes, and templates now operate independently with compatibility-based design, dynamic configuration, and comprehensive processing orchestrator — commit:in-progress
