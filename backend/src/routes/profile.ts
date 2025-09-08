@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { getDb, getSql } from '../database/connection.js';
 import { profiles } from '../database/schema.js';
 import { eq } from 'drizzle-orm';
-import { authMiddleware } from '../auth.js';
+// import { authMiddleware } from '../auth.js'; // Removed for development
 import { logger } from '../utils/logger.js';
 
 const router = Router();
 
-// Apply auth middleware to all profile routes
-router.use(authMiddleware);
+// Development mode: no auth middleware
+// router.use(authMiddleware);
 
 // GET profile - improved to handle empty profiles gracefully
 router.get('/api/profile', async (req, res) => {

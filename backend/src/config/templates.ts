@@ -81,6 +81,41 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       author: 'system'
     }
   },
+  'word-for-word-with-ai': {
+    id: 'word-for-word-with-ai',
+    name: 'Word-for-Word (with AI)',
+    nameEn: 'Word-for-Word (with AI)',
+    description: 'Formatage mot-à-mot déterministe avec nettoyage GPT optionnel',
+    descriptionEn: 'Deterministic word-for-word formatting with optional GPT cleanup',
+    type: 'formatting',
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'deterministic_plus_ai',
+      placeholders: ['spoken_commands', 'punctuation', 'spacing', 'ai_cleanup'],
+      validationRules: ['command_conversion', 'spacing_cleanup', 'capitalization', 'ai_validation']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: true,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 2,
+      timeout: 60,
+      retryAttempts: 2,
+      fallbackTemplate: 'word-for-word-formatter'
+    },
+    metadata: {
+      category: 'hybrid_formatting',
+      tags: ['word-for-word', 'ai-formatting', 'deterministic', 'voice-commands'],
+      version: '1.0.0',
+      author: 'system'
+    }
+  },
   'ai-formatter-basic': {
     id: 'ai-formatter-basic',
     name: 'AI Formatter Basic',

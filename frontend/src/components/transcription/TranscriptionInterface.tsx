@@ -43,6 +43,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
+  const [aiStepStatus, setAiStepStatus] = useState<'success' | 'skipped' | 'error' | null>(null);
   
   // Transcript analysis pipeline state
   const [capturedTranscripts, setCapturedTranscripts] = useState<{
@@ -283,8 +284,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setIsFormatting(true);
     setFormattingProgress('Initializing formatting...');
     
-    // Check if this is a Word-for-Word formatter template
-    if (template.id === 'word-for-word-formatter') {
+    // Check if this is a Word-for-Word formatter template (either basic or with AI)
+    if (template.id === 'word-for-word-formatter' || template.id === 'word-for-word-with-ai') {
       console.log('Applying Word-for-Word post-processing to current transcript');
       setFormattingProgress('Processing Word-for-Word formatting...');
       
@@ -307,8 +308,74 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         
         // Apply Word-for-Word formatting with default config
         console.log('Raw transcript before formatting:', rawTranscript);
-        const formattedTranscript = formatWordForWordText(rawTranscript);
-        console.log('Formatted transcript after formatting:', formattedTranscript);
+        let formattedTranscript = formatWordForWordText(rawTranscript);
+        console.log('Formatted transcript after deterministic formatting:', formattedTranscript);
+        
+        // Check if this is the "Word-for-Word (with AI)" template
+        if ((template.id as string) === 'word-for-word-with-ai' || template.title?.includes('with AI')) {
+          setFormattingProgress('Applying AI formatting cleanup...');
+          
+          // Generate correlation ID for tracking
+          const correlationId = `ww-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          console.log(`[${correlationId}] Starting AI formatting request`, {
+            inputLength: formattedTranscript.length,
+            language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
+          });
+          
+          try {
+            // Determine API base URL
+            const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+            const endpoint = `${apiBase}/format/word-for-word-ai`;
+            
+            // Call the backend Word-for-Word (with AI) formatting endpoint
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-correlation-id': correlationId,
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                transcript: formattedTranscript,
+                language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
+              })
+            });
+            
+            console.log(`[${correlationId}] AI formatting response:`, {
+              status: response.status,
+              ok: response.ok
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`[${correlationId}] AI formatting result:`, {
+                success: result.success,
+                outputLength: result.formatted?.length || 0,
+                issues: result.issues || []
+              });
+              
+              if (result.success && result.formatted) {
+                formattedTranscript = result.formatted;
+                setFormattingProgress('AI formatting applied successfully');
+                setAiStepStatus('success');
+              } else {
+                console.warn(`[${correlationId}] AI formatting failed, using deterministic result:`, result.error);
+                setFormattingProgress('AI formatting failed, using deterministic result');
+                // Set AI step status for UI indication
+                setAiStepStatus('skipped');
+              }
+            } else {
+              console.warn(`[${correlationId}] AI formatting request failed:`, response.status);
+              setFormattingProgress('AI formatting request failed, using deterministic result');
+              setAiStepStatus('skipped');
+            }
+          } catch (error) {
+            console.error(`[${correlationId}] AI formatting error:`, error);
+            setFormattingProgress('AI formatting error, using deterministic result');
+            setAiStepStatus('skipped');
+          }
+        }
         
         setFormattingProgress('Updating transcript...');
         
@@ -580,11 +647,32 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                     console.log('Selected template category:', template.category);
                     setSelectedTemplate(template);
                     setTemplateContent(template.content);
+                    setAiStepStatus(null); // Reset AI step status when selecting new template
                     
                     // Inject template content into the transcript
                     injectTemplateContent(template);
                   }}
                 />
+                {/* AI Step Status Chip */}
+                {aiStepStatus && (
+                  <div className="flex items-center gap-2">
+                    {aiStepStatus === 'skipped' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        AI cleanup skipped
+                      </span>
+                    )}
+                    {aiStepStatus === 'success' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        AI cleanup applied
+                      </span>
+                    )}
+                    {aiStepStatus === 'error' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        AI cleanup failed
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Mode Toggle */}
