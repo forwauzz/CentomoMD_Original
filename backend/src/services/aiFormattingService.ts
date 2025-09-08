@@ -112,73 +112,147 @@ export class AIFormattingService {
   private static formatSection7(content: string, changes: string[], options: FormattingOptions): string {
     let formatted = content;
 
-    // Ensure proper section header
-    if (!formatted.includes("7. Historique de faits et évolution")) {
-      formatted = "7. Historique de faits et évolution\n\n" + formatted;
-      changes.push("Added Section 7 header");
+    // Language-specific section headers
+    if (options.language === "fr") {
+      if (!formatted.includes("7. Historique de faits et évolution")) {
+        formatted = "7. Historique de faits et évolution\n\n" + formatted;
+        changes.push("Added Section 7 header (French)");
+      }
+    } else {
+      if (!formatted.includes("7. History of Facts and Evolution")) {
+        formatted = "7. History of Facts and Evolution\n\n" + formatted;
+        changes.push("Added Section 7 header (English)");
+      }
     }
 
-    // Enhanced worker terminology standardization
-    const workerTerminology = {
-      'patient': 'travailleur',
-      'patiente': 'travailleuse',
-      'client': 'travailleur',
-      'cliente': 'travailleuse',
-      'usager': 'travailleur',
-      'usagère': 'travailleuse'
-    };
+    // Language-specific worker terminology standardization
+    if (options.language === "fr") {
+      const frenchWorkerTerminology = {
+        'patient': 'travailleur',
+        'patiente': 'travailleuse',
+        'client': 'travailleur',
+        'cliente': 'travailleuse',
+        'usager': 'travailleur',
+        'usagère': 'travailleuse'
+      };
 
-    Object.entries(workerTerminology).forEach(([oldTerm, newTerm]) => {
-      const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
-      if (formatted.match(regex)) {
-        formatted = formatted.replace(regex, newTerm);
-        changes.push(`Standardized terminology: ${oldTerm} → ${newTerm}`);
-      }
-    });
-
-    // Enhanced date formatting
-    const datePatterns = [
-      { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "le $1 $2 $3" },
-      { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "le $1 $2 $3" },
-      { pattern: /(\d{1,2})\.(\d{1,2})\.(\d{4})/g, replacement: "le $1 $2 $3" }
-    ];
-
-    datePatterns.forEach(({ pattern, replacement }) => {
-      if (formatted.match(pattern)) {
-        formatted = formatted.replace(pattern, replacement);
-        changes.push("Standardized date format to French convention");
-      }
-    });
-
-    // Add chronological indicators if missing
-    if (!formatted.includes("le ") && !formatted.includes("Le ") && options.formattingLevel === "advanced") {
-      const sentences = formatted.split(/[.!?]+/);
-      const enhancedSentences = sentences.map((sentence, index) => {
-        if (sentence.trim() && index > 0) {
-          return sentence.replace(/^(\s*)(.+)/, '$1Le $2');
-        }
-        return sentence;
-      });
-      formatted = enhancedSentences.join('.');
-      changes.push("Added chronological indicators");
-    }
-
-    // Ensure proper medical terminology
-    const medicalTerms = {
-      'blessure': 'lésion',
-      'douleur': 'symptomatologie douloureuse',
-      'accident': 'événement traumatique',
-      'traitement': 'prise en charge thérapeutique'
-    };
-
-    if (options.formattingLevel === "advanced") {
-      Object.entries(medicalTerms).forEach(([oldTerm, newTerm]) => {
+      Object.entries(frenchWorkerTerminology).forEach(([oldTerm, newTerm]) => {
         const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
         if (formatted.match(regex)) {
           formatted = formatted.replace(regex, newTerm);
-          changes.push(`Enhanced medical terminology: ${oldTerm} → ${newTerm}`);
+          changes.push(`Standardized French terminology: ${oldTerm} → ${newTerm}`);
         }
       });
+    } else {
+      // English worker terminology - keep as-is or minimal standardization
+      const englishWorkerTerminology = {
+        'client': 'worker',
+        'user': 'worker'
+      };
+
+      Object.entries(englishWorkerTerminology).forEach(([oldTerm, newTerm]) => {
+        const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+        if (formatted.match(regex)) {
+          formatted = formatted.replace(regex, newTerm);
+          changes.push(`Standardized English terminology: ${oldTerm} → ${newTerm}`);
+        }
+      });
+    }
+
+    // Language-specific date formatting
+    if (options.language === "fr") {
+      const frenchDatePatterns = [
+        { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "le $1 $2 $3" },
+        { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "le $1 $2 $3" },
+        { pattern: /(\d{1,2})\.(\d{1,2})\.(\d{4})/g, replacement: "le $1 $2 $3" }
+      ];
+
+      frenchDatePatterns.forEach(({ pattern, replacement }) => {
+        if (formatted.match(pattern)) {
+          formatted = formatted.replace(pattern, replacement);
+          changes.push("Applied French date format");
+        }
+      });
+    } else {
+      // English date formatting - keep standard format
+      const englishDatePatterns = [
+        { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "$1/$2/$3" },
+        { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "$1-$2-$3" },
+        { pattern: /(\d{1,2})\.(\d{1,2})\.(\d{4})/g, replacement: "$1.$2.$3" }
+      ];
+
+      englishDatePatterns.forEach(({ pattern, replacement }) => {
+        if (formatted.match(pattern)) {
+          formatted = formatted.replace(pattern, replacement);
+          changes.push("Standardized English date format");
+        }
+      });
+    }
+
+    // Language-specific chronological indicators
+    if (options.formattingLevel === "advanced") {
+      if (options.language === "fr") {
+        if (!formatted.includes("le ") && !formatted.includes("Le ")) {
+          const sentences = formatted.split(/[.!?]+/);
+          const enhancedSentences = sentences.map((sentence, index) => {
+            if (sentence.trim() && index > 0) {
+              return sentence.replace(/^(\s*)(.+)/, '$1Le $2');
+            }
+            return sentence;
+          });
+          formatted = enhancedSentences.join('.');
+          changes.push("Added French chronological indicators");
+        }
+      } else {
+        // English chronological indicators - minimal or none
+        if (!formatted.includes("On ") && !formatted.includes("The ")) {
+          const sentences = formatted.split(/[.!?]+/);
+          const enhancedSentences = sentences.map((sentence, index) => {
+            if (sentence.trim() && index > 0) {
+              return sentence.replace(/^(\s*)(.+)/, '$1On $2');
+            }
+            return sentence;
+          });
+          formatted = enhancedSentences.join('.');
+          changes.push("Added English chronological indicators");
+        }
+      }
+    }
+
+    // Language-specific medical terminology
+    if (options.formattingLevel === "advanced") {
+      if (options.language === "fr") {
+        const frenchMedicalTerms = {
+          'blessure': 'lésion',
+          'douleur': 'symptomatologie douloureuse',
+          'accident': 'événement traumatique',
+          'traitement': 'prise en charge thérapeutique'
+        };
+
+        Object.entries(frenchMedicalTerms).forEach(([oldTerm, newTerm]) => {
+          const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+          if (formatted.match(regex)) {
+            formatted = formatted.replace(regex, newTerm);
+            changes.push(`Enhanced French medical terminology: ${oldTerm} → ${newTerm}`);
+          }
+        });
+      } else {
+        // English medical terminology - keep as-is or minimal enhancement
+        const englishMedicalTerms = {
+          'hurt': 'injury',
+          'pain': 'symptomatology',
+          'accident': 'traumatic event',
+          'treatment': 'therapeutic management'
+        };
+
+        Object.entries(englishMedicalTerms).forEach(([oldTerm, newTerm]) => {
+          const regex = new RegExp(`\\b${oldTerm}\\b`, 'gi');
+          if (formatted.match(regex)) {
+            formatted = formatted.replace(regex, newTerm);
+            changes.push(`Enhanced English medical terminology: ${oldTerm} → ${newTerm}`);
+          }
+        });
+      }
     }
 
     return formatted;
