@@ -54,7 +54,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   selectedTemplate,
   className
 }) => {
-  const { getTemplatesBySection } = useTemplates();
+  const { getAllTemplates } = useTemplates();
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<TemplateJSON[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<TemplateJSON[]>([]);
@@ -99,10 +99,10 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
     return converted;
   };
 
-  // Load templates for current section
+  // Load templates (truly modular - not section-dependent)
   useEffect(() => {
     loadTemplates();
-  }, [currentSection, currentLanguage, getTemplatesBySection]);
+  }, [currentLanguage, getAllTemplates]);
 
   // Filter templates based on search and tags
   useEffect(() => {
@@ -130,8 +130,8 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load templates from Template Combinations configuration using context
-      const availableTemplates = getTemplatesBySection(currentSection).filter(config => {
+      // Load ALL templates (truly modular - not section-dependent)
+      const availableTemplates = getAllTemplates().filter(config => {
         // Filter by language (both or specific language)
         // Convert currentLanguage (fr-CA/en-US) to template language format (fr/en)
         const templateLanguage = (currentLanguage as string) === 'fr-CA' ? 'fr' : 'en';
@@ -148,7 +148,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
         convertTemplateConfigToJSON(config, currentSection, currentLanguage)
       );
       
-      console.log(`TemplateDropdown: Loaded ${convertedTemplates.length} templates for section ${currentSection} with language ${currentLanguage}`);
+      console.log(`TemplateDropdown: Loaded ${convertedTemplates.length} templates (modular) with language ${currentLanguage}`);
       console.log('TemplateDropdown: Template titles:', convertedTemplates.map(t => t.title));
       setTemplates(convertedTemplates);
     } catch (error) {
@@ -223,7 +223,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
               ? 'Chargement...'
               : selectedTemplate 
                 ? selectedTemplate.title 
-                : `Sélectionner un template (Section ${currentSection}) - ${templates.length} disponible(s)`
+                : `Sélectionner un template - ${templates.length} disponible(s)`
             }
           </span>
         </div>
@@ -334,7 +334,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
             <div className="p-3 border-t bg-gray-50">
               <div className="flex justify-between items-center text-xs text-gray-500">
                 <span>{filteredTemplates.length} template(s) trouvé(s)</span>
-                <span>Section {currentSection} • {currentLanguage.toUpperCase()}</span>
+                <span>Modular • {currentLanguage.toUpperCase()}</span>
               </div>
             </div>
           </CardContent>

@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-01-08 20:35 — [develop-no-auth] fix(templates): add missing template handlers and routing for A/B testing - add section-7-verbatim and section-7-full templates to backend registry, implement processSection7Verbatim and processSection7Full handlers, fix template routing mismatch between frontend and backend, add comprehensive logging for template processing, ensure all frontend templates have proper backend handlers — commit:28be7d5
+
 ## 2025-01-08 20:25 — [feat/aws-transcript-analysis] fix(speaker-labeling): implement mode-specific speaker prefix logic with feature flag - add speakerLabeling feature flag (default OFF), ensure Word-for-Word and Smart Dictation modes produce raw text only, enable neutral speaker labels (spk_0:, spk_1:) in Ambient mode only when feature flag enabled, fix incorrect Pt:/Dr: labels appearing in all modes — commit:289330a
 
 ## 2025-01-08 19:15 — [feat/word-for-word-with-ai] feat(auth): remove development auth blocks from formatting endpoints - remove auth checks from /api/format/mode1 and /api/format/mode2 endpoints, preserve WebSocket auth (controlled by ENV.WS_REQUIRE_AUTH), enable seamless development workflow while maintaining production security — commit:ce8a32e

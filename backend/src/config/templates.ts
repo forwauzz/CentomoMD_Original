@@ -252,8 +252,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'ai', 'medical'],
       version: '1.0.0',
-      author: 'CentomoMD',
-      lastModified: '2024-12-19'
+      author: 'CentomoMD'
     }
   },
   'section-7-only': {
@@ -287,8 +286,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'basic', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD',
-      lastModified: '2024-12-19'
+      author: 'CentomoMD'
     }
   },
   'section-7-verbatim': {
@@ -322,8 +320,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'verbatim', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD',
-      lastModified: '2024-12-19'
+      author: 'CentomoMD'
     }
   },
   'section-7-full': {
@@ -357,8 +354,41 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'verbatim', 'voice-commands', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD',
-      lastModified: '2024-12-19'
+      author: 'CentomoMD'
+    }
+  },
+  'history-evolution-ai-formatter': {
+    id: 'history-evolution-ai-formatter',
+    name: 'History of Evolution AI Formatter',
+    nameEn: 'History of Evolution AI Formatter',
+    description: 'Apply AI-powered CNESST formatting to History of Evolution. Enforces worker-first rule, chronological order, preserves medical terminology, and ensures proper narrative structure for injury evolution tracking.',
+    descriptionEn: 'Apply AI-powered CNESST formatting to History of Evolution. Enforces worker-first rule, chronological order, preserves medical terminology, and ensures proper narrative structure for injury evolution tracking.',
+    type: 'formatting',
+    compatibleSections: ['history_evolution'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'ai-cnesst-history-evolution',
+      placeholders: ['chronological_order', 'worker_first', 'medical_terminology', 'injury_evolution'],
+      validationRules: ['cnesst_compliance', 'chronological_validation', 'medical_accuracy', 'worker_first_rule']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true
+    },
+    configuration: {
+      priority: 3,
+      timeout: 45,
+      retryAttempts: 2
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['history-evolution', 'cnesst', 'ai', 'medical', 'injury-tracking'],
+      version: '1.0.0',
+      author: 'CentomoMD'
     }
   }
 };

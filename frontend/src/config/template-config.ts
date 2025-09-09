@@ -7,6 +7,7 @@ export interface TemplateConfig {
   descriptionFr: string;
   type: 'formatter' | 'ai-formatter' | 'template-combo';
   compatibleSections: string[];
+  compatibleModes: string[]; // NEW: Mode compatibility
   language: 'fr' | 'en' | 'both';
   complexity: 'low' | 'medium' | 'high';
   tags: string[];
@@ -20,6 +21,7 @@ export interface TemplateConfig {
   };
   prompt?: string;
   promptFr?: string;
+  content?: string;
   config: {
     mode?: string;
     section?: string;
@@ -48,7 +50,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Convert spoken commands (EN/FR), strip Pt:/Dr: prefixes, clean spacing, and capitalize sentences. Light clinical fixes (dates, spine...',
     descriptionFr: 'Convertir les commandes vocales (EN/FR), supprimer les préfixes Pt:/Dr:, nettoyer l\'espacement et capitaliser les phrases. Corrections cliniques légères (dates, colonne...',
     type: 'formatter',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'low',
     tags: ['word-for-word', 'formatter', 'post-processor'],
@@ -79,7 +82,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Deterministic word-for-word formatting with optional GPT cleanup. Preserves every spoken word exactly while converting voice commands to proper formatting.',
     descriptionFr: 'Formatage mot-à-mot déterministe avec nettoyage GPT optionnel. Préserve chaque mot prononcé exactement tout en convertissant les commandes vocales en formatage approprié.',
     type: 'ai-formatter',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'medium',
     tags: ['word-for-word', 'ai-formatter', 'deterministic', 'voice-commands'],
@@ -112,7 +116,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution). Enforces worker-first rule, chronological...',
     descriptionFr: 'Appliquer le formatage IA CNESST à la Section 7 (Historique de faits et évolution). Applique la règle travailleur-premier, chronologique...',
     type: 'ai-formatter',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'high',
     tags: ['section7', 'ai-formatter', 'cnesst'],
@@ -147,7 +152,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Apply Section 7 AI formatting template only. Basic AI-powered CNESST formatting without verbatim or voice command...',
     descriptionFr: 'Appliquer uniquement le template de formatage IA Section 7. Formatage IA CNESST de base sans verbatim ou commande vocale...',
     type: 'template-combo',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'medium',
     tags: ['section7', 'ai-formatter', 'template-only'],
@@ -183,7 +189,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Apply Section 7 AI formatting with verbatim text support. Preserves exact quotes and specific text while applying AI formatting t...',
     descriptionFr: 'Appliquer le formatage IA Section 7 avec support de texte verbatim. Préserve les citations exactes et le texte spécifique tout en appliquant le formatage IA...',
     type: 'template-combo',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'high',
     tags: ['section7', 'ai-formatter', 'verbatim'],
@@ -219,7 +226,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Apply Section 7 AI formatting with full feature set. Includes verbatim text support and voice command processing for...',
     descriptionFr: 'Appliquer le formatage IA Section 7 avec l\'ensemble complet de fonctionnalités. Inclut le support de texte verbatim et le traitement des commandes vocales pour...',
     type: 'template-combo',
-    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
     language: 'both',
     complexity: 'high',
     tags: ['section7', 'ai-formatter', 'verbatim', 'voice-commands'],
@@ -248,6 +256,44 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     created: '2024-12-19',
     updated: '2024-12-19',
   },
+  {
+    id: 'history-evolution-ai-formatter',
+    name: 'History of Evolution AI Formatter',
+    nameFr: 'Formateur IA Historique d\'Évolution',
+    description: 'Apply AI-powered CNESST formatting to History of Evolution. Enforces worker-first rule, chronological order, preserves medical terminology, and ensures proper narrative structure for injury evolution tracking.',
+    descriptionFr: 'Appliquer le formatage IA CNESST à l\'Historique d\'Évolution. Applique la règle travailleur-premier, maintient l\'ordre chronologique, préserve la terminologie médicale et assure une structure narrative appropriée pour le suivi de l\'évolution des lésions.',
+    type: 'ai-formatter',
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom', 'history_evolution'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
+    language: 'fr',
+    complexity: 'high',
+    tags: ['history-evolution', 'ai-formatter', 'cnesst', 'injury-tracking'],
+    isActive: true,
+    isDefault: false,
+    features: {
+      verbatimSupport: true,
+      voiceCommandsSupport: true,
+      aiFormatting: true,
+      postProcessing: false,
+    },
+    prompt: 'Apply AI-powered CNESST formatting to History of Evolution. Enforce worker-first rule, maintain chronological order, preserve medical terminology, and ensure proper narrative structure for injury evolution tracking.',
+    promptFr: 'Appliquer le formatage IA CNESST à l\'Historique d\'Évolution. Appliquer la règle travailleur-premier, maintenir l\'ordre chronologique, préserver la terminologie médicale et assurer une structure narrative appropriée pour le suivi de l\'évolution des lésions.',
+    content: 'Appliquer le formatage IA CNESST à l\'Historique d\'Évolution. Applique la règle travailleur-premier, maintient l\'ordre chronologique, préserve la terminologie médicale et assure une structure narrative appropriée pour le suivi de l\'évolution des lésions.',
+    config: {
+      mode: 'history-evolution',
+      language: 'fr',
+      enforceWorkerFirst: true,
+      chronologicalOrder: true,
+      medicalTerminology: true,
+      aiFormattingEnabled: true,
+    },
+    usage: {
+      count: 0,
+      successRate: 92,
+    },
+    created: '2024-12-19',
+    updated: '2024-12-19',
+  },
 ];
 
 // Helper functions
@@ -259,6 +305,16 @@ export const getTemplatesBySection = (section: string): TemplateConfig[] => {
   return TEMPLATE_CONFIGS.filter(template => 
     template.compatibleSections.includes(section) || template.compatibleSections.includes('all')
   );
+};
+
+export const getTemplatesByMode = (mode: string): TemplateConfig[] => {
+  return TEMPLATE_CONFIGS.filter(template => 
+    template.compatibleModes.includes(mode) || template.compatibleModes.includes('all')
+  );
+};
+
+export const getAllTemplates = (): TemplateConfig[] => {
+  return TEMPLATE_CONFIGS.filter(template => template.isActive);
 };
 
 export const getActiveTemplates = (): TemplateConfig[] => {

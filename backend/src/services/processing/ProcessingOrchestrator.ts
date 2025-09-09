@@ -333,6 +333,12 @@ export class ProcessingOrchestrator {
       return await this.processSection7AIFormatter(content, template, request);
     }
     
+    // Handle History of Evolution AI Formatter template
+    if (template.id === 'history-evolution-ai-formatter') {
+      console.log(`[${correlationId}] Routing to processHistoryEvolutionAIFormatter`);
+      return await this.processHistoryEvolutionAIFormatter(content, template, request);
+    }
+    
     // Handle Section 7 Template Only
     if (template.id === 'section-7-only') {
       console.log(`[${correlationId}] Routing to processSection7TemplateOnly`);
@@ -524,7 +530,7 @@ export class ProcessingOrchestrator {
       // Apply AI formatting using the AI formatting service
       const { AIFormattingService } = await import('../../services/aiFormattingService.js');
       
-      const result = AIFormattingService.formatTemplateContent(content, {
+      const result = await AIFormattingService.formatTemplateContent(content, {
         section: '7',
         language: request.language as 'fr' | 'en',
         complexity: 'medium',
@@ -543,6 +549,42 @@ export class ProcessingOrchestrator {
       return processedContent;
     } catch (error) {
       console.error(`[${correlationId}] Section 7 AI formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process History of Evolution AI Formatter template
+   */
+  private async processHistoryEvolutionAIFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing History of Evolution AI Formatter template: ${template.id}`);
+      
+      // Apply AI formatting using the AI formatting service
+      const { AIFormattingService } = await import('../../services/aiFormattingService.js');
+      
+      const result = await AIFormattingService.formatTemplateContent(content, {
+        section: 'history_evolution',
+        language: request.language as 'fr' | 'en',
+        complexity: 'medium',
+        formattingLevel: 'standard',
+        includeSuggestions: true
+      });
+      
+      const processedContent = result.formatted;
+      
+      console.log(`[${correlationId}] History of Evolution AI formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] History of Evolution AI formatting error:`, error);
       // Return original content if formatting fails
       return content;
     }

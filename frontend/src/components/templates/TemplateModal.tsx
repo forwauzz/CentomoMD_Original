@@ -154,7 +154,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     setIsFormatting(true);
     try {
       const formattingOptions: FormattingOptions = {
-        section: formData.section as "7" | "8" | "11",
+        section: formData.section as "7" | "8" | "11" | "history_evolution",
         language: formData.language as "fr" | "en",
         complexity: formData.complexity as "low" | "medium" | "high",
         formattingLevel: 'advanced',
