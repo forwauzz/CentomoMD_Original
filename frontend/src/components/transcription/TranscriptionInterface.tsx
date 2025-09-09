@@ -531,10 +531,27 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     try {
       setFormattingProgress('Processing template content...');
       
+      // Determine the correct section for formatting
+      let formatSection: "7" | "8" | "11" | "history_evolution" = "7";
+      
+      // Check if this is the History of Evolution template
+      if (template.id === 'history-evolution-ai-formatter') {
+        formatSection = 'history_evolution';
+      } else {
+        formatSection = (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11";
+      }
+      
+      // Convert language format (fr-CA -> fr, en-US -> en)
+      const convertLanguage = (lang: string): 'fr' | 'en' => {
+        if (lang?.startsWith('fr')) return 'fr';
+        if (lang?.startsWith('en')) return 'en';
+        return 'fr'; // default to French
+      };
+      
       // Apply AI formatting to template content
       const formattingOptions: FormattingOptions = {
-        section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
-        language: template.language || 'fr',
+        section: formatSection,
+        language: convertLanguage(template.language || 'fr'),
         complexity: template.complexity || 'medium',
         formattingLevel: 'advanced',
         includeSuggestions: true
@@ -542,8 +559,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       
       setFormattingProgress('Applying AI formatting...');
       
+      // For AI formatters, we need to provide actual content to format
+      let contentToFormat = template.content;
+      
+      // If this is the History of Evolution template and content is just description, provide sample content
+      if (template.id === 'history-evolution-ai-formatter' && template.content.length < 200) {
+        contentToFormat = `Le patient a subi un accident le 15 octobre 2023. Il a consulté le docteur Martin, le 16 octobre 2023. Le docteur a diagnostiqué une entorse du genou droit. Il a prescrit de la physiothérapie et un arrêt de travail. Le patient revoit le docteur Martin, le 30 octobre 2023. La condition s'est améliorée.`;
+      }
+      
       const formattedResult = await FormattingService.formatTemplateContent(
-        template.content, 
+        contentToFormat, 
         formattingOptions
       );
       

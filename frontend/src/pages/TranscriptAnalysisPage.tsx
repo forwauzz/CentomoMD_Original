@@ -5,12 +5,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
-import { TEMPLATE_CONFIGS } from '@/config/template-config';
+// Using TemplateContext for standardized template loading
+import { TemplatePreview } from '@/components/transcription/TemplatePreview';
+import { useTemplates } from '@/contexts/TemplateContext';
 
-// Fallback for when TEMPLATE_CONFIGS is not loaded
-const getTemplateConfigs = () => {
-  return TEMPLATE_CONFIGS || [];
-};
+// Using TemplateContext for standardized template loading
 
 // Helper function to detect language from content
 const detectLanguage = (content: string): 'fr' | 'en' => {
@@ -140,13 +139,29 @@ interface TemplatePerformance {
   lastTestDate: string;
 }
 
+interface TemplateAnalysisResult {
+  templateId: string;
+  templateName: string;
+  aiFormattingQuality: number;
+  cnesstCompliance: number;
+  formattingAccuracy: number;
+  templateSpecificIssues: string[];
+  processingTime: number;
+  wordCountChange: number;
+  medicalTermAccuracy: number;
+  structuralConsistency: number;
+}
+
 export const TranscriptAnalysisPage: React.FC = () => {
+  // Use template context for standardized template loading
+  const { getAllTemplates } = useTemplates();
+  
   const [originalTranscript, setOriginalTranscript] = useState('');
   const [formattedTranscript, setFormattedTranscript] = useState('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<'quality' | 'comparison' | 'hallucination' | 'ab-test'>('quality');
+  const [selectedAnalysis, setSelectedAnalysis] = useState<'quality' | 'comparison' | 'hallucination' | 'ab-test' | 'single-template'>('quality');
   const [templateName, setTemplateName] = useState('');
   
   // A/B Test state
@@ -155,6 +170,19 @@ export const TranscriptAnalysisPage: React.FC = () => {
   const [abTestResult, setAbTestResult] = useState<ABTestResult | null>(null);
   const [isRunningABTest, setIsRunningABTest] = useState(false);
   const [templatePerformance, setTemplatePerformance] = useState<TemplatePerformance[]>([]);
+  
+  // Direct template processing state
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [isProcessingTemplate, setIsProcessingTemplate] = useState(false);
+  const [templateProcessingResult, setTemplateProcessingResult] = useState<string>('');
+  const [templateProcessingError, setTemplateProcessingError] = useState<string>('');
+  
+  // Template preview state
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  
+  // Template-specific analysis state
+  const [templateAnalysisResult, setTemplateAnalysisResult] = useState<TemplateAnalysisResult | null>(null);
 
   // Load template performance history
   React.useEffect(() => {
@@ -168,13 +196,12 @@ export const TranscriptAnalysisPage: React.FC = () => {
     }
   }, []);
 
-  // Debug: Check if TEMPLATE_CONFIGS is loaded
+  // Debug: Check if templates are loaded via context
   React.useEffect(() => {
-    const configs = getTemplateConfigs();
-    console.log('TEMPLATE_CONFIGS:', configs);
-    console.log('TEMPLATE_CONFIGS length:', configs.length);
-    console.log('Active templates:', configs.filter(t => t.isActive).length);
-  }, []);
+    const allTemplates = getAllTemplates();
+    console.log('All templates via context (modular):', allTemplates.length);
+    console.log('Active templates:', allTemplates.filter(t => t.isActive).length);
+  }, [getAllTemplates]);
 
   // Auto-populate from sessionStorage if available
   React.useEffect(() => {
@@ -193,6 +220,264 @@ export const TranscriptAnalysisPage: React.FC = () => {
       }
     }
   }, []);
+
+  // Direct template processing function (like dictation page)
+  const processWithTemplate = useCallback(async (templateId: string, content: string) => {
+    if (!templateId || !content.trim()) {
+      throw new Error('Template ID and content are required');
+    }
+
+    console.log(`[Template Processing] Processing with template: ${templateId}`);
+    
+    // Call the same backend endpoint as dictation page
+    const response = await apiFetch('/api/format/mode2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        transcript: content,
+        section: '7',
+        language: detectLanguage(content),
+        templateCombo: templateId,
+        verbatimSupport: false,
+        voiceCommandsSupport: false
+      })
+    });
+
+    if (!response.success) {
+      throw new Error(response.error || 'Template processing failed');
+    }
+
+    console.log(`[Template Processing] Template processing successful for: ${templateId}`);
+    return response.formatted;
+  }, []);
+
+  // Process single template
+  const processSingleTemplate = useCallback(async () => {
+    if (!originalTranscript.trim() || !selectedTemplate) {
+      alert('Please provide a raw transcript and select a template');
+      return;
+    }
+
+    setIsProcessingTemplate(true);
+    setTemplateProcessingError('');
+    setTemplateProcessingResult('');
+
+    try {
+      console.log(`[Single Template] Processing with template: ${selectedTemplate}`);
+      const result = await processWithTemplate(selectedTemplate, originalTranscript);
+      setTemplateProcessingResult(result);
+      setFormattedTranscript(result);
+      console.log(`[Single Template] Processing completed successfully`);
+      
+      // Automatically run template-specific analysis
+      await analyzeTemplateSpecific(selectedTemplate, originalTranscript, result);
+    } catch (error) {
+      console.error('Single template processing error:', error);
+      setTemplateProcessingError(error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsProcessingTemplate(false);
+    }
+  }, [originalTranscript, selectedTemplate, processWithTemplate]);
+
+  // Analyze template-specific metrics
+  const analyzeTemplateSpecific = useCallback(async (templateId: string, original: string, formatted: string) => {
+    setTemplateAnalysisResult(null);
+
+    try {
+      console.log(`[Template Analysis] Analyzing template-specific metrics for: ${templateId}`);
+      
+      const template = getAllTemplates().find(t => t.id === templateId);
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      // Calculate template-specific metrics
+      const startTime = Date.now();
+      
+      // Word count change
+      const originalWords = original.trim().split(/\s+/).length;
+      const formattedWords = formatted.trim().split(/\s+/).length;
+      const wordCountChange = ((formattedWords - originalWords) / originalWords) * 100;
+
+      // CNESST compliance check
+      const cnesstCompliance = calculateCNESSTCompliance(formatted);
+
+      // Medical term accuracy
+      const medicalTermAccuracy = calculateMedicalTermAccuracy(original, formatted);
+
+      // Structural consistency
+      const structuralConsistency = calculateStructuralConsistency(formatted);
+
+      // AI formatting quality (for AI templates)
+      const aiFormattingQuality = template.id.includes('ai') ? 
+        calculateAIFormattingQuality(original, formatted) : 100;
+
+      // Formatting accuracy
+      const formattingAccuracy = calculateFormattingAccuracy(original, formatted);
+
+      // Template-specific issues
+      const templateSpecificIssues = identifyTemplateSpecificIssues(templateId, original, formatted);
+
+      const processingTime = (Date.now() - startTime) / 1000;
+
+      const result: TemplateAnalysisResult = {
+        templateId,
+        templateName: template.name,
+        aiFormattingQuality,
+        cnesstCompliance,
+        formattingAccuracy,
+        templateSpecificIssues,
+        processingTime,
+        wordCountChange,
+        medicalTermAccuracy,
+        structuralConsistency
+      };
+
+      setTemplateAnalysisResult(result);
+      console.log(`[Template Analysis] Analysis completed for: ${templateId}`, result);
+
+    } catch (error) {
+      console.error('Template-specific analysis error:', error);
+    }
+  }, [getAllTemplates]);
+
+  // Helper functions for template-specific analysis
+  const calculateCNESSTCompliance = (formatted: string): number => {
+    let score = 100;
+    
+    // Check for worker-first terminology
+    if (formatted.toLowerCase().includes('patient')) {
+      score -= 20;
+    }
+    if (formatted.toLowerCase().includes('travailleur') || formatted.toLowerCase().includes('travailleuse')) {
+      score += 10;
+    }
+    
+    // Check for proper section headers
+    if (!formatted.includes('7.') && !formatted.includes('Historique')) {
+      score -= 15;
+    }
+    
+    // Check for chronological structure
+    const datePattern = /\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2}/g;
+    const dates = formatted.match(datePattern);
+    if (dates && dates.length > 1) {
+      // Check if dates are in chronological order
+      const sortedDates = [...dates].sort();
+      if (JSON.stringify(dates) !== JSON.stringify(sortedDates)) {
+        score -= 10;
+      }
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  };
+
+  const calculateMedicalTermAccuracy = (original: string, formatted: string): number => {
+    // Simple medical term preservation check
+    const medicalTerms = ['diagnostic', 'symptôme', 'traitement', 'thérapie', 'médication', 'intervention'];
+    let preservedTerms = 0;
+    let totalTerms = 0;
+    
+    medicalTerms.forEach(term => {
+      const originalCount = (original.toLowerCase().match(new RegExp(term, 'g')) || []).length;
+      const formattedCount = (formatted.toLowerCase().match(new RegExp(term, 'g')) || []).length;
+      
+      if (originalCount > 0) {
+        totalTerms += originalCount;
+        preservedTerms += Math.min(originalCount, formattedCount);
+      }
+    });
+    
+    return totalTerms > 0 ? (preservedTerms / totalTerms) * 100 : 100;
+  };
+
+  const calculateStructuralConsistency = (formatted: string): number => {
+    let score = 100;
+    
+    // Check for proper paragraph structure
+    const paragraphs = formatted.split('\n\n').filter(p => p.trim().length > 0);
+    if (paragraphs.length < 2) {
+      score -= 20;
+    }
+    
+    // Check for proper sentence structure
+    const sentences = formatted.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const avgSentenceLength = sentences.reduce((sum, s) => sum + s.trim().split(/\s+/).length, 0) / sentences.length;
+    
+    if (avgSentenceLength < 5 || avgSentenceLength > 30) {
+      score -= 15;
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  };
+
+  const calculateAIFormattingQuality = (original: string, formatted: string): number => {
+    let score = 100;
+    
+    // Check for AI-specific improvements
+    const originalPunctuation = (original.match(/[.!?]/g) || []).length;
+    const formattedPunctuation = (formatted.match(/[.!?]/g) || []).length;
+    
+    if (formattedPunctuation > originalPunctuation) {
+      score += 10; // Bonus for adding punctuation
+    }
+    
+    // Check for capitalization improvements
+    const originalCaps = (original.match(/[A-Z]/g) || []).length;
+    const formattedCaps = (formatted.match(/[A-Z]/g) || []).length;
+    
+    if (formattedCaps > originalCaps) {
+      score += 5; // Bonus for proper capitalization
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  };
+
+  const calculateFormattingAccuracy = (original: string, formatted: string): number => {
+    // Simple formatting accuracy based on content preservation
+    const originalWords = original.trim().split(/\s+/);
+    const formattedWords = formatted.trim().split(/\s+/);
+    
+    const preservedWords = originalWords.filter(word => 
+      formattedWords.some(fWord => fWord.toLowerCase().includes(word.toLowerCase()))
+    ).length;
+    
+    return (preservedWords / originalWords.length) * 100;
+  };
+
+  const identifyTemplateSpecificIssues = (templateId: string, original: string, formatted: string): string[] => {
+    const issues: string[] = [];
+    
+    if (templateId.includes('ai')) {
+      // AI-specific checks
+      if (formatted.length < original.length * 0.8) {
+        issues.push('AI formatting may have removed too much content');
+      }
+      if (!formatted.includes('7.') && original.includes('7.')) {
+        issues.push('Section header may have been lost during AI processing');
+      }
+    }
+    
+    if (templateId.includes('word-for-word')) {
+      // Word-for-word specific checks
+      const originalWords = original.split(/\s+/).length;
+      const formattedWords = formatted.split(/\s+/).length;
+      if (Math.abs(originalWords - formattedWords) > originalWords * 0.1) {
+        issues.push('Word-for-word formatting may have changed word count significantly');
+      }
+    }
+    
+    if (templateId.includes('section-7')) {
+      // Section 7 specific checks
+      if (!formatted.includes('Historique')) {
+        issues.push('Section 7 header may be missing');
+      }
+    }
+    
+    return issues;
+  };
 
   // Real AI analysis using backend API
   const analyzeTranscript = useCallback(async () => {
@@ -464,6 +749,14 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <GitCompare className="h-4 w-4" />
                 <span>A/B Test Templates</span>
               </Button>
+              <Button
+                variant={selectedAnalysis === 'single-template' ? 'default' : 'outline'}
+                onClick={() => setSelectedAnalysis('single-template')}
+                className="flex items-center space-x-2"
+              >
+                <Brain className="h-4 w-4" />
+                <span>Process Single Template</span>
+              </Button>
             </div>
             {selectedAnalysis === 'ab-test' ? (
               <Button
@@ -480,6 +773,24 @@ export const TranscriptAnalysisPage: React.FC = () => {
                   <>
                     <GitCompare className="h-4 w-4" />
                     <span>Run A/B Test</span>
+                  </>
+                )}
+              </Button>
+            ) : selectedAnalysis === 'single-template' ? (
+              <Button
+                onClick={processSingleTemplate}
+                disabled={isProcessingTemplate || !originalTranscript.trim() || !selectedTemplate}
+                className="flex items-center space-x-2"
+              >
+                {isProcessingTemplate ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Processing Template...</span>
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4" />
+                    <span>Process Template</span>
                   </>
                 )}
               </Button>
@@ -506,6 +817,59 @@ export const TranscriptAnalysisPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Single Template Configuration */}
+      {selectedAnalysis === 'single-template' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Brain className="h-5 w-5" />
+              <span>Single Template Processing</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Template
+                </label>
+                <div className="flex space-x-2">
+                  <Select 
+                    value={selectedTemplate} 
+                    onValueChange={setSelectedTemplate}
+                    items={getAllTemplates().filter(t => t.isActive).map((template) => ({
+                      label: template.name,
+                      value: template.id
+                    }))}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const template = getAllTemplates().find(t => t.id === selectedTemplate);
+                      if (template) {
+                        setPreviewTemplate(template);
+                        setShowTemplatePreview(true);
+                      }
+                    }}
+                    disabled={!selectedTemplate}
+                    className="flex items-center space-x-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Preview</span>
+                  </Button>
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>How it works:</strong> Select a template above and click "Process Template". 
+                  The system will apply the selected template to your raw transcript (just like in the dictation page) 
+                  and display the formatted result below.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* A/B Test Configuration */}
       {selectedAnalysis === 'ab-test' && (
         <Card>
@@ -524,7 +888,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <Select 
                   value={templateA} 
                   onValueChange={setTemplateA}
-                  items={getTemplateConfigs().filter(t => t.isActive).map((template) => ({
+                  items={getAllTemplates().filter(t => t.isActive).map((template) => ({
                     label: template.name,
                     value: template.id
                   }))}
@@ -537,7 +901,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <Select 
                   value={templateB} 
                   onValueChange={setTemplateB}
-                  items={getTemplateConfigs().filter(t => t.isActive).map((template) => ({
+                  items={getAllTemplates().filter(t => t.isActive).map((template) => ({
                     label: template.name,
                     value: template.id
                   }))}
@@ -549,6 +913,183 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <strong>How it works:</strong> Paste a raw transcript above, select two templates, and click "Run A/B Test". 
                 The system will apply both templates (just like in the dictation page) and compare their performance to determine which produces better results.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Single Template Processing Results */}
+      {selectedAnalysis === 'single-template' && (templateProcessingResult || templateProcessingError) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Brain className="h-5 w-5" />
+              <span>Template Processing Result</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {templateProcessingError ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center space-x-2 text-red-800">
+                  <XCircle className="h-5 w-5" />
+                  <span className="font-medium">Processing Error</span>
+                </div>
+                <p className="text-red-700 mt-2">{templateProcessingError}</p>
+              </div>
+            ) : templateProcessingResult ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-2 text-green-800">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">Template Processing Successful</span>
+                  </div>
+                  <p className="text-green-700 mt-2">
+                    Template "{getAllTemplates().find(t => t.id === selectedTemplate)?.name}" 
+                    has been applied successfully.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Formatted Result
+                  </label>
+                  <Textarea
+                    value={templateProcessingResult}
+                    readOnly
+                    className="min-h-[200px] font-mono text-sm"
+                    placeholder="Formatted result will appear here..."
+                  />
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Template-Specific Analysis Results */}
+      {selectedAnalysis === 'single-template' && templateAnalysisResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>Template-Specific Analysis</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Overall Template Score */}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">
+                  {templateAnalysisResult.templateName}
+                </div>
+                <div className="text-sm text-gray-500">Template Performance Analysis</div>
+              </div>
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-800">CNESST Compliance</span>
+                    <span className={`text-lg font-bold ${templateAnalysisResult.cnesstCompliance >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {templateAnalysisResult.cnesstCompliance.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${templateAnalysisResult.cnesstCompliance}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-800">Formatting Accuracy</span>
+                    <span className={`text-lg font-bold ${templateAnalysisResult.formattingAccuracy >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {templateAnalysisResult.formattingAccuracy.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-green-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${templateAnalysisResult.formattingAccuracy}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-purple-800">Medical Term Accuracy</span>
+                    <span className={`text-lg font-bold ${templateAnalysisResult.medicalTermAccuracy >= 90 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {templateAnalysisResult.medicalTermAccuracy.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-purple-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${templateAnalysisResult.medicalTermAccuracy}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-orange-800">Structural Consistency</span>
+                    <span className={`text-lg font-bold ${templateAnalysisResult.structuralConsistency >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {templateAnalysisResult.structuralConsistency.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-orange-200 rounded-full h-2">
+                    <div 
+                      className="bg-orange-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${templateAnalysisResult.structuralConsistency}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {templateAnalysisResult.templateId.includes('ai') && (
+                  <div className="p-4 bg-indigo-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-indigo-800">AI Formatting Quality</span>
+                      <span className={`text-lg font-bold ${templateAnalysisResult.aiFormattingQuality >= 85 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {templateAnalysisResult.aiFormattingQuality.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-indigo-200 rounded-full h-2">
+                      <div 
+                        className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${templateAnalysisResult.aiFormattingQuality}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-800">Word Count Change</span>
+                    <span className={`text-lg font-bold ${Math.abs(templateAnalysisResult.wordCountChange) <= 5 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {templateAnalysisResult.wordCountChange > 0 ? '+' : ''}{templateAnalysisResult.wordCountChange.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Processing time: {templateAnalysisResult.processingTime.toFixed(2)}s
+                  </div>
+                </div>
+              </div>
+
+              {/* Template-Specific Issues */}
+              {templateAnalysisResult.templateSpecificIssues.length > 0 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2 text-yellow-800 mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="font-medium">Template-Specific Issues</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 text-yellow-700">
+                    {templateAnalysisResult.templateSpecificIssues.map((issue, index) => (
+                      <li key={index} className="text-sm">{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1181,6 +1722,25 @@ export const TranscriptAnalysisPage: React.FC = () => {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Template Preview Modal */}
+      {showTemplatePreview && previewTemplate && (
+        <TemplatePreview
+          template={previewTemplate}
+          isOpen={showTemplatePreview}
+          onClose={() => {
+            setShowTemplatePreview(false);
+            setPreviewTemplate(null);
+          }}
+          onSelect={(template) => {
+            setSelectedTemplate(template.id || '');
+            setShowTemplatePreview(false);
+            setPreviewTemplate(null);
+          }}
+          currentSection="7"
+          currentLanguage="fr-CA"
+        />
       )}
     </div>
   );

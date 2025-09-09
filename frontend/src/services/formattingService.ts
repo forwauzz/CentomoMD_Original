@@ -1,5 +1,5 @@
 export interface FormattingOptions {
-  section: "7" | "8" | "11";
+  section: "7" | "8" | "11" | "history_evolution";
   language: "fr" | "en";
   complexity?: "low" | "medium" | "high";
   formattingLevel?: "basic" | "standard" | "advanced";
@@ -37,23 +37,29 @@ export class FormattingService {
     options: FormattingOptions
   ): Promise<FormattedContent> {
     try {
+      const requestBody = {
+        content,
+        section: options.section,
+        language: options.language,
+        complexity: options.complexity || 'medium',
+        formattingLevel: options.formattingLevel || 'standard',
+        includeSuggestions: options.includeSuggestions || false
+      };
+      
+      console.log('🔍 FormattingService request:', requestBody);
+      
       const response = await fetch(`${this.API_BASE}/templates/format`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          content,
-          section: options.section,
-          language: options.language,
-          complexity: options.complexity || 'medium',
-          formattingLevel: options.formattingLevel || 'standard',
-          includeSuggestions: options.includeSuggestions || false
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ FormattingService error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
@@ -99,7 +105,8 @@ export class FormattingService {
     const sectionHeaders = {
       "7": "7. Historique de faits et évolution",
       "8": "8. Questionnaire subjectif", 
-      "11": "11. Conclusion médicale"
+      "11": "11. Conclusion médicale",
+      "history_evolution": "Historique d'évolution"
     };
 
     if (!content.includes(sectionHeaders[options.section])) {
@@ -129,7 +136,8 @@ export class FormattingService {
     const sectionHeaders = {
       "7": "7. Historique de faits et évolution",
       "8": "8. Questionnaire subjectif",
-      "11": "11. Conclusion médicale"
+      "11": "11. Conclusion médicale",
+      "history_evolution": "Historique d'évolution"
     };
 
     if (!formatted.includes(sectionHeaders[options.section])) {

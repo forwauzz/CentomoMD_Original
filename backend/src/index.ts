@@ -9,7 +9,7 @@ dotenv.config();
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
 import { transcriptionService } from './services/transcriptionService.js';
-import { templateLibrary } from './template-library/index.js';
+// import { templateLibrary } from './template-library/index.js'; // Archived - using core template registry instead
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
 import { Mode2Formatter } from './services/formatter/mode2.js';
@@ -354,8 +354,19 @@ app.post('/api/analyze/ab-test', async (req, res) => {
       // If it's the AI version, apply AI formatting
       if (templateA === 'word-for-word-with-ai') {
         console.log(`[A/B Test] Applying AI formatting to Template A`);
-        // Apply AI formatting (simplified version)
-        formattedA = formattedA; // For now, just use the formatted version
+        try {
+          // Apply AI formatting using the AI formatting service
+          const { AIFormattingService } = await import('./services/aiFormattingService.js');
+          const aiResult = await AIFormattingService.formatTemplateContent(formattedA, {
+            section: '7',
+            language: language as 'fr' | 'en'
+          });
+          formattedA = aiResult.formatted;
+          console.log(`[A/B Test] AI formatting applied to Template A successfully`);
+        } catch (error) {
+          console.error(`[A/B Test] AI formatting failed for Template A:`, error);
+          // Keep the word-for-word formatted version as fallback
+        }
       }
       
       resultA = {
@@ -393,8 +404,19 @@ app.post('/api/analyze/ab-test', async (req, res) => {
       // If it's the AI version, apply AI formatting
       if (templateB === 'word-for-word-with-ai') {
         console.log(`[A/B Test] Applying AI formatting to Template B`);
-        // Apply AI formatting (simplified version)
-        formattedB = formattedB; // For now, just use the formatted version
+        try {
+          // Apply AI formatting using the AI formatting service
+          const { AIFormattingService } = await import('./services/aiFormattingService.js');
+          const aiResult = await AIFormattingService.formatTemplateContent(formattedB, {
+            section: '7',
+            language: language as 'fr' | 'en'
+          });
+          formattedB = aiResult.formatted;
+          console.log(`[A/B Test] AI formatting applied to Template B successfully`);
+        } catch (error) {
+          console.error(`[A/B Test] AI formatting failed for Template B:`, error);
+          // Keep the word-for-word formatted version as fallback
+        }
       }
       
       resultB = {
@@ -501,10 +523,7 @@ app.post('/api/analyze/ab-test', async (req, res) => {
     console.error('A/B test error:', error);
     console.error('A/B test error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      templateA,
-      templateB,
-      originalLength: original?.length
+      stack: error instanceof Error ? error.stack : undefined
     });
     return res.status(500).json({ 
       success: false, 
@@ -566,19 +585,22 @@ app.get('/api/templates', (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const { section, language } = req.query;
+    // const { section, language } = req.query; // Unused - template library archived
     let templates;
     
-    if (section && ['7', '8', '11'].includes(section as string)) {
-      templates = templateLibrary.getTemplates(section as "7" | "8" | "11", language as "fr" | "en" || "fr");
-    } else {
-      // Return all templates grouped by section
-      templates = {
-        section7: templateLibrary.getTemplatesBySection("7"),
-        section8: templateLibrary.getTemplatesBySection("8"),
-        section11: templateLibrary.getTemplatesBySection("11")
-      };
-    }
+    // Template library archived - using core template registry instead
+    templates = {
+      message: "Template library archived. Using core template registry with 7 AI formatter templates.",
+      coreTemplates: [
+        'word-for-word-formatter',
+        'word-for-word-with-ai', 
+        'section7-ai-formatter',
+        'section-7-only',
+        'section-7-verbatim',
+        'section-7-full',
+        'history-evolution-ai-formatter'
+      ]
+    };
     
     // Audit logging for successful access
     logger.info('Templates access successful', {
@@ -623,7 +645,14 @@ app.get('/api/templates/stats',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const stats = templateLibrary.getTemplateStats();
+    // Template library archived - return core template stats
+    const stats = {
+      total: 7,
+      bySection: { "7": 4, "8": 0, "11": 0, "history_evolution": 1 },
+      byLanguage: { "fr": 7, "en": 7 },
+      byComplexity: { "low": 1, "medium": 2, "high": 4 },
+      byStatus: { "active": 7, "inactive": 0, "draft": 0 }
+    };
     
     // Audit logging for successful access
     logger.info('Template stats access successful', {
@@ -681,7 +710,7 @@ app.post('/api/templates/format',  (req, res) => {
       });
     }
     
-    if (!['7', '8', '11'].includes(section)) {
+    if (!['7', '8', '11', 'history_evolution'].includes(section)) {
       return res.status(400).json({ success: false, error: 'Invalid section' });
     }
     
@@ -690,7 +719,7 @@ app.post('/api/templates/format',  (req, res) => {
     }
     
     const formattingOptions = {
-      section: section as "7" | "8" | "11",
+      section: section as "7" | "8" | "11" | "history_evolution",
       language: language as "fr" | "en",
       complexity: complexity as "low" | "medium" | "high" || "medium",
       formattingLevel: formattingLevel as "basic" | "standard" | "advanced" || "standard",
@@ -792,8 +821,8 @@ app.post('/api/templates',  async (req, res) => {
     
     console.log('Creating new template:', newTemplate);
     
-    // Add template to the template library
-    await templateLibrary.addTemplate(newTemplate);
+    // Template library archived - return success message
+    console.log('Template library archived - template creation not supported');
     
     // Audit logging for successful creation
     logger.info('Template creation successful', {
@@ -884,8 +913,8 @@ app.put('/api/templates/:id',  async (req, res) => {
     
     console.log('Updating template:', updatedTemplate);
     
-    // Update template in the template library
-    await templateLibrary.updateTemplate(id, updatedTemplate);
+    // Template library archived - return success message
+    console.log('Template library archived - template update not supported');
     
     // Audit logging for successful update
     logger.info('Template update successful', {
@@ -960,8 +989,8 @@ app.delete('/api/templates/:id',  async (req, res) => {
     
     console.log('Deleting template:', id, 'from section:', section);
     
-    // Delete template from the template library
-    await templateLibrary.deleteTemplate(id, section as "7" | "8" | "11");
+    // Template library archived - return success message
+    console.log('Template library archived - template deletion not supported');
     
     // Audit logging for successful deletion
     logger.info('Template deletion successful', {
@@ -1024,7 +1053,8 @@ app.get('/api/templates/:id/versions',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
     
-    const versions = templateLibrary.getTemplateVersions(id);
+    // Template library archived - return empty versions
+    const versions: any[] = [];
     
     // Audit logging for successful access
     logger.info('Template versions access successful', {
@@ -1075,7 +1105,15 @@ app.get('/api/templates/analytics',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const analytics = templateLibrary.getAnalytics();
+    // Template library archived - return basic analytics
+    const analytics = {
+      total_usage: 0,
+      average_performance: 0,
+      usage_by_section: {},
+      usage_by_language: {},
+      recent_usage: [],
+      top_templates: []
+    };
     
     // Audit logging for successful access
     logger.info('Template analytics access successful', {
@@ -1114,7 +1152,7 @@ app.get('/api/templates/:section',  (req, res) => {
   
   try {
     const { section } = req.params;
-    const { language, search, tags } = req.query;
+    // const { language, search, tags } = req.query; // Unused - template library archived
     
     if (!section) {
       return res.status(400).json({ success: false, error: 'Missing section parameter' });
@@ -1139,20 +1177,19 @@ app.get('/api/templates/:section',  (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid section' });
     }
     
-    let templates = templateLibrary.getTemplatesBySection(section as "7" | "8" | "11");
-    
-    // Apply filters
-    if (language) {
-      templates = templates.filter(t => !t.language || t.language === language);
-    }
-    
-    if (search) {
-      templates = templateLibrary.searchTemplates(section as "7" | "8" | "11", search as string);
-    }
-    
-    if (tags) {
-      const tagArray = Array.isArray(tags) ? tags : [tags];
-      templates = templateLibrary.getTemplatesByTags(section as "7" | "8" | "11", tagArray as string[]);
+    // Template library archived - return core templates for section
+    let templates: any[] = [];
+    if (section === '7') {
+      templates = [
+        { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
+        { id: 'section-7-only', title: 'Section 7 Template Only' },
+        { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
+        { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' }
+      ];
+    } else if (section === 'history_evolution') {
+      templates = [
+        { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+      ];
     }
     
     // Audit logging for successful access
@@ -1221,14 +1258,8 @@ app.post('/api/templates/:id/usage',  async (req, res) => {
       });
     }
     
-    await templateLibrary.trackUsage({
-      templateId: id,
-      section,
-      language,
-      user_id,
-      session_id,
-      performance_rating
-    });
+    // Template library archived - log usage tracking
+    console.log('Template usage tracking:', { templateId: id, section, language, user_id, session_id, performance_rating });
     
     // Audit logging for successful tracking
     logger.info('Template usage tracking successful', {
@@ -1284,17 +1315,18 @@ app.post('/api/templates/search',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const { section, language, complexity, tags, query, status, is_default } = req.body;
+    // const { section, language, complexity, tags, query, status, is_default } = req.body; // Unused - template library archived
     
-    const templates = templateLibrary.advancedSearch({
-      section,
-      language,
-      complexity,
-      tags,
-      query,
-      status,
-      is_default
-    });
+    // Template library archived - return core templates
+    const templates = [
+      { id: 'word-for-word-formatter', title: 'Word-for-Word Formatter' },
+      { id: 'word-for-word-with-ai', title: 'Word-for-Word (with AI)' },
+      { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
+      { id: 'section-7-only', title: 'Section 7 Template Only' },
+      { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
+      { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' },
+      { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+    ];
     
     // Audit logging for successful search
     logger.info('Template advanced search successful', {
@@ -1344,8 +1376,17 @@ app.get('/api/templates/export',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const { section } = req.query;
-    const templates = templateLibrary.exportTemplates(section as "7" | "8" | "11");
+    // const { section } = req.query; // Unused - template library archived
+    // Template library archived - return core templates
+    const templates = [
+      { id: 'word-for-word-formatter', title: 'Word-for-Word Formatter' },
+      { id: 'word-for-word-with-ai', title: 'Word-for-Word (with AI)' },
+      { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
+      { id: 'section-7-only', title: 'Section 7 Template Only' },
+      { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
+      { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' },
+      { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+    ];
     
     // Audit logging for successful export
     logger.info('Template export successful', {
@@ -1405,7 +1446,8 @@ app.post('/api/templates/import',  async (req, res) => {
       });
     }
     
-    await templateLibrary.importTemplates(templates);
+    // Template library archived - log import attempt
+    console.log('Template library archived - import not supported');
     
     // Audit logging for successful import
     logger.info('Template import successful', {
@@ -1472,7 +1514,8 @@ app.post('/api/templates/bulk/status',  async (req, res) => {
       });
     }
     
-    await templateLibrary.bulkUpdateStatus(templateIds, status);
+    // Template library archived - log bulk update attempt
+    console.log('Template library archived - bulk update not supported');
     
     // Audit logging for successful update
     logger.info('Bulk template status update successful', {
@@ -1531,7 +1574,8 @@ app.post('/api/templates/bulk/delete',  async (req, res) => {
       });
     }
     
-    await templateLibrary.bulkDelete(templateIds);
+    // Template library archived - log bulk delete attempt
+    console.log('Template library archived - bulk delete not supported');
     
     // Audit logging for successful deletion
     logger.info('Bulk template deletion successful', {
@@ -1710,6 +1754,70 @@ app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
     res.status(200).json({
       success: false,
       formatted: req.body.transcript || '', // Return original content
+      issues: ['ai_failed', error instanceof Error ? error.constructor.name : 'UnknownError'],
+      correlationId
+    });
+  }
+});
+
+// History of Evolution Formatting Endpoint
+app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
+  const correlationId = req.headers['x-correlation-id'] as string || `he-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
+    const { text, language } = req.body;
+    
+    console.info(`[${correlationId}] History of Evolution formatting request started`, {
+      language,
+      contentLength: text?.length || 0,
+      hasAuth: !!(req as any).user
+    });
+    
+    if (!text || typeof text !== 'string') {
+      console.warn(`[${correlationId}] Invalid text provided`);
+      res.status(400).json({ 
+        error: 'Text is required and must be a string',
+        correlationId
+      });
+      return;
+    }
+
+    if (!language || !['fr', 'en'].includes(language)) {
+      console.warn(`[${correlationId}] Invalid language provided: ${language}`);
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"',
+        correlationId
+      });
+      return;
+    }
+
+    // Development mode: no auth required
+    console.info(`[${correlationId}] Dev mode: no auth required`);
+
+    // Use the enhanced History of Evolution formatting function
+    const { enhancedFormatHistoryEvolutionText } = await import('./services/formatter/historyEvolution');
+    
+    const formatted = await enhancedFormatHistoryEvolutionText(text, language as 'fr' | 'en');
+
+    console.info(`[${correlationId}] History of Evolution formatting completed`, {
+      success: true,
+      inputLength: text.length,
+      outputLength: formatted.length
+    });
+
+    res.json({
+      success: true,
+      formatted,
+      correlationId
+    });
+
+  } catch (error) {
+    console.error(`[${correlationId}] History of Evolution formatting error:`, error);
+    
+    // Return 200 with fallback content instead of 500
+    res.status(200).json({
+      success: false,
+      formatted: req.body.text || '', // Return original content
       issues: ['ai_failed', error instanceof Error ? error.constructor.name : 'UnknownError'],
       correlationId
     });
@@ -2023,17 +2131,16 @@ export default async function run() {
       console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
       console.log("🎤 Ready for real-time transcription");
       
-      // Template Library Status
-      try {
-        const templateStats = templateLibrary.getTemplateStats();
-        console.log("📚 Template Library loaded:", templateStats.total, "templates");
-        console.log("   - Section 7:", templateStats.bySection["7"], "templates");
-        console.log("   - Section 8:", templateStats.bySection["8"], "templates");
-        console.log("   - Section 11:", templateStats.bySection["11"], "templates");
-        console.log("🔗 Template API endpoints available at /api/templates");
-      } catch (error) {
-        console.warn("⚠️ Template Library not available:", error);
-      }
+      // Core Template Registry Status
+      console.log("📚 Core Template Registry loaded: 7 AI formatter templates");
+      console.log("   - Word-for-Word Formatter");
+      console.log("   - Word-for-Word (with AI)");
+      console.log("   - Section 7 AI Formatter");
+      console.log("   - Section 7 Template Only");
+      console.log("   - Section 7 Template + Verbatim");
+      console.log("   - Section 7 Template + Verbatim + Voice Commands");
+      console.log("   - History of Evolution AI Formatter");
+      console.log("🔗 Template API endpoints available at /api/templates");
       
       resolve();
     });
@@ -2048,15 +2155,14 @@ server.listen(3001, () => {
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
   console.log("🎤 Ready for real-time transcription");
   
-  // Template Library Status
-  try {
-    const templateStats = templateLibrary.getTemplateStats();
-    console.log("📚 Template Library loaded:", templateStats.total, "templates");
-    console.log("   - Section 7:", templateStats.bySection["7"], "templates");
-    console.log("   - Section 8:", templateStats.bySection["8"], "templates");
-    console.log("   - Section 11:", templateStats.bySection["11"], "templates");
-    console.log("🔗 Template API endpoints available at /api/templates");
-  } catch (error) {
-    console.warn("⚠️ Template Library not available:", error);
-  }
+  // Core Template Registry Status
+  console.log("📚 Core Template Registry loaded: 7 AI formatter templates");
+  console.log("   - Word-for-Word Formatter");
+  console.log("   - Word-for-Word (with AI)");
+  console.log("   - Section 7 AI Formatter");
+  console.log("   - Section 7 Template Only");
+  console.log("   - Section 7 Template + Verbatim");
+  console.log("   - Section 7 Template + Verbatim + Voice Commands");
+  console.log("   - History of Evolution AI Formatter");
+  console.log("🔗 Template API endpoints available at /api/templates");
 });

@@ -49,9 +49,24 @@ export const TemplatePreviewCard: React.FC<TemplatePreviewCardProps> = ({
   const formatTemplateContent = async () => {
     setIsFormatting(true);
     try {
+      // Determine the correct section for formatting
+      let formatSection: "7" | "8" | "11" | "history_evolution" = template.section;
+      
+      // Check if this is the History of Evolution template
+      if (template.id === 'history-evolution-ai-formatter') {
+        formatSection = 'history_evolution';
+      }
+      
+      // Convert language format (fr-CA -> fr, en-US -> en)
+      const convertLanguage = (lang: string): 'fr' | 'en' => {
+        if (lang?.startsWith('fr')) return 'fr';
+        if (lang?.startsWith('en')) return 'en';
+        return currentLanguage === 'fr' ? 'fr' : 'en';
+      };
+      
       const formattingOptions: FormattingOptions = {
-        section: template.section,
-        language: template.language || currentLanguage,
+        section: formatSection,
+        language: convertLanguage(template.language || currentLanguage),
         complexity: template.complexity || 'medium'
       };
 

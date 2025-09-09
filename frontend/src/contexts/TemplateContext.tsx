@@ -11,6 +11,8 @@ interface TemplateContextType {
   refreshTemplates: () => Promise<void>;
   getTemplateById: (id: string) => TemplateConfig | undefined;
   getTemplatesBySection: (section: string) => TemplateConfig[];
+  getTemplatesByMode: (mode: string) => TemplateConfig[];
+  getAllTemplates: () => TemplateConfig[];
   loading: boolean;
   error: string | null;
 }
@@ -147,13 +149,32 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) 
 
   // Get templates by section
   const getTemplatesBySection = (section: string): TemplateConfig[] => {
-    return templates.filter(template => 
+    const filtered = templates.filter(template => 
       template.compatibleSections.includes(section) || template.compatibleSections.includes('all')
     );
+    console.log(`TemplateProvider: getTemplatesBySection('${section}') returned ${filtered.length} templates from ${templates.length} total templates`);
+    return filtered;
+  };
+
+  // Get templates by mode
+  const getTemplatesByMode = (mode: string): TemplateConfig[] => {
+    const filtered = templates.filter(template => 
+      template.compatibleModes.includes(mode) || template.compatibleModes.includes('all')
+    );
+    console.log(`TemplateProvider: getTemplatesByMode('${mode}') returned ${filtered.length} templates from ${templates.length} total templates`);
+    return filtered;
+  };
+
+  // Get all active templates (truly modular)
+  const getAllTemplates = (): TemplateConfig[] => {
+    const filtered = templates.filter(template => template.isActive);
+    console.log(`TemplateProvider: getAllTemplates() returned ${filtered.length} templates from ${templates.length} total templates`);
+    return filtered;
   };
 
   // Load templates on mount
   useEffect(() => {
+    console.log('TemplateProvider: Initializing with TEMPLATE_CONFIGS:', TEMPLATE_CONFIGS.length, 'templates');
     refreshTemplates();
   }, []);
 
@@ -165,6 +186,8 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) 
     refreshTemplates,
     getTemplateById,
     getTemplatesBySection,
+    getTemplatesByMode,
+    getAllTemplates,
     loading,
     error,
   };
