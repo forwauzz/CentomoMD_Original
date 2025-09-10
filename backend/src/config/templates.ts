@@ -400,6 +400,40 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       version: '1.0.0',
       author: 'CentomoMD'
     }
+  },
+  'mode3-transcribe-passthrough': {
+    id: 'mode3-transcribe-passthrough',
+    name: 'Mode 3 Transcribe Passthrough',
+    nameEn: 'Mode 3 Transcribe Passthrough',
+    description: 'Mode 3 pipeline passthrough - returns narrative directly from S1-S5 processing without additional AI formatting',
+    descriptionEn: 'Mode 3 pipeline passthrough - returns narrative directly from S1-S5 processing without additional AI formatting',
+    type: 'processing',
+    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleModes: ['mode3'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'pipeline-passthrough',
+      placeholders: ['narrative_content', 'role_prefixes'],
+      validationRules: ['narrative_format', 'role_consistency']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: false, // No LLM - just passthrough
+      postProcessing: false,
+      realtimeProcessing: false
+    },
+    configuration: {
+      priority: 1,
+      timeout: 30,
+      retryAttempts: 1
+    },
+    metadata: {
+      category: 'mode_specific',
+      tags: ['mode3', 'transcribe', 'passthrough', 'pipeline'],
+      version: '1.0.0',
+      author: 'CentomoMD'
+    }
   }
 };
 
