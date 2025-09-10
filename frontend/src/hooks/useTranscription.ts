@@ -29,6 +29,11 @@ export const useTranscription = (sessionId?: string, language?: string) => {
     reconnectionAttempts: 0,
   });
 
+  // Mode 3 pipeline state
+  const [mode3Narrative, setMode3Narrative] = useState<string | null>(null);
+  const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'>('idle');
+  const [finalAwsJson, setFinalAwsJson] = useState<any>(null);
+
   // Enhanced segment tracking
   const [segments, setSegments] = useState<Segment[]>([]);
   const segIndex = useRef<Map<string, number>>(new Map());
@@ -49,6 +54,33 @@ export const useTranscription = (sessionId?: string, language?: string) => {
   
   // Voice command tracking
   const [voiceCommands, setVoiceCommands] = useState<VoiceCommandEvent[]>([]);
+
+  // Mode 3 pipeline helper
+  const processMode3Pipeline = useCallback(async (params: {
+    sessionId: string;
+    language: 'en'|'fr';
+    section: string;
+    rawAwsJson: any;
+  }) => {
+    const res = await fetch('/api/transcribe/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: params.sessionId,
+        modeId: 'mode3',
+        language: params.language,
+        section: params.section,
+        rawAwsJson: params.rawAwsJson
+      })
+    });
+    if (!res.ok) throw new Error(`process failed: ${res.status}`);
+    return res.json() as Promise<{
+      narrative: string;
+      irSummary: any;
+      roleMap: Record<string,string>;
+      meta: any;
+    }>;
+  }, []);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -434,6 +466,11 @@ export const useTranscription = (sessionId?: string, language?: string) => {
                 currentTranscript: '', // Clear current transcript for next partial result
               }));
             }
+          } else if (msg.type === 'transcription_final' && msg.mode === 'ambient') {
+            // Store the raw AWS JSON for Mode 3 pipeline processing
+            console.log('Mode 3 final transcription received:', msg);
+            setFinalAwsJson(msg.payload);
+            setMode3Progress('transcribing');
           } else if (msg.type === 'transcription_error') {
             console.error('Transcribe error:', msg.error);
             updateState({ error: msg.error });
@@ -469,7 +506,7 @@ export const useTranscription = (sessionId?: string, language?: string) => {
     }
   }, [sessionId, state.currentSection, updateState, enqueueUpdate, liveTranscript, buildParagraphs, tidyFr]);
 
-  const stopTranscription = useCallback(() => {
+  const stopTranscription = useCallback(async () => {
     console.log('Stopping transcription');
     
     // Clear any pending updates
@@ -503,7 +540,28 @@ export const useTranscription = (sessionId?: string, language?: string) => {
     }
 
     updateState({ isRecording: false });
-  }, [updateState]);
+
+    // Handle Mode 3 pipeline processing
+    if (state.mode === 'ambient' && finalAwsJson && state.sessionId) {
+      try {
+        setMode3Progress('processing');
+        const result = await processMode3Pipeline({
+          sessionId: state.sessionId,
+          language: (language === 'fr-CA' || language === 'fr') ? 'fr' : 'en',
+          section: state.currentSection,
+          rawAwsJson: finalAwsJson
+        });
+        setMode3Narrative(result.narrative);
+        setMode3Progress('ready');
+      } catch (error) {
+        console.error('Mode 3 pipeline processing failed:', error);
+        setMode3Progress('idle');
+        updateState({ 
+          error: `Pipeline processing failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        });
+      }
+    }
+  }, [updateState, state.mode, finalAwsJson, state.sessionId, language, state.currentSection, processMode3Pipeline]);
 
   // Legacy compatibility - map to new functions
   const startRecording = useCallback(async () => {
@@ -570,6 +628,11 @@ export const useTranscription = (sessionId?: string, language?: string) => {
     // Voice command data
     voiceCommands,
     isListening: state.isRecording && !paused,
+
+    // Mode 3 pipeline data
+    mode3Narrative,
+    mode3Progress,
+    finalAwsJson,
 
     // Actions
     startRecording,

@@ -1897,6 +1897,162 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
   }
 });
 
+// Mode 3 Transcribe Processing Endpoint
+app.post('/api/transcribe/process', async (req, res): Promise<void> => {
+  try {
+    const { sessionId, modeId, language, section, rawAwsJson } = req.body;
+    
+    if (!sessionId || !modeId || !language || !section || !rawAwsJson) {
+      res.status(400).json({ 
+        error: 'Missing required fields: sessionId, modeId, language, section, rawAwsJson' 
+      });
+      return;
+    }
+
+    if (modeId !== 'mode3') {
+      res.status(400).json({ 
+        error: 'This endpoint only supports mode3' 
+      });
+      return;
+    }
+
+    if (!['section_7', 'section_8', 'section_11'].includes(section)) {
+      res.status(400).json({ 
+        error: 'Section must be "section_7", "section_8", or "section_11"' 
+      });
+      return;
+    }
+
+    if (!['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    // Import Mode3Pipeline dynamically
+    const { Mode3Pipeline } = await import('./services/pipeline/index.js');
+    const pipeline = new Mode3Pipeline();
+    
+    // Parse and validate AWS result
+    let awsResult;
+    try {
+      awsResult = typeof rawAwsJson === 'string' ? JSON.parse(rawAwsJson) : rawAwsJson;
+    } catch (parseError) {
+      res.status(400).json({ 
+        error: 'Invalid AWS Transcribe JSON format' 
+      });
+      return;
+    }
+
+    const validation = pipeline.validateAWSResult(awsResult);
+    if (!validation.valid) {
+      res.status(400).json({ 
+        error: 'Invalid AWS result', 
+        details: validation.errors 
+      });
+      return;
+    }
+
+    // Execute S1→S5 pipeline
+    const result = await pipeline.execute(awsResult, 'default');
+    
+    if (!result.success) {
+      res.status(500).json({ 
+        error: 'Pipeline processing failed', 
+        details: result.error 
+      });
+      return;
+    }
+
+    // Return pipeline artifacts
+    res.json({
+      narrative: result.data?.narrative,
+      irSummary: {
+        turnCount: result.data?.ir.turns.length,
+        speakerCount: result.data?.ir.metadata.speakerCount,
+        totalDuration: result.data?.ir.metadata.totalDuration
+      },
+      roleMap: result.data?.roleMap,
+      meta: {
+        processingTime: result.data?.processingTime,
+        profile: result.data?.cleaned.profile,
+        success: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Mode 3 transcribe processing error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process transcribe data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get Session Artifacts Endpoint
+app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!sessionId) {
+      res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+      return;
+    }
+
+    // TODO: Implement database retrieval of artifacts
+    // For now, return mock data structure
+    res.json({
+      ir: null, // Would be retrieved from database
+      role_map: null, // Would be retrieved from database  
+      narrative: null, // Would be retrieved from database
+      message: 'Artifacts endpoint ready - database integration pending'
+    });
+
+  } catch (error) {
+    console.error('Get session artifacts error:', error);
+    res.status(500).json({ 
+      error: 'Failed to retrieve session artifacts',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Role Swap Endpoint (Admin/Support only)
+app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!sessionId) {
+      res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+      return;
+    }
+
+    // TODO: Implement role swap logic
+    // 1. Retrieve current role map from database
+    // 2. Apply role swap using S3RoleMap.applyRoleSwap()
+    // 3. Re-run S5 narrative generation
+    // 4. Update database with new narrative
+    
+    res.json({
+      message: 'Role swap endpoint ready - database integration pending',
+      sessionId,
+      note: 'This endpoint will flip PATIENT ↔ CLINICIAN roles and regenerate narrative'
+    });
+
+  } catch (error) {
+    console.error('Role swap error:', error);
+    res.status(500).json({ 
+      error: 'Failed to swap roles',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Phase 0: Mode-specific AWS configuration function
 const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   const config = {
@@ -1909,16 +2065,16 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: false,
-        max_speaker_labels: undefined,  // Explicitly disable for Mode 1
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
     case 'smart_dictation':
       return {
         ...config,
         show_speaker_labels: false,  // Changed: Mode 2 should NOT use speaker labels
-        max_speaker_labels: undefined,  // Explicitly disable for Mode 2
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
@@ -1934,8 +2090,8 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: false,
-        max_speaker_labels: undefined,  // Explicitly disable for fallback
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
   }

@@ -24,6 +24,7 @@ export interface ModeConfig {
     batchSize?: number;
     retryAttempts?: number;
     fallbackMode?: string;
+    maxSpeakerLabels?: number; // for Mode 3 speaker diarization
   };
   metadata?: {
     category?: string;
