@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { TranscriptionState, Transcript } from '@/types';
+import { TranscriptionState, Transcript, TranscriptionMode } from '@/types';
 import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
@@ -15,7 +15,7 @@ type Segment = {
   speaker?: string | null;     // PATIENT vs CLINICIAN
 };
 
-export const useTranscription = (sessionId?: string, language?: string) => {
+export const useTranscription = (sessionId?: string, language?: string, mode?: TranscriptionMode) => {
   const featureFlags = useFeatureFlags();
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
@@ -23,7 +23,7 @@ export const useTranscription = (sessionId?: string, language?: string) => {
     currentTranscript: '',
     finalTranscripts: [],
     currentSection: 'section_7',
-    mode: 'smart_dictation',
+    mode: mode || 'smart_dictation', // Use passed mode or default to smart_dictation
     sessionId,
     error: undefined,
     reconnectionAttempts: 0,
@@ -33,6 +33,14 @@ export const useTranscription = (sessionId?: string, language?: string) => {
   const [mode3Narrative, setMode3Narrative] = useState<string | null>(null);
   const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'>('idle');
   const [finalAwsJson, setFinalAwsJson] = useState<any>(null);
+
+  // Update mode when it changes
+  useEffect(() => {
+    if (mode && mode !== state.mode) {
+      console.log(`Mode changed from ${state.mode} to ${mode}`);
+      setState(prev => ({ ...prev, mode }));
+    }
+  }, [mode, state.mode]);
 
   // Enhanced segment tracking
   const [segments, setSegments] = useState<Segment[]>([]);

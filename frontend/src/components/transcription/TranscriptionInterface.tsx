@@ -106,7 +106,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     mode3Narrative,
     mode3Progress,
     finalAwsJson
-  } = useTranscription(sessionId, selectedLanguage);
+  } = useTranscription(sessionId, selectedLanguage, mode);
 
   // Case store for saving to sections
   const { updateSection } = useCaseStore();
