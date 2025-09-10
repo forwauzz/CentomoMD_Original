@@ -1909,9 +1909,9 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
       return;
     }
 
-    if (modeId !== 'mode3') {
+    if (modeId !== 'ambient') {
       res.status(400).json({ 
-        error: 'This endpoint only supports mode3' 
+        error: 'This endpoint only supports ambient mode' 
       });
       return;
     }
@@ -2173,17 +2173,30 @@ wss.on('connection', (ws, req) => {
           transcriptionService.startStreamingTranscription(
             sessionId,
             modeConfig,
-            (res) => ws.send(JSON.stringify({ 
-              type: 'transcription_result', 
-              resultId: res.resultId,                         // stable key
-              startTime: res.startTime ?? null,
-              endTime: res.endTime ?? null,
-              text: res.transcript, 
-              isFinal: !res.is_partial,
-              language_detected: res.language_detected,
-              confidence_score: res.confidence_score,
-              speaker: res.speaker                           // PATIENT vs CLINICIAN
-            })),
+            (res) => {
+              // Check if this is the final AWS result for Mode 3
+              if (res.resultId === 'final_aws_result' && res.awsResult && msg.mode === 'ambient') {
+                console.log(`[${sessionId}] Sending final AWS result for Mode 3 pipeline`);
+                ws.send(JSON.stringify({ 
+                  type: 'transcription_final', 
+                  mode: 'ambient',
+                  payload: res.awsResult
+                }));
+              } else {
+                // Regular transcription result
+                ws.send(JSON.stringify({ 
+                  type: 'transcription_result', 
+                  resultId: res.resultId,                         // stable key
+                  startTime: res.startTime ?? null,
+                  endTime: res.endTime ?? null,
+                  text: res.transcript, 
+                  isFinal: !res.is_partial,
+                  language_detected: res.language_detected,
+                  confidence_score: res.confidence_score,
+                  speaker: res.speaker                           // PATIENT vs CLINICIAN
+                }));
+              }
+            },
             (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
           );
 
