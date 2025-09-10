@@ -110,6 +110,7 @@ export interface TranscriptionResult {
   startTime?: number | null;   // start time in seconds
   endTime?: number | null;     // end time in seconds
   speaker?: string | null;     // PATIENT vs CLINICIAN
+  awsResult?: any;             // Complete AWS result for Mode 3 pipeline
 }
 
 export interface SpeakerLabel {
