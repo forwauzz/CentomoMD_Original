@@ -60,7 +60,8 @@ export class TranscriptionService {
       MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
       ShowSpeakerLabel: config.show_speaker_labels || false,     // Mode-specific speaker attribution
-      // MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN - not supported in this version
+      // MaxSpeakerLabels: Set based on mode configuration
+      ...(config.max_speaker_labels && { MaxSpeakerLabels: config.max_speaker_labels }),
       EnablePartialResultsStabilization: true,
       PartialResultsStability: (config.partial_results_stability || 'high') as any,  // Mode-specific stability
       // Custom vocabulary for medical terms (when available)
