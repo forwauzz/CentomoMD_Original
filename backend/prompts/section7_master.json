@@ -27,6 +27,13 @@
     "paragraphe_par_evenement": true,
     "varier_les_verbes": true,
     "eviter_repetition_mecanique": true,
+    "en_tete_section_obligatoire": "7. Historique de faits et évolution",
+    "capture_noms_complets": true,
+    "format_vertebres_avec_trait_union": true,
+    "reconnaissance_ner_ameliorée": true,
+    "troncation_noms_professionnels_interdite": true,
+    "validation_completude_noms_medicaux": true,
+    "coherence_noms_documentaire": true,
     "langue": "fr-CA"
   },
 
@@ -159,6 +166,26 @@
       "appliquer": true,
       "direction": "ascendante"
     },
+    "validation_noms_professionnels": {
+      "exiger_noms_complets": true,
+      "detecter_troncation": true,
+      "signaler_noms_incomplets": true,
+      "maintenir_coherence_documentaire": true,
+      "preservation_litterale_obligatoire": true,
+      "interdire_standardisation_noms": true,
+      "exemples_preservation": {
+        "docteur_Harry_Durusso": "docteur Harry Durusso",
+        "docteur_Roxanne_Bouchard_Bellavance": "docteur Roxanne Bouchard-Bellavance",
+        "docteur_Durousseau": "docteur Durousseau",
+        "docteur_Jean_Pierre_Martin": "docteur Jean-Pierre Martin"
+      },
+      "regles_critiques": [
+        "NE JAMAIS changer 'Durousseau' en 'Durusso'",
+        "NE JAMAIS changer 'Bouchard-Bellavance' en 'Bouchard'",
+        "PRÉSERVER exactement les traits d'union et espaces",
+        "REPRODUIRE LITTÉRALEMENT sans modification"
+      ]
+    },
     "garde_fou_doublons": {
       "activer": true,
       "distance_min_caracteres": 50
@@ -183,5 +210,28 @@
     "toujours_injecter_sections": ["regles_style", "terminologie.verbes_consultation", "exemples"],
     "injecter_long_exemple_conditionnel": true,
     "etiquette_long_exemple": "EXEMPLE COMPLET (référence de forme, ne pas copier mot à mot)"
+  },
+
+  "reconnaissance_ner": {
+    "entite_type": "PERSON + PROFESSIONAL_TITLE",
+    "patron_reconnaissance": "[Titre] + [Prénom] + [Nom(s) de famille]",
+    "contexte": "Documents médicaux/légaux",
+    "completude": "Rétention obligatoire du nom complet",
+    "regles_amelioration": {
+      "si_entite_type_medical_professional": "preserve_full_name = TRUE",
+      "si_contexte_document_formel": "troncation_allowed = FALSE",
+      "support_noms_composes": "noms_hyphenés, noms_composés",
+      "verification_coherence": "instances_document"
+    },
+    "prevention_erreurs": {
+      "bloquer_troncation_noms_professionnels": true,
+      "validation_completude_personnel_medical": true,
+      "signaler_identifications_incompletes": true
+    },
+    "exemples_patrons": {
+      "docteur_harry": "docteur Harry (nom de famille non spécifié)",
+      "docteur_roxanne": "docteur Roxanne (nom de famille non spécifié)",
+      "pattern_general": "docteur [Prénom] → docteur [Prénom] (nom de famille non spécifié)"
+    }
   }
 }
