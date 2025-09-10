@@ -27,6 +27,13 @@
     "paragraph_per_event": true,
     "vary_verbs": true,
     "avoid_mechanical_repetition": true,
+    "section_header_required": "7. History of Facts and Clinical Evolution",
+    "capture_full_names": true,
+    "vertebrae_format_with_hyphen": true,
+    "enhanced_ner_recognition": true,
+    "professional_name_truncation_forbidden": true,
+    "medical_name_completeness_validation": true,
+    "documentary_name_consistency": true,
     "language": "en-CA"
   },
 
@@ -158,6 +165,12 @@
       "enforce": true,
       "direction": "ascending"
     },
+    "professional_name_validation": {
+      "require_complete_names": true,
+      "detect_truncation": true,
+      "flag_incomplete_names": true,
+      "maintain_documentary_consistency": true
+    },
     "duplicate_sentence_guard": {
       "enable": true,
       "min_distance_chars": 50
@@ -182,5 +195,28 @@
     "always_inject_sections": ["style_rules", "terminology.verbs_consultation", "few_shot"],
     "conditionally_inject_long_example": true,
     "long_example_label": "FULL EXAMPLE (reference for form, do not copy verbatim)"
+  },
+
+  "ner_recognition": {
+    "entity_type": "PERSON + PROFESSIONAL_TITLE",
+    "recognition_pattern": "[Title] + [FirstName] + [LastName(s)]",
+    "context": "Medical/legal documents",
+    "completeness": "Mandatory full name retention",
+    "enhancement_rules": {
+      "if_entity_type_medical_professional": "preserve_full_name = TRUE",
+      "if_context_formal_document": "truncation_allowed = FALSE",
+      "compound_name_support": "hyphenated_names, compound_surnames",
+      "consistency_verification": "document_instances"
+    },
+    "error_prevention": {
+      "block_professional_name_truncation": true,
+      "validate_medical_personnel_completeness": true,
+      "flag_incomplete_identifications": true
+    },
+    "pattern_examples": {
+      "dr_harry": "Dr. Harry (last name not specified)",
+      "dr_roxanne": "Dr. Roxanne (last name not specified)",
+      "general_pattern": "Dr. [FirstName] → Dr. [FirstName] (last name not specified)"
+    }
   }
 }

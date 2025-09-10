@@ -527,23 +527,31 @@ export class ProcessingOrchestrator {
     try {
       console.log(`[${correlationId}] Processing Section 7 AI Formatter template: ${template.id}`);
       
-      // Apply AI formatting using the AI formatting service
-      const { AIFormattingService } = await import('../../services/aiFormattingService.js');
+      // Use the original Section 7 AI formatter (working version)
+      const { Section7AIFormatter } = await import('../../services/formatter/section7AI.js');
       
-      const result = await AIFormattingService.formatTemplateContent(content, {
-        section: '7',
-        language: request.language as 'fr' | 'en',
-        complexity: 'medium',
-        formattingLevel: 'standard',
-        includeSuggestions: true
-      });
+      const result = await Section7AIFormatter.formatSection7Content(
+        content,
+        request.language as 'fr' | 'en'
+      );
       
       const processedContent = result.formatted;
+      
+      // Log any issues or suggestions
+      if (result.issues && result.issues.length > 0) {
+        console.warn(`[${correlationId}] Section 7 AI formatting issues:`, result.issues);
+      }
+      
+      if (result.suggestions && result.suggestions.length > 0) {
+        console.info(`[${correlationId}] Section 7 AI formatting suggestions:`, result.suggestions);
+      }
       
       console.log(`[${correlationId}] Section 7 AI formatting completed`, {
         originalLength: content.length,
         processedLength: processedContent.length,
-        templateId: template.id
+        templateId: template.id,
+        hasIssues: result.issues ? result.issues.length > 0 : false,
+        hasSuggestions: result.suggestions ? result.suggestions.length > 0 : false
       });
       
       return processedContent;

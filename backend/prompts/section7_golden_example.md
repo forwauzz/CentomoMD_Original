@@ -1,6 +1,4 @@
-# Section 7 – Golden Example (CNESST Quebec)
-
-Historique de faits et évolution
+7. Historique de faits et évolution
 
 Le travailleur est préposé à la répartition des taxis et limousines. Ses tâches consistent à rester à l'extérieur, pointer pour diriger les usagers et lever les bras pour signaler les taxis.
 

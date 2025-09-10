@@ -1,6 +1,4 @@
-# Section 7 – Golden Example (CNESST Quebec, English Translation)
-
-History of Facts and Clinical Evolution
+7. History of Facts and Clinical Evolution
 
 The worker is employed as a dispatcher for taxis and limousines. His duties consist of remaining outdoors, pointing to direct passengers, and raising his arms to signal taxis.
 

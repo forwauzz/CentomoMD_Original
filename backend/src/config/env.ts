@@ -55,6 +55,12 @@ export interface Environment {
   
   // Authentication Strategy
   AUTH_VERIFY_STRATEGY: 'supabase' | 'jwks';
+  
+  // OpenAI Configuration
+  OPENAI_API_KEY: string;
+  OPENAI_MODEL: string;
+  OPENAI_TEMPERATURE: number;
+  OPENAI_MAX_TOKENS: number;
 }
 
 // Temporary hardcoded values to bypass PowerShell line-breaking issues
@@ -105,6 +111,12 @@ const hardcodedEnv: Environment = {
   
   // Authentication Strategy - Default to working Supabase approach
   AUTH_VERIFY_STRATEGY: 'supabase',
+  
+  // OpenAI Configuration
+  OPENAI_API_KEY: process.env['OPENAI_API_KEY'] || '',
+  OPENAI_MODEL: process.env['OPENAI_MODEL'] || 'gpt-4o-mini',
+  OPENAI_TEMPERATURE: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.2'),
+  OPENAI_MAX_TOKENS: parseInt(process.env['OPENAI_MAX_TOKENS'] || '4000'),
 };
 
 // Export the hardcoded environment
@@ -152,5 +164,11 @@ export const config = {
   debug: {
     logPayloads: hardcodedEnv.LOG_PAYLOADS,
     diagMode: hardcodedEnv.DIAG_MODE,
+  },
+  openai: {
+    apiKey: hardcodedEnv.OPENAI_API_KEY,
+    model: hardcodedEnv.OPENAI_MODEL,
+    temperature: hardcodedEnv.OPENAI_TEMPERATURE,
+    maxTokens: hardcodedEnv.OPENAI_MAX_TOKENS,
   }
 };

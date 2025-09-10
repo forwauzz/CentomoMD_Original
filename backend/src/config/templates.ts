@@ -24,18 +24,23 @@ export interface TemplateConfig {
     aiFormatting: boolean;
     postProcessing: boolean;
     realtimeProcessing: boolean;
+    comprehensivePrompts?: boolean;
+    languageAware?: boolean;
+    metadataTracking?: boolean;
   };
   configuration: {
     priority: number; // Processing priority
     timeout: number; // Processing timeout in seconds
     retryAttempts: number;
     fallbackTemplate?: string;
+    promptFiles?: string[];
   };
   metadata?: {
     category?: string;
     tags?: string[];
     version?: string;
     author?: string;
+    implementation?: string;
   };
 }
 
@@ -225,34 +230,39 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     id: 'section7-ai-formatter',
     name: 'Section 7 AI Formatter',
     nameEn: 'Section 7 AI Formatter',
-    description: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution)',
-    descriptionEn: 'Apply AI-powered CNESST formatting to Section 7 (Historique de faits et évolution)',
+    description: 'Enhanced AI-powered CNESST formatting with comprehensive prompt system (6-step flowchart implementation)',
+    descriptionEn: 'Enhanced AI-powered CNESST formatting with comprehensive prompt system (6-step flowchart implementation)',
     type: 'formatting',
     compatibleSections: ['section_7'],
     compatibleModes: ['mode1', 'mode2'],
     supportedLanguages: ['fr', 'en'],
     content: {
-      structure: 'ai-cnesst-formatting',
-      placeholders: ['chronological_order', 'worker_first', 'medical_terminology'],
-      validationRules: ['cnesst_compliance', 'chronological_validation', 'medical_accuracy']
+      structure: 'ai-cnesst-formatting-enhanced',
+      placeholders: ['chronological_order', 'worker_first', 'medical_terminology', 'comprehensive_prompts'],
+      validationRules: ['cnesst_compliance', 'chronological_validation', 'medical_accuracy', 'prompt_injection_validation']
     },
     features: {
       verbatimSupport: false,
       voiceCommandsSupport: false,
       aiFormatting: true,
       postProcessing: true,
-      realtimeProcessing: true
+      realtimeProcessing: true,
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
     },
     configuration: {
       priority: 3,
       timeout: 45,
-      retryAttempts: 2
+      retryAttempts: 2,
+      promptFiles: ['master_prompt', 'json_config', 'golden_example']
     },
     metadata: {
       category: 'section_specific',
-      tags: ['section-7', 'cnesst', 'ai', 'medical'],
-      version: '1.0.0',
-      author: 'CentomoMD'
+      tags: ['section-7', 'cnesst', 'ai', 'medical', 'enhanced', 'flowchart'],
+      version: '2.0.0',
+      author: 'CentomoMD',
+      implementation: '6-step-flowchart'
     }
   },
   'section-7-only': {
@@ -486,7 +496,7 @@ export class TemplateManager {
    */
   hasFeature(templateId: string, feature: keyof TemplateConfig['features']): boolean {
     const template = this.getTemplate(templateId);
-    return template ? template.features[feature] : false;
+    return template ? (template.features[feature] ?? false) : false;
   }
 
   /**
