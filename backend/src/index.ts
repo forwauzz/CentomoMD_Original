@@ -1909,20 +1909,23 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: false,
+        max_speaker_labels: undefined,  // Explicitly disable for Mode 1
         partial_results_stability: 'high' as const
         // vocabulary_name omitted - will be undefined
       };
     case 'smart_dictation':
       return {
         ...config,
-        show_speaker_labels: true,
+        show_speaker_labels: false,  // Changed: Mode 2 should NOT use speaker labels
+        max_speaker_labels: undefined,  // Explicitly disable for Mode 2
         partial_results_stability: 'high' as const
         // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
       return {
         ...config,
-        show_speaker_labels: true,
+        show_speaker_labels: true,  // Mode 3: Enable speaker labels
+        max_speaker_labels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
         partial_results_stability: 'medium' as const
         // vocabulary_name omitted - will be undefined
       };
@@ -1931,6 +1934,7 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: false,
+        max_speaker_labels: undefined,  // Explicitly disable for fallback
         partial_results_stability: 'high' as const
         // vocabulary_name omitted - will be undefined
       };
