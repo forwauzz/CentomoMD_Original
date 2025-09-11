@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from './utils/logger.js';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from './lib/supabaseClient.js';
 import { ENV } from './config/env.js';
 
 // TODO: Define user context interface
@@ -19,12 +19,12 @@ export interface AuthMiddleware {
   (req: Request, res: Response, next: NextFunction): Promise<void | Response>;
 }
 
-// Create Supabase client for token verification
-const supabase = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-
 // JWT verification function using Supabase client
 export const verifySupabaseJWT = async (token: string): Promise<UserContext | null> => {
   try {
+    // Get Supabase client
+    const supabase = getSupabaseClient();
+    
     // Verify token using Supabase client
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
