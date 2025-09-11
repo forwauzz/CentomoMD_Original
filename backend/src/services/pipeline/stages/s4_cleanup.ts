@@ -19,6 +19,9 @@ export class S4Cleanup {
 
     try {
       const cleanupProfile = this.config[profile];
+      if (!cleanupProfile) {
+        throw new Error(`Invalid cleanup profile: ${profile}`);
+      }
       const cleanedTurns = this.cleanTurns(dialog.turns, roleMap, cleanupProfile);
       
       const cleanedDialog: CleanedDialog = {
@@ -84,28 +87,40 @@ export class S4Cleanup {
   }
 
   private removeFillers(text: string, _profile: typeof PIPELINE_CONFIG.cleanupProfiles.default): string {
-    // Common fillers in French and English
-    const fillers = [
-      // French fillers
-      'euh', 'ah', 'oh', 'ben', 'alors', 'donc', 'voilà', 'enfin', 'bref',
-      'hein', 'quoi', 'tu vois', 'tu sais', 'je veux dire', 'genre',
-      // English fillers
-      'um', 'uh', 'ah', 'oh', 'well', 'so', 'like', 'you know', 'i mean',
-      'basically', 'actually', 'literally', 'obviously', 'clearly'
-    ];
+    // Language-specific filler patterns
+    const fillerPatterns = {
+      EN: /\b(um|uh|er|ah|mm|hmm|like)\b/gi,
+      FR: /\b(euh|ben|alors|donc|voilà|heu)\b/gi
+    };
 
     let cleaned = text;
     
-    for (const filler of fillers) {
-      // Remove standalone fillers
-      const regex = new RegExp(`\\b${filler}\\b`, 'gi');
-      cleaned = cleaned.replace(regex, '');
+    // Apply both language patterns (text might contain mixed languages)
+    for (const pattern of Object.values(fillerPatterns)) {
+      cleaned = cleaned.replace(pattern, '');
     }
 
     // Remove repeated fillers
-    cleaned = cleaned.replace(/\b(euh|um|uh)\s+\1+/gi, '');
+    cleaned = cleaned.replace(/\b(euh|um|uh|er|ah|mm|hmm)\s+\1+/gi, '');
+    
+    // Clean up punctuation left behind by filler removal
+    cleaned = cleaned.replace(/,\s*,+/g, ','); // Remove multiple commas
+    cleaned = cleaned.replace(/^\s*,\s*/g, ''); // Remove leading comma
+    cleaned = cleaned.replace(/,\s*$/g, ''); // Remove trailing comma
+    cleaned = cleaned.replace(/,\s*,/g, ','); // Remove double commas
+    cleaned = cleaned.replace(/,\s*,/g, ','); // Remove double commas again
+    cleaned = cleaned.replace(/^\s*,\s*/g, ''); // Remove leading comma again
     
     return cleaned;
+  }
+
+  /**
+   * Preserve medical abbreviations and terms from being removed
+   */
+  private preserveMedicalTokens(text: string): string {
+    // This method ensures medical terms are not accidentally removed
+    // by other cleanup processes
+    return text; // For now, medical preservation is handled in removeRepetitions
   }
 
   private normalizeSpacing(text: string): string {
@@ -135,11 +150,12 @@ export class S4Cleanup {
         if (profile.clinicalGuards.preserveMedicalTerms && currentWord && this.isMedicalTerm(currentWord)) {
           cleaned.push(currentWord);
         }
-        // Skip the repetition
+        // Skip the repetition by incrementing i
+        i++; // Skip the next word since it's a repetition
         continue;
       }
       
-      if (currentWord) {
+      if (currentWord && currentWord.trim()) {
         cleaned.push(currentWord);
       }
     }
@@ -148,15 +164,22 @@ export class S4Cleanup {
   }
 
   private isMedicalTerm(word: string): boolean {
-    // Simple medical term detection (could be expanded)
+    // Medical abbreviations and terms whitelist
     const medicalTerms = [
+      // Medical abbreviations
+      'dr', 'dr.', 'mg', 'ml', 'cc', 'bpm', 'mmhg', 'nsaids', 'nsaid',
+      'pt', 'pt.', 'ptt', 'inr', 'bun', 'creatinine', 'glucose',
+      // Medical terms (French)
       'douleur', 'symptôme', 'diagnostic', 'traitement', 'médicament',
+      'prescription', 'dosage', 'contre-indication', 'effet', 'secondaire',
+      // Medical terms (English)
       'pain', 'symptom', 'diagnosis', 'treatment', 'medication',
-      'mg', 'ml', 'cc', 'mg/kg', 'bpm', 'mmhg'
+      'prescription', 'dosage', 'contraindication', 'side', 'effect',
+      'blood', 'pressure', 'heart', 'rate', 'temperature'
     ];
     
-    const lowerWord = word.toLowerCase();
-    return medicalTerms.some(term => lowerWord.includes(term));
+    const lowerWord = word.toLowerCase().replace(/[.,!?;:]/g, ''); // Remove punctuation
+    return medicalTerms.some(term => lowerWord === term || lowerWord.startsWith(term + '.'));
   }
 
   private countRemovedFillers(original: IrDialog['turns'], cleaned: CleanedTurn[]): number {
