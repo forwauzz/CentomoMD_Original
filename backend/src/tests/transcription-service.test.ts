@@ -2,17 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TranscriptionService } from '../services/transcriptionService.js';
 import { TranscriptionConfig } from '../types/index.js';
 
-// Mock AWS SDK
-const mockSend = vi.fn();
-const mockTranscribeStreamingClient = {
-  send: mockSend
-};
-
-vi.mock('@aws-sdk/client-transcribe-streaming', () => ({
-  TranscribeStreamingClient: vi.fn(() => mockTranscribeStreamingClient),
-  StartStreamTranscriptionCommand: vi.fn((input) => ({ input })),
-  StartStreamTranscriptionCommandInput: vi.fn()
-}));
+// Use global mocks from setup.ts
+const mockSend = (globalThis as any).mockSend;
+const mockTranscribeStreamingClient = (globalThis as any).mockTranscribeStreamingClient;
 
 describe('TranscriptionService AWS Configuration', () => {
   let transcriptionService: TranscriptionService;
