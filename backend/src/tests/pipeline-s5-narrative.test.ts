@@ -365,7 +365,7 @@ describe('S5: Narrative Generation', () => {
         patientTurns: 2,
         clinicianTurns: 1,
         totalDuration: 8.0,
-        wordCount: 6 // bonjour + docteur + comment + allez-vous + je + vais + bien
+        wordCount: 7 // bonjour + docteur + comment + allez-vous + je + vais + bien
       });
     });
 

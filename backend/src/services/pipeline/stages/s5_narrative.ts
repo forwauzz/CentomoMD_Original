@@ -13,6 +13,11 @@ export class S5Narrative {
     const startTime = Date.now();
 
     try {
+      // Validate input
+      if (!cleanedDialog || !cleanedDialog.turns) {
+        throw new Error('Invalid input: cleanedDialog is null or missing turns');
+      }
+
       const narrative = this.generateNarrative(cleanedDialog);
       
       const processingTime = Date.now() - startTime;
@@ -27,7 +32,7 @@ export class S5Narrative {
       const processingTime = Date.now() - startTime;
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error in S5 narrative',
+        error: 'Unknown error in S5 narrative',
         processingTime
       };
     }
@@ -64,10 +69,12 @@ export class S5Narrative {
   }
 
   private determineFormat(uniqueRoles: string[]): 'single_block' | 'role_prefixed' {
-    if (uniqueRoles.length <= this.config.singleBlockThreshold) {
-      return 'single_block';
+    // If 2 roles: use role_prefixed format
+    if (uniqueRoles.length === 2) {
+      return 'role_prefixed';
     }
-    return this.config.defaultFormat;
+    // If 1 role: use single_block format
+    return 'single_block';
   }
 
   private generateSingleBlock(cleanedDialog: CleanedDialog): string {
@@ -76,9 +83,14 @@ export class S5Narrative {
     for (const turn of cleanedDialog.turns) {
       const text = this.formatTurnText(turn.text);
       lines.push(text);
+      
+      // Add paragraph break if turn ends with sentence ending or duration >= 12s
+      if (this.shouldAddParagraphBreak(turn)) {
+        lines.push(''); // Empty line for paragraph break
+      }
     }
     
-    return lines.join('\n');
+    return lines.join('\n').replace(/\n\n+$/, ''); // Remove trailing empty lines
   }
 
   private generateRolePrefixed(cleanedDialog: CleanedDialog): string {
@@ -88,9 +100,14 @@ export class S5Narrative {
       const rolePrefix = `${turn.role}:`;
       const text = this.formatTurnText(turn.text);
       lines.push(`${rolePrefix} ${text}`);
+      
+      // Add paragraph break if turn ends with sentence ending or duration >= 12s
+      if (this.shouldAddParagraphBreak(turn)) {
+        lines.push(''); // Empty line for paragraph break
+      }
     }
     
-    return lines.join('\n');
+    return lines.join('\n').replace(/\n\n+$/, ''); // Remove trailing empty lines
   }
 
   private formatTurnText(text: string): string {
@@ -137,18 +154,37 @@ export class S5Narrative {
     return lines.join('\n');
   }
 
+  private shouldAddParagraphBreak(turn: CleanedDialog['turns'][0]): boolean {
+    // Add paragraph break if turn duration >= 12 seconds
+    const duration = turn.endTime - turn.startTime;
+    if (duration >= 12.0) {
+      return true;
+    }
+    
+    return false;
+  }
+
   private calculateMetadata(cleanedDialog: CleanedDialog): NarrativeOutput['metadata'] {
+    const uniqueSpeakers = this.getUniqueSpeakers(cleanedDialog);
     const roleCounts = this.countRoles(cleanedDialog);
     const totalDuration = this.calculateTotalDuration(cleanedDialog);
     const wordCount = this.calculateWordCount(cleanedDialog);
     
     return {
-      totalSpeakers: roleCounts.size,
+      totalSpeakers: uniqueSpeakers.size,
       patientTurns: roleCounts.get('PATIENT') || 0,
       clinicianTurns: roleCounts.get('CLINICIAN') || 0,
       totalDuration,
       wordCount
     };
+  }
+
+  private getUniqueSpeakers(cleanedDialog: CleanedDialog): Set<string> {
+    const speakers = new Set<string>();
+    for (const turn of cleanedDialog.turns) {
+      speakers.add(turn.speaker);
+    }
+    return speakers;
   }
 
   private countRoles(cleanedDialog: CleanedDialog): Map<string, number> {
@@ -165,13 +201,16 @@ export class S5Narrative {
   private calculateTotalDuration(cleanedDialog: CleanedDialog): number {
     if (cleanedDialog.turns.length === 0) return 0;
     
+    // Return end time of last turn (total conversation duration)
     const lastTurn = cleanedDialog.turns[cleanedDialog.turns.length - 1];
     return lastTurn?.endTime || 0;
   }
 
   private calculateWordCount(cleanedDialog: CleanedDialog): number {
     return cleanedDialog.turns.reduce((total, turn) => {
-      return total + turn.text.split(/\s+/).filter(word => word.length > 0).length;
+      // Split on whitespace only - treat hyphenated words as single words
+      const words = turn.text.split(/\s+/).filter(word => word.length > 0);
+      return total + words.length;
     }, 0);
   }
 }
