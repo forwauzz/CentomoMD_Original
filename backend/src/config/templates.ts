@@ -129,7 +129,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'Basic AI formatting without additional layers',
     type: 'formatting',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing',
@@ -164,7 +164,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'AI formatting with verbatim text support',
     type: 'combination',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing_with_verbatim',
@@ -199,7 +199,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'Complete AI formatting with all features',
     type: 'combination',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing_with_all_features',
@@ -409,7 +409,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'Mode 3 pipeline passthrough - returns narrative directly from S1-S5 processing without additional AI formatting',
     type: 'processing',
     compatibleSections: ['section_7', 'section_8', 'section_11'],
-    compatibleModes: ['mode3'],
+    compatibleModes: ['ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'pipeline-passthrough',
@@ -430,7 +430,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     },
     metadata: {
       category: 'mode_specific',
-      tags: ['mode3', 'transcribe', 'passthrough', 'pipeline'],
+      tags: ['ambient', 'transcribe', 'passthrough', 'pipeline'],
       version: '1.0.0',
       author: 'CentomoMD'
     }

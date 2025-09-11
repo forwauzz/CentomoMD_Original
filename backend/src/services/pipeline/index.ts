@@ -106,7 +106,12 @@ export class Mode3Pipeline {
 
       return {
         success: true,
-        data: artifacts as PipelineArtifacts,
+        data: {
+          ir: artifacts.ir!,
+          roleMap: artifacts.roleMap!,
+          narrative: artifacts.narrative!,
+          processingTime: artifacts.processingTime!
+        },
         processingTime: totalTime
       };
 

@@ -75,7 +75,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId: params.sessionId,
-        modeId: 'mode3',
+        modeId: 'ambient',
         language: params.language,
         section: params.section,
         rawAwsJson: params.rawAwsJson
@@ -649,5 +649,8 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     updateState,
     reconnect,
     setActiveSection,
+    
+    // Expose pipeline helper for testing
+    processMode3Pipeline,
   };
 };
