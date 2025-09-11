@@ -332,6 +332,15 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations[typeof LANGUAGES.FR];
 
+// Language sync helpers
+export const dbLocaleToUi = (db: 'en-CA' | 'fr-CA'): 'en' | 'fr' => {
+  return db === 'fr-CA' ? 'fr' : 'en';
+};
+
+export const uiToDbLocale = (ui: 'fr' | 'en'): 'en-CA' | 'fr-CA' => {
+  return ui === 'fr' ? 'fr-CA' : 'en-CA';
+};
+
 // i18n hook
 export const useI18n = () => {
   const { language } = useUIStore();
