@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/lib/authClient';
+import { supabase, getIntendedPath, clearIntendedPath, decodeState } from '@/lib/authClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
@@ -53,6 +53,42 @@ export const AuthCallback: React.FC = () => {
         const hash = location.hash;
         console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
         
+        // Extract intended path in priority order
+        const getIntendedDestination = () => {
+          // 1. Check URL state parameter (from OAuth)
+          const urlParams = new URLSearchParams(location.search);
+          const stateParam = urlParams.get('state');
+          if (stateParam) {
+            try {
+              const stateData = decodeState(stateParam);
+              if (stateData.intended) {
+                console.log('🔍 Found intended path in OAuth state:', stateData.intended);
+                return stateData.intended;
+              }
+            } catch (error) {
+              console.warn('⚠️ Failed to decode OAuth state:', error);
+            }
+          }
+          
+          // 2. Check localStorage fallback
+          const storedPath = getIntendedPath();
+          if (storedPath) {
+            console.log('🔍 Found intended path in localStorage:', storedPath);
+            return storedPath;
+          }
+          
+          // 3. Check ?redirect param
+          const redirectParam = urlParams.get('redirect');
+          if (redirectParam) {
+            console.log('🔍 Found intended path in redirect param:', redirectParam);
+            return redirectParam;
+          }
+          
+          // 4. Default to root
+          console.log('🔍 No intended path found, defaulting to /');
+          return '/';
+        };
+        
         if (hash) {
           // Parse the hash to extract access_token and refresh_token
           const params = new URLSearchParams(hash.substring(1));
@@ -93,9 +129,12 @@ export const AuthCallback: React.FC = () => {
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
             
-            // Redirect to dashboard after a short delay
+            // Get intended destination and redirect
+            const intendedDestination = getIntendedDestination();
+            clearIntendedPath();
+            
             setTimeout(() => {
-              navigate('/dashboard', { replace: true });
+              navigate(intendedDestination, { replace: true });
             }, 1500);
             
           } else {
@@ -117,8 +156,12 @@ export const AuthCallback: React.FC = () => {
               setStatus('success');
               setMessage('Authentication successful! Redirecting...');
               
+              // Get intended destination and redirect
+              const intendedDestination = getIntendedDestination();
+              clearIntendedPath();
+              
               setTimeout(() => {
-                navigate('/dashboard', { replace: true });
+                navigate(intendedDestination, { replace: true });
               }, 1500);
             } else {
               throw new Error('No session found after authentication');
@@ -144,8 +187,12 @@ export const AuthCallback: React.FC = () => {
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
             
+            // Get intended destination and redirect
+            const intendedDestination = getIntendedDestination();
+            clearIntendedPath();
+            
             setTimeout(() => {
-              navigate('/dashboard', { replace: true });
+              navigate(intendedDestination, { replace: true });
             }, 1500);
           } else {
             // No session and no hash - this might be a direct visit
@@ -157,6 +204,9 @@ export const AuthCallback: React.FC = () => {
         console.error('❌ Auth callback error:', error);
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Authentication failed');
+        
+        // Clear any stored intended path on error
+        clearIntendedPath();
         
         // Redirect back to login after error
         setTimeout(() => {

@@ -17,7 +17,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const { language, setLanguage } = useUIStore();
   const { t } = useI18n();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { profile } = useUserStore();
 
   const getBreadcrumbs = () => {
@@ -53,6 +53,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
 
   const handleBreadcrumbClick = (href: string) => {
     navigate(href);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const breadcrumbs = getBreadcrumbs();
@@ -152,7 +160,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-slate-700 hover:bg-blue-50"
+            onClick={handleLogout}
+            disabled={!user}
+            className="text-slate-700 hover:bg-blue-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+            title={user ? "Sign out" : "Not authenticated"}
           >
             <LogOut className="h-4 w-4" />
           </Button>

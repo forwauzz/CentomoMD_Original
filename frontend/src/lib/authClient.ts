@@ -91,6 +91,27 @@ export const isAuthConfigured = () => {
   return ok;
 };
 
+// Helper functions for intended path preservation
+const getSiteUrl = () => import.meta.env.VITE_SITE_URL || window.location.origin;
+
+const INTENDED_KEY = 'auth_intended_path';
+const saveIntendedPath = (path: string) => localStorage.setItem(INTENDED_KEY, path);
+const getIntendedPath = () => localStorage.getItem(INTENDED_KEY);
+const clearIntendedPath = () => localStorage.removeItem(INTENDED_KEY);
+
+// OAuth state helpers
+const encodeState = (obj: Record<string, any>) => btoa(encodeURIComponent(JSON.stringify(obj)));
+const decodeState = (state: string) => {
+  try { 
+    return JSON.parse(decodeURIComponent(atob(state))); 
+  } catch { 
+    return {}; 
+  }
+};
+
+// Export helpers for use in AuthCallback
+export { getIntendedPath, clearIntendedPath, decodeState };
+
 // Auth hook for session management
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
@@ -180,10 +201,14 @@ export const useAuth = () => {
         return;
       }
 
+      // Capture current path before redirect
+      const intended = window.location.pathname + window.location.search;
+      saveIntendedPath(intended);
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getSiteUrl()}/auth/callback`,
         },
       });
       
@@ -214,10 +239,23 @@ export const useAuth = () => {
         return;
       }
 
+      // Capture current path before redirect
+      const intended = window.location.pathname + window.location.search;
+      saveIntendedPath(intended);
+
+      // Use state parameter for OAuth (preferred method)
+      const state = encodeState({ intended });
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${getSiteUrl()}/auth/callback`,
+          scopes: 'openid email profile',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          },
+          state
         },
       });
       if (error) throw error;
@@ -243,6 +281,21 @@ export const useAuth = () => {
 
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // Clear local app state
+      setState({
+        user: null,
+        session: null,
+        loading: false,
+        error: null,
+      });
+
+      // Clear any stored auth data
+      clearIntendedPath();
+      sessionStorage.clear();
+
+      // Navigate to login
+      window.location.href = '/login';
     } catch (error) {
       setState(prev => ({
         ...prev,

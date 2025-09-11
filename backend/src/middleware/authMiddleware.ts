@@ -1,24 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabaseClient.js';
 import { logger, complianceLogger } from '@/utils/logger.js';
-
-// Initialize Supabase client conditionally
-let supabase: any = null;
-
-const getSupabaseClient = () => {
-  if (!supabase) {
-    const supabaseUrl = process.env['SUPABASE_URL'];
-    const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
-    
-    if (!supabaseUrl || !supabaseKey) {
-      logger.warn('Supabase credentials not configured, using mock authentication');
-      return null;
-    }
-    
-    supabase = createClient(supabaseUrl, supabaseKey);
-  }
-  return supabase;
-};
 
 // Extend Express Request interface to include user
 declare global {
@@ -41,11 +23,12 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const supabaseClient = getSupabaseClient();
-    
-    // If Supabase is not configured, allow access for development
-    if (!supabaseClient) {
-      logger.info('Mock authentication for development');
+    let supabaseClient;
+    try {
+      supabaseClient = getSupabaseClient();
+    } catch (error) {
+      // If Supabase is not configured, allow access for development
+      logger.info('Mock authentication for development - Supabase not configured');
       req.user = {
         id: 'dev-user-id',
         email: 'dev@example.com',
