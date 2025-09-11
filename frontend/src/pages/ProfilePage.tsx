@@ -8,16 +8,19 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, User, Globe, Shield, Mail, Plus } from 'lucide-react';
+import { Loader2, Save, User, Globe, Shield, Mail, Plus, Key } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useUserStore } from '@/stores/userStore';
+import { dbLocaleToUi, uiToDbLocale } from '@/lib/i18n';
+import { supabase } from '@/lib/authClient';
 
-// TODO: Profile types - matches backend API response
+// Profile types - matches backend API response
 interface ProfileData {
   display_name: string;
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;
   consent_marketing: boolean;
+  default_clinic_id?: string;
 }
 
 interface ProfileUpdate {
@@ -25,13 +28,14 @@ interface ProfileUpdate {
   locale?: 'en-CA' | 'fr-CA';
   consent_pipeda?: boolean;
   consent_marketing?: boolean;
+  default_clinic_id?: string;
 }
 
-// TODO: Profile API service functions
+// Profile API service functions
 const profileService = {
   async getProfile(): Promise<ProfileData> {
-    const response = await apiFetch<{ success: boolean; data: ProfileData }>('/api/profile');
-    return response.data;
+    const response = await apiFetch<{ ok: boolean; profile: ProfileData }>('/api/profile');
+    return response.profile;
   },
 
   async updateProfile(updates: ProfileUpdate): Promise<ProfileData> {
@@ -55,12 +59,14 @@ const profileService = {
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { addToast, setLanguage } = useUIStore();
-  const { setProfile: setUserProfile } = useUserStore();
+  const { setProfile: setUserProfile, refreshProfile } = useUserStore();
   const { t } = useI18n();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [hasPasswordAuth, setHasPasswordAuth] = useState(false);
 
   // TODO: Form state for editing
   const [formData, setFormData] = useState<ProfileData>({
@@ -70,10 +76,25 @@ export const ProfilePage: React.FC = () => {
     consent_marketing: false,
   });
 
-  // TODO: Load profile data on component mount
+  // Load profile data on component mount
   useEffect(() => {
     loadProfile();
+    checkPasswordAuth();
   }, []);
+
+  const checkPasswordAuth = async () => {
+    try {
+      if (user?.email) {
+        // Check if user has password authentication enabled
+        // This is a simple check - in a real app you might want to check user metadata
+        // For now, we'll assume password auth is available if user has email
+        setHasPasswordAuth(true);
+      }
+    } catch (error) {
+      console.error('Error checking password auth:', error);
+      setHasPasswordAuth(false);
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -88,12 +109,9 @@ export const ProfilePage: React.FC = () => {
         setFormData(data);
         setErrors({});
         
-        // Update platform language based on profile
-        if (data.locale === 'fr-CA') {
-          setLanguage('fr');
-        } else {
-          setLanguage('en');
-        }
+        // Update platform language based on profile (DB is source of truth)
+        const uiLanguage = dbLocaleToUi(data.locale);
+        setLanguage(uiLanguage);
         
         // Update user store with profile data
         setUserProfile(data);
@@ -200,20 +218,20 @@ export const ProfilePage: React.FC = () => {
       }
 
       const updatedProfile = await profileService.updateProfile(changes);
+      
+      // Optimistic update to stop flicker, then ensure with refresh
+      setUserProfile(updatedProfile);
       setProfile(updatedProfile);
       setFormData(updatedProfile);
       
-      // TODO: Update platform language if locale changed
+      // Update platform language if locale changed (DB is source of truth)
       if (changes.locale) {
-        if (updatedProfile.locale === 'fr-CA') {
-          setLanguage('fr');
-        } else {
-          setLanguage('en');
-        }
+        const uiLanguage = dbLocaleToUi(updatedProfile.locale);
+        setLanguage(uiLanguage);
       }
       
-      // TODO: Update user store with new profile data
-      setUserProfile(updatedProfile);
+      // Ensure store is in sync with server
+      refreshProfile().catch(() => void 0);
       
       addToast({
         type: 'success',
@@ -247,7 +265,42 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  // TODO: Show loading state
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No email address found for password reset'
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/reset-callback`
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setPasswordResetSent(true);
+      addToast({
+        type: 'success',
+        title: 'Password Reset Sent',
+        message: `We sent a password reset link to ${user.email}`
+      });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to send password reset email'
+      });
+    }
+  };
+
+  // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -364,7 +417,52 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* TODO: Save Button */}
+          {/* Password Reset Section */}
+          {hasPasswordAuth && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Key className="h-5 w-5" />
+                <span>Password</span>
+              </h3>
+              
+              {passwordResetSent ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <Mail className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-green-800">
+                        Password Reset Email Sent
+                      </h4>
+                      <p className="text-sm text-green-700 mt-1">
+                        We sent a password reset link to {user?.email}. Check your email and follow the instructions to reset your password.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Reset Password</Label>
+                    <p className="text-sm text-gray-500">
+                      Send a password reset link to your email address
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handlePasswordReset}
+                    className="flex items-center space-x-2"
+                  >
+                    <Key className="h-4 w-4" />
+                    <span>Reset Password</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Save Button */}
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               variant="outline"

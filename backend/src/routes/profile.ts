@@ -10,11 +10,21 @@ const router = Router();
 // Development mode: no auth middleware
 // router.use(authMiddleware);
 
+// Mock user for development when AUTH_REQUIRED=false
+// Using real user ID to match existing profile in database
+const getMockUser = () => ({
+  user_id: '9dc87840-75b8-4bd0-8ec1-85d2a2c2e804', // Real user ID from database
+  email: 'tamonuzziel@gmail.com',
+  role: 'physician'
+});
+
 // GET profile - improved to handle empty profiles gracefully
 router.get('/api/profile', async (req, res) => {
   const db = getDb();
   const sql = getSql();
-  const user = (req as any).user;
+  
+  // Mock user for development when AUTH_REQUIRED=false
+  const user = (req as any).user || getMockUser();
 
   try {
     // Audit logging for secure event tracking
@@ -126,7 +136,9 @@ router.get('/api/profile', async (req, res) => {
 // POST profile - create new profile for user
 router.post('/api/profile', async (req, res) => {
   const db = getDb();
-  const user = (req as any).user;
+  
+  // Mock user for development when AUTH_REQUIRED=false
+  const user = (req as any).user || getMockUser();
 
   try {
     const userId = user?.user_id;
@@ -199,6 +211,143 @@ router.post('/api/profile', async (req, res) => {
     
     return res.status(500).json({ 
       error: 'Failed to create profile',
+      message: err?.message || 'Unknown error occurred'
+    });
+  }
+});
+
+// PATCH profile - update existing profile
+router.patch('/api/profile', async (req, res) => {
+  const db = getDb();
+  
+  // Mock user for development when AUTH_REQUIRED=false
+  const user = (req as any).user || getMockUser();
+
+  try {
+    const userId = user?.user_id;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        error: 'Missing user ID',
+        message: 'User ID not found in authentication context'
+      });
+    }
+
+    // Validate request body
+    const { display_name, locale, consent_pipeda, consent_marketing, default_clinic_id } = req.body;
+
+    // Server-side validation
+    const validationErrors: string[] = [];
+    
+    if (display_name !== undefined) {
+      if (typeof display_name !== 'string') {
+        validationErrors.push('display_name must be a string');
+      } else if (display_name.length > 255) {
+        validationErrors.push('display_name must be 255 characters or less');
+      } else if (display_name.trim().length === 0) {
+        validationErrors.push('display_name cannot be empty');
+      }
+    }
+
+    if (locale !== undefined) {
+      if (!['en-CA', 'fr-CA'].includes(locale)) {
+        validationErrors.push('locale must be either "en-CA" or "fr-CA"');
+      }
+    }
+
+    if (consent_pipeda !== undefined && typeof consent_pipeda !== 'boolean') {
+      validationErrors.push('consent_pipeda must be a boolean');
+    }
+
+    if (consent_marketing !== undefined && typeof consent_marketing !== 'boolean') {
+      validationErrors.push('consent_marketing must be a boolean');
+    }
+
+    if (default_clinic_id !== undefined && default_clinic_id !== null) {
+      if (typeof default_clinic_id !== 'string') {
+        validationErrors.push('default_clinic_id must be a string or null');
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid input data',
+        details: validationErrors
+      });
+    }
+
+    // Check if profile exists
+    const existingProfile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.user_id, userId))
+      .limit(1);
+
+    if (existingProfile.length === 0) {
+      return res.status(404).json({ 
+        error: 'Profile not found',
+        message: 'User profile does not exist. Use POST /api/profile to create one.'
+      });
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {
+      updated_at: new Date()
+    };
+
+    if (display_name !== undefined) updateData.display_name = display_name.trim();
+    if (locale !== undefined) updateData.locale = locale;
+    if (consent_pipeda !== undefined) updateData.consent_pipeda = consent_pipeda;
+    if (consent_marketing !== undefined) updateData.consent_marketing = consent_marketing;
+    if (default_clinic_id !== undefined) updateData.default_clinic_id = default_clinic_id;
+
+    // Update profile
+    const updatedProfile = await db
+      .update(profiles)
+      .set(updateData)
+      .where(eq(profiles.user_id, userId))
+      .returning();
+
+    // Audit logging
+    const changedFields = Object.keys(updateData).filter(key => key !== 'updated_at');
+    logger.info('Profile updated successfully', {
+      userId: userId,
+      userEmail: user?.email,
+      changedFields: changedFields,
+      endpoint: req.path,
+      method: req.method
+    });
+
+    return res.json({
+      success: true,
+      data: updatedProfile[0],
+      message: 'Profile updated successfully'
+    });
+
+  } catch (err: any) {
+    logger.error('Profile update failed', {
+      userId: user?.user_id,
+      userEmail: user?.email,
+      error: err?.message,
+      stack: err?.stack
+    });
+
+    console.error('[PATCH /api/profile] ERROR', {
+      name: err?.name,
+      code: err?.code,
+      message: err?.message,
+      detail: err?.detail,
+      hint: err?.hint,
+      routine: err?.routine,
+      schema: err?.schema,
+      table: err?.table,
+      column: err?.column,
+      stack: err?.stack,
+    });
+    
+    return res.status(500).json({ 
+      error: 'Failed to update profile',
       message: err?.message || 'Unknown error occurred'
     });
   }

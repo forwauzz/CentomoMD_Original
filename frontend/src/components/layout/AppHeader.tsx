@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Globe, Bell, User, LogOut, ChevronRight, Home, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,9 @@ import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/lib/i18n';
 import { ROUTES } from '@/lib/constants';
 import { useAuth } from '@/lib/authClient';
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore, useEnsureProfileLoaded } from '@/stores/userStore';
+import { resolveDisplayName } from '@/lib/resolveDisplayName';
+import { supabase } from '@/lib/authClient';
 
 interface AppHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -18,7 +20,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   const { language, setLanguage } = useUIStore();
   const { t } = useI18n();
   const { user, signOut } = useAuth();
-  const { profile } = useUserStore();
+  const profile = useUserStore((s) => s.profile);
+  const refreshProfile = useUserStore((s) => s.refreshProfile);
+  const [authUser, setAuthUser] = useState<import('@supabase/supabase-js').User | null>(null);
+
+  // Ensure profile is loaded on first render
+  useEnsureProfileLoaded();
+
+  // Keep a live view of the auth user (for fallback only)
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => mounted && setAuthUser(data.user ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthUser(session?.user ?? null);
+      // After login/logout, refresh the profile row to avoid stale header
+      refreshProfile().catch(() => void 0);
+    });
+    return () => { 
+      mounted = false; 
+      sub?.subscription.unsubscribe(); 
+    };
+  }, [refreshProfile]);
 
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -65,16 +88,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
 
   const breadcrumbs = getBreadcrumbs();
 
-  // Get display name from profile or auth user
-  const getDisplayName = () => {
-    if (profile?.display_name) {
-      return profile.display_name;
-    }
-    if (user?.name) {
-      return user.name;
-    }
-    return 'Unknown User';
-  };
+  // Use the centralized display name resolver
+  const name = useMemo(() => resolveDisplayName(profile, authUser), [profile, authUser]);
+
+  // Development diagnostics
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.table({
+      profile_display_name: profile?.display_name,
+      auth_meta_name: authUser?.user_metadata?.full_name || authUser?.user_metadata?.name,
+      auth_email: authUser?.email,
+      final: name,
+    });
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -152,7 +178,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
               className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
             >
               <User className="h-4 w-4" />
-              <span className="hidden lg:inline">{getDisplayName()}</span>
+              <span className="hidden lg:inline">{name}</span>
             </Button>
           </div>
 
