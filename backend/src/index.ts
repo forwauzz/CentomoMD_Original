@@ -26,7 +26,9 @@ import { securityMiddleware } from './server/security.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
-import { bootProbe } from './database/connection.js';
+import { bootProbe, getDb } from './database/connection.js';
+import { artifacts } from './database/schema.js';
+import { eq, desc } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
 import { logger } from './utils/logger.js';
 
@@ -1965,19 +1967,37 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
       return;
     }
 
+    // result from pipeline
+    const { data, processingTime } = result;
+
+    // Basic shape validation
+    if (!data || !data.ir || !data.roleMap || !data.narrative) {
+      return res.status(500).json({ error: 'Pipeline returned incomplete artifacts' });
+    }
+
+    // Persist
+    const db = getDb();
+    await db.insert(artifacts).values({
+      session_id: sessionId,
+      ir: data.ir,
+      role_map: data.roleMap,
+      narrative: data.narrative,
+      processing_time: data.processingTime || { total: processingTime }
+    });
+
     // Return pipeline artifacts
     res.json({
-      narrative: result.data?.narrative,
+      narrative: data.narrative,
       irSummary: {
-        turnCount: result.data?.ir.turns.length,
-        speakerCount: result.data?.ir.metadata.speakerCount,
-        totalDuration: result.data?.ir.metadata.totalDuration
+        turnCount: data.ir.turns.length,
+        speakerCount: data.ir.metadata.speakerCount,
+        totalDuration: data.ir.metadata.totalDuration
       },
-      roleMap: result.data?.roleMap,
+      roleMap: data.roleMap,
       meta: {
-        processingTime: result.data?.processingTime,
-        profile: result.data?.cleaned.profile,
-        success: true
+        processingTime: data.processingTime,
+        success: true,
+        saved: true
       }
     });
 
@@ -2002,14 +2022,19 @@ app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
       return;
     }
 
-    // TODO: Implement database retrieval of artifacts
-    // For now, return mock data structure
-    res.json({
-      ir: null, // Would be retrieved from database
-      role_map: null, // Would be retrieved from database  
-      narrative: null, // Would be retrieved from database
-      message: 'Artifacts endpoint ready - database integration pending'
-    });
+    // Get database instance
+    const db = getDb();
+    
+    const rows = await db.select().from(artifacts)
+      .where(eq(artifacts.session_id, sessionId))
+      .orderBy(desc(artifacts.created_at))
+      .limit(1);
+
+    if (!rows.length) {
+      return res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+    }
+    const a = rows[0];
+    return res.json({ ir: a.ir, role_map: a.role_map, narrative: a.narrative, processing_time: a.processing_time });
 
   } catch (error) {
     console.error('Get session artifacts error:', error);

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, json, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer, json, jsonb, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table
@@ -136,6 +136,17 @@ export const export_history = pgTable('export_history', {
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Artifacts table for Mode 3 pipeline outputs
+export const artifacts = pgTable('artifacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  session_id: uuid('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  ir: jsonb('ir').notNull(),
+  role_map: jsonb('role_map').notNull(),
+  narrative: jsonb('narrative').notNull(),
+  processing_time: jsonb('processing_time'),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -178,6 +189,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   transcripts: many(transcripts),
   audit_logs: many(audit_logs),
   export_history: many(export_history),
+  artifacts: many(artifacts),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -224,6 +236,13 @@ export const exportHistoryRelations = relations(export_history, ({ one }) => ({
   }),
 }));
 
+export const artifactsRelations = relations(artifacts, ({ one }) => ({
+  session: one(sessions, {
+    fields: [artifacts.session_id],
+    references: [sessions.id],
+  }),
+}));
+
 // Database schema type
 export type DatabaseSchema = {
   users: typeof users;
@@ -236,6 +255,7 @@ export type DatabaseSchema = {
   clinics: typeof clinics;
   voice_command_mappings: typeof voice_command_mappings;
   export_history: typeof export_history;
+  artifacts: typeof artifacts;
 };
 
 // Row types
@@ -259,3 +279,5 @@ export type VoiceCommandMapping = typeof voice_command_mappings.$inferSelect;
 export type NewVoiceCommandMapping = typeof voice_command_mappings.$inferInsert;
 export type ExportHistory = typeof export_history.$inferSelect;
 export type NewExportHistory = typeof export_history.$inferInsert;
+export type Artifact = typeof artifacts.$inferSelect;
+export type NewArtifact = typeof artifacts.$inferInsert;

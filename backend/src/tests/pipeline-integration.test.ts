@@ -428,5 +428,154 @@ describe('Mode 3 Pipeline Integration', () => {
       expect(endTime - startTime).toBeLessThan(1000); // Should complete within 1 second
       expect(result.data!.processingTime.total).toBeLessThan(1000);
     });
+
+    it('should return standardized artifacts structure in result.data', async () => {
+      const awsResult: AWSTranscribeResult = {
+        speaker_labels: {
+          segments: [
+            {
+              start_time: '0.0',
+              end_time: '3.0',
+              speaker_label: 'spk_0',
+              items: [
+                {
+                  start_time: '0.0',
+                  end_time: '1.5',
+                  speaker_label: 'spk_0'
+                },
+                {
+                  start_time: '1.5',
+                  end_time: '3.0',
+                  speaker_label: 'spk_0'
+                }
+              ]
+            }
+          ]
+        },
+        results: {
+          items: [
+            {
+              start_time: '0.0',
+              end_time: '1.5',
+              alternatives: [{ confidence: '0.90', content: 'Bonjour' }],
+              type: 'pronunciation'
+            },
+            {
+              start_time: '1.5',
+              end_time: '3.0',
+              alternatives: [{ confidence: '0.85', content: 'docteur' }],
+              type: 'pronunciation'
+            }
+          ]
+        }
+      };
+
+      const result = await pipeline.execute(awsResult, 'default');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      // Assert standardized structure
+      expect(result.data!.ir).toBeDefined();
+      expect(result.data!.roleMap).toBeDefined();
+      expect(result.data!.narrative).toBeDefined();
+      expect(result.data!.processingTime).toBeDefined();
+
+      // Assert specific artifact types
+      expect(result.data!.ir).toHaveProperty('turns');
+      expect(result.data!.ir).toHaveProperty('metadata');
+      expect(Array.isArray(result.data!.ir.turns)).toBe(true);
+      
+      expect(typeof result.data!.roleMap).toBe('object');
+      expect(result.data!.roleMap).not.toBeNull();
+      
+      expect(result.data!.narrative).toHaveProperty('content');
+      expect(result.data!.narrative).toHaveProperty('format');
+      
+      expect(result.data!.processingTime).toHaveProperty('s1_ingest');
+      expect(result.data!.processingTime).toHaveProperty('s2_merge');
+      expect(result.data!.processingTime).toHaveProperty('s3_role_map');
+      expect(result.data!.processingTime).toHaveProperty('s4_cleanup');
+      expect(result.data!.processingTime).toHaveProperty('s5_narrative');
+      expect(result.data!.processingTime).toHaveProperty('total');
+      
+      // Assert processing times are numbers
+      expect(typeof result.data!.processingTime.s1_ingest).toBe('number');
+      expect(typeof result.data!.processingTime.s2_merge).toBe('number');
+      expect(typeof result.data!.processingTime.s3_role_map).toBe('number');
+      expect(typeof result.data!.processingTime.s4_cleanup).toBe('number');
+      expect(typeof result.data!.processingTime.s5_narrative).toBe('number');
+      expect(typeof result.data!.processingTime.total).toBe('number');
+    });
+
+    it('should return data.ir, data.roleMap, data.narrative with correct structure', async () => {
+      const awsResult: AWSTranscribeResult = {
+        speaker_labels: {
+          segments: [
+            {
+              start_time: '0.0',
+              end_time: '2.5',
+              speaker_label: 'spk_0',
+              items: [
+                {
+                  start_time: '0.0',
+                  end_time: '2.5',
+                  speaker_label: 'spk_0'
+                }
+              ]
+            }
+          ]
+        },
+        results: {
+          items: [
+            {
+              start_time: '0.0',
+              end_time: '2.5',
+              alternatives: [{ confidence: '0.95', content: 'Bonjour docteur' }],
+              type: 'pronunciation'
+            }
+          ]
+        }
+      };
+
+      const result = await pipeline.execute(awsResult, 'default');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+
+      // Test data.ir structure
+      expect(result.data!.ir).toBeDefined();
+      expect(result.data!.ir).toHaveProperty('turns');
+      expect(result.data!.ir).toHaveProperty('metadata');
+      expect(Array.isArray(result.data!.ir.turns)).toBe(true);
+      expect(result.data!.ir.turns.length).toBeGreaterThan(0);
+      expect(result.data!.ir.metadata).toHaveProperty('speakerCount');
+      expect(result.data!.ir.metadata).toHaveProperty('totalDuration');
+
+      // Test data.roleMap structure
+      expect(result.data!.roleMap).toBeDefined();
+      expect(typeof result.data!.roleMap).toBe('object');
+      expect(result.data!.roleMap).not.toBeNull();
+      // Should have speaker mappings like 'spk_0': 'PATIENT'
+      const roleMapKeys = Object.keys(result.data!.roleMap);
+      expect(roleMapKeys.length).toBeGreaterThan(0);
+      roleMapKeys.forEach(key => {
+        expect(['PATIENT', 'CLINICIAN']).toContain(result.data!.roleMap[key]);
+      });
+
+      // Test data.narrative structure
+      expect(result.data!.narrative).toBeDefined();
+      expect(result.data!.narrative).toHaveProperty('content');
+      expect(result.data!.narrative).toHaveProperty('format');
+      expect(typeof result.data!.narrative.content).toBe('string');
+      expect(result.data!.narrative.content.length).toBeGreaterThan(0);
+      expect(['role_prefixed', 'single_block']).toContain(result.data!.narrative.format);
+
+      // Test data.processingTime structure
+      expect(result.data!.processingTime).toBeDefined();
+      expect(result.data!.processingTime).toHaveProperty('total');
+      expect(typeof result.data!.processingTime.total).toBe('number');
+      expect(result.data!.processingTime.total).toBeGreaterThan(0);
+    });
   });
 });
