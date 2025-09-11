@@ -68,16 +68,16 @@ export class S1IngestAWS {
       const speaker = segment.speaker_label;
 
       // Find corresponding text items for this segment
-      const segmentText = this.extractTextForSegment(segment, items);
+      const segmentResult = this.extractTextForSegment(segment, items);
       
-      if (segmentText.trim()) {
+      if (segmentResult.text.trim()) {
         const confidence = this.calculateSegmentConfidence(segment, items);
         
         turns.push({
           speaker,
           startTime,
-          endTime,
-          text: segmentText,
+          endTime: segmentResult.endTime, // Use actual end time from last word
+          text: segmentResult.text,
           confidence,
           isPartial: false
         });
@@ -91,66 +91,135 @@ export class S1IngestAWS {
   private extractTextForSegment(
     segment: AWSSpeakerSegment, 
     items: AWSTranscriptItem[]
-  ): string {
-    const segmentItems = segment.items;
-    const textParts: string[] = [];
-
-    for (const segmentItem of segmentItems) {
-      const itemStart = segmentItem.start_time ? parseFloat(segmentItem.start_time) : 0;
-      const itemEnd = segmentItem.end_time ? parseFloat(segmentItem.end_time) : 0;
-
-      // Find matching transcript item
-      const transcriptItem = items.find(item => {
+  ): { text: string; endTime: number } {
+    const segmentStartTime = parseFloat(segment.start_time);
+    const segmentEndTime = parseFloat(segment.end_time);
+    
+    // First, collect all pronunciation items within this segment
+    const segmentWords: Array<{ content: string; startTime: number; endTime: number; index: number }> = [];
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'pronunciation' && item.alternatives[0]?.content) {
         const itemStartTime = item.start_time ? parseFloat(item.start_time) : 0;
         const itemEndTime = item.end_time ? parseFloat(item.end_time) : 0;
         
-        return Math.abs(itemStartTime - itemStart) < 0.1 && 
-               Math.abs(itemEndTime - itemEnd) < 0.1;
-      });
-
-      if (transcriptItem && transcriptItem.alternatives.length > 0) {
-        const content = transcriptItem.alternatives[0]?.content;
-        if (content) {
-          if (transcriptItem.type === 'pronunciation') {
-            textParts.push(content);
-          } else if (transcriptItem.type === 'punctuation') {
-            // Add punctuation without space
-            textParts.push(content);
-          }
+        if (itemStartTime < segmentEndTime && itemEndTime > segmentStartTime) {
+          segmentWords.push({
+            content: item.alternatives[0].content,
+            startTime: itemStartTime,
+            endTime: itemEndTime,
+            index: i
+          });
         }
       }
     }
 
-    return textParts.join(' ');
+    if (segmentWords.length === 0) {
+      return { text: '', endTime: segmentStartTime };
+    }
+
+    // Sort by start time
+    segmentWords.sort((a, b) => a.startTime - b.startTime);
+
+    // Build text by joining words and attaching punctuation
+    let text = '';
+    let lastEndTime = segmentStartTime;
+
+    for (let i = 0; i < segmentWords.length; i++) {
+      const word = segmentWords[i];
+      
+      // Add space before word if there's previous content
+      if (text) {
+        text += ' ';
+      }
+      text += word.content;
+      lastEndTime = word.endTime;
+
+      // Look for punctuation items that come after this word
+      for (let j = word.index + 1; j < items.length; j++) {
+        const nextItem = items[j];
+        if (nextItem.type === 'punctuation' && nextItem.alternatives[0]?.content) {
+          const punct = nextItem.alternatives[0].content;
+          // Skip space-only punctuation (it's handled by word spacing)
+          if (punct.trim() === '' || punct === ' ') {
+            continue;
+          }
+          // Attach punctuation if we haven't already attached it
+          if (!text.endsWith(punct)) {
+            text = this.joinWordAndPunct(text, punct);
+          }
+        } else if (nextItem.type === 'pronunciation') {
+          // Stop at the next pronunciation item
+          break;
+        }
+      }
+    }
+
+    return { text: text.trim(), endTime: lastEndTime };
+  }
+
+  /**
+   * Helper to properly join words and punctuation with correct spacing
+   */
+  private joinWordAndPunct(prevText: string, punct: string): string {
+    if (!prevText) return punct;
+    
+    // Remove trailing space if present
+    const trimmed = prevText.trimEnd();
+    
+    // Punctuation that attaches directly (no space before)
+    const directAttachPunct = ['.', ',', '?', '!', ';', ':'];
+    
+    if (directAttachPunct.includes(punct)) {
+      return trimmed + punct;
+    }
+    
+    // Other punctuation gets a space
+    return trimmed + ' ' + punct;
+  }
+
+  /**
+   * Helper to check if text ends with punctuation
+   */
+  private endsWithPunctuation(text: string): boolean {
+    const punct = ['.', ',', '?', '!', ';', ':'];
+    return punct.some(p => text.endsWith(p));
   }
 
   private calculateSegmentConfidence(
     segment: AWSSpeakerSegment, 
     items: AWSTranscriptItem[]
   ): number {
+    const segmentStartTime = parseFloat(segment.start_time);
+    const segmentEndTime = parseFloat(segment.end_time);
+    
+    // Get all pronunciation items that fall within this segment's time range
+    const segmentItems = items.filter(item => {
+      const itemStartTime = item.start_time ? parseFloat(item.start_time) : 0;
+      const itemEndTime = item.end_time ? parseFloat(item.end_time) : 0;
+      
+      return item.type === 'pronunciation' && 
+             itemStartTime < segmentEndTime && 
+             itemEndTime > segmentStartTime;
+    });
+
+    if (segmentItems.length === 0) return 0;
+
     let totalConfidence = 0;
-    let itemCount = 0;
+    let totalDuration = 0;
 
-    for (const segmentItem of segment.items) {
-      const itemStart = segmentItem.start_time ? parseFloat(segmentItem.start_time) : 0;
-      const itemEnd = segmentItem.end_time ? parseFloat(segmentItem.end_time) : 0;
-
-      const transcriptItem = items.find(item => {
-        const itemStartTime = item.start_time ? parseFloat(item.start_time) : 0;
-        const itemEndTime = item.end_time ? parseFloat(item.end_time) : 0;
-        
-        return Math.abs(itemStartTime - itemStart) < 0.1 && 
-               Math.abs(itemEndTime - itemEnd) < 0.1;
-      });
-
-      if (transcriptItem && transcriptItem.alternatives.length > 0) {
-        const confidence = parseFloat(transcriptItem.alternatives[0]?.confidence || '0');
-        totalConfidence += confidence;
-        itemCount++;
-      }
+    for (const item of segmentItems) {
+      const itemStartTime = item.start_time ? parseFloat(item.start_time) : 0;
+      const itemEndTime = item.end_time ? parseFloat(item.end_time) : 0;
+      const itemDuration = itemEndTime - itemStartTime;
+      const confidence = parseFloat(item.alternatives[0]?.confidence || '0');
+      
+      totalConfidence += confidence * itemDuration;
+      totalDuration += itemDuration;
     }
 
-    return itemCount > 0 ? totalConfidence / itemCount : 0;
+    return totalDuration > 0 ? totalConfidence / totalDuration : 0;
   }
 
   private calculateTotalDuration(turns: IrTurn[]): number {

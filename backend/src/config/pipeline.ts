@@ -15,9 +15,9 @@ export const PIPELINE_CONFIG = {
 
   // S2: Merge configuration
   merge: {
-    maxGapSeconds: 2.0,
+    maxGapSeconds: 1.0,      // MERGE_GAP_SEC
     minTurnDuration: 0.5,
-    maxTurnDuration: 30.0,
+    maxTurnDuration: 15.0,   // MAX_TURN_SEC
   },
 
   // S3: Role mapping configuration
