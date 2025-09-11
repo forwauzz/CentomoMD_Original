@@ -35,5 +35,9 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.13",
+    "openai": "^5.19.1"
   }
 }
