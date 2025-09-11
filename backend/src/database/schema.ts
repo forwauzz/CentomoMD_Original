@@ -19,6 +19,7 @@ export const profiles = pgTable('profiles', {
   locale: text('locale', { enum: ['en-CA', 'fr-CA'] }).notNull().default('fr-CA'),
   consent_pipeda: boolean('consent_pipeda').notNull().default(false),
   consent_marketing: boolean('consent_marketing').notNull().default(false),
+  default_clinic_id: uuid('default_clinic_id').references(() => clinics.id, { onDelete: 'set null' }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
