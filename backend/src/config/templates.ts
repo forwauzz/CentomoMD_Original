@@ -129,7 +129,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'Basic AI formatting without additional layers',
     type: 'formatting',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing',
@@ -164,7 +164,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'AI formatting with verbatim text support',
     type: 'combination',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing_with_verbatim',
@@ -199,7 +199,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     descriptionEn: 'Complete AI formatting with all features',
     type: 'combination',
     compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
-    compatibleModes: ['mode2', 'mode3'],
+    compatibleModes: ['mode2', 'ambient'],
     supportedLanguages: ['fr', 'en'],
     content: {
       structure: 'ai_processing_with_all_features',
@@ -397,6 +397,40 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     metadata: {
       category: 'section_specific',
       tags: ['history-evolution', 'cnesst', 'ai', 'medical', 'injury-tracking'],
+      version: '1.0.0',
+      author: 'CentomoMD'
+    }
+  },
+  'mode3-transcribe-passthrough': {
+    id: 'mode3-transcribe-passthrough',
+    name: 'Mode 3 Transcribe Passthrough',
+    nameEn: 'Mode 3 Transcribe Passthrough',
+    description: 'Mode 3 pipeline passthrough - returns narrative directly from S1-S5 processing without additional AI formatting',
+    descriptionEn: 'Mode 3 pipeline passthrough - returns narrative directly from S1-S5 processing without additional AI formatting',
+    type: 'processing',
+    compatibleSections: ['section_7', 'section_8', 'section_11'],
+    compatibleModes: ['ambient'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'pipeline-passthrough',
+      placeholders: ['narrative_content', 'role_prefixes'],
+      validationRules: ['narrative_format', 'role_consistency']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: false, // No LLM - just passthrough
+      postProcessing: false,
+      realtimeProcessing: false
+    },
+    configuration: {
+      priority: 1,
+      timeout: 30,
+      retryAttempts: 1
+    },
+    metadata: {
+      category: 'mode_specific',
+      tags: ['ambient', 'transcribe', 'passthrough', 'pipeline'],
       version: '1.0.0',
       author: 'CentomoMD'
     }

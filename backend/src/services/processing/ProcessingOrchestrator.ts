@@ -695,11 +695,97 @@ export class ProcessingOrchestrator {
   /**
    * Apply mode-specific processing
    */
-  private async applyModeProcessing(content: string, mode: ModeConfig, _request: ProcessingRequest): Promise<string> {
-    // This would integrate with the existing mode processing logic
-    // For now, return content as-is
+  private async applyModeProcessing(content: string, mode: ModeConfig, request: ProcessingRequest): Promise<string> {
     console.log(`Applying mode processing: ${mode.id}`);
+    
+    // Route to mode-specific processing
+    switch (mode.id) {
+      case 'mode1':
+        return await this.processMode1(content, request);
+      case 'mode2':
+        return await this.processMode2(content, request);
+      case 'mode3':
+        return await this.processMode3(content, request);
+      default:
+        console.warn(`Unknown mode: ${mode.id}, returning content as-is`);
+        return content;
+    }
+  }
+
+  /**
+   * Process Mode 1 (Word-for-Word)
+   */
+  private async processMode1(content: string, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    console.log(`[${correlationId}] Processing Mode 1 (Word-for-Word)`);
+    
+    // Mode 1 processing logic would go here
+    // For now, return content as-is
     return content;
+  }
+
+  /**
+   * Process Mode 2 (Smart Dictation)
+   */
+  private async processMode2(content: string, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    console.log(`[${correlationId}] Processing Mode 2 (Smart Dictation)`);
+    
+    // Mode 2 processing logic would go here
+    // For now, return content as-is
+    return content;
+  }
+
+  /**
+   * Process Mode 3 (Ambient/Transcribe) - S1→S5 Pipeline
+   */
+  private async processMode3(content: string, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    console.log(`[${correlationId}] Processing Mode 3 (Ambient/Transcribe)`);
+    
+    try {
+      // Import Mode3Pipeline dynamically to avoid circular dependencies
+      const { Mode3Pipeline } = await import('../pipeline/index.js');
+      const pipeline = new Mode3Pipeline();
+      
+      // Parse content as AWS Transcribe result
+      let awsResult;
+      try {
+        awsResult = JSON.parse(content);
+      } catch (parseError) {
+        console.error(`[${correlationId}] Failed to parse AWS Transcribe result:`, parseError);
+        throw new Error('Invalid AWS Transcribe JSON format');
+      }
+      
+      // Validate AWS result
+      const validation = pipeline.validateAWSResult(awsResult);
+      if (!validation.valid) {
+        console.error(`[${correlationId}] AWS result validation failed:`, validation.errors);
+        throw new Error(`Invalid AWS result: ${validation.errors.join(', ')}`);
+      }
+      
+      // Execute S1→S5 pipeline
+      const result = await pipeline.execute(awsResult, 'default');
+      
+      if (!result.success) {
+        console.error(`[${correlationId}] Mode 3 pipeline failed:`, result.error);
+        throw new Error(`Pipeline failed: ${result.error}`);
+      }
+      
+      console.log(`[${correlationId}] Mode 3 pipeline completed successfully`, {
+        processingTime: result.processingTime,
+        narrativeFormat: result.data?.narrative.format,
+        speakerCount: result.data?.narrative.metadata.totalSpeakers
+      });
+      
+      // Return the narrative content
+      return result.data?.narrative.content || content;
+      
+    } catch (error) {
+      console.error(`[${correlationId}] Mode 3 processing error:`, error);
+      // Return original content if processing fails
+      return content;
+    }
   }
 }
 

@@ -26,7 +26,9 @@ import { securityMiddleware } from './server/security.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
-import { bootProbe } from './database/connection.js';
+import { bootProbe, getDb } from './database/connection.js';
+import { artifacts } from './database/schema.js';
+import { eq, desc } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
 import { logger } from './utils/logger.js';
 
@@ -1897,6 +1899,185 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
   }
 });
 
+// Mode 3 Transcribe Processing Endpoint
+app.post('/api/transcribe/process', async (req, res): Promise<void> => {
+  try {
+    const { sessionId, modeId, language, section, rawAwsJson } = req.body;
+    
+    if (!sessionId || !modeId || !language || !section || !rawAwsJson) {
+      res.status(400).json({ 
+        error: 'Missing required fields: sessionId, modeId, language, section, rawAwsJson' 
+      });
+      return;
+    }
+
+    if (modeId !== 'ambient') {
+      res.status(400).json({ 
+        error: 'This endpoint only supports ambient mode' 
+      });
+      return;
+    }
+
+    if (!['section_7', 'section_8', 'section_11'].includes(section)) {
+      res.status(400).json({ 
+        error: 'Section must be "section_7", "section_8", or "section_11"' 
+      });
+      return;
+    }
+
+    if (!['fr', 'en'].includes(language)) {
+      res.status(400).json({ 
+        error: 'Language must be either "fr" or "en"' 
+      });
+      return;
+    }
+
+    // Import Mode3Pipeline dynamically
+    const { Mode3Pipeline } = await import('./services/pipeline/index.js');
+    const pipeline = new Mode3Pipeline();
+    
+    // Parse and validate AWS result
+    let awsResult;
+    try {
+      awsResult = typeof rawAwsJson === 'string' ? JSON.parse(rawAwsJson) : rawAwsJson;
+    } catch (parseError) {
+      res.status(400).json({ 
+        error: 'Invalid AWS Transcribe JSON format' 
+      });
+      return;
+    }
+
+    const validation = pipeline.validateAWSResult(awsResult);
+    if (!validation.valid) {
+      res.status(400).json({ 
+        error: 'Invalid AWS result', 
+        details: validation.errors 
+      });
+      return;
+    }
+
+    // Execute S1→S5 pipeline
+    const result = await pipeline.execute(awsResult, 'default');
+    
+    if (!result.success) {
+      res.status(500).json({ 
+        error: 'Pipeline processing failed', 
+        details: result.error 
+      });
+      return;
+    }
+
+    // result from pipeline
+    const { data, processingTime } = result;
+
+    // Basic shape validation
+    if (!data || !data.ir || !data.roleMap || !data.narrative) {
+      return res.status(500).json({ error: 'Pipeline returned incomplete artifacts' });
+    }
+
+    // Persist
+    const db = getDb();
+    await db.insert(artifacts).values({
+      session_id: sessionId,
+      ir: data.ir,
+      role_map: data.roleMap,
+      narrative: data.narrative,
+      processing_time: data.processingTime || { total: processingTime }
+    });
+
+    // Return pipeline artifacts
+    res.json({
+      narrative: data.narrative,
+      irSummary: {
+        turnCount: data.ir.turns.length,
+        speakerCount: data.ir.metadata.speakerCount,
+        totalDuration: data.ir.metadata.totalDuration
+      },
+      roleMap: data.roleMap,
+      meta: {
+        processingTime: data.processingTime,
+        success: true,
+        saved: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Mode 3 transcribe processing error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process transcribe data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get Session Artifacts Endpoint
+app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!sessionId) {
+      res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+      return;
+    }
+
+    // Get database instance
+    const db = getDb();
+    
+    const rows = await db.select().from(artifacts)
+      .where(eq(artifacts.session_id, sessionId))
+      .orderBy(desc(artifacts.created_at))
+      .limit(1);
+
+    if (!rows.length) {
+      return res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+    }
+    const a = rows[0];
+    return res.json({ ir: a.ir, role_map: a.role_map, narrative: a.narrative, processing_time: a.processing_time });
+
+  } catch (error) {
+    console.error('Get session artifacts error:', error);
+    res.status(500).json({ 
+      error: 'Failed to retrieve session artifacts',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Role Swap Endpoint (Admin/Support only)
+app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!sessionId) {
+      res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+      return;
+    }
+
+    // TODO: Implement role swap logic
+    // 1. Retrieve current role map from database
+    // 2. Apply role swap using S3RoleMap.applyRoleSwap()
+    // 3. Re-run S5 narrative generation
+    // 4. Update database with new narrative
+    
+    res.json({
+      message: 'Role swap endpoint ready - database integration pending',
+      sessionId,
+      note: 'This endpoint will flip PATIENT ↔ CLINICIAN roles and regenerate narrative'
+    });
+
+  } catch (error) {
+    console.error('Role swap error:', error);
+    res.status(500).json({ 
+      error: 'Failed to swap roles',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Phase 0: Mode-specific AWS configuration function
 const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   const config = {
@@ -1910,19 +2091,22 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
         ...config,
         show_speaker_labels: false,
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
     case 'smart_dictation':
       return {
         ...config,
-        show_speaker_labels: true,
+        show_speaker_labels: false,  // Changed: Mode 2 should NOT use speaker labels
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
       return {
         ...config,
-        show_speaker_labels: true,
+        show_speaker_labels: true,  // Mode 3: Enable speaker labels
+        max_speaker_labels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
         partial_results_stability: 'medium' as const
         // vocabulary_name omitted - will be undefined
       };
@@ -1932,6 +2116,7 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
         ...config,
         show_speaker_labels: false,
         partial_results_stability: 'high' as const
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
   }
@@ -2013,17 +2198,30 @@ wss.on('connection', (ws, req) => {
           transcriptionService.startStreamingTranscription(
             sessionId,
             modeConfig,
-            (res) => ws.send(JSON.stringify({ 
-              type: 'transcription_result', 
-              resultId: res.resultId,                         // stable key
-              startTime: res.startTime ?? null,
-              endTime: res.endTime ?? null,
-              text: res.transcript, 
-              isFinal: !res.is_partial,
-              language_detected: res.language_detected,
-              confidence_score: res.confidence_score,
-              speaker: res.speaker                           // PATIENT vs CLINICIAN
-            })),
+            (res) => {
+              // Check if this is the final AWS result for Mode 3
+              if (res.resultId === 'final_aws_result' && res.awsResult && msg.mode === 'ambient') {
+                console.log(`[${sessionId}] Sending final AWS result for Mode 3 pipeline`);
+                ws.send(JSON.stringify({ 
+                  type: 'transcription_final', 
+                  mode: 'ambient',
+                  payload: res.awsResult
+                }));
+              } else {
+                // Regular transcription result
+                ws.send(JSON.stringify({ 
+                  type: 'transcription_result', 
+                  resultId: res.resultId,                         // stable key
+                  startTime: res.startTime ?? null,
+                  endTime: res.endTime ?? null,
+                  text: res.transcript, 
+                  isFinal: !res.is_partial,
+                  language_detected: res.language_detected,
+                  confidence_score: res.confidence_score,
+                  speaker: res.speaker                           // PATIENT vs CLINICIAN
+                }));
+              }
+            },
             (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
           );
 

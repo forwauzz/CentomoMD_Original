@@ -24,6 +24,7 @@ export interface ModeConfig {
     batchSize?: number;
     retryAttempts?: number;
     fallbackMode?: string;
+    maxSpeakerLabels?: number; // for Mode 3 speaker diarization
   };
   metadata?: {
     category?: string;
@@ -115,7 +116,8 @@ export const MODE_REGISTRY: ModeRegistry = {
       maxProcessingTime: 300,
       batchSize: 10,
       retryAttempts: 1,
-      fallbackMode: 'mode2'
+      fallbackMode: 'mode2',
+      maxSpeakerLabels: 2  // PATIENT vs CLINICIAN
     },
     metadata: {
       category: 'advanced_processing',

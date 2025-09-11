@@ -60,7 +60,8 @@ export class TranscriptionService {
       MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
       ShowSpeakerLabel: config.show_speaker_labels || false,     // Mode-specific speaker attribution
-      // MaxSpeakerLabels: 2,         // PATIENT vs CLINICIAN - not supported in this version
+      // MaxSpeakerLabels: Set based on mode configuration
+      ...(config.max_speaker_labels && { MaxSpeakerLabels: config.max_speaker_labels }),
       EnablePartialResultsStabilization: true,
       PartialResultsStability: (config.partial_results_stability || 'high') as any,  // Mode-specific stability
       // Custom vocabulary for medical terms (when available)
@@ -151,16 +152,53 @@ export class TranscriptionService {
     onTranscript: (result: TranscriptionResult) => void,
     onError: (error: Error) => void
   ): Promise<void> {
+    // Store complete AWS result for Mode 3 pipeline
+    const awsResult: any = {
+      results: {
+        transcripts: [],
+        items: []
+      },
+      speaker_labels: {
+        speakers: 0,
+        segments: []
+      }
+    };
+
     try {
       for await (const evt of stream as any) {
         if (!evt.TranscriptEvent) continue;
         const results = evt.TranscriptEvent.Transcript?.Results ?? [];
+        
         for (const r of results) {
           const alt = r.Alternatives?.[0];
           if (!alt?.Transcript) continue;
+          
           // FIX: partial flag (true means partial)
           // Extract speaker information (best-effort)
           const speaker = alt?.Items?.[0]?.Speaker || null;
+          
+          // Build complete AWS result for Mode 3
+          if (!r.IsPartial) {
+            // Final result - add to transcripts
+            awsResult.results.transcripts.push({
+              transcript: alt.Transcript
+            });
+            
+            // Add items with speaker labels
+            if (alt.Items) {
+              for (const item of alt.Items) {
+                awsResult.results.items.push({
+                  start_time: item.StartTime?.toString() || "0.0",
+                  end_time: item.EndTime?.toString() || "0.0",
+                  alternatives: [{
+                    confidence: item.Confidence?.toString() || "0.0",
+                    content: item.Content || ""
+                  }],
+                  type: item.Type || "pronunciation"
+                });
+              }
+            }
+          }
           
           onTranscript({
             transcript: alt.Transcript,
@@ -174,6 +212,21 @@ export class TranscriptionService {
           });
         }
       }
+      
+      // Stream ended - send final AWS result for Mode 3
+      console.log(`[${sessionId}] Stream ended, sending final AWS result for Mode 3 pipeline`);
+      onTranscript({
+        transcript: '', // Empty transcript for final message
+        is_partial: false,
+        confidence_score: 1.0,
+        timestamp: new Date(),
+        resultId: 'final_aws_result',
+        startTime: null,
+        endTime: null,
+        speaker: null,
+        awsResult: awsResult // Include complete AWS result
+      });
+      
     } catch (error) {
       console.error(`Error handling transcript events for session ${sessionId}:`, error);
       this.handleTranscribeError(error, onError);

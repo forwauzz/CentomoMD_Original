@@ -102,8 +102,10 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     startRecording,
     stopRecording,
     error,
-    setActiveSection
-  } = useTranscription(sessionId, selectedLanguage);
+    setActiveSection,
+    mode3Narrative,
+    mode3Progress
+  } = useTranscription(sessionId, selectedLanguage, mode);
 
   // Case store for saving to sections
   const { updateSection } = useCaseStore();
@@ -791,6 +793,28 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   </p>
                 )}
               </div>
+
+              {/* Mode 3 Pipeline Display */}
+              {mode === 'ambient' && (
+                <div className="mt-3">
+                  {/* Progress indicators */}
+                  <div className="text-sm opacity-70 mb-2">
+                    {mode3Progress === 'transcribing' && 'Transcribing…'}
+                    {mode3Progress === 'processing' && 'Cleaning & building narrative…'}
+                    {mode3Progress === 'ready' && 'Ready'}
+                  </div>
+
+                  {/* Narrative output */}
+                  {mode3Narrative && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Processed Narrative:</h4>
+                      <pre className="whitespace-pre-wrap rounded-lg border p-3 bg-white/50 text-sm text-gray-800 font-mono">
+                        {mode3Narrative}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

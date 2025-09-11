@@ -38,7 +38,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     verbatim: true,      // Enable for development
     macros: false,       // Keep disabled until implemented
     transcriptAnalysisPipeline: true, // Enable for development and testing
-    speakerLabeling: false, // Keep disabled by default
+    speakerLabeling: true, // Enable for development - Transcribe mode fully functional
   };
 
   // Use environment flags if available, otherwise use dev flags

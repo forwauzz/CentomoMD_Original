@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Flags Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .enabled { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .disabled { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Feature Flags Status Check</h1>
+    
+    <div id="status"></div>
+    
+    <h2>🎯 Transcribe (Ambient) Mode Analysis</h2>
+    <div id="transcribe-analysis"></div>
+    
+    <h2>🔧 How to Enable Full Transcribe Mode</h2>
+    <div id="instructions"></div>
+
+    <script type="module">
+        // Simulate the feature flags logic
+        const getFeatureFlags = () => {
+            // Check environment variables (simulated)
+            const envFlags = {
+                voiceCommands: import.meta.env?.VITE_FEATURE_VOICE_COMMANDS === 'true',
+                verbatim: import.meta.env?.VITE_FEATURE_VERBATIM === 'true',
+                macros: import.meta.env?.VITE_FEATURE_MACROS === 'true',
+                transcriptAnalysisPipeline: import.meta.env?.VITE_FEATURE_TRANSCRIPT_ANALYSIS_PIPELINE === 'true',
+                speakerLabeling: import.meta.env?.VITE_FEATURE_SPEAKER_LABELING === 'true',
+            };
+
+            // Development flags (current settings)
+            const devFlags = {
+                voiceCommands: true,
+                verbatim: true,
+                macros: false,
+                transcriptAnalysisPipeline: true,
+                speakerLabeling: false, // This is the key one!
+            };
+
+            return {
+                voiceCommands: envFlags.voiceCommands || devFlags.voiceCommands,
+                verbatim: envFlags.verbatim || devFlags.verbatim,
+                macros: envFlags.macros || devFlags.macros,
+                transcriptAnalysisPipeline: envFlags.transcriptAnalysisPipeline || devFlags.transcriptAnalysisPipeline,
+                speakerLabeling: envFlags.speakerLabeling || devFlags.speakerLabeling,
+            };
+        };
+
+        const flags = getFeatureFlags();
+        
+        // Display current status
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = `
+            <h3>Current Feature Flags:</h3>
+            <div class="status ${flags.voiceCommands ? 'enabled' : 'disabled'}">
+                <strong>Voice Commands:</strong> ${flags.voiceCommands ? '✅ Enabled' : '❌ Disabled'}
+            </div>
+            <div class="status ${flags.verbatim ? 'enabled' : 'disabled'}">
+                <strong>Verbatim:</strong> ${flags.verbatim ? '✅ Enabled' : '❌ Disabled'}
+            </div>
+            <div class="status ${flags.macros ? 'enabled' : 'disabled'}">
+                <strong>Macros:</strong> ${flags.macros ? '✅ Enabled' : '❌ Disabled'}
+            </div>
+            <div class="status ${flags.transcriptAnalysisPipeline ? 'enabled' : 'disabled'}">
+                <strong>Transcript Analysis Pipeline:</strong> ${flags.transcriptAnalysisPipeline ? '✅ Enabled' : '❌ Disabled'}
+            </div>
+            <div class="status ${flags.speakerLabeling ? 'enabled' : 'disabled'}">
+                <strong>Speaker Labeling:</strong> ${flags.speakerLabeling ? '✅ Enabled' : '❌ Disabled'}
+            </div>
+        `;
+
+        // Transcribe mode analysis
+        const transcribeDiv = document.getElementById('transcribe-analysis');
+        const isFullyEnabled = flags.speakerLabeling;
+        
+        transcribeDiv.innerHTML = `
+            <div class="status ${isFullyEnabled ? 'enabled' : 'warning'}">
+                <strong>Transcribe Mode Status:</strong> ${isFullyEnabled ? '✅ Fully Enabled' : '⚠️ Limited Mode (Lazy Mode)'}
+            </div>
+            
+            <h4>What Works:</h4>
+            <ul>
+                <li>✅ Mode selection in UI</li>
+                <li>✅ Audio recording and WebSocket</li>
+                <li>✅ S1-S5 pipeline processing</li>
+                <li>✅ Role mapping (PATIENT/CLINICIAN)</li>
+                <li>✅ Final narrative generation</li>
+            </ul>
+            
+            <h4>What's Limited:</h4>
+            <ul>
+                <li>${isFullyEnabled ? '✅' : '❌'} Live speaker labels during recording</li>
+                <li>${isFullyEnabled ? '✅' : '❌'} Real-time spk_0:, spk_1: prefixes</li>
+                <li>${isFullyEnabled ? '✅' : '❌'} Full speaker diarization display</li>
+            </ul>
+        `;
+
+        // Instructions
+        const instructionsDiv = document.getElementById('instructions');
+        instructionsDiv.innerHTML = `
+            <div class="status warning">
+                <strong>To Enable Full Transcribe Mode:</strong>
+            </div>
+            
+            <h4>Option 1: Environment Variable (Recommended)</h4>
+            <pre># Create frontend/.env.local file
+echo "VITE_FEATURE_SPEAKER_LABELING=true" > frontend/.env.local</pre>
+            
+            <h4>Option 2: Modify Development Flags</h4>
+            <pre># In frontend/src/lib/featureFlags.ts line 41
+speakerLabeling: true, // Change from false to true</pre>
+            
+            <h4>Option 3: Set Environment Variable</h4>
+            <pre># Windows PowerShell
+$env:VITE_FEATURE_SPEAKER_LABELING="true"
+npm run dev
+
+# Or add to your shell profile
+export VITE_FEATURE_SPEAKER_LABELING=true</pre>
+        `;
+    </script>
+</body>
+</html>
