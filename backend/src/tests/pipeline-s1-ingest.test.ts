@@ -85,7 +85,7 @@ describe('S1: Ingest AWS Transcribe JSON', () => {
       expect(result.data!.turns[0]).toEqual({
         speaker: 'spk_0',
         startTime: 0.0,
-        endTime: 2.5,
+        endTime: 2.5, // Should be the end time of the last word
         text: 'Bonjour docteur.',
         confidence: expect.any(Number),
         isPartial: false
@@ -93,7 +93,7 @@ describe('S1: Ingest AWS Transcribe JSON', () => {
       expect(result.data!.turns[1]).toEqual({
         speaker: 'spk_1',
         startTime: 3.0,
-        endTime: 5.0,
+        endTime: 5.0, // Should be the end time of the last word
         text: 'Comment?',
         confidence: expect.any(Number),
         isPartial: false
@@ -251,7 +251,79 @@ describe('S1: Ingest AWS Transcribe JSON', () => {
       const result = await s1Ingest.execute(awsResult);
 
       expect(result.success).toBe(true);
-      expect(result.data!.turns[0].text).toBe('Bonjour,docteur.');
+      expect(result.data!.turns[0].text).toBe('Bonjour, docteur.');
+    });
+
+    it('should attach punctuation to preceding word without standalone turns', async () => {
+      const awsResult: AWSTranscribeResult = {
+        speaker_labels: {
+          segments: [
+            {
+              start_time: '0.0',
+              end_time: '3.0',
+              speaker_label: 'spk_0',
+              items: [
+                {
+                  start_time: '0.0',
+                  end_time: '1.0',
+                  speaker_label: 'spk_0'
+                },
+                {
+                  start_time: '1.0',
+                  end_time: '2.0',
+                  speaker_label: 'spk_0'
+                },
+                {
+                  start_time: '2.0',
+                  end_time: '3.0',
+                  speaker_label: 'spk_0'
+                }
+              ]
+            }
+          ]
+        },
+        results: {
+          items: [
+            {
+              start_time: '0.0',
+              end_time: '1.0',
+              alternatives: [{ confidence: '0.95', content: 'Hello' }],
+              type: 'pronunciation'
+            },
+            {
+              alternatives: [{ confidence: '1.0', content: ',' }],
+              type: 'punctuation'
+            },
+            {
+              start_time: '1.0',
+              end_time: '2.0',
+              alternatives: [{ confidence: '0.88', content: 'doctor' }],
+              type: 'pronunciation'
+            },
+            {
+              alternatives: [{ confidence: '1.0', content: '.' }],
+              type: 'punctuation'
+            },
+            {
+              start_time: '2.0',
+              end_time: '3.0',
+              alternatives: [{ confidence: '0.92', content: 'How' }],
+              type: 'pronunciation'
+            },
+            {
+              alternatives: [{ confidence: '1.0', content: '?' }],
+              type: 'punctuation'
+            }
+          ]
+        }
+      };
+
+      const result = await s1Ingest.execute(awsResult);
+
+      expect(result.success).toBe(true);
+      expect(result.data!.turns).toHaveLength(1);
+      expect(result.data!.turns[0].text).toBe('Hello, doctor. How?');
+      expect(result.data!.turns[0].endTime).toBe(3.0); // Should be the end time of the last word
     });
 
     it('should calculate confidence correctly', async () => {

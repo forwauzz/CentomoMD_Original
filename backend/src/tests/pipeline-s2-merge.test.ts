@@ -123,8 +123,8 @@ describe('S2: Merge Adjacent Turns', () => {
           },
           {
             speaker: 'spk_0',
-            startTime: 5.0, // Large gap (3 seconds)
-            endTime: 7.0,
+            startTime: 3.5, // Large gap (1.5 seconds, exceeds 1.0 limit)
+            endTime: 5.5,
             text: 'docteur',
             confidence: 0.8,
             isPartial: false
@@ -153,15 +153,15 @@ describe('S2: Merge Adjacent Turns', () => {
           {
             speaker: 'spk_0',
             startTime: 0.0,
-            endTime: 15.0, // Already long turn
+            endTime: 14.0, // Already long turn (14 seconds)
             text: 'This is a very long turn that should not be merged',
             confidence: 0.9,
             isPartial: false
           },
           {
             speaker: 'spk_0',
-            startTime: 15.1,
-            endTime: 17.0,
+            startTime: 14.1,
+            endTime: 16.0, // Would make total 16 seconds, exceeding 15.0 limit
             text: 'with this',
             confidence: 0.8,
             isPartial: false
@@ -323,8 +323,119 @@ describe('S2: Merge Adjacent Turns', () => {
       const result = await s2Merge.execute(dialog);
 
       expect(result.success).toBe(true);
-      // Weighted average: (0.9 * 1.0 + 0.6 * 2.0) / 3.0 = 0.7
-      expect(result.data!.turns[0].confidence).toBeCloseTo(0.7, 2);
+      // Weighted average by tokens: (0.9 * 1 + 0.6 * 1) / 2 = 0.75
+      expect(result.data!.turns[0].confidence).toBeCloseTo(0.75, 2);
+    });
+  });
+
+  describe('Boundary Conditions', () => {
+    it('should merge turns at exact gap boundary (1.0 seconds)', async () => {
+      const dialog: IrDialog = {
+        turns: [
+          {
+            speaker: 'spk_0',
+            startTime: 0.0,
+            endTime: 2.0,
+            text: 'Bonjour',
+            confidence: 0.9,
+            isPartial: false
+          },
+          {
+            speaker: 'spk_0',
+            startTime: 3.0, // Exactly 1.0 second gap
+            endTime: 5.0,
+            text: 'docteur',
+            confidence: 0.8,
+            isPartial: false
+          }
+        ],
+        metadata: {
+          source: 'aws_transcribe',
+          language: 'fr-CA',
+          totalDuration: 5.0,
+          speakerCount: 1,
+          createdAt: new Date()
+        }
+      };
+
+      const result = await s2Merge.execute(dialog);
+
+      expect(result.success).toBe(true);
+      expect(result.data!.turns).toHaveLength(1);
+      expect(result.data!.turns[0].text).toBe('Bonjour docteur');
+    });
+
+    it('should not merge turns that would exceed max duration boundary (15.0 seconds)', async () => {
+      const dialog: IrDialog = {
+        turns: [
+          {
+            speaker: 'spk_0',
+            startTime: 0.0,
+            endTime: 14.0, // 14 seconds
+            text: 'This is a very long turn',
+            confidence: 0.9,
+            isPartial: false
+          },
+          {
+            speaker: 'spk_0',
+            startTime: 14.1, // Small gap
+            endTime: 15.1, // Would make total 15.1 seconds, exceeding 15.0 limit
+            text: 'with this',
+            confidence: 0.8,
+            isPartial: false
+          }
+        ],
+        metadata: {
+          source: 'aws_transcribe',
+          language: 'fr-CA',
+          totalDuration: 15.1,
+          speakerCount: 1,
+          createdAt: new Date()
+        }
+      };
+
+      const result = await s2Merge.execute(dialog);
+
+      expect(result.success).toBe(true);
+      expect(result.data!.turns).toHaveLength(2);
+      expect(result.data!.turns[0].text).toBe('This is a very long turn');
+      expect(result.data!.turns[1].text).toBe('with this');
+    });
+
+    it('should merge turns at exact max duration boundary (15.0 seconds)', async () => {
+      const dialog: IrDialog = {
+        turns: [
+          {
+            speaker: 'spk_0',
+            startTime: 0.0,
+            endTime: 14.0, // 14 seconds
+            text: 'This is a very long turn',
+            confidence: 0.9,
+            isPartial: false
+          },
+          {
+            speaker: 'spk_0',
+            startTime: 14.1, // Small gap
+            endTime: 15.0, // Exactly 15.0 seconds total
+            text: 'with this',
+            confidence: 0.8,
+            isPartial: false
+          }
+        ],
+        metadata: {
+          source: 'aws_transcribe',
+          language: 'fr-CA',
+          totalDuration: 15.0,
+          speakerCount: 1,
+          createdAt: new Date()
+        }
+      };
+
+      const result = await s2Merge.execute(dialog);
+
+      expect(result.success).toBe(true);
+      expect(result.data!.turns).toHaveLength(1);
+      expect(result.data!.turns[0].text).toBe('This is a very long turn with this');
     });
   });
 

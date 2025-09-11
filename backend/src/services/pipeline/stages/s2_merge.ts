@@ -56,7 +56,16 @@ export class S2Merge {
 
       // Check if we can merge with current turn
       if (this.canMerge(currentTurn, turn)) {
-        currentTurn = this.mergeTurns(currentTurn, turn);
+        // Check if merging would exceed max duration
+        const tentativeDuration = turn.endTime - currentTurn.startTime;
+        if (tentativeDuration <= this.config.maxTurnDuration) {
+          // Safe to merge
+          currentTurn = this.mergeTurns(currentTurn, turn);
+        } else {
+          // Would exceed max duration, finalize current and start new
+          merged.push(currentTurn);
+          currentTurn = { ...turn };
+        }
       } else {
         // Can't merge, finalize current turn and start new one
         merged.push(currentTurn);
@@ -84,17 +93,6 @@ export class S2Merge {
       return false;
     }
 
-    // Check turn duration limits
-    const mergedDuration = turn2.endTime - turn1.startTime;
-    if (mergedDuration > this.config.maxTurnDuration) {
-      return false;
-    }
-
-    // Check minimum turn duration (don't merge very short turns)
-    if (turn1.endTime - turn1.startTime < this.config.minTurnDuration) {
-      return true; // Allow merging short turns
-    }
-
     return true;
   }
 
@@ -113,13 +111,13 @@ export class S2Merge {
       combinedText = `${text1} ${text2}`;
     }
 
-    // Calculate weighted average confidence
-    const duration1 = turn1.endTime - turn1.startTime;
-    const duration2 = turn2.endTime - turn2.startTime;
-    const totalDuration = duration1 + duration2;
+    // Calculate weighted average confidence based on token counts
+    const tokens1 = text1.split(/\s+/).length;
+    const tokens2 = text2.split(/\s+/).length;
+    const totalTokens = tokens1 + tokens2;
     
     const weightedConfidence = 
-      (turn1.confidence * duration1 + turn2.confidence * duration2) / totalDuration;
+      (turn1.confidence * tokens1 + turn2.confidence * tokens2) / totalTokens;
 
     return {
       speaker: turn1.speaker,
