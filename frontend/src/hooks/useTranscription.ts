@@ -33,11 +33,23 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
 
   // Mode 3 pipeline state
   const [mode3Narrative, setMode3Narrative] = useState<string | null>(null);
-  const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'|'error'>('idle');
+  const [mode3Progress, setMode3Progress] = useState<'idle'|'recording'|'processing'|'ready'|'error'>('idle');
   const [finalAwsJson, setFinalAwsJson] = useState<any>(null);
+  const [processingTimeout, setProcessingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [liveTranscriptState, setLiveTranscriptState] = useState<string>("");
+
+  // new: final readiness gate
+  const [mode3FinalReady, setMode3FinalReady] = useState<boolean>(false);
+
+  // new: session sequencer to avoid stale writes from prior sessions
+  const ambientSessionSeq = useRef<number>(0);
   
   // Prevent duplicate processing (final message + manual stop)
   const processingStartedRef = useRef(false);
+
+  // WebSocket closure control for Mode 3 finalization
+  const pendingAmbientFinalizeRef = useRef(false); // true after Stop, until final handled
+  const wsRef = useRef<WebSocket | null>(null);    // store the active ws
 
   // Update mode when it changes
   useEffect(() => {
@@ -100,8 +112,29 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     }>;
   }, []);
 
+  // helper: commit final narrative in a single place
+  const commitFinalNarrative = useCallback((
+    seq: number,
+    payload: { narrative: string | null; status: "ready" | "error" }
+  ) => {
+    if (seq !== ambientSessionSeq.current) {
+      console.warn("[Mode3] commitFinalNarrative ignored (stale seq)", { seq, cur: ambientSessionSeq.current });
+      return;
+    }
+    console.log("[Mode3] commitFinalNarrative", payload.status, payload.narrative?.slice(0, 80));
+    setMode3Narrative(payload.narrative);
+    setMode3FinalReady(payload.status === "ready");
+    setMode3Progress(payload.status);
+  }, []);
+
   // Idempotent Mode 3 processing helper
   const triggerMode3Processing = useCallback(async (reason: 'final_msg' | 'manual_stop') => {
+    // Guard against mid-recording pipeline attempts
+    if (mode3Progress !== "processing" && mode3Progress !== "ready" && mode3Progress !== "error") {
+      console.warn("[Mode3] ignoring mid-recording pipeline attempt");
+      return;
+    }
+
     // Idempotent guard
     if (processingStartedRef.current) return;
     processingStartedRef.current = true;
@@ -120,15 +153,42 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         section: state.currentSection,
         rawAwsJson: finalAwsJson
       });
-      setMode3Narrative(result.narrative);
-      setMode3Progress('ready');
+      
+      // Validate that we have proper artifacts before showing transcript
+      if (result.narrative && result.roleMap && Object.keys(result.roleMap).length > 0) {
+        console.log('[Mode3] Processing completed with valid artifacts:', {
+          narrativeLength: result.narrative.length,
+          roleMapKeys: Object.keys(result.roleMap),
+          hasNarrative: !!result.narrative
+        });
+        console.log('[FRONTEND] Setting narrative from pipeline:', result.narrative);
+        const seqAtProcessing = ambientSessionSeq.current;
+        commitFinalNarrative(seqAtProcessing, {
+          narrative: result.narrative,
+          status: "ready"
+        });
+      } else {
+        console.warn('[Mode3] Processing completed but artifacts are incomplete:', {
+          hasNarrative: !!result.narrative,
+          roleMapKeys: result.roleMap ? Object.keys(result.roleMap) : 'missing',
+          narrativeLength: result.narrative?.length || 0
+        });
+        const seqAtProcessing = ambientSessionSeq.current;
+        commitFinalNarrative(seqAtProcessing, {
+          narrative: "Processing completed but artifacts are incomplete.",
+          status: "error"
+        });
+      }
     } catch (err) {
       console.error('[Mode3] processing failed', { reason, err });
-      setMode3Progress('error');
+      const seqAtProcessing = ambientSessionSeq.current;
+      commitFinalNarrative(seqAtProcessing, {
+        narrative: "Processing failed. Please try again.",
+        status: "error"
+      });
     }
-  }, [state.mode, finalAwsJson, state.sessionId, state.currentSection, language, processMode3Pipeline]);
+  }, [state.mode, finalAwsJson, state.sessionId, state.currentSection, language, processMode3Pipeline, mode3Progress, commitFinalNarrative]);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -206,7 +266,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
   }, [upsertSegment]);
 
   // Build live partial transcript from non-final segments
-  const liveTranscript = segments
+  const computedLiveTranscript = segments
     .filter(s => !s.isFinal)
     .map(s => s.text)
     .join(' ');
@@ -308,10 +368,15 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       console.log('Starting transcription with language:', languageCode);
       
       // Reset Mode 3 state for new session
+      console.log('[FRONTEND] Starting new session - clearing Mode 3 state');
       processingStartedRef.current = false;
       setFinalAwsJson(null);
-      setMode3Narrative('');
+      console.log('[FRONTEND] Clearing mode3Narrative in startTranscription');
+      setMode3Narrative(null);
+      setMode3FinalReady(false);
       setMode3Progress('idle');
+      setLiveTranscriptState('');
+      console.log('[FRONTEND] Mode 3 state cleared');
       
       const ws = new WebSocket('ws://localhost:3001/ws/transcription');
       ws.binaryType = 'arraybuffer';
@@ -333,8 +398,33 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
 
       ws.onmessage = async (ev) => {
         try {
+          console.log('[FRONTEND] Raw WebSocket message received:', ev.data);
           const msg = JSON.parse(ev.data);
-          console.log('Received message:', msg);
+          console.log('[FRONTEND] Parsed message:', msg);
+          
+          // Debug: Log ALL message types
+          console.log('[FRONTEND] Message type:', msg.type);
+          
+          // Debug: Log transcription results specifically
+          if (msg.type === 'transcription_result') {
+            console.log('[FRONTEND] Live transcription result:', {
+              text: msg.text,
+              isFinal: msg.isFinal,
+              resultId: msg.resultId
+            });
+          }
+          
+          // Handle live transcription updates for ambient mode
+          if (msg.type === "transcription_live" && msg.mode === "ambient") {
+            console.log('[FRONTEND] Live transcription update:', {
+              text: msg.text,
+              isPartial: msg.isPartial,
+              resultId: msg.resultId
+            });
+            
+            // live preview only, do not touch final narrative
+            setLiveTranscriptState(msg.text || "");
+          }
           
           if (msg.type === 'stream_ready') {
             console.log('Stream ready, starting audio capture');
@@ -373,6 +463,26 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
              };
             
             updateState({ isRecording: true });
+            
+            // Set Mode 3 progress to recording for ambient mode
+            const currentMode = mode || state.mode;
+            if (currentMode === 'ambient') {
+              // Increment session sequencer for new ambient session
+              ambientSessionSeq.current += 1;
+              console.log("[Mode3] startAmbientRecording seq=", ambientSessionSeq.current);
+              
+              // Clean reset for new session
+              console.log('[FRONTEND] Clearing mode3Narrative in ambient start');
+              setMode3Narrative(null);
+              setMode3FinalReady(false);
+              setLiveTranscriptState('');
+              if (processingTimeout) { 
+                clearTimeout(processingTimeout); 
+                setProcessingTimeout(null); 
+              }
+              
+              setMode3Progress('recording');
+            }
                      } else if (msg.type === 'transcription_result') {
              console.log('Transcription result:', msg);
              
@@ -487,9 +597,10 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
              }
 
             // Update current transcript for live display
+            setLiveTranscriptState(computedLiveTranscript);
             setState(prev => ({
               ...prev,
-              currentTranscript: liveTranscript
+              currentTranscript: computedLiveTranscript
             }));
 
             if (msg.isFinal) {
@@ -524,12 +635,53 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
           } else if (msg.type === 'transcription_final' && msg.mode === 'ambient') {
             console.log('Mode 3 final transcription received:', msg);
             
+            const seqAtFinal = ambientSessionSeq.current;
+            // Clear processing timeout
+            if (processingTimeout) {
+              clearTimeout(processingTimeout);
+              setProcessingTimeout(null);
+            }
+            
+            // Fetch final transcript data
+            console.log('[FRONTEND] Fetching final transcript for artifactId:', msg.artifactId);
+            fetch(`http://localhost:3001/api/transcripts/${msg.artifactId}`)
+              .then(r => {
+                console.log('[FRONTEND] Fetch response status:', r.status);
+                if (!r.ok) {
+                  throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                }
+                return r.json();
+              })
+              .then(data => {
+                setLiveTranscriptState("");
+                const narrative = (data?.narrative ?? "").trim();
+                if (!narrative) {
+                  commitFinalNarrative(seqAtFinal, {
+                    narrative: "No content transcribed.",
+                    status: "ready"
+                  });
+                } else {
+                  commitFinalNarrative(seqAtFinal, {
+                    narrative,
+                    status: "ready"
+                  });
+                }
+              })
+              .catch(err => {
+                console.error("[Mode3] final fetch failed", err);
+                commitFinalNarrative(seqAtFinal, {
+                  narrative: "Failed to load transcript. Please try again.",
+                  status: "error"
+                });
+              });
+            
             // Show toast notification for diarization status
             if (msg.summary?.diarized) {
+              const confidence = msg.summary.confidence ? ` (conf: ${(msg.summary.confidence * 100).toFixed(0)}%)` : '';
               addToast({
                 type: 'success',
                 title: 'Ambient: Speakers ON',
-                message: `Detected ${msg.summary.speakerCount} speaker(s)`
+                message: `Detected ${msg.summary.speakerCount} speaker(s)${confidence}`
               });
             } else {
               addToast({
@@ -539,11 +691,14 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
               });
             }
             
-            setFinalAwsJson(msg.payload);
-            setMode3Progress('transcribing');
-            // ✅ Auto-trigger once we've set state
-            // Wait one tick so finalAwsJson is set before processing
-            queueMicrotask(() => triggerMode3Processing('final_msg'));
+            // Close WebSocket after processing transcription_final
+            pendingAmbientFinalizeRef.current = false;
+            console.log("[Mode3] FE closing WS (state before):", wsRef.current?.readyState);
+            try { 
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
+              }
+            } catch {}
           } else if (msg.type === 'transcription_error') {
             console.error('Transcribe error:', msg.error);
             updateState({ error: msg.error });
@@ -563,6 +718,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       };
 
       ws.onclose = () => {
+        console.log("[Mode3] WS onclose (pendingFinalize:", pendingAmbientFinalizeRef.current, ")");
         console.log('WebSocket connection closed');
         updateState({ isConnected: false, isRecording: false });
       };
@@ -577,7 +733,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         isRecording: false 
       });
     }
-  }, [sessionId, state.currentSection, mode, updateState, enqueueUpdate, liveTranscript, buildParagraphs, tidyFr]);
+  }, [sessionId, state.currentSection, mode, updateState, enqueueUpdate, computedLiveTranscript, buildParagraphs, tidyFr]);
 
   const stopTranscription = useCallback(async () => {
     console.log('Stopping transcription');
@@ -600,8 +756,14 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         console.error('Error sending stop message:', error);
       }
     }
-    if (ws && ws.readyState !== WebSocket.CLOSED) {
-      ws.close();
+    // Don't close WebSocket if we're waiting for ambient finalization
+    if (pendingAmbientFinalizeRef.current) {
+      console.log("[Mode3] skip ws.close() during pending finalize");
+    } else {
+      console.log("[Mode3] FE closing WS (state before):", wsRef.current?.readyState);
+      if (ws && ws.readyState !== WebSocket.CLOSED) {
+        ws.close();
+      }
     }
     
     // Clean up audio resources
@@ -625,6 +787,36 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     // ✅ Fallback: if final didn't auto-trigger for any reason
     await triggerMode3Processing('manual_stop');
   }, [updateState, triggerMode3Processing]);
+
+  // Mode 3 specific stop function with processing state
+  const stopAmbientRecording = useCallback(() => {
+    const seqAtStop = ambientSessionSeq.current;
+    
+    // mark we are waiting for backend finalization
+    pendingAmbientFinalizeRef.current = true;
+
+    // send stop to backend but DO NOT close socket here
+    wsRef.current?.send(JSON.stringify({ type: "stop_transcription", mode: "ambient" }));
+    
+    setMode3Progress("processing");
+
+    // Clear existing timeout
+    if (processingTimeout) {
+      clearTimeout(processingTimeout);
+    }
+    
+    // Set watchdog timeout
+    const t = setTimeout(() => {
+      if (mode3Progress === "processing") {
+        console.warn("[Mode3] processing timeout");
+        commitFinalNarrative(seqAtStop, {
+          narrative: "Processing timed out. Please try again.",
+          status: "error"
+        });
+      }
+    }, 10000);
+    setProcessingTimeout(t);
+  }, [processingTimeout, mode3Progress, commitFinalNarrative]);
 
   // Legacy compatibility - map to new functions
   const startRecording = useCallback(async () => {
@@ -673,7 +865,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     // State
     isRecording: state.isRecording,
     isConnected: state.isConnected,
-    currentTranscript: liveTranscript, // Use live transcript from segments
+    currentTranscript: liveTranscriptState, // Use live transcript from segments
     finalTranscripts: state.finalTranscripts,
     currentSection: state.currentSection,
     mode: state.mode,
@@ -695,11 +887,14 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     // Mode 3 pipeline data
     mode3Narrative,
     mode3Progress,
+    mode3FinalReady,
     finalAwsJson,
+    liveTranscript: liveTranscriptState,
 
     // Actions
     startRecording,
     stopRecording,
+    stopAmbientRecording,
     sendVoiceCommand,
     updateState,
     reconnect,
