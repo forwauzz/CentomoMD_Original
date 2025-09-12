@@ -4,6 +4,7 @@ import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
+import { useUIStore } from '@/stores/uiStore';
 
 // Enhanced segment tracking for partial results
 type Segment = { 
@@ -17,6 +18,7 @@ type Segment = {
 
 export const useTranscription = (sessionId?: string, language?: string, mode?: TranscriptionMode) => {
   const featureFlags = useFeatureFlags();
+  const { addToast } = useUIStore();
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
     isConnected: false,
@@ -31,8 +33,11 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
 
   // Mode 3 pipeline state
   const [mode3Narrative, setMode3Narrative] = useState<string | null>(null);
-  const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'>('idle');
+  const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'|'error'>('idle');
   const [finalAwsJson, setFinalAwsJson] = useState<any>(null);
+  
+  // Prevent duplicate processing (final message + manual stop)
+  const processingStartedRef = useRef(false);
 
   // Update mode when it changes
   useEffect(() => {
@@ -41,6 +46,11 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       setState(prev => ({ ...prev, mode }));
     }
   }, [mode, state.mode]);
+
+  // Debug: Log mode changes
+  useEffect(() => {
+    console.log(`[useTranscription] Mode parameter changed to: ${mode}`);
+  }, [mode]);
 
   // Enhanced segment tracking
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -89,6 +99,34 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       meta: any;
     }>;
   }, []);
+
+  // Idempotent Mode 3 processing helper
+  const triggerMode3Processing = useCallback(async (reason: 'final_msg' | 'manual_stop') => {
+    // Idempotent guard
+    if (processingStartedRef.current) return;
+    processingStartedRef.current = true;
+
+    // Preconditions
+    if (state.mode !== 'ambient' || !finalAwsJson || !state.sessionId) {
+      processingStartedRef.current = false;
+      return;
+    }
+
+    try {
+      setMode3Progress('processing');
+      const result = await processMode3Pipeline({
+        sessionId: state.sessionId,
+        language: (language === 'fr-CA' || language === 'fr') ? 'fr' : 'en',
+        section: state.currentSection,
+        rawAwsJson: finalAwsJson
+      });
+      setMode3Narrative(result.narrative);
+      setMode3Progress('ready');
+    } catch (err) {
+      console.error('[Mode3] processing failed', { reason, err });
+      setMode3Progress('error');
+    }
+  }, [state.mode, finalAwsJson, state.sessionId, state.currentSection, language, processMode3Pipeline]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -269,17 +307,25 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     try {
       console.log('Starting transcription with language:', languageCode);
       
+      // Reset Mode 3 state for new session
+      processingStartedRef.current = false;
+      setFinalAwsJson(null);
+      setMode3Narrative('');
+      setMode3Progress('idle');
+      
       const ws = new WebSocket('ws://localhost:3001/ws/transcription');
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
       ws.onopen = () => {
         console.log('WebSocket connected, sending start message');
+        const currentMode = mode || state.mode; // Use the passed mode parameter first, fallback to state
+        console.log('Sending mode to backend:', currentMode);
         ws.send(JSON.stringify({ 
           type: 'start_transcription', 
           languageCode, 
           sampleRate: 16000,
-          mode: state.mode,  // Add mode parameter for Phase 0
+          mode: currentMode,  // Use the current mode parameter
           sessionId 
         }));
         updateState({ isConnected: true, error: undefined });
@@ -450,8 +496,9 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
               // Handle final results - add to final transcripts
               const paragraphs = buildParagraphs();
               // Apply processing based on mode
-              console.log('Processing final transcript with mode:', state.mode);
-              const finalDisplay = state.mode === 'word_for_word' 
+              const currentMode = mode || state.mode;
+              console.log('Processing final transcript with mode:', currentMode);
+              const finalDisplay = currentMode === 'word_for_word' 
                 ? paragraphs  // Raw text for word-for-word mode (post-processing triggered by template)
                 : paragraphs.map(tidyFr);  // Formatted text for other modes (AWS handles punctuation naturally)
               
@@ -475,10 +522,28 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
               }));
             }
           } else if (msg.type === 'transcription_final' && msg.mode === 'ambient') {
-            // Store the raw AWS JSON for Mode 3 pipeline processing
             console.log('Mode 3 final transcription received:', msg);
+            
+            // Show toast notification for diarization status
+            if (msg.summary?.diarized) {
+              addToast({
+                type: 'success',
+                title: 'Ambient: Speakers ON',
+                message: `Detected ${msg.summary.speakerCount} speaker(s)`
+              });
+            } else {
+              addToast({
+                type: 'warning',
+                title: 'Ambient: No speakers detected',
+                message: 'Check ShowSpeakerLabel/MaxSpeakerLabels configuration'
+              });
+            }
+            
             setFinalAwsJson(msg.payload);
             setMode3Progress('transcribing');
+            // ✅ Auto-trigger once we've set state
+            // Wait one tick so finalAwsJson is set before processing
+            queueMicrotask(() => triggerMode3Processing('final_msg'));
           } else if (msg.type === 'transcription_error') {
             console.error('Transcribe error:', msg.error);
             updateState({ error: msg.error });
@@ -512,7 +577,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         isRecording: false 
       });
     }
-  }, [sessionId, state.currentSection, updateState, enqueueUpdate, liveTranscript, buildParagraphs, tidyFr]);
+  }, [sessionId, state.currentSection, mode, updateState, enqueueUpdate, liveTranscript, buildParagraphs, tidyFr]);
 
   const stopTranscription = useCallback(async () => {
     console.log('Stopping transcription');
@@ -524,12 +589,20 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     }
     
     const ws: WebSocket | undefined = (window as any).__tx_ws;
-    try { 
-      ws?.send(JSON.stringify({ type: 'stop_transcription' })); 
-    } catch (error) {
-      console.error('Error sending stop message:', error);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try { 
+        const currentMode = mode || state.mode; // Use the passed mode parameter first, fallback to state
+        ws.send(JSON.stringify({ 
+          type: 'stop_transcription',
+          mode: currentMode 
+        })); 
+      } catch (error) {
+        console.error('Error sending stop message:', error);
+      }
     }
-    ws?.close();
+    if (ws && ws.readyState !== WebSocket.CLOSED) {
+      ws.close();
+    }
     
     // Clean up audio resources
     if (processorRef.current) {
@@ -549,27 +622,9 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
 
     updateState({ isRecording: false });
 
-    // Handle Mode 3 pipeline processing
-    if (state.mode === 'ambient' && finalAwsJson && state.sessionId) {
-      try {
-        setMode3Progress('processing');
-        const result = await processMode3Pipeline({
-          sessionId: state.sessionId,
-          language: (language === 'fr-CA' || language === 'fr') ? 'fr' : 'en',
-          section: state.currentSection,
-          rawAwsJson: finalAwsJson
-        });
-        setMode3Narrative(result.narrative);
-        setMode3Progress('ready');
-      } catch (error) {
-        console.error('Mode 3 pipeline processing failed:', error);
-        setMode3Progress('idle');
-        updateState({ 
-          error: `Pipeline processing failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        });
-      }
-    }
-  }, [updateState, state.mode, finalAwsJson, state.sessionId, language, state.currentSection, processMode3Pipeline]);
+    // ✅ Fallback: if final didn't auto-trigger for any reason
+    await triggerMode3Processing('manual_stop');
+  }, [updateState, triggerMode3Processing]);
 
   // Legacy compatibility - map to new functions
   const startRecording = useCallback(async () => {

@@ -92,6 +92,8 @@ If the same task fails after **3 development attempts**:
 - Split logic into composable utilities or handlers
 - Avoid deep nesting and unrelated logic in the same file
 - Apply clean code principles to keep future changes safe and testable
+- No code bloating, maximum of approximately 700 lines of code per file.
+
 
 ---
 

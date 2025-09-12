@@ -1947,6 +1947,22 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
       return;
     }
 
+    // Validate diarization for Ambient mode
+    const j = awsResult || {};
+    const speakerItems = j?.results?.speaker_labels?.segments?.flatMap((s: any) => s.items) || [];
+    const itemSpeakerTags = (j?.results?.items || []).map((i: any) => i?.speaker_label).filter(Boolean);
+    const labelsA = new Set((speakerItems || []).map((x: any) => x?.speaker_label).filter(Boolean));
+    const labelsB = new Set(itemSpeakerTags);
+    const diarized = (labelsA.size > 0) || (labelsB.size > 0);
+    const channels = !!(j?.results?.channel_labels || j?.channel_labels);
+    
+    if (!diarized && !channels) {
+      res.status(400).json({ 
+        error: 'no_diarization_or_channel_labels' 
+      });
+      return;
+    }
+
     const validation = pipeline.validateAWSResult(awsResult);
     if (!validation.valid) {
       res.status(400).json({ 
@@ -1972,7 +1988,8 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
 
     // Basic shape validation
     if (!data || !data.ir || !data.roleMap || !data.narrative) {
-      return res.status(500).json({ error: 'Pipeline returned incomplete artifacts' });
+      res.status(500).json({ error: 'Pipeline returned incomplete artifacts' });
+      return;
     }
 
     // Persist
@@ -2031,10 +2048,15 @@ app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
       .limit(1);
 
     if (!rows.length) {
-      return res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+      res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+      return;
     }
     const a = rows[0];
-    return res.json({ ir: a.ir, role_map: a.role_map, narrative: a.narrative, processing_time: a.processing_time });
+    if (!a) {
+      res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+      return;
+    }
+    res.json({ ir: a.ir, role_map: a.role_map, narrative: a.narrative, processing_time: a.processing_time });
 
   } catch (error) {
     console.error('Get session artifacts error:', error);
@@ -2089,24 +2111,27 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
     case 'word_for_word':
       return {
         ...config,
-        show_speaker_labels: false,
+        ShowSpeakerLabel: false,
+        ChannelIdentification: false,
         partial_results_stability: 'high' as const
-        // max_speaker_labels omitted - will be undefined
+        // MaxSpeakerLabels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
     case 'smart_dictation':
       return {
         ...config,
-        show_speaker_labels: false,  // Changed: Mode 2 should NOT use speaker labels
+        ShowSpeakerLabel: false,  // Mode 2 should NOT use speaker labels
+        ChannelIdentification: false,
         partial_results_stability: 'high' as const
-        // max_speaker_labels omitted - will be undefined
+        // MaxSpeakerLabels omitted - will be undefined
         // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
       return {
         ...config,
-        show_speaker_labels: true,  // Mode 3: Enable speaker labels
-        max_speaker_labels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
+        ShowSpeakerLabel: true,  // Mode 3: Enable speaker labels
+        MaxSpeakerLabels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
+        ChannelIdentification: false,  // Do not enable ChannelIdentification in ambient; diarization & channel ID are mutually exclusive
         partial_results_stability: 'medium' as const
         // vocabulary_name omitted - will be undefined
       };
@@ -2114,9 +2139,10 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       // Fallback to current configuration
       return {
         ...config,
-        show_speaker_labels: false,
+        ShowSpeakerLabel: false,
+        ChannelIdentification: false,
         partial_results_stability: 'high' as const
-        // max_speaker_labels omitted - will be undefined
+        // MaxSpeakerLabels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
   }
@@ -2126,6 +2152,62 @@ const wss = new WebSocketServer({ server });
 
 // Store active transcription sessions - integrated with AWS Transcribe
 const activeSessions = new Map();
+
+// Per-session store for Mode 3 finalization tracking
+const sessionFinalization = new Map<string, {
+  finalSent: boolean;
+  awsAccumulatedResult: any;
+}>();
+
+// Helper to finalize ambient session (idempotent)
+function finalizeAmbientSession(sessionId: string, ws: any, reason: 'natural_end' | 'manual_stop') {
+  const sessionData = sessionFinalization.get(sessionId);
+  
+  // Check if already finalized
+  if (sessionData?.finalSent) {
+    console.log(`[${sessionId}] Finalization skipped (already sent) - reason: ${reason}`);
+    return;
+  }
+  
+  // Mark as finalized
+  if (!sessionData) {
+    sessionFinalization.set(sessionId, { finalSent: true, awsAccumulatedResult: null });
+  } else {
+    sessionData.finalSent = true;
+  }
+  
+  // Build AWS result from accumulated data
+  const awsResult = sessionData?.awsAccumulatedResult || { 
+    results: { transcripts: [], items: [] }, 
+    speaker_labels: { speakers: 0, segments: [] } 
+  };
+  
+  console.log(`[${sessionId}] Finalizing ambient session (${reason})`);
+  
+  // Build detailed diarization summary
+  const j = awsResult || {};
+  const speakerItems = j?.results?.speaker_labels?.segments?.flatMap((s: any) => s.items) || [];
+  const itemSpeakerTags = (j?.results?.items || []).map((i: any) => i?.speaker_label).filter(Boolean);
+  const labelsA = new Set((speakerItems || []).map((x: any) => x?.speaker_label).filter(Boolean));
+  const labelsB = new Set(itemSpeakerTags);
+  const diarized = (labelsA.size > 0) || (labelsB.size > 0);
+  const channels = !!(j?.results?.channel_labels || j?.channel_labels);
+  const summary = {
+    diarized,
+    channels,
+    speakerCount: Math.max(labelsA.size, labelsB.size),
+    itemCount: (j?.results?.items || []).length
+  };
+  console.log('FINAL_STREAMING_SUMMARY', summary);
+  
+  // Send transcription_final message with summary
+  ws.send(JSON.stringify({ 
+    type: 'transcription_final', 
+    mode: 'ambient',
+    summary,
+    payload: awsResult
+  }));
+}
 
 wss.on('connection', (ws, req) => {
   let started = false;
@@ -2188,9 +2270,31 @@ wss.on('connection', (ws, req) => {
         started = true;
 
         // Phase 0: Use mode-specific configuration
+        console.log(`[${sessionId}] Received start message:`, { mode: msg.mode, languageCode: msg.languageCode, sampleRate: msg.sampleRate });
         const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
           language_code: msg.languageCode, 
           media_sample_rate_hz: msg.sampleRate ?? 16000
+        });
+        console.log(`[${sessionId}] Mode config generated:`, modeConfig);
+
+        // Runtime validation guards for speaker diarization configuration
+        if (modeConfig.ShowSpeakerLabel && modeConfig.ChannelIdentification) {
+          console.error(`[${sessionId}] ERROR: ShowSpeakerLabel and ChannelIdentification cannot both be true. Setting ChannelIdentification=false.`);
+          modeConfig.ChannelIdentification = false;
+        }
+        if (modeConfig.ShowSpeakerLabel && !(modeConfig as any).MaxSpeakerLabels) {
+          console.warn(`[${sessionId}] WARNING: ShowSpeakerLabel=true but MaxSpeakerLabels not set. Setting MaxSpeakerLabels=2.`);
+          (modeConfig as any).MaxSpeakerLabels = 2;
+        }
+
+        // Log stream parameters for verification
+        console.log('[STREAM_PARAMS]', {
+          mode: msg.mode,
+          LanguageCode: modeConfig.language_code,
+          SampleRate: modeConfig.media_sample_rate_hz,
+          ShowSpeakerLabel: modeConfig.ShowSpeakerLabel ?? false,
+          MaxSpeakerLabels: (modeConfig as any).MaxSpeakerLabels ?? null,
+          ChannelIdentification: modeConfig.ChannelIdentification ?? false
         });
 
         // Start AWS stream (non-blocking) and expose feeder immediately
@@ -2201,12 +2305,21 @@ wss.on('connection', (ws, req) => {
             (res) => {
               // Check if this is the final AWS result for Mode 3
               if (res.resultId === 'final_aws_result' && res.awsResult && msg.mode === 'ambient') {
-                console.log(`[${sessionId}] Sending final AWS result for Mode 3 pipeline`);
-                ws.send(JSON.stringify({ 
-                  type: 'transcription_final', 
-                  mode: 'ambient',
-                  payload: res.awsResult
-                }));
+                console.log(`[${sessionId}] Storing final AWS result for Mode 3 pipeline`);
+                
+                // Store AWS result for this session
+                const sessionData = sessionFinalization.get(sessionId);
+                if (sessionData) {
+                  sessionData.awsAccumulatedResult = res.awsResult;
+                } else {
+                  sessionFinalization.set(sessionId, { 
+                    finalSent: false, 
+                    awsAccumulatedResult: res.awsResult 
+                  });
+                }
+                
+                // Finalize the session
+                finalizeAmbientSession(sessionId, ws, 'natural_end');
               } else {
                 // Regular transcription result
                 ws.send(JSON.stringify({ 
@@ -2258,7 +2371,18 @@ wss.on('connection', (ws, req) => {
 
     try {
       const msg = JSON.parse(data.toString());
-      if (msg?.type === 'stop_transcription') endAudio?.();
+      if (msg?.type === 'stop_transcription') {
+        try {
+          endAudio?.();
+        } catch (error) {
+          console.error(`[${sessionId}] Error stopping audio:`, error);
+        }
+        
+        // Finalize ambient session for manual stop
+        if (msg.mode === 'ambient') {
+          finalizeAmbientSession(sessionId, ws, 'manual_stop');
+        }
+      }
       
       // Handle voice commands
       if (msg?.type === 'cmd.save') {
@@ -2281,6 +2405,9 @@ wss.on('connection', (ws, req) => {
     if (activeSessions.has(sessionId)) {
       activeSessions.delete(sessionId);
     }
+    
+    // Clean up finalization data
+    sessionFinalization.delete(sessionId);
     
     try {
       const status = transcriptionService.getStatus();

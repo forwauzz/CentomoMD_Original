@@ -104,7 +104,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     error,
     setActiveSection,
     mode3Narrative,
-    mode3Progress
+    mode3Progress,
+    finalAwsJson
   } = useTranscription(sessionId, selectedLanguage, mode);
 
   // Case store for saving to sections
@@ -804,15 +805,34 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                     {mode3Progress === 'ready' && 'Ready'}
                   </div>
 
-                  {/* Narrative output */}
-                  {mode3Narrative && (
-                    <div className="mt-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Processed Narrative:</h4>
-                      <pre className="whitespace-pre-wrap rounded-lg border p-3 bg-white/50 text-sm text-gray-800 font-mono">
-                        {mode3Narrative}
-                      </pre>
+                  {/* Debug button for raw JSON viewing */}
+                  {featureFlags.ambientDebugMode && finalAwsJson && (
+                    <div className="mb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const modal = document.createElement('div');
+                          modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                          modal.innerHTML = `
+                            <div class="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-auto">
+                              <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Raw AWS JSON</h3>
+                                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">×</button>
+                              </div>
+                              <pre class="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-96">${JSON.stringify(finalAwsJson, null, 2)}</pre>
+                            </div>
+                          `;
+                          document.body.appendChild(modal);
+                        }}
+                        className="text-xs"
+                      >
+                        View raw JSON
+                      </Button>
                     </div>
                   )}
+
+                  {/* Mode 3 narrative now displays in Final Transcript section */}
                 </div>
               )}
             </CardContent>
@@ -927,6 +947,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   <div className="space-y-3">
                     <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {editedTranscript}
+                    </p>
+                  </div>
+                ) : mode === 'ambient' && mode3Narrative ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {mode3Narrative}
                     </p>
                   </div>
                 ) : paragraphs.length > 0 ? (

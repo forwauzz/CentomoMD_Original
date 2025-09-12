@@ -53,6 +53,13 @@ export class Mode3Pipeline {
     };
 
     try {
+      // Validate AWS result before processing
+      const validation = this.validateAWSResult(awsResult);
+      if (!validation.valid) {
+        throw new Error(`AWS result validation failed: ${validation.errors.join(', ')}`);
+      }
+      console.log('[Mode3Pipeline] AWS result validation passed');
+
       // S1: Ingest AWS JSON → IrDialog
       console.log('[Mode3Pipeline] Starting S1: Ingest AWS JSON');
       const s1Result = await this.s1Ingest.execute(awsResult);
@@ -109,6 +116,7 @@ export class Mode3Pipeline {
         data: {
           ir: artifacts.ir!,
           roleMap: artifacts.roleMap!,
+          cleaned: artifacts.cleaned!,
           narrative: artifacts.narrative!,
           processingTime: artifacts.processingTime!
         },
@@ -160,6 +168,8 @@ export class Mode3Pipeline {
 
   /**
    * Validate AWS Transcribe result before processing
+   * Accept if diarization OR channel labels exist.
+   * If neither, return validation error with helpful message.
    */
   validateAWSResult(awsResult: AWSTranscribeResult): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -169,16 +179,21 @@ export class Mode3Pipeline {
       return { valid: false, errors };
     }
 
-    if (!awsResult.speaker_labels?.segments) {
-      errors.push('Missing speaker_labels.segments');
+    // Check for diarization (speaker labels)
+    const hasSpeakerLabels = !!(awsResult.speaker_labels || awsResult.results?.items?.some((i: any) => i.speaker_label));
+    
+    // Check for channel labels
+    const hasChannelLabels = !!(awsResult.channel_labels);
+
+    // Accept if diarization OR channel labels exist
+    if (!hasSpeakerLabels && !hasChannelLabels) {
+      errors.push('no_diarization_or_channel_labels: AWS result contains neither speaker diarization nor channel labels. Mode 3 requires speaker diarization to be enabled.');
+      return { valid: false, errors };
     }
 
+    // Additional validation for basic structure
     if (!awsResult.results?.items) {
       errors.push('Missing results.items');
-    }
-
-    if (awsResult.speaker_labels?.segments && awsResult.speaker_labels.segments.length === 0) {
-      errors.push('Empty speaker_labels.segments');
     }
 
     if (awsResult.results?.items && awsResult.results.items.length === 0) {
