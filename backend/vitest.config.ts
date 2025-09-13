@@ -17,6 +17,10 @@ export default defineConfig({
     // File patterns to exclude from tests
     exclude: ['node_modules', 'dist', 'build'],
     
+    // Test configuration - ensure logs are visible
+    reporters: ['default'],
+    logHeapUsage: false,
+    
     // Coverage configuration
     coverage: {
       provider: 'v8',

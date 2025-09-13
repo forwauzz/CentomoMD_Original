@@ -43,10 +43,39 @@ router.post('/', async (_req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     logger.info(`GET /api/transcripts/${req.params.id} - Get transcript`);
+    
+    // Get the transcript from the in-memory store
+    const transcript = (global as any).finalTranscripts?.get(req.params.id);
+    
+    if (!transcript) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Transcript not found' 
+      });
+    }
+    
+    console.log('[API] Retrieved transcript:', JSON.stringify(transcript, null, 2));
+    
+    // Extract text from AWS result - try multiple paths
+    let awsText = 'No transcript available';
+    
+    if (transcript.payload?.results?.transcripts?.[0]?.transcript) {
+      awsText = transcript.payload.results.transcripts[0].transcript;
+    } else if (transcript.payload?.results?.items) {
+      // Fallback: reconstruct from items
+      awsText = transcript.payload.results.items
+        .filter((item: any) => item.type === 'pronunciation')
+        .map((item: any) => item.alternatives?.[0]?.content || '')
+        .join(' ')
+        .trim();
+    }
+    
+    console.log('[API] Extracted text:', awsText);
+    
     res.json({ 
       success: true, 
-      data: { id: req.params.id },
-      message: 'Transcript details endpoint - not yet implemented'
+      data: transcript,
+      narrative: awsText
     });
   } catch (error) {
     logger.error('Error getting transcript:', error);

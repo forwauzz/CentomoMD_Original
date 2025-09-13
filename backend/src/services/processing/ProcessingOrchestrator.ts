@@ -764,7 +764,7 @@ export class ProcessingOrchestrator {
         throw new Error(`Invalid AWS result: ${validation.errors.join(', ')}`);
       }
       
-      // Execute S1→S5 pipeline
+      // Execute S1→S5 pipeline with language for speaker mapping
       const result = await pipeline.execute(awsResult, 'default');
       
       if (!result.success) {

@@ -40,6 +40,7 @@ export interface Environment {
   AUTH_REQUIRED: boolean;
   WS_REQUIRE_AUTH: boolean;
   RATE_LIMIT_ENABLED: boolean;
+  ALLOW_SINGLE_SPEAKER_FALLBACK: boolean;
   
   // WebSocket Configuration
   WS_JWT_SECRET?: string;
@@ -96,6 +97,7 @@ const hardcodedEnv: Environment = {
   AUTH_REQUIRED: true,
   WS_REQUIRE_AUTH: false,
   RATE_LIMIT_ENABLED: false,
+  ALLOW_SINGLE_SPEAKER_FALLBACK: process.env['ALLOW_SINGLE_SPEAKER_FALLBACK'] === '1',
   
   // WebSocket Configuration
   WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
@@ -121,6 +123,9 @@ const hardcodedEnv: Environment = {
 
 // Export the hardcoded environment
 export const ENV: Environment = hardcodedEnv;
+
+// Export single-speaker fallback toggle
+export const ALLOW_SINGLE_SPEAKER_FALLBACK = hardcodedEnv.ALLOW_SINGLE_SPEAKER_FALLBACK;
 
 // Export config object for backward compatibility
 export const config = {

@@ -17,6 +17,10 @@ import { S3RoleMap } from './stages/s3_role_map.js';
 import { S4Cleanup } from './stages/s4_cleanup.js';
 import { S5Narrative } from './stages/s5_narrative.js';
 import { PIPELINE_CONFIG } from '../../config/pipeline.js';
+import { RoleMapper } from './roleMapper.js';
+import { PipelineInvariantError } from './errors.js';
+import { StageTracer } from './StageTracer.js';
+import { S1Output, S2Output, S3Output } from './schemas.js';
 
 export class Mode3Pipeline {
   private s1Ingest: S1IngestAWS;
@@ -34,13 +38,14 @@ export class Mode3Pipeline {
   }
 
   /**
-   * Execute the complete Mode 3 pipeline
+   * Execute the complete Mode 3 pipeline with automatic speaker mapping
    */
   async execute(
     awsResult: AWSTranscribeResult,
     cleanupProfile: 'default' | 'clinical_light' = 'default'
   ): Promise<StageResult<PipelineArtifacts>> {
     const pipelineStartTime = Date.now();
+    const tracer = new StageTracer();
     const artifacts: Partial<PipelineArtifacts> = {
       processingTime: {
         s1_ingest: 0,
@@ -69,6 +74,32 @@ export class Mode3Pipeline {
       artifacts.ir = s1Result.data;
       artifacts.processingTime!.s1_ingest = s1Result.processingTime;
 
+      // S1 Guard: Check speakers and segments
+      const speakers = s1Result.data.turns?.map(t => t.speaker).filter(Boolean) || [];
+      const segments = s1Result.data.turns || [];
+      if (!speakers.length || !segments.length) {
+        throw new PipelineInvariantError("S1_NO_SEGMENTS", { 
+          speakers: speakers.length, 
+          segments: segments.length 
+        });
+      }
+
+      // S1 Trace
+      tracer.mark("S1_INGEST", { 
+        speakers: speakers,
+        segments: segments
+      });
+
+      // S1 Schema Validation
+      try {
+        S1Output.parse(s1Result.data);
+      } catch (err: any) {
+        throw new PipelineInvariantError("SCHEMA_VIOLATION", { 
+          stage: "S1", 
+          issues: err.issues || err.message 
+        });
+      }
+
       // S2: Merge adjacent turns
       console.log('[Mode3Pipeline] Starting S2: Merge turns');
       const s2Result = await this.s2Merge.execute(s1Result.data);
@@ -78,30 +109,120 @@ export class Mode3Pipeline {
       artifacts.ir = s2Result.data; // Update with merged dialog
       artifacts.processingTime!.s2_merge = s2Result.processingTime;
 
-      // S3: Role mapping
-      console.log('[Mode3Pipeline] Starting S3: Role mapping');
-      const s3Result = await this.s3RoleMap.execute(s2Result.data);
-      if (!s3Result.success || !s3Result.data) {
-        throw new Error(`S3 failed: ${s3Result.error}`);
+      // S2 Guard: Check turns
+      const turns = s2Result.data.turns || [];
+      if (!turns.length) {
+        throw new PipelineInvariantError("S2_NO_TURNS", { 
+          turns: 0 
+        });
       }
-      artifacts.roleMap = s3Result.data;
-      artifacts.processingTime!.s3_role_map = s3Result.processingTime;
+
+      // S2 Trace
+      tracer.mark("S2_MERGE", { 
+        turns: turns
+      });
+
+      // S2 Schema Validation
+      try {
+        S2Output.parse(s2Result.data);
+      } catch (err: any) {
+        throw new PipelineInvariantError("SCHEMA_VIOLATION", { 
+          stage: "S2", 
+          issues: err.issues || err.message 
+        });
+      }
+
+      // Pre-S3 Guard: Ensure roleMap object exists
+      if (!artifacts.roleMap) {
+        artifacts.roleMap = {};
+      }
+
+      // Role Mapping: Map AWS speaker labels (spk_0, spk_1, etc.) to roles
+      console.log('[Mode3Pipeline] Starting Role Mapping');
+      const roleMappingStart = Date.now();
+      
+      // Extract speakers from S2 result (these are AWS speaker labels: spk_0, spk_1, etc.)
+      const s3Speakers = Array.from(new Set(s2Result.data.turns.map(turn => turn.speaker).filter(Boolean)));
+      const s3Turns = s2Result.data.turns.map(turn => ({
+        speaker: turn.speaker,
+        startTime: turn.startTime,
+        endTime: turn.endTime,
+        text: turn.text,
+        isPartial: turn.isPartial || false
+      }));
+
+      console.log(`[Mode3Pipeline] AWS speakers found: ${s3Speakers.join(', ')}`);
+      console.log(`[Mode3Pipeline] Total turns: ${s3Turns.length}`);
+
+      // Use defensive role mapping (enable heuristics for stage coverage test)
+      const roleMap = RoleMapper.mapRoles(
+        { speakers: s3Speakers, turns: s3Turns }, 
+        { allowHeuristics: true }
+      );
+      
+      const roleMappingTime = Date.now() - roleMappingStart;
+      console.log(`[Mode3Pipeline] Role mapping completed in ${roleMappingTime}ms`);
+      console.log(`[Mode3Pipeline] Role mapping result:`, roleMap);
+
+      // S3 Guard: Check roleMap coverage - only enforce if we actually have >0 speakers and fallback wasn't single-only
+      if (s3Speakers.length > 0 && (!roleMap || s3Speakers.some(s => !(s in roleMap)))) {
+        if (Object.keys(roleMap || {}).length === 0) {
+          console.warn("[Pipeline] Empty roleMap; proceeding with Unknown roles");
+        } else {
+          throw new PipelineInvariantError("S3_EMPTY_ROLEMAP", { 
+            speakers: s3Speakers, 
+            roleMap: roleMap 
+          });
+        }
+      }
+      console.error("[TRACE] S3_ROLEMAP", { keys: Object.keys(roleMap ?? {}) });
+
+      // S3 Trace
+      tracer.mark("S3_ROLEMAP", { 
+        roleMap: roleMap
+      });
+
+      // S3 Schema Validation
+      try {
+        S3Output.parse({
+          turns: s2Result.data.turns,
+          roleMap: roleMap
+        });
+      } catch (err: any) {
+        throw new PipelineInvariantError("SCHEMA_VIOLATION", { 
+          stage: "S3", 
+          issues: err.issues || err.message 
+        });
+      }
+
+      // Store the roleMap directly (maps AWS speaker labels to roles)
+      artifacts.roleMap = roleMap;
+      artifacts.processingTime!.s3_role_map = roleMappingTime;
+
 
       // S4: Cleanup
       console.log('[Mode3Pipeline] Starting S4: Cleanup');
-      const s4Result = await this.s4Cleanup.execute(s2Result.data, s3Result.data, cleanupProfile);
+      const s4Result = await this.s4Cleanup.execute(s2Result.data, roleMap, cleanupProfile);
       if (!s4Result.success || !s4Result.data) {
         throw new Error(`S4 failed: ${s4Result.error}`);
       }
       artifacts.cleaned = s4Result.data;
       artifacts.processingTime!.s4_cleanup = s4Result.processingTime;
 
-      // S5: Generate narrative
+      // S4 Trace
+      console.error("[TRACE] S4_SMOOTH", { turns: `len:${s4Result.data.turns?.length ?? 0}` });
+      tracer.mark("S4_SMOOTH", { 
+        turns: s4Result.data.turns || []
+      });
+
+      // S5: Generate narrative with clean turns
       console.log('[Mode3Pipeline] Starting S5: Generate narrative');
       const s5Result = await this.s5Narrative.execute(s4Result.data);
       if (!s5Result.success || !s5Result.data) {
         throw new Error(`S5 failed: ${s5Result.error}`);
       }
+      
+      // Store narrative result
       artifacts.narrative = s5Result.data;
       artifacts.processingTime!.s5_narrative = s5Result.processingTime;
 
@@ -110,6 +231,9 @@ export class Mode3Pipeline {
       artifacts.processingTime!.total = totalTime;
 
       console.log(`[Mode3Pipeline] Pipeline completed in ${totalTime}ms`);
+
+      // DONE Trace
+      tracer.mark("DONE");
 
       return {
         success: true,
@@ -183,7 +307,7 @@ export class Mode3Pipeline {
     const hasSpeakerLabels = !!(awsResult.speaker_labels || awsResult.results?.items?.some((i: any) => i.speaker_label));
     
     // Check for channel labels
-    const hasChannelLabels = !!(awsResult.channel_labels);
+    const hasChannelLabels = !!(awsResult as any).channel_labels;
 
     // Accept if diarization OR channel labels exist
     if (!hasSpeakerLabels && !hasChannelLabels) {

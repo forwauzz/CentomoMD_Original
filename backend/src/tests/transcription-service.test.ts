@@ -59,9 +59,8 @@ describe('TranscriptionService AWS Configuration', () => {
             LanguageCode: 'fr-CA',
             MediaEncoding: 'pcm',
             MediaSampleRateHertz: 16000,
-            ShowSpeakerLabel: false,
             // MaxSpeakerLabels should not be present
-            EnablePartialResultsStabilization: true,
+            EnableChannelIdentification: false,
             PartialResultsStability: 'high'
           })
         })
@@ -114,9 +113,8 @@ describe('TranscriptionService AWS Configuration', () => {
             LanguageCode: 'fr-CA',
             MediaEncoding: 'pcm',
             MediaSampleRateHertz: 16000,
-            ShowSpeakerLabel: false,
             // MaxSpeakerLabels should not be present
-            EnablePartialResultsStabilization: true,
+            EnableChannelIdentification: false,
             PartialResultsStability: 'high'
           })
         })
@@ -171,7 +169,7 @@ describe('TranscriptionService AWS Configuration', () => {
             MediaSampleRateHertz: 16000,
             ShowSpeakerLabel: true,
             MaxSpeakerLabels: 2,  // Should be set for Mode 3
-            EnablePartialResultsStabilization: true,
+            EnableChannelIdentification: false,
             PartialResultsStability: 'medium'
           })
         })

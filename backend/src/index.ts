@@ -30,10 +30,18 @@ import { bootProbe, getDb } from './database/connection.js';
 import { artifacts } from './database/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
+import sessionsRouter from './routes/sessions.js';
+import { transcriptController } from './controllers/transcriptController.js';
 import { logger } from './utils/logger.js';
 
 const app = express();
 const server = http.createServer(app);
+
+// Simple in-memory store for final transcripts
+const finalTranscripts = new Map<string, any>();
+
+// Make it globally accessible
+(global as any).finalTranscripts = finalTranscripts;
 
 // TODO: Apply security middleware
 app.use(securityMiddleware);
@@ -540,6 +548,22 @@ try {
   console.log('✅ /api/db routes mounted');
 } catch(e) {
   console.error('❌ mount /api/db:', e);
+}
+
+// Sessions routes (admin-only role swap)
+try {
+  app.use('/api/sessions', sessionsRouter);
+  console.log('✅ /api/sessions routes mounted');
+} catch(e) {
+  console.error('❌ Failed to mount /api/sessions routes:', e);
+}
+
+// Mount transcript routes
+try {
+  app.use('/api/transcripts', transcriptController);
+  console.log('✅ /api/transcripts routes mounted');
+} catch(e) {
+  console.error('❌ Failed to mount /api/transcripts routes:', e);
 }
 
 // Boot-time database probe
@@ -1972,7 +1996,7 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
       return;
     }
 
-    // Execute S1→S5 pipeline
+    // Execute S1→S5 pipeline with language for speaker mapping
     const result = await pipeline.execute(awsResult, 'default');
     
     if (!result.success) {
@@ -2111,27 +2135,27 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
     case 'word_for_word':
       return {
         ...config,
-        ShowSpeakerLabel: false,
-        ChannelIdentification: false,
+        show_speaker_labels: false,
+        EnableChannelIdentification: false,
         partial_results_stability: 'high' as const
-        // MaxSpeakerLabels omitted - will be undefined
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
       };
     case 'smart_dictation':
       return {
         ...config,
-        ShowSpeakerLabel: false,  // Mode 2 should NOT use speaker labels
-        ChannelIdentification: false,
+        show_speaker_labels: false,  // Mode 2 should NOT use speaker labels
+        EnableChannelIdentification: false,
         partial_results_stability: 'high' as const
-        // MaxSpeakerLabels omitted - will be undefined
+        // max_speaker_labels omitted - will be undefined
         // vocabulary_name: 'medical_terms_fr'  // TODO: Create medical vocabulary in AWS
       };
     case 'ambient':
       return {
         ...config,
-        ShowSpeakerLabel: true,  // Mode 3: Enable speaker labels
-        MaxSpeakerLabels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
-        ChannelIdentification: false,  // Do not enable ChannelIdentification in ambient; diarization & channel ID are mutually exclusive
+        show_speaker_labels: true,  // Mode 3: Enable speaker labels
+        max_speaker_labels: 3,  // Mode 3: Allow up to 3 speakers (recommended by AWS)
+        EnableChannelIdentification: false,  // Do not enable ChannelIdentification in ambient; diarization & channel ID are mutually exclusive
         partial_results_stability: 'medium' as const
         // vocabulary_name omitted - will be undefined
       };
@@ -2139,8 +2163,8 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       // Fallback to current configuration
       return {
         ...config,
-        ShowSpeakerLabel: false,
-        ChannelIdentification: false,
+        show_speaker_labels: false,
+        EnableChannelIdentification: false,
         partial_results_stability: 'high' as const
         // MaxSpeakerLabels omitted - will be undefined
         // vocabulary_name omitted - will be undefined
@@ -2159,61 +2183,71 @@ const sessionFinalization = new Map<string, {
   awsAccumulatedResult: any;
 }>();
 
-// Helper to finalize ambient session (idempotent)
-function finalizeAmbientSession(sessionId: string, ws: any, reason: 'natural_end' | 'manual_stop') {
-  const sessionData = sessionFinalization.get(sessionId);
-  
-  // Check if already finalized
-  if (sessionData?.finalSent) {
-    console.log(`[${sessionId}] Finalization skipped (already sent) - reason: ${reason}`);
-    return;
-  }
-  
-  // Mark as finalized
-  if (!sessionData) {
-    sessionFinalization.set(sessionId, { finalSent: true, awsAccumulatedResult: null });
-  } else {
-    sessionData.finalSent = true;
-  }
-  
-  // Build AWS result from accumulated data
-  const awsResult = sessionData?.awsAccumulatedResult || { 
-    results: { transcripts: [], items: [] }, 
-    speaker_labels: { speakers: 0, segments: [] } 
-  };
-  
-  console.log(`[${sessionId}] Finalizing ambient session (${reason})`);
-  
-  // Build detailed diarization summary
-  const j = awsResult || {};
-  const speakerItems = j?.results?.speaker_labels?.segments?.flatMap((s: any) => s.items) || [];
-  const itemSpeakerTags = (j?.results?.items || []).map((i: any) => i?.speaker_label).filter(Boolean);
-  const labelsA = new Set((speakerItems || []).map((x: any) => x?.speaker_label).filter(Boolean));
-  const labelsB = new Set(itemSpeakerTags);
-  const diarized = (labelsA.size > 0) || (labelsB.size > 0);
-  const channels = !!(j?.results?.channel_labels || j?.channel_labels);
-  const summary = {
-    diarized,
-    channels,
-    speakerCount: Math.max(labelsA.size, labelsB.size),
-    itemCount: (j?.results?.items || []).length
-  };
-  console.log('FINAL_STREAMING_SUMMARY', summary);
-  
-  // Send transcription_final message with summary
-  ws.send(JSON.stringify({ 
-    type: 'transcription_final', 
-    mode: 'ambient',
-    summary,
-    payload: awsResult
-  }));
-}
 
 wss.on('connection', (ws, req) => {
   let started = false;
   let sessionId = `dev-session-id`; // or your own
   let pushAudio: ((u8: Uint8Array) => void) | null = null;
   let endAudio: (() => void) | null = null;
+  let readerDone: Promise<void> | null = null;
+
+  // Session-scoped finalize tracking
+  let finalizeRequested: "manual_stop" | "natural_end" | null = null;
+  let finalized = false;
+  let awsAccumulatedResult: any = null;
+
+  function requestFinalize(reason: "manual_stop" | "natural_end") {
+    finalizeRequested = reason;
+    // coalesce to single finalize
+    queueMicrotask(() => void finalizeAmbientSession(ws, finalizeRequested!, buildFinalArtifact));
+  }
+
+  function buildFinalArtifact() {
+    return {
+      id: sessionId,
+      summary: {
+        diarized: awsAccumulatedResult?.results?.speaker_labels?.segments?.length > 0,
+        channels: !!(awsAccumulatedResult?.results?.channel_labels || awsAccumulatedResult?.channel_labels),
+        speakerCount: new Set((awsAccumulatedResult?.results?.speaker_labels?.segments?.flatMap((s: any) => s.items) || [])
+          .map((x: any) => x?.speaker_label).filter(Boolean)).size,
+        itemCount: (awsAccumulatedResult?.results?.items || []).length
+      },
+      payload: awsAccumulatedResult
+    };
+  }
+
+  async function finalizeAmbientSession(
+    ws: import("ws"),
+    reason: "manual_stop" | "natural_end" | "watchdog_timeout",
+    buildFinalArtifact: () => any
+  ) {
+    if (finalized) return;
+    finalized = true;
+
+    console.log(`[${sessionId}] Finalizing ambient session (${reason})`);
+
+    try { if (readerDone) await readerDone; } catch (e) { console.error("[ambient] readerDone error", e); }
+
+    const artifact = buildFinalArtifact();
+    console.log("FINAL_STREAMING_SUMMARY", artifact?.summary ?? {});
+
+    // Store the final transcript in memory
+    finalTranscripts.set(artifact.id, artifact);
+    console.log(`[ambient] Stored final transcript for artifactId: ${artifact.id}`);
+
+    try {
+      ws.send(JSON.stringify({
+        type: "transcription_final",
+        mode: "ambient",
+        artifactId: artifact.id,
+        summary: artifact.summary,
+      }));
+    } catch (e) {
+      console.error("[ambient] ws send final failed", e);
+    }
+
+    setTimeout(() => { try { ws.close(); } catch {} }, 100);
+  }
 
   console.log("WebSocket connection established", { sessionId });
   
@@ -2278,27 +2312,27 @@ wss.on('connection', (ws, req) => {
         console.log(`[${sessionId}] Mode config generated:`, modeConfig);
 
         // Runtime validation guards for speaker diarization configuration
-        if (modeConfig.ShowSpeakerLabel && modeConfig.ChannelIdentification) {
-          console.error(`[${sessionId}] ERROR: ShowSpeakerLabel and ChannelIdentification cannot both be true. Setting ChannelIdentification=false.`);
-          modeConfig.ChannelIdentification = false;
+        if (modeConfig.show_speaker_labels && (modeConfig as any).EnableChannelIdentification) {
+          console.error(`[${sessionId}] ERROR: show_speaker_labels and EnableChannelIdentification cannot both be true. Setting EnableChannelIdentification=false.`);
+          (modeConfig as any).EnableChannelIdentification = false;
         }
-        if (modeConfig.ShowSpeakerLabel && !(modeConfig as any).MaxSpeakerLabels) {
-          console.warn(`[${sessionId}] WARNING: ShowSpeakerLabel=true but MaxSpeakerLabels not set. Setting MaxSpeakerLabels=2.`);
-          (modeConfig as any).MaxSpeakerLabels = 2;
+        if (modeConfig.show_speaker_labels && !(modeConfig as any).max_speaker_labels) {
+          console.warn(`[${sessionId}] WARNING: show_speaker_labels=true but max_speaker_labels not set. Setting max_speaker_labels=2.`);
+          (modeConfig as any).max_speaker_labels = 2;
         }
 
         // Log stream parameters for verification
         console.log('[STREAM_PARAMS]', {
           mode: msg.mode,
           LanguageCode: modeConfig.language_code,
-          SampleRate: modeConfig.media_sample_rate_hz,
-          ShowSpeakerLabel: modeConfig.ShowSpeakerLabel ?? false,
-          MaxSpeakerLabels: (modeConfig as any).MaxSpeakerLabels ?? null,
-          ChannelIdentification: modeConfig.ChannelIdentification ?? false
+          MediaSampleRateHertz: modeConfig.media_sample_rate_hz,
+          ShowSpeakerLabel: modeConfig.show_speaker_labels ?? false,
+          MaxSpeakerLabels: (modeConfig as any).max_speaker_labels ?? null,
+          EnableChannelIdentification: (modeConfig as any).EnableChannelIdentification ?? false
         });
 
         // Start AWS stream (non-blocking) and expose feeder immediately
-        const { pushAudio: feeder, endAudio: ender } =
+        const { pushAudio: feeder, endAudio: ender, readerDone: readerDonePromise } =
           transcriptionService.startStreamingTranscription(
             sessionId,
             modeConfig,
@@ -2308,35 +2342,61 @@ wss.on('connection', (ws, req) => {
                 console.log(`[${sessionId}] Storing final AWS result for Mode 3 pipeline`);
                 
                 // Store AWS result for this session
-                const sessionData = sessionFinalization.get(sessionId);
-                if (sessionData) {
-                  sessionData.awsAccumulatedResult = res.awsResult;
-                } else {
-                  sessionFinalization.set(sessionId, { 
-                    finalSent: false, 
-                    awsAccumulatedResult: res.awsResult 
-                  });
-                }
+                awsAccumulatedResult = res.awsResult;
                 
-                // Finalize the session
-                finalizeAmbientSession(sessionId, ws, 'natural_end');
-              } else {
-                // Regular transcription result
-                ws.send(JSON.stringify({ 
-                  type: 'transcription_result', 
-                  resultId: res.resultId,                         // stable key
-                  startTime: res.startTime ?? null,
-                  endTime: res.endTime ?? null,
-                  text: res.transcript, 
-                  isFinal: !res.is_partial,
-                  language_detected: res.language_detected,
-                  confidence_score: res.confidence_score,
-                  speaker: res.speaker                           // PATIENT vs CLINICIAN
-                }));
+                // Request finalize for natural end
+                requestFinalize('natural_end');
+              }
+              
+              // Always send live transcription results (for all modes including ambient)
+              if (res.resultId !== 'final_aws_result') {
+                console.log(`[${sessionId}] Sending live transcription result:`, {
+                  resultId: res.resultId,
+                  text: res.transcript,
+                  isPartial: res.is_partial,
+                  mode: msg.mode
+                });
+                
+                // Send live updates with explicit type for ambient mode
+                if (msg.mode === 'ambient') {
+                  const liveMessage = {
+                    type: "transcription_live",
+                    mode: "ambient",
+                    resultId: res.resultId,
+                    text: res.transcript,
+                    isPartial: res.is_partial,
+                  };
+                  console.log(`[${sessionId}] Sending WS message:`, liveMessage);
+                  ws.send(JSON.stringify(liveMessage));
+                  console.log(`[${sessionId}] WS message sent successfully`);
+                } else {
+                  // Send full transcription_result for other modes
+                  ws.send(JSON.stringify({ 
+                    type: 'transcription_result', 
+                    resultId: res.resultId,                         // stable key
+                    startTime: res.startTime ?? null,
+                    endTime: res.endTime ?? null,
+                    text: res.transcript, 
+                    isFinal: !res.is_partial,
+                    language_detected: res.language_detected,
+                    confidence_score: res.confidence_score,
+                    speaker: res.speaker                           // PATIENT vs CLINICIAN
+                  }));
+                }
               }
             },
             (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
           );
+
+        // Ensure AWS reader promise is assigned where you start streaming
+        readerDone = (async () => {
+          try {
+            await readerDonePromise;
+            console.log("[ambient] AWS stream reader completed");
+          } catch (error) {
+            console.error("[ambient] AWS stream reader error:", error);
+          }
+        })();
 
         pushAudio = feeder;
         endAudio = ender;
@@ -2351,6 +2411,17 @@ wss.on('connection', (ws, req) => {
 
         // Tell client to start mic now
         ws.send(JSON.stringify({ type: 'stream_ready' }));
+
+        // Send session_info for ambient mode
+        if (msg.mode === 'ambient') {
+          const sessionInfo = { type: "session_info", mode: "ambient", sessionId };
+          try {
+            ws.send(JSON.stringify(sessionInfo));
+            console.log("[ambient] sent session_info", sessionInfo);
+          } catch (e) {
+            console.error("[ambient] failed to send session_info", e);
+          }
+        }
       } catch {
         ws.send(JSON.stringify({ type: 'transcription_error', error: 'Expected start_transcription JSON' }));
         return ws.close();
@@ -2378,9 +2449,9 @@ wss.on('connection', (ws, req) => {
           console.error(`[${sessionId}] Error stopping audio:`, error);
         }
         
-        // Finalize ambient session for manual stop
+        // Request finalize for manual stop
         if (msg.mode === 'ambient') {
-          finalizeAmbientSession(sessionId, ws, 'manual_stop');
+          requestFinalize('manual_stop');
         }
       }
       
@@ -2400,6 +2471,11 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     endAudio?.();
+    
+    // Request finalize for natural end if not already finalized
+    if (!finalized) {
+      requestFinalize('natural_end');
+    }
     
     // Clean up session
     if (activeSessions.has(sessionId)) {

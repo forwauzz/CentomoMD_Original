@@ -97,7 +97,8 @@ export class S5Narrative {
     const lines: string[] = [];
     
     for (const turn of cleanedDialog.turns) {
-      const rolePrefix = `${turn.role}:`;
+      const role = turn.role || "Unknown";
+      const rolePrefix = `${role}:`;
       const text = this.formatTurnText(turn.text);
       lines.push(`${rolePrefix} ${text}`);
       

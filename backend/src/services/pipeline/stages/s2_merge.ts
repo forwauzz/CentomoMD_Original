@@ -6,6 +6,15 @@
 import { IrDialog, IrTurn, StageResult } from '../../../types/ir.js';
 import { PIPELINE_CONFIG } from '../../../config/pipeline.js';
 
+export async function s2MergeTurns(input: {
+  speakers: string[];
+  segments: Array<{ speaker: string; startMs: number; endMs: number; text: string }>;
+}): Promise<{ speakers: string[]; turns: Array<{ speaker: string; startMs: number; endMs: number; text: string }> }> {
+  const turns = input.segments.map(s => ({ speaker: s.speaker, startMs: s.startMs, endMs: s.endMs, text: s.text }));
+  console.error("[TRACE] S2_MERGE", { turns: `len:${turns.length}` });
+  return { speakers: input.speakers, turns };
+}
+
 export class S2Merge {
   private config = PIPELINE_CONFIG.merge;
 
@@ -13,7 +22,13 @@ export class S2Merge {
     const startTime = Date.now();
 
     try {
+      console.log(`[S2Merge] Input turns: ${dialog.turns.length}`);
       const mergedTurns = this.mergeAdjacentTurns(dialog.turns);
+      console.log(`[S2Merge] Output turns: ${mergedTurns.length}`);
+      
+      // Log text filtering stats
+      const nonEmptyTurns = mergedTurns.filter(t => t.text.trim().length > 0);
+      console.log(`[S2Merge] Non-empty turns: ${nonEmptyTurns.length}`);
       
       const mergedDialog: IrDialog = {
         ...dialog,

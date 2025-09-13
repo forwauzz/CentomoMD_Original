@@ -4,8 +4,8 @@ import { describe, it, expect } from 'vitest';
 // Since we can't easily import it directly, we'll recreate it here for testing
 const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   const config = {
-    language_code: baseConfig.language_code,
-    media_sample_rate_hz: baseConfig.media_sample_rate_hz,
+    language_code: baseConfig?.language_code || 'fr-CA',
+    media_sample_rate_hz: baseConfig?.media_sample_rate_hz || 16000,
   };
 
   switch (mode) {

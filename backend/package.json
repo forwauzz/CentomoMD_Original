@@ -10,6 +10,7 @@
     "start": "node dist/src/boot.js",
     "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest --config vitest.config.ts --coverage",
+    "test:integ": "cross-env PIPELINE_TRACE=1 vitest run --reporter=default --bail=1 src/tests/pipeline-integration.test.ts",
     "db:setup": "node scripts/create-tables.js",
     "db:migrate": "node scripts/create-tables.js",
     "db:generate": "drizzle-kit generate",
@@ -38,7 +39,7 @@
     "socket.io": "^4.7.4",
     "winston": "^3.11.0",
     "ws": "^8.14.2",
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -49,6 +50,7 @@
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
+    "cross-env": "^7.0.3",
     "drizzle-kit": "^0.20.6",
     "eslint": "^8.54.0",
     "postgres": "^3.4.3",

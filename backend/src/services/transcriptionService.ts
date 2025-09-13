@@ -11,6 +11,35 @@ import {
 import { config } from '../config/env.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
 
+export function buildTranscribeCmdInput(modeConfig: any): StartStreamTranscriptionCommandInput {
+  const cmdInput: StartStreamTranscriptionCommandInput = {
+    LanguageCode: modeConfig.language_code ?? "en-US",
+    MediaEncoding: "pcm",
+    MediaSampleRateHertz: modeConfig.media_sample_rate_hz ?? 16000,
+    EnableChannelIdentification: false,
+  };
+
+  // Only set speaker labels if explicitly enabled
+  if (modeConfig.show_speaker_labels === true) {
+    cmdInput.ShowSpeakerLabel = true;
+    // Only set MaxSpeakerLabels if it's a positive number
+    if (modeConfig.max_speaker_labels && modeConfig.max_speaker_labels > 0) {
+      cmdInput.MaxSpeakerLabels = modeConfig.max_speaker_labels;
+    } else if (modeConfig.max_speaker_labels === 0) {
+      // Don't set MaxSpeakerLabels when explicitly set to 0
+    } else {
+      cmdInput.MaxSpeakerLabels = 2; // Default for ambient mode
+    }
+  }
+
+  // Add PartialResultsStability for all modes
+  cmdInput.PartialResultsStability = modeConfig.partial_results_stability ?? "high";
+  cmdInput.EnablePartialResultsStabilization = true;
+
+  console.log("[TRANSCRIBE_START_CMD_INPUT]", cmdInput);
+  return cmdInput;
+}
+
 export class TranscriptionService {
   private client: TranscribeStreamingClient;
   private activeStreams: Map<string, TranscriptResultStream> = new Map();
@@ -34,7 +63,7 @@ export class TranscriptionService {
     config: TranscriptionConfig,
     onTranscript: (result: TranscriptionResult) => void,
     onError: (error: Error) => void
-  ): { pushAudio: (audioData: Uint8Array) => void; endAudio: () => void } {
+  ): { pushAudio: (audioData: Uint8Array) => void; endAudio: () => void; readerDone: Promise<void> } {
     console.log(`Starting AWS Transcribe streaming for session: ${sessionId} with language: ${config.language_code}`);
 
     // Simple async queue for audio chunks (never yields undefined)
@@ -54,24 +83,20 @@ export class TranscriptionService {
     })();
 
     // Phase 0: Prepare AWS Transcribe configuration with mode-specific parameters
-    const cmdInput: StartStreamTranscriptionCommandInput = {
-      LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
-      MediaEncoding: 'pcm',
-      MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
-      AudioStream: audioIterable,
-      ShowSpeakerLabel: config.ShowSpeakerLabel || false,     // Mode-specific speaker attribution
-      // MaxSpeakerLabels: Set based on mode configuration
-      ...(config.MaxSpeakerLabels && { MaxSpeakerLabels: config.MaxSpeakerLabels }),
-      ChannelIdentification: config.ChannelIdentification || false,  // Channel identification
-      EnablePartialResultsStabilization: true,
-      PartialResultsStability: (config.partial_results_stability || 'high') as any,  // Mode-specific stability
-      // Custom vocabulary for medical terms (when available)
-      ...(config.vocabulary_name && { VocabularyName: config.vocabulary_name }),
-    };
+    const cmdInput = buildTranscribeCmdInput(config);
+    cmdInput.AudioStream = audioIterable;
 
     // Create streaming command
     const command = new StartStreamTranscriptionCommand(cmdInput);
     
+    // Create a promise that resolves when the AWS stream completes
+    let readerDoneResolve: () => void;
+    let readerDoneReject: (error: Error) => void;
+    const readerDone = new Promise<void>((resolve, reject) => {
+      readerDoneResolve = resolve;
+      readerDoneReject = reject;
+    });
+
     // Start AWS handshake in background (don't await)
     this.client.send(command).then(async (response) => {
       try {
@@ -82,17 +107,27 @@ export class TranscriptionService {
         // Store the stream for this session
         this.activeStreams.set(sessionId, response.TranscriptResultStream as any);
 
-        // Handle transcript events
-        this.handleTranscriptEvents(sessionId, response.TranscriptResultStream as any, onTranscript, onError);
+        // Handle transcript events and resolve readerDone when complete
+        this.handleTranscriptEvents(sessionId, response.TranscriptResultStream as any, onTranscript, onError)
+          .then(() => {
+            console.log(`[${sessionId}] AWS stream reader completed`);
+            readerDoneResolve();
+          })
+          .catch((error) => {
+            console.error(`[${sessionId}] AWS stream reader error:`, error);
+            readerDoneReject(error);
+          });
 
         console.log(`AWS Transcribe streaming started successfully for session: ${sessionId}`);
       } catch (error) {
         console.error(`Failed to start AWS Transcribe streaming for session ${sessionId}:`, error);
         this.handleTranscribeError(error, onError);
+        readerDoneReject(error as Error);
       }
     }).catch((error) => {
       console.error(`AWS Transcribe handshake failed for session ${sessionId}:`, error);
       this.handleTranscribeError(error, onError);
+      readerDoneReject(error as Error);
     });
 
     // Store the queue for this session (available immediately)
@@ -112,7 +147,8 @@ export class TranscriptionService {
       endAudio: () => {
         done = true;
         console.log(`🎵 Audio stream ended for session: ${sessionId}`);
-      }
+      },
+      readerDone
     };
   }
 

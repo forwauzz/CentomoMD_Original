@@ -11,6 +11,58 @@ import {
   AWSTranscriptItem,
   StageResult 
 } from '../../../types/ir.js';
+import { parseAwsTranscript } from '../../../providers/awsTranscribe/schema.js';
+import { ALLOW_SINGLE_SPEAKER_FALLBACK } from '../../../config/env.js';
+
+export async function s1IngestAws(input: { rawAwsJson: any }): Promise<{
+  speakers: string[];
+  segments: Array<{ speaker: string; startMs: number; endMs: number; text: string }>;
+}> {
+  const aws = parseAwsTranscript(input.rawAwsJson);
+
+  const segs = aws.speaker_labels?.segments ?? [];
+  const items = aws.results?.items ?? [];
+
+  if (!segs.length) {
+    if (!ALLOW_SINGLE_SPEAKER_FALLBACK) {
+      console.warn("[S1] No speaker labels and fallback disabled");
+      return { speakers: [], segments: [] };
+    }
+    console.warn("[S1] No speaker labels; using single-speaker fallback");
+    const words = items
+      .filter((it: any) => it.type === "pronunciation")
+      .map((it: any) => it.alternatives?.[0]?.content ?? "")
+      .filter(Boolean);
+
+    const endMs = items.length
+      ? Math.round(parseFloat(items[items.length - 1]?.end_time ?? "0") * 1000)
+      : 0;
+
+    const text = words.join(" ").trim();
+    if (!text) return { speakers: [], segments: [] };
+
+    return {
+      speakers: ["spk_0"],
+      segments: [{ speaker: "spk_0", startMs: 0, endMs, text }]
+    };
+  }
+
+  // diarized path (existing)
+  const segments = segs.map((seg: any) => {
+    const s = parseFloat(seg.start_time);
+    const e = parseFloat(seg.end_time);
+    const text = items
+      .filter((it: any) => it.type === "pronunciation" && it.start_time && parseFloat(it.start_time) >= s && parseFloat(it.end_time) <= e)
+      .map((it: any) => it.alternatives?.[0]?.content ?? "")
+      .join(" ")
+      .trim();
+    return { speaker: seg.speaker_label, startMs: Math.round(s * 1000), endMs: Math.round(e * 1000), text };
+  }).filter((x: any) => x.text);
+
+  const speakers = Array.from(new Set(segments.map((s: any) => s.speaker)));
+  console.error("[TRACE] S1_INGEST", { speakers: `len:${speakers.length}`, segments: `len:${segments.length}` });
+  return { speakers, segments };
+}
 
 export class S1IngestAWS {
 
@@ -18,13 +70,16 @@ export class S1IngestAWS {
     const startTime = Date.now();
 
     try {
-      if (!awsResult.speaker_labels?.segments || !awsResult.results?.items) {
+      // Validate AWS input structure using Zod schema
+      const validatedAwsResult = parseAwsTranscript(awsResult);
+      
+      if (!validatedAwsResult.speaker_labels?.segments || !validatedAwsResult.results.items) {
         throw new Error('Invalid AWS Transcribe result: missing speaker_labels or results');
       }
 
       const turns = this.parseSegmentsToTurns(
-        awsResult.speaker_labels.segments,
-        awsResult.results.items
+        validatedAwsResult.speaker_labels.segments,
+        validatedAwsResult.results.items
       );
 
       const dialog: IrDialog = {
@@ -65,7 +120,7 @@ export class S1IngestAWS {
     for (const segment of segments) {
       const startTime = parseFloat(segment.start_time);
       const endTime = parseFloat(segment.end_time);
-      const speaker = segment.speaker_label;
+      const speaker = this.normalizeSpeakerLabel(segment.speaker_label);
 
       // Find corresponding text items for this segment
       const segmentResult = this.extractTextForSegment(segment, items);
@@ -86,6 +141,23 @@ export class S1IngestAWS {
 
     // Sort turns by start time
     return turns.sort((a, b) => a.startTime - b.startTime);
+  }
+
+  /**
+   * Normalize speaker labels to handle string drift
+   * Maps spk_00, spk_000, etc. to spk_0 and spk_11, spk_111, etc. to spk_1
+   */
+  private normalizeSpeakerLabel(speakerLabel: string): string {
+    // Handle spk_0+ patterns (spk_00, spk_000, etc.)
+    if (/^spk_0+$/.test(speakerLabel)) {
+      return 'spk_0';
+    }
+    // Handle spk_1+ patterns (spk_11, spk_111, etc.)
+    if (/^spk_1+$/.test(speakerLabel)) {
+      return 'spk_1';
+    }
+    // Return as-is for other patterns
+    return speakerLabel;
   }
 
   private extractTextForSegment(
