@@ -1,0 +1,1 @@
+cursor/scan-codebase-for-typescript-errors-42a2

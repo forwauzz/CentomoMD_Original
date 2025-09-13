@@ -1,0 +1,19 @@
+# TypeScript Errors (Grouped by File)
+## src/components/transcription/TranscriptionInterface.tsx
+## src/components/transcription/__tests__/TranscriptionInterface.test.tsx
+## src/config/template-config.ts
+## src/controllers/transcriptController.ts
+## src/lib/authClient.ts
+## src/lib/supabaseClient.ts
+## src/middleware/authMiddleware.ts
+## src/middleware/errorHandler.ts
+## src/middleware/performanceMiddleware.ts
+## src/pages/ProfilePage.tsx
+## src/services/pipeline/StageTracer.ts
+## src/services/pipeline/roleMapper.ts
+## src/services/pipeline/smoother.ts
+## src/services/pipeline/speakerNormalizer.ts
+## src/services/pipeline/stages/s1_ingest_aws.ts
+## src/services/pipeline/stages/s4_cleanup.ts
+## src/services/pipeline/turnBuilder.ts
+## src/services/transcriptionService.ts
