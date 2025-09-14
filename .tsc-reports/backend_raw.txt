@@ -1,0 +1,122 @@
+src/controllers/transcriptController.ts(43,20): error TS7030: Not all code paths return a value.
+src/lib/supabaseClient.ts(8,27): error TS4111: Property 'SUPABASE_URL' comes from an index signature, so it must be accessed with ['SUPABASE_URL'].
+src/lib/supabaseClient.ts(9,27): error TS4111: Property 'SUPABASE_SERVICE_ROLE_KEY' comes from an index signature, so it must be accessed with ['SUPABASE_SERVICE_ROLE_KEY'].
+src/middleware/authMiddleware.ts(94,43): error TS4111: Property 'name' comes from an index signature, so it must be accessed with ['name'].
+src/middleware/authMiddleware.ts(107,9): error TS2322: Type 'null' is not assignable to type 'string'.
+src/middleware/authMiddleware.ts(108,9): error TS2322: Type '{ user_id: string; display_name: any; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id: null; }' is not assignable to type '{ display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }'.
+  Types of property 'default_clinic_id' are incompatible.
+    Type 'null' is not assignable to type 'string'.
+src/middleware/authMiddleware.ts(124,24): error TS2339: Property 'user_id' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(125,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/middleware/authMiddleware.ts(126,21): error TS2339: Property 'display_name' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(126,57): error TS4111: Property 'name' comes from an index signature, so it must be accessed with ['name'].
+src/middleware/authMiddleware.ts(128,26): error TS2339: Property 'default_clinic_id' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(130,31): error TS2339: Property 'display_name' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(131,25): error TS2339: Property 'locale' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(132,33): error TS2339: Property 'consent_pipeda' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(133,36): error TS2339: Property 'consent_marketing' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(134,36): error TS2339: Property 'default_clinic_id' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(139,38): error TS2339: Property 'user_id' does not exist on type 'never'.
+src/middleware/authMiddleware.ts(176,26): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/authMiddleware.ts(213,24): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/authMiddleware.ts(252,44): error TS2304: Cannot find name 'supabase'.
+src/middleware/authMiddleware.ts(266,67): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/authMiddleware.ts(268,26): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/authMiddleware.ts(287,24): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/authMiddleware.ts(311,45): error TS2304: Cannot find name 'supabase'.
+src/middleware/authMiddleware.ts(319,37): error TS2552: Cannot find name 'supabaseClient'. Did you mean 'getSupabaseClient'?
+src/middleware/errorHandler.ts(183,23): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(22,17): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(58,27): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(78,25): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(100,29): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(135,27): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/middleware/performanceMiddleware.ts(160,27): error TS2339: Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'.
+src/services/pipeline/StageTracer.ts(17,45): error TS4111: Property 'PIPELINE_TRACE' comes from an index signature, so it must be accessed with ['PIPELINE_TRACE'].
+src/services/pipeline/StageTracer.ts(22,22): error TS2379: Argument of type '{ stage: "S1_INGEST" | "S2_MERGE" | "S3_ROLEMAP" | "S4_SMOOTH" | "DONE"; meta: Record<string, unknown> | undefined; at: string; }' is not assignable to parameter of type 'TraceEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'meta' are incompatible.
+    Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, unknown>'.
+      Type 'undefined' is not assignable to type 'Record<string, unknown>'.
+src/services/pipeline/roleMapper.ts(211,13): error TS2322: Type '"A" | "B" | undefined' is not assignable to type '"A" | "B"'.
+  Type 'undefined' is not assignable to type '"A" | "B"'.
+src/services/pipeline/roleMapper.ts(220,13): error TS2322: Type '"A" | "B" | undefined' is not assignable to type '"A" | "B"'.
+  Type 'undefined' is not assignable to type '"A" | "B"'.
+src/services/pipeline/smoother.ts(33,27): error TS6133: 'FILLER_DROP' is declared but its value is never read.
+src/services/pipeline/smoother.ts(83,27): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(84,25): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(100,21): error TS2379: Argument of type '{ bucket: "A" | "B"; t0?: number; t1?: number; text?: string; conf?: number; filler?: boolean; }' is not assignable to parameter of type 'NormalizedItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Property 't0' is optional in type '{ bucket: "A" | "B"; t0?: number; t1?: number; text?: string; conf?: number; filler?: boolean; }' but required in type 'NormalizedItem'.
+src/services/pipeline/smoother.ts(116,25): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(117,24): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(149,11): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(150,11): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(151,15): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(152,13): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(157,19): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(160,11): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(161,22): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(162,31): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(167,15): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(168,15): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(169,19): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(170,17): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(190,24): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(190,37): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(199,30): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(200,47): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(204,30): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(205,39): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(208,30): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(209,32): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(213,28): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(214,37): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(217,28): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(218,30): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/smoother.ts(221,23): error TS2345: Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'.
+  Type 'undefined' is not assignable to type 'SmoothedSegment'.
+src/services/pipeline/smoother.ts(225,21): error TS2345: Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'.
+  Type 'undefined' is not assignable to type 'SmoothedSegment'.
+src/services/pipeline/smoother.ts(242,11): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/smoother.ts(242,31): error TS2532: Object is possibly 'undefined'.
+src/services/pipeline/speakerNormalizer.ts(235,9): error TS2322: Type '{ t0: number; t1: number; bucket: "A" | "B"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'.
+  Type '{ t0: number; t1: number; bucket: "A" | "B"; text: string; conf: number; filler: boolean | undefined; }' is not assignable to type 'NormalizedItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'filler' are incompatible.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/services/pipeline/speakerNormalizer.ts(268,7): error TS2322: Type '{ t0: number; t1: number; bucket: "A" | "B"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'.
+  Type '{ t0: number; t1: number; bucket: "A" | "B"; text: string; conf: number; filler: boolean | undefined; }' is not assignable to type 'NormalizedItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'filler' are incompatible.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/services/pipeline/stages/s1_ingest_aws.ts(81,9): error TS2345: Argument of type '{ speaker_label: string; start_time: string; end_time: string; }[]' is not assignable to parameter of type 'AWSSpeakerSegment[]'.
+  Property 'items' is missing in type '{ speaker_label: string; start_time: string; end_time: string; }' but required in type 'AWSSpeakerSegment'.
+src/services/pipeline/stages/s1_ingest_aws.ts(122,13): error TS6133: 'endTime' is declared but its value is never read.
+src/services/pipeline/stages/s1_ingest_aws.ts(175,11): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(175,44): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(176,31): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(176,60): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(177,29): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(177,56): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(181,22): error TS18048: 'item' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(208,15): error TS18048: 'word' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(209,21): error TS18048: 'word' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(212,20): error TS18048: 'word' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(214,13): error TS18048: 'nextItem' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(214,48): error TS18048: 'nextItem' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(215,25): error TS18048: 'nextItem' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(224,20): error TS18048: 'nextItem' is possibly 'undefined'.
+src/services/pipeline/stages/s1_ingest_aws.ts(257,11): error TS6133: 'endsWithPunctuation' is declared but its value is never read.
+src/services/pipeline/stages/s4_cleanup.ts(120,11): error TS6133: 'preserveMedicalTokens' is declared but its value is never read.
+src/services/pipeline/turnBuilder.ts(58,31): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(61,48): error TS2345: Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'.
+  Type 'undefined' is not assignable to type 'SmoothedSegment'.
+src/services/pipeline/turnBuilder.ts(70,17): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(71,15): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(72,15): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(77,37): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(78,28): error TS18048: 'segment' is possibly 'undefined'.
+src/services/pipeline/turnBuilder.ts(111,5): error TS6133: 'roleMapping' is declared but its value is never read.
+src/services/transcriptionService.ts(15,9): error TS2741: Property 'AudioStream' is missing in type '{ LanguageCode: any; MediaEncoding: "pcm"; MediaSampleRateHertz: any; EnableChannelIdentification: false; }' but required in type 'StartStreamTranscriptionCommandInput'.
+src/services/transcriptionService.ts(27,16): error TS2339: Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'.
+src/services/transcriptionService.ts(31,16): error TS2339: Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'.
