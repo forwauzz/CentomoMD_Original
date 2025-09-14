@@ -1,0 +1,2077 @@
+{
+  "totalErrors": 107,
+  "totalsBySource": {
+    "backend": 101,
+    "frontend": 6
+  },
+  "topFiles": [
+    {
+      "file": "src/services/pipeline/smoother.ts",
+      "count": 34
+    },
+    {
+      "file": "src/middleware/authMiddleware.ts",
+      "count": 22
+    },
+    {
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "count": 17
+    },
+    {
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "count": 8
+    },
+    {
+      "file": "src/middleware/performanceMiddleware.ts",
+      "count": 6
+    },
+    {
+      "file": "src/services/transcriptionService.ts",
+      "count": 3
+    },
+    {
+      "file": "src/lib/supabaseClient.ts",
+      "count": 2
+    },
+    {
+      "file": "src/services/pipeline/StageTracer.ts",
+      "count": 2
+    },
+    {
+      "file": "src/services/pipeline/roleMapper.ts",
+      "count": 2
+    },
+    {
+      "file": "src/services/pipeline/speakerNormalizer.ts",
+      "count": 2
+    }
+  ],
+  "recurring": [
+    {
+      "category": "Possibly undefined (TS18048)",
+      "count": 42
+    },
+    {
+      "category": "Property does not exist (TS2339)",
+      "count": 23
+    },
+    {
+      "category": "Object is possibly undefined/null (TS2532)",
+      "count": 8
+    },
+    {
+      "category": "Type mismatch (assignment) (TS2322)",
+      "count": 7
+    },
+    {
+      "category": "Unused variable (TS6133)",
+      "count": 6
+    },
+    {
+      "category": "Index signature property access required (TS4111)",
+      "count": 5
+    },
+    {
+      "category": "Type mismatch (call argument) (TS2345)",
+      "count": 4
+    },
+    {
+      "category": "Object literal extra/invalid properties (TS2353)",
+      "count": 3
+    },
+    {
+      "category": "Name not found (TS2304)",
+      "count": 2
+    },
+    {
+      "category": "Exact optional property types mismatch (TS2379)",
+      "count": 2
+    },
+    {
+      "category": "Not all code paths return a value (TS7030)",
+      "count": 1
+    },
+    {
+      "category": "Cannot find name (did you mean) (TS2552)",
+      "count": 1
+    },
+    {
+      "category": "Missing required property (TS2741)",
+      "count": 1
+    },
+    {
+      "category": "Unintentional comparison (no overlap) (TS2367)",
+      "count": 1
+    },
+    {
+      "category": "Module not found (TS2307)",
+      "count": 1
+    }
+  ],
+  "errors": [
+    {
+      "source": "backend",
+      "file": "src/controllers/transcriptController.ts",
+      "line": 43,
+      "column": 20,
+      "code": "TS7030",
+      "category": "Not all code paths return a value",
+      "message": "Not all code paths return a value."
+    },
+    {
+      "source": "backend",
+      "file": "src/lib/supabaseClient.ts",
+      "line": 8,
+      "column": 27,
+      "code": "TS4111",
+      "category": "Index signature property access required",
+      "message": "Property 'SUPABASE_URL' comes from an index signature, so it must be accessed with ['SUPABASE_URL']."
+    },
+    {
+      "source": "backend",
+      "file": "src/lib/supabaseClient.ts",
+      "line": 9,
+      "column": 27,
+      "code": "TS4111",
+      "category": "Index signature property access required",
+      "message": "Property 'SUPABASE_SERVICE_ROLE_KEY' comes from an index signature, so it must be accessed with ['SUPABASE_SERVICE_ROLE_KEY']."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 94,
+      "column": 43,
+      "code": "TS4111",
+      "category": "Index signature property access required",
+      "message": "Property 'name' comes from an index signature, so it must be accessed with ['name']."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 107,
+      "column": 9,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type 'null' is not assignable to type 'string'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 108,
+      "column": 9,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type '{ user_id: string; display_name: any; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id: null; }' is not assignable to type '{ display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 124,
+      "column": 24,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'user_id' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 125,
+      "column": 7,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type 'string | undefined' is not assignable to type 'string'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 126,
+      "column": 21,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'display_name' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 126,
+      "column": 57,
+      "code": "TS4111",
+      "category": "Index signature property access required",
+      "message": "Property 'name' comes from an index signature, so it must be accessed with ['name']."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 128,
+      "column": 26,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'default_clinic_id' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 130,
+      "column": 31,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'display_name' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 131,
+      "column": 25,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'locale' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 132,
+      "column": 33,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'consent_pipeda' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 133,
+      "column": 36,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'consent_marketing' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 134,
+      "column": 36,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'default_clinic_id' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 139,
+      "column": 38,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'user_id' does not exist on type 'never'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 176,
+      "column": 26,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 213,
+      "column": 24,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 252,
+      "column": 44,
+      "code": "TS2304",
+      "category": "Name not found",
+      "message": "Cannot find name 'supabase'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 266,
+      "column": 67,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 268,
+      "column": 26,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 287,
+      "column": 24,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 311,
+      "column": 45,
+      "code": "TS2304",
+      "category": "Name not found",
+      "message": "Cannot find name 'supabase'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/authMiddleware.ts",
+      "line": 319,
+      "column": 37,
+      "code": "TS2552",
+      "category": "Cannot find name (did you mean)",
+      "message": "Cannot find name 'supabaseClient'. Did you mean 'getSupabaseClient'?"
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/errorHandler.ts",
+      "line": 183,
+      "column": 23,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 22,
+      "column": 17,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 58,
+      "column": 27,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 78,
+      "column": 25,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 100,
+      "column": 29,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 135,
+      "column": 27,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/middleware/performanceMiddleware.ts",
+      "line": 160,
+      "column": 27,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/StageTracer.ts",
+      "line": 17,
+      "column": 45,
+      "code": "TS4111",
+      "category": "Index signature property access required",
+      "message": "Property 'PIPELINE_TRACE' comes from an index signature, so it must be accessed with ['PIPELINE_TRACE']."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/StageTracer.ts",
+      "line": 22,
+      "column": 22,
+      "code": "TS2379",
+      "category": "Exact optional property types mismatch",
+      "message": "Argument of type '{ stage: \"S1_INGEST\" | \"S2_MERGE\" | \"S3_ROLEMAP\" | \"S4_SMOOTH\" | \"DONE\"; meta: Record<string, unknown> | undefined; at: string; }' is not assignable to parameter of type 'TraceEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/roleMapper.ts",
+      "line": 211,
+      "column": 13,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type '\"A\" | \"B\" | undefined' is not assignable to type '\"A\" | \"B\"'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/roleMapper.ts",
+      "line": 220,
+      "column": 13,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type '\"A\" | \"B\" | undefined' is not assignable to type '\"A\" | \"B\"'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 33,
+      "column": 27,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'FILLER_DROP' is declared but its value is never read."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 83,
+      "column": 27,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 84,
+      "column": 25,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 100,
+      "column": 21,
+      "code": "TS2379",
+      "category": "Exact optional property types mismatch",
+      "message": "Argument of type '{ bucket: \"A\" | \"B\"; t0?: number; t1?: number; text?: string; conf?: number; filler?: boolean; }' is not assignable to parameter of type 'NormalizedItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 116,
+      "column": 25,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 117,
+      "column": 24,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 149,
+      "column": 11,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 150,
+      "column": 11,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 151,
+      "column": 15,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 152,
+      "column": 13,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 157,
+      "column": 19,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 160,
+      "column": 11,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 161,
+      "column": 22,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 162,
+      "column": 31,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 167,
+      "column": 15,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 168,
+      "column": 15,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 169,
+      "column": 19,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 170,
+      "column": 17,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 190,
+      "column": 24,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 190,
+      "column": 37,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 199,
+      "column": 30,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 200,
+      "column": 47,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 204,
+      "column": 30,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 205,
+      "column": 39,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 208,
+      "column": 30,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 209,
+      "column": 32,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 213,
+      "column": 28,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 214,
+      "column": 37,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 217,
+      "column": 28,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 218,
+      "column": 30,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 221,
+      "column": 23,
+      "code": "TS2345",
+      "category": "Type mismatch (call argument)",
+      "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 225,
+      "column": 21,
+      "code": "TS2345",
+      "category": "Type mismatch (call argument)",
+      "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 242,
+      "column": 11,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/smoother.ts",
+      "line": 242,
+      "column": 31,
+      "code": "TS2532",
+      "category": "Object is possibly undefined/null",
+      "message": "Object is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/speakerNormalizer.ts",
+      "line": 235,
+      "column": 9,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type '{ t0: number; t1: number; bucket: \"A\" | \"B\"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/speakerNormalizer.ts",
+      "line": 268,
+      "column": 7,
+      "code": "TS2322",
+      "category": "Type mismatch (assignment)",
+      "message": "Type '{ t0: number; t1: number; bucket: \"A\" | \"B\"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 81,
+      "column": 9,
+      "code": "TS2345",
+      "category": "Type mismatch (call argument)",
+      "message": "Argument of type '{ speaker_label: string; start_time: string; end_time: string; }[]' is not assignable to parameter of type 'AWSSpeakerSegment[]'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 122,
+      "column": 13,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'endTime' is declared but its value is never read."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 175,
+      "column": 11,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 175,
+      "column": 44,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 176,
+      "column": 31,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 176,
+      "column": 60,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 177,
+      "column": 29,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 177,
+      "column": 56,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 181,
+      "column": 22,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'item' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 208,
+      "column": 15,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'word' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 209,
+      "column": 21,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'word' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 212,
+      "column": 20,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'word' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 214,
+      "column": 13,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'nextItem' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 214,
+      "column": 48,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'nextItem' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 215,
+      "column": 25,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'nextItem' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 224,
+      "column": 20,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'nextItem' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+      "line": 257,
+      "column": 11,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'endsWithPunctuation' is declared but its value is never read."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/stages/s4_cleanup.ts",
+      "line": 120,
+      "column": 11,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'preserveMedicalTokens' is declared but its value is never read."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 58,
+      "column": 31,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 61,
+      "column": 48,
+      "code": "TS2345",
+      "category": "Type mismatch (call argument)",
+      "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 70,
+      "column": 17,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 71,
+      "column": 15,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 72,
+      "column": 15,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 77,
+      "column": 37,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 78,
+      "column": 28,
+      "code": "TS18048",
+      "category": "Possibly undefined",
+      "message": "'segment' is possibly 'undefined'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/pipeline/turnBuilder.ts",
+      "line": 111,
+      "column": 5,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'roleMapping' is declared but its value is never read."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/transcriptionService.ts",
+      "line": 15,
+      "column": 9,
+      "code": "TS2741",
+      "category": "Missing required property",
+      "message": "Property 'AudioStream' is missing in type '{ LanguageCode: any; MediaEncoding: \"pcm\"; MediaSampleRateHertz: any; EnableChannelIdentification: false; }' but required in type 'StartStreamTranscriptionCommandInput'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/transcriptionService.ts",
+      "line": 27,
+      "column": 16,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'."
+    },
+    {
+      "source": "backend",
+      "file": "src/services/transcriptionService.ts",
+      "line": 31,
+      "column": 16,
+      "code": "TS2339",
+      "category": "Property does not exist",
+      "message": "Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'."
+    },
+    {
+      "source": "frontend",
+      "file": "src/components/transcription/TranscriptionInterface.tsx",
+      "line": 803,
+      "column": 22,
+      "code": "TS2367",
+      "category": "Unintentional comparison (no overlap)",
+      "message": "This comparison appears to be unintentional because the types '\"error\" | \"recording\" | \"idle\" | \"processing\" | \"ready\"' and '\"transcribing\"' have no overlap."
+    },
+    {
+      "source": "frontend",
+      "file": "src/components/transcription/__tests__/TranscriptionInterface.test.tsx",
+      "line": 2,
+      "column": 54,
+      "code": "TS2307",
+      "category": "Module not found",
+      "message": "Cannot find module 'vitest' or its corresponding type declarations."
+    },
+    {
+      "source": "frontend",
+      "file": "src/config/template-config.ts",
+      "line": 131,
+      "column": 7,
+      "code": "TS2353",
+      "category": "Object literal extra/invalid properties",
+      "message": "Object literal may only specify known properties, and 'comprehensivePrompts' does not exist in type '{ verbatimSupport: boolean; voiceCommandsSupport: boolean; aiFormatting: boolean; postProcessing: boolean; }'."
+    },
+    {
+      "source": "frontend",
+      "file": "src/config/template-config.ts",
+      "line": 143,
+      "column": 7,
+      "code": "TS2353",
+      "category": "Object literal extra/invalid properties",
+      "message": "Object literal may only specify known properties, and 'comprehensivePrompts' does not exist in type '{ mode?: string | undefined; section?: string | undefined; language?: string | undefined; enforceWorkerFirst?: boolean | undefined; chronologicalOrder?: boolean | undefined; medicalTerminology?: boolean | undefined; templateCombo?: string | undefined; aiFormattingEnabled?: boolean | undefined; deterministicFirst?: b...'."
+    },
+    {
+      "source": "frontend",
+      "file": "src/lib/authClient.ts",
+      "line": 258,
+      "column": 11,
+      "code": "TS2353",
+      "category": "Object literal extra/invalid properties",
+      "message": "Object literal may only specify known properties, and 'state' does not exist in type '{ redirectTo?: string | undefined; scopes?: string | undefined; queryParams?: { [key: string]: string; } | undefined; skipBrowserRedirect?: boolean | undefined; }'."
+    },
+    {
+      "source": "frontend",
+      "file": "src/pages/ProfilePage.tsx",
+      "line": 14,
+      "column": 24,
+      "code": "TS6133",
+      "category": "Unused variable",
+      "message": "'uiToDbLocale' is declared but its value is never read."
+    }
+  ],
+  "byFile": {
+    "src/controllers/transcriptController.ts": [
+      {
+        "source": "backend",
+        "file": "src/controllers/transcriptController.ts",
+        "line": 43,
+        "column": 20,
+        "code": "TS7030",
+        "category": "Not all code paths return a value",
+        "message": "Not all code paths return a value."
+      }
+    ],
+    "src/lib/supabaseClient.ts": [
+      {
+        "source": "backend",
+        "file": "src/lib/supabaseClient.ts",
+        "line": 8,
+        "column": 27,
+        "code": "TS4111",
+        "category": "Index signature property access required",
+        "message": "Property 'SUPABASE_URL' comes from an index signature, so it must be accessed with ['SUPABASE_URL']."
+      },
+      {
+        "source": "backend",
+        "file": "src/lib/supabaseClient.ts",
+        "line": 9,
+        "column": 27,
+        "code": "TS4111",
+        "category": "Index signature property access required",
+        "message": "Property 'SUPABASE_SERVICE_ROLE_KEY' comes from an index signature, so it must be accessed with ['SUPABASE_SERVICE_ROLE_KEY']."
+      }
+    ],
+    "src/middleware/authMiddleware.ts": [
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 94,
+        "column": 43,
+        "code": "TS4111",
+        "category": "Index signature property access required",
+        "message": "Property 'name' comes from an index signature, so it must be accessed with ['name']."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 107,
+        "column": 9,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type 'null' is not assignable to type 'string'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 108,
+        "column": 9,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type '{ user_id: string; display_name: any; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id: null; }' is not assignable to type '{ display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 124,
+        "column": 24,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'user_id' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 125,
+        "column": 7,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type 'string | undefined' is not assignable to type 'string'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 126,
+        "column": 21,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'display_name' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 126,
+        "column": 57,
+        "code": "TS4111",
+        "category": "Index signature property access required",
+        "message": "Property 'name' comes from an index signature, so it must be accessed with ['name']."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 128,
+        "column": 26,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'default_clinic_id' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 130,
+        "column": 31,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'display_name' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 131,
+        "column": 25,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'locale' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 132,
+        "column": 33,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'consent_pipeda' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 133,
+        "column": 36,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'consent_marketing' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 134,
+        "column": 36,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'default_clinic_id' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 139,
+        "column": 38,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'user_id' does not exist on type 'never'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 176,
+        "column": 26,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 213,
+        "column": 24,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 252,
+        "column": 44,
+        "code": "TS2304",
+        "category": "Name not found",
+        "message": "Cannot find name 'supabase'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 266,
+        "column": 67,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 268,
+        "column": 26,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 287,
+        "column": 24,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 311,
+        "column": 45,
+        "code": "TS2304",
+        "category": "Name not found",
+        "message": "Cannot find name 'supabase'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/authMiddleware.ts",
+        "line": 319,
+        "column": 37,
+        "code": "TS2552",
+        "category": "Cannot find name (did you mean)",
+        "message": "Cannot find name 'supabaseClient'. Did you mean 'getSupabaseClient'?"
+      }
+    ],
+    "src/middleware/errorHandler.ts": [
+      {
+        "source": "backend",
+        "file": "src/middleware/errorHandler.ts",
+        "line": 183,
+        "column": 23,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      }
+    ],
+    "src/middleware/performanceMiddleware.ts": [
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 22,
+        "column": 17,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 58,
+        "column": 27,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 78,
+        "column": 25,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 100,
+        "column": 29,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 135,
+        "column": 27,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      },
+      {
+        "source": "backend",
+        "file": "src/middleware/performanceMiddleware.ts",
+        "line": 160,
+        "column": 27,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'id' does not exist on type '{ user_id: string; email: string; name: string; role: string; clinic_id?: string; profile?: { display_name?: string; locale: string; consent_pipeda: boolean; consent_marketing: boolean; default_clinic_id?: string; }; }'."
+      }
+    ],
+    "src/services/pipeline/StageTracer.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/StageTracer.ts",
+        "line": 17,
+        "column": 45,
+        "code": "TS4111",
+        "category": "Index signature property access required",
+        "message": "Property 'PIPELINE_TRACE' comes from an index signature, so it must be accessed with ['PIPELINE_TRACE']."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/StageTracer.ts",
+        "line": 22,
+        "column": 22,
+        "code": "TS2379",
+        "category": "Exact optional property types mismatch",
+        "message": "Argument of type '{ stage: \"S1_INGEST\" | \"S2_MERGE\" | \"S3_ROLEMAP\" | \"S4_SMOOTH\" | \"DONE\"; meta: Record<string, unknown> | undefined; at: string; }' is not assignable to parameter of type 'TraceEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties."
+      }
+    ],
+    "src/services/pipeline/roleMapper.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/roleMapper.ts",
+        "line": 211,
+        "column": 13,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type '\"A\" | \"B\" | undefined' is not assignable to type '\"A\" | \"B\"'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/roleMapper.ts",
+        "line": 220,
+        "column": 13,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type '\"A\" | \"B\" | undefined' is not assignable to type '\"A\" | \"B\"'."
+      }
+    ],
+    "src/services/pipeline/smoother.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 33,
+        "column": 27,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'FILLER_DROP' is declared but its value is never read."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 83,
+        "column": 27,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 84,
+        "column": 25,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 100,
+        "column": 21,
+        "code": "TS2379",
+        "category": "Exact optional property types mismatch",
+        "message": "Argument of type '{ bucket: \"A\" | \"B\"; t0?: number; t1?: number; text?: string; conf?: number; filler?: boolean; }' is not assignable to parameter of type 'NormalizedItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 116,
+        "column": 25,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 117,
+        "column": 24,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 149,
+        "column": 11,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 150,
+        "column": 11,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 151,
+        "column": 15,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 152,
+        "column": 13,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 157,
+        "column": 19,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 160,
+        "column": 11,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 161,
+        "column": 22,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 162,
+        "column": 31,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 167,
+        "column": 15,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 168,
+        "column": 15,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 169,
+        "column": 19,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 170,
+        "column": 17,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 190,
+        "column": 24,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 190,
+        "column": 37,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 199,
+        "column": 30,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 200,
+        "column": 47,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 204,
+        "column": 30,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 205,
+        "column": 39,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 208,
+        "column": 30,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 209,
+        "column": 32,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 213,
+        "column": 28,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 214,
+        "column": 37,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 217,
+        "column": 28,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 218,
+        "column": 30,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 221,
+        "column": 23,
+        "code": "TS2345",
+        "category": "Type mismatch (call argument)",
+        "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 225,
+        "column": 21,
+        "code": "TS2345",
+        "category": "Type mismatch (call argument)",
+        "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 242,
+        "column": 11,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/smoother.ts",
+        "line": 242,
+        "column": 31,
+        "code": "TS2532",
+        "category": "Object is possibly undefined/null",
+        "message": "Object is possibly 'undefined'."
+      }
+    ],
+    "src/services/pipeline/speakerNormalizer.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/speakerNormalizer.ts",
+        "line": 235,
+        "column": 9,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type '{ t0: number; t1: number; bucket: \"A\" | \"B\"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/speakerNormalizer.ts",
+        "line": 268,
+        "column": 7,
+        "code": "TS2322",
+        "category": "Type mismatch (assignment)",
+        "message": "Type '{ t0: number; t1: number; bucket: \"A\" | \"B\"; text: string; conf: number; filler: boolean | undefined; }[]' is not assignable to type 'NormalizedItem[]'."
+      }
+    ],
+    "src/services/pipeline/stages/s1_ingest_aws.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 81,
+        "column": 9,
+        "code": "TS2345",
+        "category": "Type mismatch (call argument)",
+        "message": "Argument of type '{ speaker_label: string; start_time: string; end_time: string; }[]' is not assignable to parameter of type 'AWSSpeakerSegment[]'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 122,
+        "column": 13,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'endTime' is declared but its value is never read."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 175,
+        "column": 11,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 175,
+        "column": 44,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 176,
+        "column": 31,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 176,
+        "column": 60,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 177,
+        "column": 29,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 177,
+        "column": 56,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 181,
+        "column": 22,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'item' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 208,
+        "column": 15,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'word' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 209,
+        "column": 21,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'word' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 212,
+        "column": 20,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'word' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 214,
+        "column": 13,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'nextItem' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 214,
+        "column": 48,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'nextItem' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 215,
+        "column": 25,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'nextItem' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 224,
+        "column": 20,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'nextItem' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s1_ingest_aws.ts",
+        "line": 257,
+        "column": 11,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'endsWithPunctuation' is declared but its value is never read."
+      }
+    ],
+    "src/services/pipeline/stages/s4_cleanup.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/stages/s4_cleanup.ts",
+        "line": 120,
+        "column": 11,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'preserveMedicalTokens' is declared but its value is never read."
+      }
+    ],
+    "src/services/pipeline/turnBuilder.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 58,
+        "column": 31,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 61,
+        "column": 48,
+        "code": "TS2345",
+        "category": "Type mismatch (call argument)",
+        "message": "Argument of type 'SmoothedSegment | undefined' is not assignable to parameter of type 'SmoothedSegment'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 70,
+        "column": 17,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 71,
+        "column": 15,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 72,
+        "column": 15,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 77,
+        "column": 37,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 78,
+        "column": 28,
+        "code": "TS18048",
+        "category": "Possibly undefined",
+        "message": "'segment' is possibly 'undefined'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/pipeline/turnBuilder.ts",
+        "line": 111,
+        "column": 5,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'roleMapping' is declared but its value is never read."
+      }
+    ],
+    "src/services/transcriptionService.ts": [
+      {
+        "source": "backend",
+        "file": "src/services/transcriptionService.ts",
+        "line": 15,
+        "column": 9,
+        "code": "TS2741",
+        "category": "Missing required property",
+        "message": "Property 'AudioStream' is missing in type '{ LanguageCode: any; MediaEncoding: \"pcm\"; MediaSampleRateHertz: any; EnableChannelIdentification: false; }' but required in type 'StartStreamTranscriptionCommandInput'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/transcriptionService.ts",
+        "line": 27,
+        "column": 16,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'."
+      },
+      {
+        "source": "backend",
+        "file": "src/services/transcriptionService.ts",
+        "line": 31,
+        "column": 16,
+        "code": "TS2339",
+        "category": "Property does not exist",
+        "message": "Property 'MaxSpeakerLabels' does not exist on type 'StartStreamTranscriptionCommandInput'."
+      }
+    ],
+    "src/components/transcription/TranscriptionInterface.tsx": [
+      {
+        "source": "frontend",
+        "file": "src/components/transcription/TranscriptionInterface.tsx",
+        "line": 803,
+        "column": 22,
+        "code": "TS2367",
+        "category": "Unintentional comparison (no overlap)",
+        "message": "This comparison appears to be unintentional because the types '\"error\" | \"recording\" | \"idle\" | \"processing\" | \"ready\"' and '\"transcribing\"' have no overlap."
+      }
+    ],
+    "src/components/transcription/__tests__/TranscriptionInterface.test.tsx": [
+      {
+        "source": "frontend",
+        "file": "src/components/transcription/__tests__/TranscriptionInterface.test.tsx",
+        "line": 2,
+        "column": 54,
+        "code": "TS2307",
+        "category": "Module not found",
+        "message": "Cannot find module 'vitest' or its corresponding type declarations."
+      }
+    ],
+    "src/config/template-config.ts": [
+      {
+        "source": "frontend",
+        "file": "src/config/template-config.ts",
+        "line": 131,
+        "column": 7,
+        "code": "TS2353",
+        "category": "Object literal extra/invalid properties",
+        "message": "Object literal may only specify known properties, and 'comprehensivePrompts' does not exist in type '{ verbatimSupport: boolean; voiceCommandsSupport: boolean; aiFormatting: boolean; postProcessing: boolean; }'."
+      },
+      {
+        "source": "frontend",
+        "file": "src/config/template-config.ts",
+        "line": 143,
+        "column": 7,
+        "code": "TS2353",
+        "category": "Object literal extra/invalid properties",
+        "message": "Object literal may only specify known properties, and 'comprehensivePrompts' does not exist in type '{ mode?: string | undefined; section?: string | undefined; language?: string | undefined; enforceWorkerFirst?: boolean | undefined; chronologicalOrder?: boolean | undefined; medicalTerminology?: boolean | undefined; templateCombo?: string | undefined; aiFormattingEnabled?: boolean | undefined; deterministicFirst?: b...'."
+      }
+    ],
+    "src/lib/authClient.ts": [
+      {
+        "source": "frontend",
+        "file": "src/lib/authClient.ts",
+        "line": 258,
+        "column": 11,
+        "code": "TS2353",
+        "category": "Object literal extra/invalid properties",
+        "message": "Object literal may only specify known properties, and 'state' does not exist in type '{ redirectTo?: string | undefined; scopes?: string | undefined; queryParams?: { [key: string]: string; } | undefined; skipBrowserRedirect?: boolean | undefined; }'."
+      }
+    ],
+    "src/pages/ProfilePage.tsx": [
+      {
+        "source": "frontend",
+        "file": "src/pages/ProfilePage.tsx",
+        "line": 14,
+        "column": 24,
+        "code": "TS6133",
+        "category": "Unused variable",
+        "message": "'uiToDbLocale' is declared but its value is never read."
+      }
+    ]
+  }
+}
