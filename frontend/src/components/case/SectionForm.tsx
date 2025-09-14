@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useI18n } from '@/lib/i18n';
 import { useCaseStore } from '@/stores/caseStore';
 import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
+import { PhysicianInformationForm } from './PhysicianInformationForm';
+import { ReportForm } from './ReportForm';
 
 interface SectionFormProps {
   sectionId: string;
@@ -53,6 +55,16 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
         Section non trouvée
       </div>
     );
+  }
+
+  // Render Physician Information form for section B
+  if (sectionId === 'section_b') {
+    return <PhysicianInformationForm sectionId={sectionId} />;
+  }
+
+  // Render Report form for section C
+  if (sectionId === 'section_c') {
+    return <ReportForm sectionId={sectionId} />;
   }
 
   return (
@@ -120,6 +132,61 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
                     onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                   />
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="telephone">{t('telephone')}</Label>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    value={formData.telephone || ''}
+                    onChange={(e) => handleInputChange('telephone', e.target.value)}
+                    placeholder={t('enterTelephone')}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="medicalCardNumber">{t('medicalCardNumber')}</Label>
+                  <Input
+                    id="medicalCardNumber"
+                    value={formData.medicalCardNumber || ''}
+                    onChange={(e) => handleInputChange('medicalCardNumber', e.target.value)}
+                    placeholder={t('enterMedicalCardNumber')}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="initialIncidentDate">{t('initialIncidentDate')}</Label>
+                  <Input
+                    id="initialIncidentDate"
+                    type="date"
+                    value={formData.initialIncidentDate || ''}
+                    onChange={(e) => handleInputChange('initialIncidentDate', e.target.value)}
+                    placeholder={t('enterInitialIncidentDate')}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="aggravationDate">{t('aggravationDate')}</Label>
+                  <Input
+                    id="aggravationDate"
+                    type="date"
+                    value={formData.aggravationDate || ''}
+                    onChange={(e) => handleInputChange('aggravationDate', e.target.value)}
+                    placeholder={t('enterAggravationDate')}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="address">{t('address')}</Label>
+                <Input
+                  id="address"
+                  value={formData.address || ''}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder={t('enterAddress')}
+                />
               </div>
               
               <div>
