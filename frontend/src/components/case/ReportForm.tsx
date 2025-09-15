@@ -8,6 +8,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useI18n } from '@/lib/i18n';
 import { useCaseStore } from '@/stores/caseStore';
 import { EvaluationMandateForm } from './EvaluationMandateForm';
+import { DiagnosesAcceptedForm } from './DiagnosesAcceptedForm';
+import { InterviewModalityForm } from './InterviewModalityForm';
+import { IdentificationForm } from './IdentificationForm';
 
 interface ReportFormProps {
   sectionId: string;
@@ -86,8 +89,26 @@ export const ReportForm: React.FC<ReportFormProps> = ({ sectionId }) => {
             <EvaluationMandateForm sectionId={`${sectionId}_evaluationMandate`} />
           )}
           
-          {/* Render other content if no specific option is selected or if it's not evaluationMandate */}
-          {formData.selectedOption !== 'evaluationMandate' && (
+          {/* Render Diagnoses Accepted Form if selected */}
+          {formData.selectedOption === 'diagnosesAccepted' && (
+            <DiagnosesAcceptedForm sectionId={`${sectionId}_diagnosesAccepted`} />
+          )}
+          
+          {/* Render Interview Modality Form if selected */}
+          {formData.selectedOption === 'interviewModality' && (
+            <InterviewModalityForm sectionId={`${sectionId}_interviewModality`} />
+          )}
+          
+          {/* Render Identification Form if selected */}
+          {formData.selectedOption === 'identification' && (
+            <IdentificationForm sectionId={`${sectionId}_identification`} />
+          )}
+          
+          {/* Render other content if no specific option is selected or if it's not one of the linked options */}
+          {formData.selectedOption !== 'evaluationMandate' && 
+           formData.selectedOption !== 'diagnosesAccepted' && 
+           formData.selectedOption !== 'interviewModality' && 
+           formData.selectedOption !== 'identification' && (
             <>
               {/* Evaluation Goal Header */}
               <Card>

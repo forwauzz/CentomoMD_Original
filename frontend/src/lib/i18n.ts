@@ -140,6 +140,34 @@ export const translations = {
     mandateDetails: 'Détails du mandat',
     enterMandateDetails: 'Entrez les détails du mandat d\'évaluation...',
     
+    // Diagnoses Accepted Section
+    diagnosesAcceptedSection: 'Section Diagnostics acceptés par la CNESST',
+    diagnosesAcceptedHeader: 'Diagnostics acceptés par la CNESST',
+    diagnosesDetails: 'Détails des diagnostics',
+    enterDiagnosesDetails: 'Entrez les détails des diagnostics acceptés...',
+    
+    // Interview Modality Section
+    interviewModalitySection: 'Section Modalité de l\'entrevue',
+    interviewModalityHeader: 'Modalité de l\'entrevue',
+    interviewDetails: 'Détails de l\'entrevue',
+    enterInterviewDetails: 'Entrez les détails de la modalité d\'entrevue...',
+    
+    // Identification Section
+    identificationSection: 'Section Identification',
+    identificationHeader: 'Identification',
+    age: 'Âge',
+    enterAge: 'Entrez l\'âge',
+    dominance: 'Dominance',
+    enterDominance: 'Entrez la dominance (droitier/gaucher)',
+    employment: 'Emploi',
+    enterEmployment: 'Entrez l\'emploi',
+    name: 'Nom',
+    enterName: 'Entrez le nom complet',
+    cnesstNumber: 'Numéro CNESST',
+    enterCnesstNumber: 'Entrez le numéro CNESST',
+    evaluationDate: 'Date d\'évaluation',
+    enterEvaluationDate: 'Sélectionnez la date d\'évaluation',
+    
     // Dictation
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
@@ -321,7 +349,7 @@ export const translations = {
     
     // Report Radio Button Labels
     evaluationMandate: '1. Evaluation Mandate',
-    diagnosesAccepted: '2. Diagnoses Accepted by CNESST',
+    diagnosesAccepted: '2. Diagnosis Accepted by CNESST',
     interviewModality: '3. Interview Modality',
     identification: '4. Identification',
     antecedents: '5. Antecedents',
@@ -339,6 +367,34 @@ export const translations = {
     evaluationMandateSection: 'Evaluation Mandate Section',
     mandateDetails: 'Mandate Details',
     enterMandateDetails: 'Enter evaluation mandate details...',
+    
+    // Diagnoses Accepted Section
+    diagnosesAcceptedSection: 'Diagnoses Accepted by CNESST Section',
+    diagnosesAcceptedHeader: 'Diagnoses Accepted by CNESST',
+    diagnosesDetails: 'Diagnosis Details',
+    enterDiagnosesDetails: 'Enter accepted diagnosis details...',
+    
+    // Interview Modality Section
+    interviewModalitySection: 'Interview Modality Section',
+    interviewModalityHeader: 'Interview Modality',
+    interviewDetails: 'Interview Details',
+    enterInterviewDetails: 'Enter interview modality details...',
+    
+    // Identification Section
+    identificationSection: 'Identification Section',
+    identificationHeader: 'Identification',
+    age: 'Age',
+    enterAge: 'Enter age',
+    dominance: 'Dominance',
+    enterDominance: 'Enter dominance (right-handed/left-handed)',
+    employment: 'Employment',
+    enterEmployment: 'Enter employment',
+    name: 'Name',
+    enterName: 'Enter full name',
+    cnesstNumber: 'CNESST Number',
+    enterCnesstNumber: 'Enter CNESST number',
+    evaluationDate: 'Evaluation Date',
+    enterEvaluationDate: 'Select evaluation date',
     
     // Dictation
     goToDictation: 'Go to Dictation',
