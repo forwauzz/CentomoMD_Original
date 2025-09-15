@@ -11,6 +11,7 @@ import { EvaluationMandateForm } from './EvaluationMandateForm';
 import { DiagnosesAcceptedForm } from './DiagnosesAcceptedForm';
 import { InterviewModalityForm } from './InterviewModalityForm';
 import { IdentificationForm } from './IdentificationForm';
+import { CurrentMedicationForm } from './CurrentMedicationForm';
 
 interface ReportFormProps {
   sectionId: string;
@@ -104,11 +105,17 @@ export const ReportForm: React.FC<ReportFormProps> = ({ sectionId }) => {
             <IdentificationForm sectionId={`${sectionId}_identification`} />
           )}
           
+          {/* Render Current Medication Form if selected */}
+          {formData.selectedOption === 'currentMedication' && (
+            <CurrentMedicationForm sectionId={`${sectionId}_currentMedication`} />
+          )}
+          
           {/* Render other content if no specific option is selected or if it's not one of the linked options */}
           {formData.selectedOption !== 'evaluationMandate' && 
            formData.selectedOption !== 'diagnosesAccepted' && 
            formData.selectedOption !== 'interviewModality' && 
-           formData.selectedOption !== 'identification' && (
+           formData.selectedOption !== 'identification' && 
+           formData.selectedOption !== 'currentMedication' && (
             <>
               {/* Evaluation Goal Header */}
               <Card>

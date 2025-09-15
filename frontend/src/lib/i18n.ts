@@ -168,6 +168,14 @@ export const translations = {
     evaluationDate: 'Date d\'évaluation',
     enterEvaluationDate: 'Sélectionnez la date d\'évaluation',
     
+    // Current Medication Section
+    currentMedicationSection: 'Section Médication actuelle et mesures thérapeutiques',
+    currentMedicationHeader: 'Médication actuelle et mesures thérapeutiques',
+    currentMedicationDetails: 'Détails de la médication',
+    enterCurrentMedicationDetails: 'Entrez les détails de la médication actuelle et des mesures thérapeutiques...',
+    therapeuticMeasures: 'Mesures thérapeutiques',
+    enterTherapeuticMeasures: 'Entrez les mesures thérapeutiques en cours...',
+    
     // Dictation
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
@@ -395,6 +403,14 @@ export const translations = {
     enterCnesstNumber: 'Enter CNESST number',
     evaluationDate: 'Evaluation Date',
     enterEvaluationDate: 'Select evaluation date',
+    
+    // Current Medication Section
+    currentMedicationSection: 'Current Medication and Ongoing Therapeutic Measures Section',
+    currentMedicationHeader: 'Current Medication and Ongoing Therapeutic Measures',
+    currentMedicationDetails: 'Medication Details',
+    enterCurrentMedicationDetails: 'Enter current medication and therapeutic measures details...',
+    therapeuticMeasures: 'Therapeutic Measures',
+    enterTherapeuticMeasures: 'Enter ongoing therapeutic measures...',
     
     // Dictation
     goToDictation: 'Go to Dictation',
