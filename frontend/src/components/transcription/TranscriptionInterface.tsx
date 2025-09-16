@@ -8,6 +8,7 @@ import { useTranscription } from '@/hooks/useTranscription';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { LanguageSelector } from './LanguageSelector';
+import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 import { TemplateSelector } from './TemplateSelector';
@@ -104,7 +105,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     error,
     setActiveSection,
     mode3Narrative,
-    mode3Progress
+    mode3Progress,
+    cleanedConversation,
+    orthopedicNarrative
   } = useTranscription(sessionId, selectedLanguage, mode);
 
   // Case store for saving to sections
@@ -1083,6 +1086,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Orthopedic Narrative Section - Only show for ambient mode */}
+      {mode === 'ambient' && featureFlags.speakerLabeling && (
+        <div className="mt-6">
+          <OrthopedicNarrative narrative={orthopedicNarrative} />
         </div>
       )}
     </div>

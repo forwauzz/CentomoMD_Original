@@ -2106,8 +2106,8 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: true,  // Mode 3: Enable speaker labels
-        max_speaker_labels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
-        partial_results_stability: 'medium' as const
+        // max_speaker_labels removed - not available for streaming
+        partial_results_stability: 'high' as const  // Better for diarization
         // vocabulary_name omitted - will be undefined
       };
     default:

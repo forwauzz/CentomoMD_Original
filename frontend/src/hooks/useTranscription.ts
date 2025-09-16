@@ -15,6 +15,10 @@ class AdvancedSpeakerCorrection {
       instructions: RegExp;
       transitions: RegExp;
       acknowledgments: RegExp;
+      // Orthopedic-specific patterns
+      orthopedic: RegExp;
+      examination: RegExp;
+      assessment: RegExp;
     };
     patient: {
       personal: RegExp;
@@ -22,11 +26,83 @@ class AdvancedSpeakerCorrection {
       symptoms: RegExp;
       answers: RegExp;
       descriptions: RegExp;
+      // Orthopedic-specific patterns
+      orthopedic: RegExp;
+      pain: RegExp;
+      injury: RegExp;
+    };
+  };
+  
+  // Orthopedic context patterns by phase
+  private phasePatterns: {
+    [key: string]: {
+      doctor: RegExp[];
+      patient: RegExp[];
+      weights: { doctor: number; patient: number };
     };
   };
 
   constructor() {
     // this.conversationContext = []; // Not used in current implementation
+    
+    // Initialize phase-specific patterns
+    this.phasePatterns = {
+      greeting: {
+        doctor: [
+          /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|nice to meet you)\b/gi
+        ],
+        patient: [
+          /\b(hi|hello|nice to meet you|thank you)\b/gi
+        ],
+        weights: { doctor: 3, patient: 1 }
+      },
+      chief_complaint: {
+        doctor: [
+          /\b(what brings you in|why you're here|tell me about|what's the problem)\b/gi
+        ],
+        patient: [
+          /\b(I hurt my|I injured my|my \w+ hurts|I have pain|I can't move)\b/gi
+        ],
+        weights: { doctor: 2, patient: 3 }
+      },
+      history: {
+        doctor: [
+          /\b(when did this start|how did this happen|what were you doing|any previous injuries|how long)\b/gi
+        ],
+        patient: [
+          /\b(it started|about \d+ days ago|I was \w+|I heard a pop|I fell)\b/gi
+        ],
+        weights: { doctor: 2, patient: 3 }
+      },
+      examination: {
+        doctor: [
+          /\b(let me take a look|I'm going to examine|does this hurt|can you move|push against my hand)\b/gi
+        ],
+        patient: [
+          /\b(ow|ouch|that hurts|yes, right there|that's the spot|I can feel)\b/gi
+        ],
+        weights: { doctor: 3, patient: 2 }
+      },
+      assessment: {
+        doctor: [
+          /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out)\b/gi
+        ],
+        patient: [
+          /\b(what does that mean|is it serious|will I need surgery|how long will it take)\b/gi
+        ],
+        weights: { doctor: 3, patient: 1 }
+      },
+      plan: {
+        doctor: [
+          /\b(I'm going to prescribe|let's start with|follow up with me|any questions|does that make sense)\b/gi
+        ],
+        patient: [
+          /\b(thank you|that sounds good|when should I come back|what should I do)\b/gi
+        ],
+        weights: { doctor: 2, patient: 2 }
+      }
+    };
+    
     this.speakerPatterns = {
       doctor: {
         // Strong doctor indicators
@@ -36,7 +112,12 @@ class AdvancedSpeakerCorrection {
         
         // Weaker indicators (context dependent)
         transitions: /\b(so|um so|now|and|alright)\b/gi,
-        acknowledgments: /\b(OK|alright|I see|mm-hmm)\b/gi
+        acknowledgments: /\b(OK|alright|I see|mm-hmm)\b/gi,
+        
+        // Orthopedic-specific patterns
+        orthopedic: /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|Can you tell me what brings you in|tell me about this pain|when did this start|how did this happen|what were you doing when|on a scale of 1 to 10|rate your pain|does it hurt when you|can you move|any numbness|have you tried|any previous injuries|let me take a look|I'm going to examine|push against my hand|does this hurt|I can feel|there's some swelling|what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me|any questions for me|does that make sense)\b/gi,
+        examination: /\b(let me take a look|I'm going to examine|can you raise your arm|push against my hand|does this hurt|I can feel|there's some swelling|tenderness|stiffness)\b/gi,
+        assessment: /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me)\b/gi
       },
       
       patient: {
@@ -47,7 +128,12 @@ class AdvancedSpeakerCorrection {
         
         // Response patterns
         answers: /\b(yes|no|yeah|nope|maybe|I think|probably|not really)\b/gi,
-        descriptions: /\b(it's like|feels like|kind of|sort of)\b/gi
+        descriptions: /\b(it's like|feels like|kind of|sort of)\b/gi,
+        
+        // Orthopedic-specific patterns
+        orthopedic: /\b(I hurt my|I injured my|I twisted my|I fell on my|my back hurts|my neck is killing me|my shoulder is in pain|I have pain in my|I can't move|it's been hurting for|the pain is sharp|it feels like|it's a \d+ out of 10|it's really bad|nothing helps|it's worse when I|I was playing|I fell down|I heard a pop|it happened when I|I can't work|I haven't been able to|it's affecting my|I tried ice|I've been taking|I saw another doctor|I had physical therapy|ow|ouch|that hurts|yes, right there|that's the spot|I can feel tingling|it's tender there)\b/gi,
+        pain: /\b(the pain is sharp|dull|aching|throbbing|burning|shooting|it's a \d+ out of 10|it's really bad|terrible|excruciating|unbearable|nothing helps|it's worse when I|it hurts more when)\b/gi,
+        injury: /\b(I hurt my|I injured my|I twisted my|I fell on my|I was playing|I fell down|I heard a pop|it happened when I|I was doing)\b/gi
       }
     };
   }
@@ -65,11 +151,14 @@ class AdvancedSpeakerCorrection {
     const doctorScore = this.calculateDoctorScore(cleanText, context);
     const patientScore = this.calculatePatientScore(cleanText, context);
     
+    // Apply orthopedic context scoring
+    const orthopedicAdjustment = this.getOrthopedicContextAdjustment(cleanText, context);
+    
     // Apply conversation flow logic
     const flowAdjustment = this.getConversationFlowAdjustment(cleanText, context);
     
-    const finalDoctorScore = doctorScore + flowAdjustment.doctor;
-    const finalPatientScore = patientScore + flowAdjustment.patient;
+    const finalDoctorScore = doctorScore + flowAdjustment.doctor + orthopedicAdjustment.doctor;
+    const finalPatientScore = patientScore + flowAdjustment.patient + orthopedicAdjustment.patient;
     
     // Determine speaker with confidence
     const result = this.determineSpeaker(finalDoctorScore, finalPatientScore, cleanText, context);
@@ -119,12 +208,25 @@ class AdvancedSpeakerCorrection {
     const instructionMatches = (text.match(this.speakerPatterns.doctor.instructions) || []).length;
     score += instructionMatches * 2;
     
+    // Orthopedic-specific indicators (high confidence)
+    const orthopedicMatches = (text.match(this.speakerPatterns.doctor.orthopedic) || []).length;
+    score += orthopedicMatches * 4; // Very strong indicator
+    
+    const examinationMatches = (text.match(this.speakerPatterns.doctor.examination) || []).length;
+    score += examinationMatches * 3;
+    
+    const assessmentMatches = (text.match(this.speakerPatterns.doctor.assessment) || []).length;
+    score += assessmentMatches * 3;
+    
     // Question structure
     if (text.includes('?')) score += 2;
     if (text.match(/\b(does|do|can|will|would|how|what|when|where|why)\b/g)) score += 1;
     
     // Professional language patterns
     if (text.match(/\b(scale|rate|describe|tell me about)\b/g)) score += 1.5;
+    
+    // Orthopedic-specific question patterns
+    if (text.match(/\b(on a scale of|rate your pain|does it hurt when|can you move|any numbness|have you tried|any previous injuries)\b/gi)) score += 2.5;
     
     // Weaker indicators (only if no strong patient indicators)
     if (!this.hasStrongPatientIndicators(text)) {
@@ -148,6 +250,16 @@ class AdvancedSpeakerCorrection {
     const symptomMatches = (text.match(this.speakerPatterns.patient.symptoms) || []).length;
     score += symptomMatches * 2;
     
+    // Orthopedic-specific indicators (high confidence)
+    const orthopedicMatches = (text.match(this.speakerPatterns.patient.orthopedic) || []).length;
+    score += orthopedicMatches * 4; // Very strong indicator
+    
+    const painMatches = (text.match(this.speakerPatterns.patient.pain) || []).length;
+    score += painMatches * 3;
+    
+    const injuryMatches = (text.match(this.speakerPatterns.patient.injury) || []).length;
+    score += injuryMatches * 3;
+    
     // Response patterns (especially after questions)
     if (context.lastWasQuestion) {
       const answerMatches = (text.match(this.speakerPatterns.patient.answers) || []).length;
@@ -159,11 +271,21 @@ class AdvancedSpeakerCorrection {
       score += 2;
     }
     
+    // Orthopedic-specific pain responses
+    if (text.match(/\b(ow|ouch|that hurts|yes, right there|that's the spot)\b/gi)) {
+      score += 3;
+    }
+    
+    // Body part mentions with pain context
+    if (text.match(/\b(back|neck|shoulder|arm|knee|ankle|hip|wrist|elbow)\b/gi) && text.match(/\b(hurts|pain|ache|sore|tender)\b/gi)) {
+      score += 2;
+    }
+    
     return score;
   }
 
   private hasStrongPatientIndicators(text: string): boolean {
-    return !!text.match(/\b(I took|I tried|Tylenol|Motrin|nothing helped)\b/gi);
+    return !!text.match(/\b(I took|I tried|Tylenol|Motrin|nothing helped|I hurt my|I injured my|my back hurts|my neck is killing me|the pain is sharp|it's a \d+ out of 10|ow|ouch|that hurts)\b/gi);
   }
 
   private getConversationFlowAdjustment(text: string, context: any): { doctor: number; patient: number } {
@@ -188,11 +310,78 @@ class AdvancedSpeakerCorrection {
     return adjustment;
   }
 
+  private getOrthopedicContextAdjustment(text: string, context: any): { doctor: number; patient: number } {
+    const adjustment = { doctor: 0, patient: 0 };
+    
+    // Get orthopedic context from the context object
+    const orthopedicContext = context.orthopedicContext;
+    if (!orthopedicContext) {
+      return adjustment;
+    }
+    
+    const currentPhase = orthopedicContext.currentPhase;
+    const bodyParts = orthopedicContext.bodyParts || [];
+    const painLevel = orthopedicContext.painLevel;
+    const injuryMechanism = orthopedicContext.injuryMechanism;
+    
+    // Phase-specific adjustments
+    if (this.phasePatterns[currentPhase]) {
+      const phasePattern = this.phasePatterns[currentPhase];
+      
+      // Check doctor patterns for current phase
+      for (const pattern of phasePattern.doctor) {
+        if (pattern.test(text)) {
+          adjustment.doctor += phasePattern.weights.doctor;
+          console.log(`Phase-based doctor pattern match: ${currentPhase} (+${phasePattern.weights.doctor})`);
+        }
+      }
+      
+      // Check patient patterns for current phase
+      for (const pattern of phasePattern.patient) {
+        if (pattern.test(text)) {
+          adjustment.patient += phasePattern.weights.patient;
+          console.log(`Phase-based patient pattern match: ${currentPhase} (+${phasePattern.weights.patient})`);
+        }
+      }
+    }
+    
+    // Body part context adjustments
+    if (bodyParts.length > 0) {
+      // If text mentions body parts that are already in context, likely patient
+      const mentionedBodyParts = bodyParts.filter((part: string) => text.includes(part));
+      if (mentionedBodyParts.length > 0) {
+        adjustment.patient += 1;
+        console.log(`Body part context match: ${mentionedBodyParts.join(', ')} (+1 patient)`);
+      }
+    }
+    
+    // Pain level context adjustments
+    if (painLevel !== null) {
+      // If text mentions pain scale or pain descriptors, likely patient
+      if (text.match(/\b(\d+)\s*out\s*of\s*(\d+|ten)\b/i) || 
+          text.match(/\b(really bad|terrible|excruciating|moderate|mild|slight)\b/i)) {
+        adjustment.patient += 1.5;
+        console.log(`Pain level context match: ${painLevel} (+1.5 patient)`);
+      }
+    }
+    
+    // Injury mechanism context adjustments
+    if (injuryMechanism) {
+      // If text mentions the same injury mechanism, likely patient
+      if (text.includes(injuryMechanism)) {
+        adjustment.patient += 1;
+        console.log(`Injury mechanism context match: ${injuryMechanism} (+1 patient)`);
+      }
+    }
+    
+    return adjustment;
+  }
+
   private determineSpeaker(doctorScore: number, patientScore: number, _text: string, context: any): { speaker: string; confidence: string } {
     const scoreDiff = Math.abs(doctorScore - patientScore);
     
-    // High confidence threshold
-    if (scoreDiff > 2) {
+    // High confidence threshold - lowered for better sensitivity
+    if (scoreDiff >= 1.5) {
       return {
         speaker: doctorScore > patientScore ? 'doctor' : 'patient',
         confidence: 'high'
@@ -200,7 +389,7 @@ class AdvancedSpeakerCorrection {
     }
     
     // Medium confidence
-    if (scoreDiff > 0.5) {
+    if (scoreDiff >= 0.5) {
       return {
         speaker: doctorScore > patientScore ? 'doctor' : 'patient',
         confidence: 'medium'
@@ -223,9 +412,454 @@ class AdvancedSpeakerCorrection {
   }
 }
 
-// Improved transcription processor with conversation context
-class ImprovedTranscriptionProcessor {
+// Advanced conversation flow cleaner for post-processing
+class ConversationFlowCleaner {
+  private fragmentPatterns: {
+    continuePatterns: RegExp;
+    newThoughtPatterns: RegExp;
+    interruptionPatterns: RegExp;
+    medicalContinuation: RegExp;
+    // Orthopedic-specific fragment patterns
+    orthopedicFragments: RegExp;
+    bodyPartFragments: RegExp;
+    painFragments: RegExp;
+  };
+  private conversationRules: {
+    minSegmentLength: number;
+    maxMergeTimeGap: number;
+    speakerSwitchThreshold: number;
+  };
+
+  constructor() {
+    this.fragmentPatterns = {
+      // Incomplete sentence endings that should continue
+      continuePatterns: /\b(and|but|so|because|um|uh|I|it's|the|a|an|my|your|that|this|when|where|if)$/i,
+      
+      // Sentence starters that indicate new thoughts
+      newThoughtPatterns: /^(so|now|um|uh|well|OK|alright|what|how|do you|can you|I think|I feel)/i,
+      
+      // Mid-sentence interruption indicators
+      interruptionPatterns: /\b(um|uh|er|ah)\s*$/i,
+      
+      // Incomplete medical phrases
+      medicalContinuation: /\b(brain|head|pain|started|having|seizures|tumor|neighbor|last year)$/i,
+      
+      // Orthopedic-specific fragment patterns
+      orthopedicFragments: /\b(and|but|so|because|um|uh|I|it's|the|my|your|that|this|when|where|if|back|neck|shoulder|knee|ankle|arm|hip|wrist|elbow|pain|hurt|ache|sore|tender)$/i,
+      bodyPartFragments: /\b(back|neck|shoulder|knee|ankle|arm|hip|wrist|elbow|leg|foot|hand|finger|thumb)$/i,
+      painFragments: /\b(pain|hurt|ache|sore|tender|sharp|dull|throbbing|burning|shooting)$/i
+    };
+    
+    this.conversationRules = {
+      // Minimum viable segment length
+      minSegmentLength: 8,
+      
+      // Maximum time gap for merging (seconds)
+      maxMergeTimeGap: 3,
+      
+      // Speaker switch confidence threshold
+      speakerSwitchThreshold: 0.7
+    };
+  }
+
+  cleanConversationFlow(segments: Array<{
+    text: string;
+    speaker: string;
+    startTime?: number;
+    endTime?: number;
+    originalSpeaker?: string;
+  }>): Array<{
+    id: number;
+    speaker: string;
+    text: string;
+    startTime?: number;
+    endTime?: number;
+    duration?: number;
+    wordCount: number;
+    confidence: string;
+    metadata: {
+      segmentCount: number;
+      wasMerged: boolean;
+      originalSpeakers: string[];
+    };
+  }> {
+    // Step 1: Merge obvious fragments
+    const mergedSegments = this.mergeFragmentedSegments(segments);
+    
+    // Step 2: Fix mid-sentence speaker switches
+    const fixedSwitches = this.fixMidSentenceSwitches(mergedSegments);
+    
+    // Step 3: Clean up conversation turns
+    const cleanedTurns = this.createCleanConversationTurns(fixedSwitches);
+    
+    // Step 4: Final formatting and validation
+    const finalConversation = this.finalizeConversation(cleanedTurns);
+    
+    return finalConversation;
+  }
+
+  private mergeFragmentedSegments(segments: Array<{
+    text: string;
+    speaker: string;
+    startTime?: number;
+    endTime?: number;
+    originalSpeaker?: string;
+  }>): Array<{
+    text: string;
+    speaker: string;
+    startTime?: number;
+    endTime?: number;
+    originalSpeaker?: string;
+    confidence: string;
+    originalSegments?: Array<any>;
+  }> {
+    const merged: Array<{
+      text: string;
+      speaker: string;
+      startTime?: number;
+      endTime?: number;
+      originalSpeaker?: string;
+      confidence: string;
+      originalSegments?: Array<any>;
+    }> = [];
+    let currentSegment: any = null;
+    
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      
+      if (!currentSegment) {
+        currentSegment = { ...segment, confidence: 'original' };
+        continue;
+      }
+      
+      const shouldMerge = this.shouldMergeWithPrevious(currentSegment, segment, segments, i);
+      
+      if (shouldMerge) {
+        // Merge segments
+        currentSegment = this.mergeSegments(currentSegment, segment);
+      } else {
+        // Finalize current and start new
+        merged.push(this.finalizeSegment(currentSegment));
+        currentSegment = { ...segment, confidence: 'original' };
+      }
+    }
+    
+    if (currentSegment) {
+      merged.push(this.finalizeSegment(currentSegment));
+    }
+    
+    return merged;
+  }
+
+  private shouldMergeWithPrevious(current: any, next: any, _allSegments: any[], _index: number): boolean {
+    // Same speaker check
+    if (current.speaker !== next.speaker) {
+      return false;
+    }
+    
+    // Time gap check
+    const timeGap = (next.startTime || 0) - (current.endTime || 0);
+    if (timeGap > this.conversationRules.maxMergeTimeGap) {
+      return false;
+    }
+    
+    // Fragment pattern checks
+    const currentText = current.text.trim();
+    const nextText = next.text.trim();
+    
+    // Current segment ends incompletely
+    if (this.fragmentPatterns.continuePatterns.test(currentText)) {
+      return true;
+    }
+    
+    // Current ends with interruption filler
+    if (this.fragmentPatterns.interruptionPatterns.test(currentText)) {
+      return true;
+    }
+    
+    // Medical phrase continuation
+    if (this.fragmentPatterns.medicalContinuation.test(currentText)) {
+      return true;
+    }
+    
+    // Orthopedic-specific fragment patterns
+    if (this.fragmentPatterns.orthopedicFragments.test(currentText)) {
+      return true;
+    }
+    
+    // Body part fragments (common in orthopedic conversations)
+    if (this.fragmentPatterns.bodyPartFragments.test(currentText)) {
+      return true;
+    }
+    
+    // Pain fragments (common in orthopedic conversations)
+    if (this.fragmentPatterns.painFragments.test(currentText)) {
+      return true;
+    }
+    
+    // Very short segments are likely fragments
+    if (currentText.length < this.conversationRules.minSegmentLength || 
+        nextText.length < this.conversationRules.minSegmentLength) {
+      return true;
+    }
+    
+    // Next segment doesn't start a new thought
+    if (!this.fragmentPatterns.newThoughtPatterns.test(nextText) && 
+        !nextText.match(/^[A-Z]/)) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  private mergeSegments(segment1: any, segment2: any): any {
+    return {
+      ...segment1,
+      text: this.smartTextMerge(segment1.text, segment2.text),
+      endTime: segment2.endTime,
+      confidence: 'merged',
+      originalSegments: [
+        ...(segment1.originalSegments || [segment1]),
+        ...(segment2.originalSegments || [segment2])
+      ]
+    };
+  }
+
+  private smartTextMerge(text1: string, text2: string): string {
+    const clean1 = text1.trim();
+    const clean2 = text2.trim();
+    
+    // Remove redundant conjunctions at merge point
+    let merged = clean1;
+    
+    // Add appropriate spacing
+    if (!clean1.endsWith(' ') && !clean2.startsWith(' ')) {
+      merged += ' ';
+    }
+    
+    merged += clean2;
+    
+    // Clean up double spaces and punctuation
+    return merged
+      .replace(/\s+/g, ' ')
+      .replace(/,\s*,/g, ',')
+      .replace(/\.\s*\./g, '.')
+      .trim();
+  }
+
+  private fixMidSentenceSwitches(segments: any[]): any[] {
+    const fixed: any[] = [];
+    
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      
+      // Check for obvious mid-sentence switches
+      const switchPoints = this.findSpeakerSwitchPoints(segment.text);
+      
+      if (switchPoints.length > 0) {
+        // Split segment at switch points
+        const splitSegments = this.splitSegmentAtSwitches(segment, switchPoints);
+        fixed.push(...splitSegments);
+      } else {
+        fixed.push(segment);
+      }
+    }
+    
+    return fixed;
+  }
+
+  private findSpeakerSwitchPoints(text: string): Array<{
+    position: number;
+    confidence: number;
+    type: string;
+  }> {
+    const switchPoints: Array<{
+      position: number;
+      confidence: number;
+      type: string;
+    }> = [];
+    
+    // Look for patterns that indicate speaker changes
+    const patterns = [
+      // Question followed by response pattern
+      /(\?)\s+(I|Yeah|Yes|No|Well|Um)/gi,
+      
+      // Statement followed by question
+      /(\.|!)\s+(What|How|Do you|Can you|So)/gi,
+      
+      // Medical professional interjections
+      /(OK|Alright|I see)\.\s+(So|Now|What|How)/gi
+    ];
+    
+    patterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        switchPoints.push({
+          position: match.index + match[1].length,
+          confidence: 0.8,
+          type: 'pattern_match'
+        });
+      }
+    });
+    
+    return switchPoints;
+  }
+
+  private splitSegmentAtSwitches(segment: any, switchPoints: Array<{
+    position: number;
+    confidence: number;
+    type: string;
+  }>): any[] {
+    if (switchPoints.length === 0) return [segment];
+    
+    const splits: any[] = [];
+    let lastPosition = 0;
+    let currentSpeaker = segment.speaker;
+    
+    switchPoints.forEach((switchPoint, _index) => {
+      // Create segment for text before switch
+      const beforeText = segment.text.substring(lastPosition, switchPoint.position).trim();
+      if (beforeText.length > 0) {
+        splits.push({
+          ...segment,
+          text: beforeText,
+          speaker: currentSpeaker,
+          confidence: 'split_before'
+        });
+      }
+      
+      // Switch speaker for next segment
+      currentSpeaker = currentSpeaker === 'doctor' ? 'patient' : 'doctor';
+      lastPosition = switchPoint.position;
+    });
+    
+    // Add remaining text
+    const remainingText = segment.text.substring(lastPosition).trim();
+    if (remainingText.length > 0) {
+      splits.push({
+        ...segment,
+        text: remainingText,
+        speaker: currentSpeaker,
+        confidence: 'split_after'
+      });
+    }
+    
+    return splits;
+  }
+
+  private createCleanConversationTurns(segments: any[]): any[] {
+    const turns: any[] = [];
+    let currentTurn: any = null;
+    
+    for (const segment of segments) {
+      if (!currentTurn || currentTurn.speaker !== segment.speaker) {
+        // Start new turn
+        if (currentTurn) {
+          turns.push(this.finalizeTurn(currentTurn));
+        }
+        
+        currentTurn = {
+          speaker: segment.speaker,
+          text: segment.text,
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          segments: [segment],
+          confidence: segment.confidence
+        };
+      } else {
+        // Continue current turn
+        currentTurn.text = this.smartTextMerge(currentTurn.text, segment.text);
+        currentTurn.endTime = segment.endTime;
+        currentTurn.segments.push(segment);
+        
+        // Update confidence based on segments
+        if (segment.confidence === 'high' && currentTurn.confidence !== 'high') {
+          currentTurn.confidence = 'medium';
+        }
+      }
+    }
+    
+    if (currentTurn) {
+      turns.push(this.finalizeTurn(currentTurn));
+    }
+    
+    return turns;
+  }
+
+  private finalizeTurn(turn: any): any {
+    return {
+      ...turn,
+      text: this.cleanFinalText(turn.text),
+      duration: (turn.endTime || 0) - (turn.startTime || 0),
+      wordCount: turn.text.split(/\s+/).length
+    };
+  }
+
+  private cleanFinalText(text: string): string {
+    return text
+      // Fix punctuation spacing
+      .replace(/\s*([,.!?;:])\s*/g, '$1 ')
+      .replace(/\s+([,.!?;:])/g, '$1')
+      
+      // Clean up filler words at boundaries
+      .replace(/^(um|uh|er|ah)\s+/gi, '')
+      .replace(/\s+(um|uh|er|ah)$/gi, '')
+      
+      // Fix capitalization after punctuation
+      .replace(/([.!?])\s+([a-z])/g, (_match, punct, letter) => 
+        punct + ' ' + letter.toUpperCase())
+      
+      // Clean multiple spaces
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private finalizeConversation(turns: any[]): Array<{
+    id: number;
+    speaker: string;
+    text: string;
+    startTime?: number;
+    endTime?: number;
+    duration?: number;
+    wordCount: number;
+    confidence: string;
+    metadata: {
+      segmentCount: number;
+      wasMerged: boolean;
+      originalSpeakers: string[];
+    };
+  }> {
+    return turns
+      .filter(turn => turn.text.length > 2) // Remove empty turns
+      .map((turn, index) => ({
+        id: index,
+        speaker: turn.speaker === 'doctor' ? 'Provider' : 'Patient',
+        text: turn.text,
+        startTime: turn.startTime,
+        endTime: turn.endTime,
+        duration: turn.duration,
+        wordCount: turn.wordCount,
+        confidence: turn.confidence,
+        metadata: {
+          segmentCount: turn.segments.length,
+          wasMerged: turn.segments.length > 1,
+          originalSpeakers: Array.from(new Set(turn.segments.map((s: any) => s.originalSpeaker || s.speaker)))
+        }
+      }));
+  }
+
+  private finalizeSegment(segment: any): any {
+    return {
+      ...segment,
+      text: segment.text.trim()
+    };
+  }
+}
+
+// Enhanced transcription processor with conversation flow cleaning
+class EnhancedTranscriptionProcessor {
   private speakerCorrector: AdvancedSpeakerCorrection;
+  private flowCleaner: ConversationFlowCleaner;
   private conversationHistory: Array<{
     text: string;
     speaker: string;
@@ -234,10 +868,41 @@ class ImprovedTranscriptionProcessor {
     endTime?: number;
     wasQuestion: boolean;
   }>;
+  private rawSegments: Array<{
+    text: string;
+    speaker: string;
+    startTime?: number;
+    endTime?: number;
+    originalSpeaker?: string;
+  }>;
+  
+  // Orthopedic context tracking
+  private orthopedicContext: {
+    currentPhase: 'greeting' | 'chief_complaint' | 'history' | 'examination' | 'assessment' | 'plan';
+    bodyParts: string[];
+    painLevel: number | null;
+    injuryMechanism: string | null;
+    conversationFlow: Array<{
+      phase: string;
+      timestamp: number;
+      trigger: string;
+    }>;
+  };
 
   constructor() {
     this.speakerCorrector = new AdvancedSpeakerCorrection();
+    this.flowCleaner = new ConversationFlowCleaner();
     this.conversationHistory = [];
+    this.rawSegments = [];
+    
+    // Initialize orthopedic context
+    this.orthopedicContext = {
+      currentPhase: 'greeting',
+      bodyParts: [],
+      painLevel: null,
+      injuryMechanism: null,
+      conversationFlow: []
+    };
   }
 
   processTranscriptionResult(result: {
@@ -252,10 +917,14 @@ class ImprovedTranscriptionProcessor {
     startTime?: number;
     endTime?: number;
     wasCorrected: boolean;
+    orthopedicContext?: any;
   } {
     const { text, speaker: originalSpeaker, startTime, endTime } = result;
     
-    // Build context from recent conversation
+    // Update orthopedic context before speaker correction
+    this.updateOrthopedicContext(text, startTime);
+    
+    // Build context from recent conversation (including orthopedic context)
     const context = this.buildContext();
     
     // Correct the speaker
@@ -264,6 +933,15 @@ class ImprovedTranscriptionProcessor {
       originalSpeaker || 'unknown', 
       context
     );
+    
+    // Add to raw segments for flow cleaning
+    this.rawSegments.push({
+      text,
+      speaker: correctedSpeaker,
+      startTime,
+      endTime,
+      originalSpeaker: originalSpeaker || 'unknown'
+    });
     
     // Update conversation history
     this.updateConversationHistory({
@@ -284,8 +962,27 @@ class ImprovedTranscriptionProcessor {
       ...result,
       speaker: correctedSpeaker,
       originalSpeaker: originalSpeaker || 'unknown',
-      wasCorrected: correctedSpeaker !== originalSpeaker
+      wasCorrected: correctedSpeaker !== originalSpeaker,
+      orthopedicContext: { ...this.orthopedicContext }
     };
+  }
+
+  getCleanedConversation(): Array<{
+    id: number;
+    speaker: string;
+    text: string;
+    startTime?: number;
+    endTime?: number;
+    duration?: number;
+    wordCount: number;
+    confidence: string;
+    metadata: {
+      segmentCount: number;
+      wasMerged: boolean;
+      originalSpeakers: string[];
+    };
+  }> {
+    return this.flowCleaner.cleanConversationFlow(this.rawSegments);
   }
 
   private buildContext(): {
@@ -293,6 +990,7 @@ class ImprovedTranscriptionProcessor {
     lastWasQuestion: boolean;
     recentSpeakers: string[];
     conversationLength: number;
+    orthopedicContext: any;
   } {
     const recent = this.conversationHistory.slice(-3); // Last 3 turns
     const lastTurn = recent[recent.length - 1];
@@ -301,7 +999,8 @@ class ImprovedTranscriptionProcessor {
       lastSpeaker: lastTurn?.speaker || null,
       lastWasQuestion: lastTurn?.wasQuestion || false,
       recentSpeakers: recent.map(turn => turn.speaker),
-      conversationLength: this.conversationHistory.length
+      conversationLength: this.conversationHistory.length,
+      orthopedicContext: this.getOrthopedicContext()
     };
   }
 
@@ -319,6 +1018,400 @@ class ImprovedTranscriptionProcessor {
     if (this.conversationHistory.length > 20) {
       this.conversationHistory = this.conversationHistory.slice(-15);
     }
+  }
+
+  // Orthopedic context tracking methods
+  private updateOrthopedicContext(text: string, startTime?: number): void {
+    const cleanText = text.toLowerCase();
+    const timestamp = startTime || Date.now();
+    
+    // Update conversation phase
+    this.updateConversationPhase(cleanText, timestamp);
+    
+    // Extract body parts
+    this.extractBodyParts(cleanText);
+    
+    // Extract pain level
+    this.extractPainLevel(cleanText);
+    
+    // Extract injury mechanism
+    this.extractInjuryMechanism(cleanText);
+  }
+
+  private updateConversationPhase(text: string, timestamp: number): void {
+    const previousPhase = this.orthopedicContext.currentPhase;
+    let newPhase = previousPhase;
+    
+    // Phase transition patterns
+    if (text.includes('orthopedic surgeon') || text.includes('i\'ll be your doctor')) {
+      newPhase = 'greeting';
+    } else if (text.includes('what brings you in') || text.includes('why you\'re here') || text.includes('tell me about')) {
+      newPhase = 'chief_complaint';
+    } else if (text.includes('when did this start') || text.includes('how did this happen') || text.includes('what were you doing')) {
+      newPhase = 'history';
+    } else if (text.includes('let me take a look') || text.includes('examine') || text.includes('does this hurt')) {
+      newPhase = 'examination';
+    } else if (text.includes('what i think is going on') || text.includes('looks like you have') || text.includes('diagnosis')) {
+      newPhase = 'assessment';
+    } else if (text.includes('i\'d like to get') || text.includes('prescribe') || text.includes('follow up')) {
+      newPhase = 'plan';
+    }
+    
+    // Update phase if changed
+    if (newPhase !== previousPhase) {
+      this.orthopedicContext.currentPhase = newPhase;
+      this.orthopedicContext.conversationFlow.push({
+        phase: newPhase,
+        timestamp,
+        trigger: text.substring(0, 50)
+      });
+      
+      console.log(`Orthopedic phase transition: ${previousPhase} → ${newPhase}`);
+    }
+  }
+
+  private extractBodyParts(text: string): void {
+    const bodyPartPatterns = [
+      /\b(back|spine|neck|cervical|lumbar|thoracic)\b/gi,
+      /\b(shoulder|rotator cuff|clavicle|scapula)\b/gi,
+      /\b(arm|elbow|forearm|wrist|hand|finger|thumb)\b/gi,
+      /\b(hip|pelvis|groin|thigh|femur)\b/gi,
+      /\b(knee|kneecap|patella|meniscus|acl|mcl|pcl|lcl)\b/gi,
+      /\b(leg|shin|calf|tibia|fibula)\b/gi,
+      /\b(ankle|foot|toe|heel|arch|achilles)\b/gi
+    ];
+    
+    bodyPartPatterns.forEach(pattern => {
+      const matches = text.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const bodyPart = match.toLowerCase();
+          if (!this.orthopedicContext.bodyParts.includes(bodyPart)) {
+            this.orthopedicContext.bodyParts.push(bodyPart);
+          }
+        });
+      }
+    });
+  }
+
+  private extractPainLevel(text: string): void {
+    // Look for pain scale mentions
+    const painScaleMatch = text.match(/(\d+)\s*out\s*of\s*(\d+|ten)/i);
+    if (painScaleMatch) {
+      const level = parseInt(painScaleMatch[1]);
+      const max = painScaleMatch[2].toLowerCase() === 'ten' ? 10 : parseInt(painScaleMatch[2]);
+      
+      if (level >= 1 && level <= max) {
+        this.orthopedicContext.painLevel = level;
+        console.log(`Pain level detected: ${level}/${max}`);
+      }
+    }
+    
+    // Look for descriptive pain levels
+    if (text.includes('really bad') || text.includes('terrible') || text.includes('excruciating')) {
+      this.orthopedicContext.painLevel = 8; // High pain
+    } else if (text.includes('moderate') || text.includes('manageable')) {
+      this.orthopedicContext.painLevel = 5; // Moderate pain
+    } else if (text.includes('mild') || text.includes('slight')) {
+      this.orthopedicContext.painLevel = 3; // Mild pain
+    }
+  }
+
+  private extractInjuryMechanism(text: string): void {
+    // More specific patterns to avoid partial matches - ordered by priority
+    const injuryPatterns = [
+      { pattern: /\b(heard a pop|heard a crack|heard a snap)\b/gi, mechanism: 'heard a pop' },
+      { pattern: /\b(fell down|fell off)\b/gi, mechanism: 'fell down' },
+      { pattern: /\b(car accident|motor vehicle|mva)\b/gi, mechanism: 'car accident' },
+      { pattern: /\b(work injury|workplace|on the job)\b/gi, mechanism: 'work injury' },
+      { pattern: /\b(playing|sports|basketball|football|tennis)\b/gi, mechanism: 'playing' },
+      { pattern: /\b(lifting|lifted|picked up)\b/gi, mechanism: 'lifting' },
+      { pattern: /\b(twisted|twisting)\b/gi, mechanism: 'twisted' },
+      { pattern: /\b(fell)\b/gi, mechanism: 'fell' }
+    ];
+    
+    // Check patterns in order of priority (most important first)
+    for (const { pattern, mechanism } of injuryPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        this.orthopedicContext.injuryMechanism = mechanism;
+        console.log(`Injury mechanism detected: ${this.orthopedicContext.injuryMechanism}`);
+        break; // Stop at first match to avoid overwriting with less specific patterns
+      }
+    }
+  }
+
+  // Get current orthopedic context
+  getOrthopedicContext(): any {
+    return { ...this.orthopedicContext };
+  }
+
+  // Reset orthopedic context (useful for new conversations)
+  resetOrthopedicContext(): void {
+    this.orthopedicContext = {
+      currentPhase: 'greeting',
+      bodyParts: [],
+      painLevel: null,
+      injuryMechanism: null,
+      conversationFlow: []
+    };
+  }
+
+  // Generate structured orthopedic narrative
+  generateOrthopedicNarrative(): {
+    summary: {
+      patient: string;
+      chiefComplaint: string;
+      history: string;
+      examination: string;
+      assessment: string;
+      plan: string;
+    };
+    keyFindings: {
+      bodyParts: string[];
+      painLevel: number | null;
+      injuryMechanism: string | null;
+      duration: string | null;
+    };
+    conversationFlow: Array<{
+      phase: string;
+      timestamp: number;
+      trigger: string;
+    }>;
+    structuredTranscript: Array<{
+      phase: string;
+      speaker: string;
+      text: string;
+      timestamp?: number;
+      medicalSignificance: string;
+    }>;
+  } {
+    const cleanedConversation = this.getCleanedConversation();
+    const context = this.getOrthopedicContext();
+    
+    // Group conversation by phases
+    const phaseGroups = this.groupConversationByPhases(cleanedConversation);
+    
+    // Generate structured summary
+    const summary = this.generatePhaseSummary(phaseGroups);
+    
+    // Extract key findings
+    const keyFindings = this.extractKeyFindings(context, phaseGroups);
+    
+    // Create structured transcript
+    const structuredTranscript = this.createStructuredTranscript(cleanedConversation, phaseGroups);
+    
+    return {
+      summary,
+      keyFindings,
+      conversationFlow: context.conversationFlow,
+      structuredTranscript
+    };
+  }
+
+  private groupConversationByPhases(conversation: any[]): { [key: string]: any[] } {
+    const phaseGroups: { [key: string]: any[] } = {
+      greeting: [],
+      chief_complaint: [],
+      history: [],
+      examination: [],
+      assessment: [],
+      plan: []
+    };
+    
+    let currentPhase = 'greeting';
+    
+    conversation.forEach((turn) => {
+      // Determine phase based on content analysis and conversation flow
+      const turnText = turn.text.toLowerCase();
+      
+      // Phase detection based on content
+      if (turnText.includes('orthopedic surgeon') || turnText.includes('i\'ll be your doctor')) {
+        currentPhase = 'greeting';
+      } else if (turnText.includes('what brings you in') || turnText.includes('why you\'re here') || turnText.includes('tell me about')) {
+        currentPhase = 'chief_complaint';
+      } else if (turnText.includes('when did this start') || turnText.includes('how did this happen') || turnText.includes('what were you doing')) {
+        currentPhase = 'history';
+      } else if (turnText.includes('let me take a look') || turnText.includes('examine') || turnText.includes('does this hurt')) {
+        currentPhase = 'examination';
+      } else if (turnText.includes('what i think is going on') || turnText.includes('looks like you have') || turnText.includes('diagnosis')) {
+        currentPhase = 'assessment';
+      } else if (turnText.includes('i\'d like to get') || turnText.includes('prescribe') || turnText.includes('follow up')) {
+        currentPhase = 'plan';
+      }
+      
+      // Assign turn to appropriate phase group
+      if (phaseGroups[currentPhase]) {
+        phaseGroups[currentPhase].push(turn);
+      }
+    });
+    
+    return phaseGroups;
+  }
+
+  private generatePhaseSummary(phaseGroups: { [key: string]: any[] }): {
+    patient: string;
+    chiefComplaint: string;
+    history: string;
+    examination: string;
+    assessment: string;
+    plan: string;
+  } {
+    return {
+      patient: this.extractPatientInfo(phaseGroups.greeting),
+      chiefComplaint: this.extractChiefComplaint(phaseGroups.chief_complaint),
+      history: this.extractHistory(phaseGroups.history),
+      examination: this.extractExamination(phaseGroups.examination),
+      assessment: this.extractAssessment(phaseGroups.assessment),
+      plan: this.extractPlan(phaseGroups.plan)
+    };
+  }
+
+  private extractPatientInfo(greetingTurns: any[]): string {
+    const patientTurns = greetingTurns.filter(turn => turn.speaker === 'patient');
+    if (patientTurns.length === 0) return 'Patient information not captured';
+    
+    const responses = patientTurns.map(turn => turn.text).join(' ');
+    return `Patient: ${responses}`;
+  }
+
+  private extractChiefComplaint(complaintTurns: any[]): string {
+    const patientTurns = complaintTurns.filter(turn => turn.speaker === 'patient');
+    if (patientTurns.length === 0) return 'Chief complaint not captured';
+    
+    const complaints = patientTurns.map(turn => turn.text).join(' ');
+    return `Chief Complaint: ${complaints}`;
+  }
+
+  private extractHistory(historyTurns: any[]): string {
+    const patientTurns = historyTurns.filter(turn => turn.speaker === 'patient');
+    if (patientTurns.length === 0) return 'History not captured';
+    
+    const history = patientTurns.map(turn => turn.text).join(' ');
+    return `History: ${history}`;
+  }
+
+  private extractExamination(examTurns: any[]): string {
+    const doctorTurns = examTurns.filter(turn => turn.speaker === 'doctor');
+    const patientTurns = examTurns.filter(turn => turn.speaker === 'patient');
+    
+    const doctorFindings = doctorTurns.map(turn => turn.text).join(' ');
+    const patientResponses = patientTurns.map(turn => turn.text).join(' ');
+    
+    return `Examination: ${doctorFindings} Patient responses: ${patientResponses}`;
+  }
+
+  private extractAssessment(assessmentTurns: any[]): string {
+    const doctorTurns = assessmentTurns.filter(turn => turn.speaker === 'doctor');
+    if (doctorTurns.length === 0) return 'Assessment not captured';
+    
+    const assessment = doctorTurns.map(turn => turn.text).join(' ');
+    return `Assessment: ${assessment}`;
+  }
+
+  private extractPlan(planTurns: any[]): string {
+    const doctorTurns = planTurns.filter(turn => turn.speaker === 'doctor');
+    if (doctorTurns.length === 0) return 'Plan not captured';
+    
+    const plan = doctorTurns.map(turn => turn.text).join(' ');
+    return `Plan: ${plan}`;
+  }
+
+  private extractKeyFindings(context: any, phaseGroups: { [key: string]: any[] }): {
+    bodyParts: string[];
+    painLevel: number | null;
+    injuryMechanism: string | null;
+    duration: string | null;
+  } {
+    // Extract duration from history
+    let duration = null;
+    const historyTurns = phaseGroups.history || [];
+    const historyText = historyTurns.map(turn => turn.text).join(' ');
+    
+    // Improved duration pattern matching
+    const durationMatch = historyText.match(/(\d+)\s*(days?|weeks?|months?|years?)\s*ago/i);
+    if (durationMatch) {
+      duration = `${durationMatch[1]} ${durationMatch[2]} ago`;
+    } else {
+      // Try alternative patterns
+      const altMatch = historyText.match(/about\s+(\d+)\s*(days?|weeks?|months?|years?)\s*ago/i);
+      if (altMatch) {
+        duration = `${altMatch[1]} ${altMatch[2]} ago`;
+      }
+    }
+    
+    return {
+      bodyParts: context.bodyParts || [],
+      painLevel: context.painLevel,
+      injuryMechanism: context.injuryMechanism,
+      duration
+    };
+  }
+
+  private createStructuredTranscript(conversation: any[], phaseGroups: { [key: string]: any[] }): Array<{
+    phase: string;
+    speaker: string;
+    text: string;
+    timestamp?: number;
+    medicalSignificance: string;
+  }> {
+    return conversation.map(turn => {
+      // Determine phase for this turn
+      let phase = 'greeting';
+      for (const [phaseName, turns] of Object.entries(phaseGroups)) {
+        if (turns.includes(turn)) {
+          phase = phaseName;
+          break;
+        }
+      }
+      
+      // Determine medical significance
+      const medicalSignificance = this.assessMedicalSignificance(turn.text, phase);
+      
+      return {
+        phase,
+        speaker: turn.speaker,
+        text: turn.text,
+        timestamp: turn.startTime,
+        medicalSignificance
+      };
+    });
+  }
+
+  private assessMedicalSignificance(text: string, phase: string): string {
+    const lowerText = text.toLowerCase();
+    
+    // High significance patterns
+    if (lowerText.match(/\b(pain|hurt|injury|fracture|strain|sprain|tear)\b/)) {
+      return 'High - Pain/Injury related';
+    }
+    
+    if (lowerText.match(/\b(diagnosis|assessment|what i think|looks like)\b/)) {
+      return 'High - Diagnostic information';
+    }
+    
+    if (lowerText.match(/\b(prescribe|medication|treatment|follow up)\b/)) {
+      return 'High - Treatment plan';
+    }
+    
+    if (lowerText.match(/\b(examine|look at|check|test)\b/)) {
+      return 'Medium - Examination findings';
+    }
+    
+    if (lowerText.match(/\b(when|how|what|where)\b/)) {
+      return 'Medium - History gathering';
+    }
+    
+    // Phase-based significance
+    if (phase === 'assessment' || phase === 'plan') {
+      return 'High - Clinical decision making';
+    }
+    
+    if (phase === 'examination') {
+      return 'Medium - Clinical findings';
+    }
+    
+    return 'Low - General conversation';
   }
 }
 
@@ -350,6 +1443,53 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
   const [mode3Narrative, setMode3Narrative] = useState<string | null>(null);
   const [mode3Progress, setMode3Progress] = useState<'idle'|'transcribing'|'processing'|'ready'>('idle');
   const [finalAwsJson, setFinalAwsJson] = useState<any>(null);
+  
+  // Enhanced conversation flow state
+  const [cleanedConversation, setCleanedConversation] = useState<Array<{
+    id: number;
+    speaker: string;
+    text: string;
+    startTime?: number;
+    endTime?: number;
+    duration?: number;
+    wordCount: number;
+    confidence: string;
+    metadata: {
+      segmentCount: number;
+      wasMerged: boolean;
+      originalSpeakers: string[];
+    };
+  }>>([]);
+
+  // Orthopedic narrative state
+  const [orthopedicNarrative, setOrthopedicNarrative] = useState<{
+    summary: {
+      patient: string;
+      chiefComplaint: string;
+      history: string;
+      examination: string;
+      assessment: string;
+      plan: string;
+    };
+    keyFindings: {
+      bodyParts: string[];
+      painLevel: number | null;
+      injuryMechanism: string | null;
+      duration: string | null;
+    };
+    conversationFlow: Array<{
+      phase: string;
+      timestamp: number;
+      trigger: string;
+    }>;
+    structuredTranscript: Array<{
+      phase: string;
+      speaker: string;
+      text: string;
+      timestamp?: number;
+      medicalSignificance: string;
+    }>;
+  } | null>(null);
 
   // Update mode when it changes
   useEffect(() => {
@@ -366,12 +1506,12 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
   // Speaker tracking for correction
   const lastSpeakerRef = useRef<string | null>(null);
   
-  // Advanced speaker correction processor
-  const transcriptionProcessorRef = useRef<ImprovedTranscriptionProcessor | null>(null);
+  // Enhanced speaker correction processor with flow cleaning
+  const transcriptionProcessorRef = useRef<EnhancedTranscriptionProcessor | null>(null);
   
   // Initialize the processor
   if (!transcriptionProcessorRef.current) {
-    transcriptionProcessorRef.current = new ImprovedTranscriptionProcessor();
+    transcriptionProcessorRef.current = new EnhancedTranscriptionProcessor();
   }
 
   // Section routing for CNESST (wire the buffers)
@@ -502,6 +1642,24 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     .join(' ');
 
   // Build final paragraphs with heuristics, deduplication, and speaker attribution
+  // Update cleaned conversation when segments change
+  useEffect(() => {
+    if (state.mode === 'ambient' && featureFlags.speakerLabeling && transcriptionProcessorRef.current) {
+      const cleaned = transcriptionProcessorRef.current.getCleanedConversation();
+      setCleanedConversation(cleaned);
+      
+      // Generate orthopedic narrative if we have enough conversation data
+      if (cleaned.length >= 3) {
+        try {
+          const narrative = transcriptionProcessorRef.current.generateOrthopedicNarrative();
+          setOrthopedicNarrative(narrative);
+        } catch (error) {
+          console.warn('Failed to generate orthopedic narrative:', error);
+        }
+      }
+    }
+  }, [segments, state.mode, featureFlags.speakerLabeling]);
+
   const buildParagraphs = useCallback(() => {
     const PAUSE_MS = 1200;
     
@@ -995,6 +2153,12 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     mode3Narrative,
     mode3Progress,
     finalAwsJson,
+    
+    // Enhanced conversation flow data
+    cleanedConversation,
+    
+    // Orthopedic narrative data
+    orthopedicNarrative,
 
     // Actions
     startRecording,

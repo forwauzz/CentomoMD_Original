@@ -118,6 +118,7 @@ export interface AWSTranscriptItem {
     content: string;
   }>;
   type: 'pronunciation' | 'punctuation';
+  Speaker?: string;  // Speaker label for streaming format
 }
 
 // Pipeline stage result types
