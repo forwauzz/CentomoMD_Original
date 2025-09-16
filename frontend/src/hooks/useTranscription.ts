@@ -5,6 +5,323 @@ import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
 
+// Advanced speaker correction with weighted scoring and conversation context
+class AdvancedSpeakerCorrection {
+  // private conversationContext: any[]; // Not used in current implementation
+  private speakerPatterns: {
+    doctor: {
+      questions: RegExp;
+      medical: RegExp;
+      instructions: RegExp;
+      transitions: RegExp;
+      acknowledgments: RegExp;
+    };
+    patient: {
+      personal: RegExp;
+      medications: RegExp;
+      symptoms: RegExp;
+      answers: RegExp;
+      descriptions: RegExp;
+    };
+  };
+
+  constructor() {
+    // this.conversationContext = []; // Not used in current implementation
+    this.speakerPatterns = {
+      doctor: {
+        // Strong doctor indicators
+        questions: /\b(tell me|rate on a|pain scale|does it move|does the|anything that makes|how would you|what about)\b/gi,
+        medical: /\b(pain scale|radiation|0 being|10 being|scale of|examination|symptoms)\b/gi,
+        instructions: /\b(let me|I want you to|can you|try to)\b/gi,
+        
+        // Weaker indicators (context dependent)
+        transitions: /\b(so|um so|now|and|alright)\b/gi,
+        acknowledgments: /\b(OK|alright|I see|mm-hmm)\b/gi
+      },
+      
+      patient: {
+        // Strong patient indicators
+        personal: /\b(I took|I tried|I have|I feel|I can't|I don't|my pain|it hurts)\b/gi,
+        medications: /\b(Tylenol|Motrin|ibuprofen|aspirin|took some|tried some)\b/gi,
+        symptoms: /\b(nothing helped|doesn't work|makes it worse|feels like|started when)\b/gi,
+        
+        // Response patterns
+        answers: /\b(yes|no|yeah|nope|maybe|I think|probably|not really)\b/gi,
+        descriptions: /\b(it's like|feels like|kind of|sort of)\b/gi
+      }
+    };
+  }
+
+  correctSpeaker(text: string, originalSpeaker: string, context: any = {}): string {
+    // Clean and analyze the text
+    const cleanText = text.trim().toLowerCase();
+    
+    // Handle very short fragments first
+    if (cleanText.length < 10) {
+      return this.handleShortFragment(cleanText, originalSpeaker, context);
+    }
+    
+    // Calculate speaker scores
+    const doctorScore = this.calculateDoctorScore(cleanText, context);
+    const patientScore = this.calculatePatientScore(cleanText, context);
+    
+    // Apply conversation flow logic
+    const flowAdjustment = this.getConversationFlowAdjustment(cleanText, context);
+    
+    const finalDoctorScore = doctorScore + flowAdjustment.doctor;
+    const finalPatientScore = patientScore + flowAdjustment.patient;
+    
+    // Determine speaker with confidence
+    const result = this.determineSpeaker(finalDoctorScore, finalPatientScore, cleanText, context);
+    
+    // Log for debugging
+    console.log(`Speaker analysis: "${text.substring(0, 50)}..." 
+      Doctor: ${finalDoctorScore.toFixed(1)}, Patient: ${finalPatientScore.toFixed(1)} 
+      → ${result.speaker} (${result.confidence})`);
+    
+    return result.speaker;
+  }
+
+  private handleShortFragment(cleanText: string, originalSpeaker: string, context: any): string {
+    // Very short utterances - use context heavily
+    const lastSpeaker = context.lastSpeaker;
+    const isQuestion = context.lastWasQuestion;
+    
+    // Filler words usually continue current speaker
+    if (cleanText.match(/^(um|uh|ah|er|well)\.?$/)) {
+      return lastSpeaker || originalSpeaker;
+    }
+    
+    // Short acknowledgments
+    if (cleanText.match(/^(ok|yeah|yes|no|mm-hmm|uh-huh)\.?$/)) {
+      // If last was a question, this is likely patient response
+      if (isQuestion && lastSpeaker === 'doctor') {
+        return 'patient';
+      }
+      // Otherwise, could be doctor acknowledging
+      return lastSpeaker === 'patient' ? 'doctor' : 'patient';
+    }
+    
+    // Default to alternating for unclear short fragments
+    return lastSpeaker === 'doctor' ? 'patient' : 'doctor';
+  }
+
+  private calculateDoctorScore(text: string, _context: any): number {
+    let score = 0;
+    
+    // Strong indicators
+    const questionMatches = (text.match(this.speakerPatterns.doctor.questions) || []).length;
+    score += questionMatches * 3;
+    
+    const medicalMatches = (text.match(this.speakerPatterns.doctor.medical) || []).length;
+    score += medicalMatches * 2;
+    
+    const instructionMatches = (text.match(this.speakerPatterns.doctor.instructions) || []).length;
+    score += instructionMatches * 2;
+    
+    // Question structure
+    if (text.includes('?')) score += 2;
+    if (text.match(/\b(does|do|can|will|would|how|what|when|where|why)\b/g)) score += 1;
+    
+    // Professional language patterns
+    if (text.match(/\b(scale|rate|describe|tell me about)\b/g)) score += 1.5;
+    
+    // Weaker indicators (only if no strong patient indicators)
+    if (!this.hasStrongPatientIndicators(text)) {
+      const transitionMatches = (text.match(this.speakerPatterns.doctor.transitions) || []).length;
+      score += transitionMatches * 0.5;
+    }
+    
+    return score;
+  }
+
+  private calculatePatientScore(text: string, context: any): number {
+    let score = 0;
+    
+    // Strong indicators
+    const personalMatches = (text.match(this.speakerPatterns.patient.personal) || []).length;
+    score += personalMatches * 3;
+    
+    const medicationMatches = (text.match(this.speakerPatterns.patient.medications) || []).length;
+    score += medicationMatches * 4; // Very strong indicator
+    
+    const symptomMatches = (text.match(this.speakerPatterns.patient.symptoms) || []).length;
+    score += symptomMatches * 2;
+    
+    // Response patterns (especially after questions)
+    if (context.lastWasQuestion) {
+      const answerMatches = (text.match(this.speakerPatterns.patient.answers) || []).length;
+      score += answerMatches * 2;
+    }
+    
+    // Personal pronouns in symptom context
+    if (text.includes('i ') && text.match(/\b(pain|hurt|feel|took|tried)\b/)) {
+      score += 2;
+    }
+    
+    return score;
+  }
+
+  private hasStrongPatientIndicators(text: string): boolean {
+    return !!text.match(/\b(I took|I tried|Tylenol|Motrin|nothing helped)\b/gi);
+  }
+
+  private getConversationFlowAdjustment(text: string, context: any): { doctor: number; patient: number } {
+    const adjustment = { doctor: 0, patient: 0 };
+    
+    // Question-answer flow
+    if (context.lastWasQuestion && context.lastSpeaker === 'doctor') {
+      adjustment.patient += 2; // Likely answering
+    }
+    
+    // Follow-up question pattern
+    if (text.includes('?') && context.lastSpeaker === 'patient') {
+      adjustment.doctor += 1.5; // Likely follow-up question
+    }
+    
+    // Alternating conversation bonus
+    if (context.lastSpeaker) {
+      adjustment.doctor += context.lastSpeaker === 'patient' ? 0.5 : -0.5;
+      adjustment.patient += context.lastSpeaker === 'doctor' ? 0.5 : -0.5;
+    }
+    
+    return adjustment;
+  }
+
+  private determineSpeaker(doctorScore: number, patientScore: number, _text: string, context: any): { speaker: string; confidence: string } {
+    const scoreDiff = Math.abs(doctorScore - patientScore);
+    
+    // High confidence threshold
+    if (scoreDiff > 2) {
+      return {
+        speaker: doctorScore > patientScore ? 'doctor' : 'patient',
+        confidence: 'high'
+      };
+    }
+    
+    // Medium confidence
+    if (scoreDiff > 0.5) {
+      return {
+        speaker: doctorScore > patientScore ? 'doctor' : 'patient',
+        confidence: 'medium'
+      };
+    }
+    
+    // Low confidence - use context
+    if (context.lastSpeaker) {
+      return {
+        speaker: context.lastSpeaker === 'doctor' ? 'patient' : 'doctor',
+        confidence: 'low'
+      };
+    }
+    
+    // Default fallback
+    return {
+      speaker: doctorScore > patientScore ? 'doctor' : 'patient',
+      confidence: 'guess'
+    };
+  }
+}
+
+// Improved transcription processor with conversation context
+class ImprovedTranscriptionProcessor {
+  private speakerCorrector: AdvancedSpeakerCorrection;
+  private conversationHistory: Array<{
+    text: string;
+    speaker: string;
+    originalSpeaker: string;
+    startTime?: number;
+    endTime?: number;
+    wasQuestion: boolean;
+  }>;
+
+  constructor() {
+    this.speakerCorrector = new AdvancedSpeakerCorrection();
+    this.conversationHistory = [];
+  }
+
+  processTranscriptionResult(result: {
+    text: string;
+    speaker?: string;
+    startTime?: number;
+    endTime?: number;
+  }): {
+    text: string;
+    speaker: string;
+    originalSpeaker: string;
+    startTime?: number;
+    endTime?: number;
+    wasCorrected: boolean;
+  } {
+    const { text, speaker: originalSpeaker, startTime, endTime } = result;
+    
+    // Build context from recent conversation
+    const context = this.buildContext();
+    
+    // Correct the speaker
+    const correctedSpeaker = this.speakerCorrector.correctSpeaker(
+      text, 
+      originalSpeaker || 'unknown', 
+      context
+    );
+    
+    // Update conversation history
+    this.updateConversationHistory({
+      text,
+      speaker: correctedSpeaker,
+      originalSpeaker: originalSpeaker || 'unknown',
+      startTime,
+      endTime,
+      wasQuestion: text.includes('?')
+    });
+    
+    // Log the correction
+    if (correctedSpeaker !== originalSpeaker) {
+      console.log(`Speaker correction: "${text.substring(0, 50)}..." ${originalSpeaker} → ${correctedSpeaker}`);
+    }
+    
+    return {
+      ...result,
+      speaker: correctedSpeaker,
+      originalSpeaker: originalSpeaker || 'unknown',
+      wasCorrected: correctedSpeaker !== originalSpeaker
+    };
+  }
+
+  private buildContext(): {
+    lastSpeaker: string | null;
+    lastWasQuestion: boolean;
+    recentSpeakers: string[];
+    conversationLength: number;
+  } {
+    const recent = this.conversationHistory.slice(-3); // Last 3 turns
+    const lastTurn = recent[recent.length - 1];
+    
+    return {
+      lastSpeaker: lastTurn?.speaker || null,
+      lastWasQuestion: lastTurn?.wasQuestion || false,
+      recentSpeakers: recent.map(turn => turn.speaker),
+      conversationLength: this.conversationHistory.length
+    };
+  }
+
+  private updateConversationHistory(turn: {
+    text: string;
+    speaker: string;
+    originalSpeaker: string;
+    startTime?: number;
+    endTime?: number;
+    wasQuestion: boolean;
+  }): void {
+    this.conversationHistory.push(turn);
+    
+    // Keep only recent history to prevent memory issues
+    if (this.conversationHistory.length > 20) {
+      this.conversationHistory = this.conversationHistory.slice(-15);
+    }
+  }
+}
+
 // Enhanced segment tracking for partial results
 type Segment = { 
   id: string; 
@@ -40,11 +357,22 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       console.log(`Mode changed from ${state.mode} to ${mode}`);
       setState(prev => ({ ...prev, mode }));
     }
-  }, [mode, state.mode]);
+  }, [mode]); // Remove state.mode from dependencies to avoid circular updates
 
   // Enhanced segment tracking
   const [segments, setSegments] = useState<Segment[]>([]);
   const segIndex = useRef<Map<string, number>>(new Map());
+  
+  // Speaker tracking for correction
+  const lastSpeakerRef = useRef<string | null>(null);
+  
+  // Advanced speaker correction processor
+  const transcriptionProcessorRef = useRef<ImprovedTranscriptionProcessor | null>(null);
+  
+  // Initialize the processor
+  if (!transcriptionProcessorRef.current) {
+    transcriptionProcessorRef.current = new ImprovedTranscriptionProcessor();
+  }
 
   // Section routing for CNESST (wire the buffers)
   const [activeSection, setActiveSection] = useState<'section_7'|'section_8'|'section_11'>('section_7');
@@ -225,9 +553,21 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         // Raw text only - no speaker labels
         buf.push(curr.text.trim());
       } else if (state.mode === 'ambient' && featureFlags.speakerLabeling) {
-        // Ambient mode with feature flag ON: show neutral speaker labels
-        const speakerPrefix = curr.speaker ? `${curr.speaker}: ` : '';
+        // Ambient mode with feature flag ON: show corrected speaker labels using advanced processor
+        const processedResult = transcriptionProcessorRef.current!.processTranscriptionResult({
+          text: curr.text,
+          speaker: curr.speaker || undefined,
+          startTime: curr.startTime || undefined,
+          endTime: curr.endTime || undefined
+        });
+        
+        const speakerPrefix = processedResult.speaker !== 'unknown' ? `${processedResult.speaker}: ` : '';
         buf.push(speakerPrefix + curr.text.trim());
+        
+        // Update last speaker for next correction
+        if (processedResult.speaker !== 'unknown') {
+          lastSpeakerRef.current = processedResult.speaker;
+        }
       } else {
         // Ambient mode with feature flag OFF: raw text only
         buf.push(curr.text.trim());
@@ -236,7 +576,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     if (buf.length) paragraphs.push(buf.join(' '));
     
     return paragraphs;
-  }, [segments, buffers, activeSection]);
+  }, [segments, buffers, activeSection, state.mode, featureFlags.speakerLabeling]);
 
 
   // French typography polish (clinic-friendly)
@@ -298,13 +638,25 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
             
             const stream = await navigator.mediaDevices.getUserMedia({
               audio: {
-                channelCount: 1,
-                noiseSuppression: false,
-                echoCancellation: false,
-                autoGainControl: false,
+                sampleRate: 16000,        // Ensure 16kHz for best diarization
+                channelCount: 1,          // Mono audio works better for diarization
+                echoCancellation: false,   // Turn OFF - can interfere with speaker detection
+                noiseSuppression: false,   // Turn OFF - can merge speakers
+                autoGainControl: false,    // Turn OFF - can normalize different speaker volumes
               },
             });
             streamRef.current = stream;
+            
+            // Log audio settings for debugging
+            const track = stream.getAudioTracks()[0];
+            const settings = track.getSettings();
+            console.log('Audio settings for diarization:', {
+              sampleRate: settings.sampleRate,
+              channelCount: settings.channelCount,
+              echoCancellation: settings.echoCancellation,
+              noiseSuppression: settings.noiseSuppression,
+              autoGainControl: settings.autoGainControl
+            });
             
             const source = audioContext.createMediaStreamSource(stream);
             const proc = audioContext.createScriptProcessor(4096, 1, 1);
@@ -451,6 +803,8 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
               const paragraphs = buildParagraphs();
               // Apply processing based on mode
               console.log('Processing final transcript with mode:', state.mode);
+              console.log('Current mode from props:', mode);
+              console.log('Feature flags:', featureFlags);
               const finalDisplay = state.mode === 'word_for_word' 
                 ? paragraphs  // Raw text for word-for-word mode (post-processing triggered by template)
                 : paragraphs.map(tidyFr);  // Formatted text for other modes (AWS handles punctuation naturally)
