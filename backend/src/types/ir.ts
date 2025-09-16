@@ -94,6 +94,11 @@ export interface AWSTranscribeResult {
   };
   results: {
     items: AWSTranscriptItem[];
+    language_code?: string;
+    language_identification?: Array<{
+      language_code: string;
+      score: number;
+    }>;
   };
 }
 

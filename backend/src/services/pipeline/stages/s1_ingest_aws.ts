@@ -13,6 +13,27 @@ import {
 
 export class S1IngestAWS {
 
+  /**
+   * Extract language from AWS Transcribe streaming response
+   */
+  private extractLanguageFromTranscribeResponse(transcribeResponse: AWSTranscribeResult): string {
+    // Method 1: From Result.LanguageCode (most direct)
+    if (transcribeResponse?.results?.items?.length > 0) {
+      const result = transcribeResponse.results;
+      if (result.language_code) {
+        return result.language_code;
+      }
+      
+      // Method 2: From LanguageIdentification array (when using language detection)
+      if (result.language_identification?.length > 0) {
+        return result.language_identification[0].language_code;
+      }
+    }
+    
+    // Fallback to default if no language detected
+    return 'en-US';
+  }
+
   async execute(awsResult: AWSTranscribeResult): Promise<StageResult<IrDialog>> {
     const startTime = Date.now();
 
@@ -28,12 +49,13 @@ export class S1IngestAWS {
       }
 
       const turns = this.parseItemsToTurns(awsResult.results.items);
+      const detectedLanguage = this.extractLanguageFromTranscribeResponse(awsResult);
 
       const dialog: IrDialog = {
         turns,
         metadata: {
           source: 'aws_transcribe',
-          language: 'fr-CA', // TODO: Extract from AWS result
+          language: detectedLanguage, // Dynamic language extraction
           totalDuration: this.calculateTotalDuration(turns),
           speakerCount: this.countDistinctSpeakers(turns),
           createdAt: new Date()
