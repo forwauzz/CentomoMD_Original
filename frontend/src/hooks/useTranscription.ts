@@ -49,55 +49,55 @@ class AdvancedSpeakerCorrection {
     this.phasePatterns = {
       greeting: {
         doctor: [
-          /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|nice to meet you)\b/gi
+          /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|nice to meet you|Je vais être votre chirurgien orthopédique|Je suis Dr\.|laissez-moi me laver les mains|enchanté de vous rencontrer|bonjour docteur)\b/gi
         ],
         patient: [
-          /\b(hi|hello|nice to meet you|thank you)\b/gi
+          /\b(hi|hello|nice to meet you|thank you|salut|bonjour|enchanté|merci|bonjour docteur)\b/gi
         ],
         weights: { doctor: 3, patient: 1 }
       },
       chief_complaint: {
         doctor: [
-          /\b(what brings you in|why you're here|tell me about|what's the problem)\b/gi
+          /\b(what brings you in|why you're here|tell me about|what's the problem|qu'est-ce qui vous amène|pourquoi êtes-vous ici|parlez-moi de|quel est le problème|que puis-je faire pour vous)\b/gi
         ],
         patient: [
-          /\b(I hurt my|I injured my|my \w+ hurts|I have pain|I can't move)\b/gi
+          /\b(I hurt my|I injured my|my \w+ hurts|I have pain|I can't move|j'ai mal à|je me suis blessé|mon \w+ me fait mal|j'ai de la douleur|je ne peux pas bouger|j'ai mal|ça me fait mal)\b/gi
         ],
         weights: { doctor: 2, patient: 3 }
       },
       history: {
         doctor: [
-          /\b(when did this start|how did this happen|what were you doing|any previous injuries|how long)\b/gi
+          /\b(when did this start|how did this happen|what were you doing|any previous injuries|how long|quand est-ce que ça a commencé|comment est-ce arrivé|que faisiez-vous|avez-vous eu des blessures précédentes|depuis combien de temps)\b/gi
         ],
         patient: [
-          /\b(it started|about \d+ days ago|I was \w+|I heard a pop|I fell)\b/gi
+          /\b(it started|about \d+ days ago|I was \w+|I heard a pop|I fell|ça a commencé|il y a environ \d+ jours|j'étais en train de|j'ai entendu un craquement|je suis tombé|j'ai glissé)\b/gi
         ],
         weights: { doctor: 2, patient: 3 }
       },
       examination: {
         doctor: [
-          /\b(let me take a look|I'm going to examine|does this hurt|can you move|push against my hand)\b/gi
+          /\b(let me take a look|I'm going to examine|does this hurt|can you move|push against my hand|laissez-moi regarder|je vais vous examiner|est-ce que ça fait mal|pouvez-vous bouger|poussez contre ma main|montrez-moi)\b/gi
         ],
         patient: [
-          /\b(ow|ouch|that hurts|yes, right there|that's the spot|I can feel)\b/gi
+          /\b(ow|ouch|that hurts|yes, right there|that's the spot|I can feel|aïe|ouille|ça fait mal|oui, juste là|c'est là|je peux sentir|ça fait très mal)\b/gi
         ],
         weights: { doctor: 3, patient: 2 }
       },
       assessment: {
         doctor: [
-          /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out)\b/gi
+          /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|ce que je pense qui se passe|il semble que vous ayez|j'aimerais faire une radiographie|nous devons éliminer|je pense que vous avez)\b/gi
         ],
         patient: [
-          /\b(what does that mean|is it serious|will I need surgery|how long will it take)\b/gi
+          /\b(what does that mean|is it serious|will I need surgery|how long will it take|qu'est-ce que ça veut dire|est-ce grave|est-ce que j'aurai besoin de chirurgie|combien de temps ça va prendre|est-ce que c'est sérieux)\b/gi
         ],
         weights: { doctor: 3, patient: 1 }
       },
       plan: {
         doctor: [
-          /\b(I'm going to prescribe|let's start with|follow up with me|any questions|does that make sense)\b/gi
+          /\b(I'm going to prescribe|let's start with|follow up with me|any questions|does that make sense|je vais vous prescrire|commençons par|revenez me voir|avez-vous des questions|est-ce que ça a du sens|je vais vous donner)\b/gi
         ],
         patient: [
-          /\b(thank you|that sounds good|when should I come back|what should I do)\b/gi
+          /\b(thank you|that sounds good|when should I come back|what should I do|merci|ça a l'air bien|quand est-ce que je dois revenir|que dois-je faire|merci docteur)\b/gi
         ],
         weights: { doctor: 2, patient: 2 }
       }
@@ -106,34 +106,34 @@ class AdvancedSpeakerCorrection {
     this.speakerPatterns = {
       doctor: {
         // Strong doctor indicators
-        questions: /\b(tell me|rate on a|pain scale|does it move|does the|anything that makes|how would you|what about)\b/gi,
-        medical: /\b(pain scale|radiation|0 being|10 being|scale of|examination|symptoms)\b/gi,
-        instructions: /\b(let me|I want you to|can you|try to)\b/gi,
+        questions: /\b(tell me|rate on a|pain scale|does it move|does the|anything that makes|how would you|what about|dites-moi|évaluez sur|échelle de douleur|est-ce que ça bouge|est-ce que|qu'est-ce qui fait|comment|qu'en est-il)\b/gi,
+        medical: /\b(pain scale|radiation|0 being|10 being|scale of|examination|symptoms|échelle de douleur|irradiation|0 étant|10 étant|échelle de|examen|symptômes|radiographie|IRM|physiothérapie)\b/gi,
+        instructions: /\b(let me|I want you to|can you|try to|laissez-moi|je veux que vous|pouvez-vous|essayez de|montrez-moi)\b/gi,
         
         // Weaker indicators (context dependent)
-        transitions: /\b(so|um so|now|and|alright)\b/gi,
-        acknowledgments: /\b(OK|alright|I see|mm-hmm)\b/gi,
+        transitions: /\b(so|um so|now|and|alright|donc|alors|maintenant|et|d'accord)\b/gi,
+        acknowledgments: /\b(OK|alright|I see|mm-hmm|d'accord|je vois|mm-hmm|très bien)\b/gi,
         
         // Orthopedic-specific patterns
-        orthopedic: /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|Can you tell me what brings you in|tell me about this pain|when did this start|how did this happen|what were you doing when|on a scale of 1 to 10|rate your pain|does it hurt when you|can you move|any numbness|have you tried|any previous injuries|let me take a look|I'm going to examine|push against my hand|does this hurt|I can feel|there's some swelling|what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me|any questions for me|does that make sense)\b/gi,
-        examination: /\b(let me take a look|I'm going to examine|can you raise your arm|push against my hand|does this hurt|I can feel|there's some swelling|tenderness|stiffness)\b/gi,
-        assessment: /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me)\b/gi
+        orthopedic: /\b(I'll be your orthopedic surgeon|I'm Dr\.|let me just wash my hands|Can you tell me what brings you in|tell me about this pain|when did this start|how did this happen|what were you doing when|on a scale of 1 to 10|rate your pain|does it hurt when you|can you move|any numbness|have you tried|any previous injuries|let me take a look|I'm going to examine|push against my hand|does this hurt|I can feel|there's some swelling|what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me|any questions for me|does that make sense|Je vais être votre chirurgien orthopédique|Je suis Dr\.|laissez-moi me laver les mains|Pouvez-vous me dire ce qui vous amène|parlez-moi de cette douleur|quand est-ce que ça a commencé|comment est-ce arrivé|que faisiez-vous quand|sur une échelle de 1 à 10|évaluez votre douleur|est-ce que ça fait mal quand vous|pouvez-vous bouger|avez-vous des engourdissements|avez-vous essayé|avez-vous eu des blessures précédentes|laissez-moi regarder|je vais vous examiner|poussez contre ma main|est-ce que ça fait mal|je peux sentir|il y a un gonflement|ce que je pense qui se passe|il semble que vous ayez|j'aimerais faire une radiographie|nous devons éliminer|je vais vous prescrire|commençons par un traitement conservateur|revenez me voir|avez-vous des questions|est-ce que ça a du sens)\b/gi,
+        examination: /\b(let me take a look|I'm going to examine|can you raise your arm|push against my hand|does this hurt|I can feel|there's some swelling|tenderness|stiffness|laissez-moi regarder|je vais vous examiner|pouvez-vous lever votre bras|poussez contre ma main|est-ce que ça fait mal|je peux sentir|il y a un gonflement|sensibilité|raideur|montrez-moi)\b/gi,
+        assessment: /\b(what I think is going on|it looks like you have|I'd like to get an X-ray|we need to rule out|I'm going to prescribe|let's start with conservative treatment|follow up with me|ce que je pense qui se passe|il semble que vous ayez|j'aimerais faire une radiographie|nous devons éliminer|je vais vous prescrire|commençons par un traitement conservateur|revenez me voir)\b/gi
       },
       
       patient: {
         // Strong patient indicators
-        personal: /\b(I took|I tried|I have|I feel|I can't|I don't|my pain|it hurts)\b/gi,
-        medications: /\b(Tylenol|Motrin|ibuprofen|aspirin|took some|tried some)\b/gi,
-        symptoms: /\b(nothing helped|doesn't work|makes it worse|feels like|started when)\b/gi,
+        personal: /\b(I took|I tried|I have|I feel|I can't|I don't|my pain|it hurts|j'ai pris|j'ai essayé|j'ai|je ressens|je ne peux pas|je ne|ma douleur|ça fait mal)\b/gi,
+        medications: /\b(Tylenol|Motrin|ibuprofen|aspirin|took some|tried some|Tylenol|Motrin|ibuprofène|aspirine|j'ai pris|j'ai essayé|paracétamol)\b/gi,
+        symptoms: /\b(nothing helped|doesn't work|makes it worse|feels like|started when|rien n'a aidé|ça ne marche pas|ça empire|ça ressemble à|ça a commencé quand)\b/gi,
         
         // Response patterns
-        answers: /\b(yes|no|yeah|nope|maybe|I think|probably|not really)\b/gi,
-        descriptions: /\b(it's like|feels like|kind of|sort of)\b/gi,
+        answers: /\b(yes|no|yeah|nope|maybe|I think|probably|not really|oui|non|ouais|peut-être|je pense|probablement|pas vraiment|je crois)\b/gi,
+        descriptions: /\b(it's like|feels like|kind of|sort of|c'est comme|ça ressemble à|un peu|plutôt|ça fait comme)\b/gi,
         
         // Orthopedic-specific patterns
-        orthopedic: /\b(I hurt my|I injured my|I twisted my|I fell on my|my back hurts|my neck is killing me|my shoulder is in pain|I have pain in my|I can't move|it's been hurting for|the pain is sharp|it feels like|it's a \d+ out of 10|it's really bad|nothing helps|it's worse when I|I was playing|I fell down|I heard a pop|it happened when I|I can't work|I haven't been able to|it's affecting my|I tried ice|I've been taking|I saw another doctor|I had physical therapy|ow|ouch|that hurts|yes, right there|that's the spot|I can feel tingling|it's tender there)\b/gi,
-        pain: /\b(the pain is sharp|dull|aching|throbbing|burning|shooting|it's a \d+ out of 10|it's really bad|terrible|excruciating|unbearable|nothing helps|it's worse when I|it hurts more when)\b/gi,
-        injury: /\b(I hurt my|I injured my|I twisted my|I fell on my|I was playing|I fell down|I heard a pop|it happened when I|I was doing)\b/gi
+        orthopedic: /\b(I hurt my|I injured my|I twisted my|I fell on my|my back hurts|my neck is killing me|my shoulder is in pain|I have pain in my|I can't move|it's been hurting for|the pain is sharp|it feels like|it's a \d+ out of 10|it's really bad|nothing helps|it's worse when I|I was playing|I fell down|I heard a pop|it happened when I|I can't work|I haven't been able to|it's affecting my|I tried ice|I've been taking|I saw another doctor|I had physical therapy|ow|ouch|that hurts|yes, right there|that's the spot|I can feel tingling|it's tender there|j'ai mal à|je me suis blessé|je me suis tordu|je suis tombé sur|mon dos me fait mal|mon cou me tue|mon épaule me fait mal|j'ai mal à|je ne peux pas bouger|ça fait mal depuis|la douleur est aiguë|ça ressemble à|c'est un \d+ sur 10|c'est vraiment mauvais|rien n'aide|ça empire quand je|je jouais|je suis tombé|j'ai entendu un craquement|ça s'est passé quand je|je ne peux pas travailler|je n'ai pas pu|ça affecte|j'ai essayé la glace|j'ai pris|j'ai vu un autre docteur|j'ai fait de la physiothérapie|aïe|ouille|ça fait mal|oui, juste là|c'est là|je peux sentir des picotements|c'est sensible là)\b/gi,
+        pain: /\b(the pain is sharp|dull|aching|throbbing|burning|shooting|it's a \d+ out of 10|it's really bad|terrible|excruciating|unbearable|nothing helps|it's worse when I|it hurts more when|la douleur est aiguë|sourde|douloureuse|pulsante|brûlante|lancinante|c'est un \d+ sur 10|c'est vraiment mauvais|terrible|atroce|insupportable|rien n'aide|ça empire quand je|ça fait plus mal quand)\b/gi,
+        injury: /\b(I hurt my|I injured my|I twisted my|I fell on my|I was playing|I fell down|I heard a pop|it happened when I|I was doing|j'ai mal à|je me suis blessé|je me suis tordu|je suis tombé sur|je jouais|je suis tombé|j'ai entendu un craquement|ça s'est passé quand je|je faisais)\b/gi
       }
     };
   }
@@ -357,9 +357,10 @@ class AdvancedSpeakerCorrection {
     
     // Pain level context adjustments
     if (painLevel !== null) {
-      // If text mentions pain scale or pain descriptors, likely patient
+      // If text mentions pain scale or pain descriptors, likely patient (English and French)
       if (text.match(/\b(\d+)\s*out\s*of\s*(\d+|ten)\b/i) || 
-          text.match(/\b(really bad|terrible|excruciating|moderate|mild|slight)\b/i)) {
+          text.match(/\b(\d+)\s*sur\s*(\d+|dix)\b/i) ||
+          text.match(/\b(really bad|terrible|excruciating|moderate|mild|slight|vraiment mauvais|terrible|atroce|modéré|supportable|léger|légère)\b/i)) {
         adjustment.patient += 1.5;
         console.log(`Pain level context match: ${painLevel} (+1.5 patient)`);
       }
@@ -1205,18 +1206,18 @@ class EnhancedTranscriptionProcessor {
     const previousPhase = this.orthopedicContext.currentPhase;
     let newPhase = previousPhase;
     
-    // Phase transition patterns
-    if (text.includes('orthopedic surgeon') || text.includes('i\'ll be your doctor')) {
+    // Phase transition patterns (English and French)
+    if (text.includes('orthopedic surgeon') || text.includes('i\'ll be your doctor') || text.includes('chirurgien orthopédique') || text.includes('je vais être votre docteur')) {
       newPhase = 'greeting';
-    } else if (text.includes('what brings you in') || text.includes('why you\'re here') || text.includes('tell me about')) {
+    } else if (text.includes('what brings you in') || text.includes('why you\'re here') || text.includes('tell me about') || text.includes('qu\'est-ce qui vous amène') || text.includes('pourquoi êtes-vous ici') || text.includes('parlez-moi de')) {
       newPhase = 'chief_complaint';
-    } else if (text.includes('when did this start') || text.includes('how did this happen') || text.includes('what were you doing')) {
+    } else if (text.includes('when did this start') || text.includes('how did this happen') || text.includes('what were you doing') || text.includes('quand est-ce que ça a commencé') || text.includes('comment est-ce arrivé') || text.includes('que faisiez-vous')) {
       newPhase = 'history';
-    } else if (text.includes('let me take a look') || text.includes('examine') || text.includes('does this hurt')) {
+    } else if (text.includes('let me take a look') || text.includes('examine') || text.includes('does this hurt') || text.includes('laissez-moi regarder') || text.includes('examiner') || text.includes('est-ce que ça fait mal')) {
       newPhase = 'examination';
-    } else if (text.includes('what i think is going on') || text.includes('looks like you have') || text.includes('diagnosis')) {
+    } else if (text.includes('what i think is going on') || text.includes('looks like you have') || text.includes('diagnosis') || text.includes('ce que je pense qui se passe') || text.includes('il semble que vous ayez') || text.includes('diagnostic')) {
       newPhase = 'assessment';
-    } else if (text.includes('i\'d like to get') || text.includes('prescribe') || text.includes('follow up')) {
+    } else if (text.includes('i\'d like to get') || text.includes('prescribe') || text.includes('follow up') || text.includes('j\'aimerais faire') || text.includes('prescrire') || text.includes('suivi')) {
       newPhase = 'plan';
     }
     
@@ -1235,13 +1236,13 @@ class EnhancedTranscriptionProcessor {
 
   private extractBodyParts(text: string): void {
     const bodyPartPatterns = [
-      /\b(back|spine|neck|cervical|lumbar|thoracic)\b/gi,
-      /\b(shoulder|rotator cuff|clavicle|scapula)\b/gi,
-      /\b(arm|elbow|forearm|wrist|hand|finger|thumb)\b/gi,
-      /\b(hip|pelvis|groin|thigh|femur)\b/gi,
-      /\b(knee|kneecap|patella|meniscus|acl|mcl|pcl|lcl)\b/gi,
-      /\b(leg|shin|calf|tibia|fibula)\b/gi,
-      /\b(ankle|foot|toe|heel|arch|achilles)\b/gi
+      /\b(back|spine|neck|cervical|lumbar|thoracic)\b|(dos|colonne|cou|lombaire|thoracique)/gi,
+      /\b(shoulder|rotator cuff|clavicle|scapula)\b|(épaule|coiffe des rotateurs|clavicule|omoplate)/gi,
+      /\b(arm|elbow|forearm|wrist|hand|finger|thumb)\b|(bras|coude|avant-bras|poignet|main|doigt|pouce)/gi,
+      /\b(hip|pelvis|groin|thigh|femur)\b|(hanche|bassin|aine|cuisse|fémur)/gi,
+      /\b(knee|kneecap|patella|meniscus|acl|mcl|pcl|lcl)\b|(genou|rotule|ménisque|LCA|LCM|LCP|LCL)/gi,
+      /\b(leg|shin|calf|tibia|fibula)\b|(jambe|mollet|péroné)/gi,
+      /\b(ankle|foot|toe|heel|arch|achilles)\b|(cheville|pied|orteil|talon|voûte|achille)/gi
     ];
     
     bodyPartPatterns.forEach(pattern => {
@@ -1258,11 +1259,11 @@ class EnhancedTranscriptionProcessor {
   }
 
   private extractPainLevel(text: string): void {
-    // Look for pain scale mentions
-    const painScaleMatch = text.match(/(\d+)\s*out\s*of\s*(\d+|ten)/i);
+    // Look for pain scale mentions (English and French)
+    const painScaleMatch = text.match(/(\d+)\s*out\s*of\s*(\d+|ten)|(\d+)\s*sur\s*(\d+|dix)/i);
     if (painScaleMatch) {
-      const level = parseInt(painScaleMatch[1]);
-      const max = painScaleMatch[2].toLowerCase() === 'ten' ? 10 : parseInt(painScaleMatch[2]);
+      const level = parseInt(painScaleMatch[1] || painScaleMatch[3]);
+      const max = (painScaleMatch[2] || painScaleMatch[4]).toLowerCase() === 'ten' || (painScaleMatch[2] || painScaleMatch[4]).toLowerCase() === 'dix' ? 10 : parseInt(painScaleMatch[2] || painScaleMatch[4]);
       
       if (level >= 1 && level <= max) {
         this.orthopedicContext.painLevel = level;
@@ -1270,27 +1271,27 @@ class EnhancedTranscriptionProcessor {
       }
     }
     
-    // Look for descriptive pain levels
-    if (text.includes('really bad') || text.includes('terrible') || text.includes('excruciating')) {
+    // Look for descriptive pain levels (English and French)
+    if (text.includes('really bad') || text.includes('terrible') || text.includes('excruciating') || text.includes('vraiment mauvais') || text.includes('terrible') || text.includes('atroce')) {
       this.orthopedicContext.painLevel = 8; // High pain
-    } else if (text.includes('moderate') || text.includes('manageable')) {
+    } else if (text.includes('moderate') || text.includes('manageable') || text.includes('modéré') || text.includes('supportable')) {
       this.orthopedicContext.painLevel = 5; // Moderate pain
-    } else if (text.includes('mild') || text.includes('slight')) {
+    } else if (text.includes('mild') || text.includes('slight') || text.includes('léger') || text.includes('légère')) {
       this.orthopedicContext.painLevel = 3; // Mild pain
     }
   }
 
   private extractInjuryMechanism(text: string): void {
-    // More specific patterns to avoid partial matches - ordered by priority
+    // More specific patterns to avoid partial matches - ordered by priority (English and French)
     const injuryPatterns = [
-      { pattern: /\b(heard a pop|heard a crack|heard a snap)\b/gi, mechanism: 'heard a pop' },
-      { pattern: /\b(fell down|fell off)\b/gi, mechanism: 'fell down' },
-      { pattern: /\b(car accident|motor vehicle|mva)\b/gi, mechanism: 'car accident' },
-      { pattern: /\b(work injury|workplace|on the job)\b/gi, mechanism: 'work injury' },
-      { pattern: /\b(playing|sports|basketball|football|tennis)\b/gi, mechanism: 'playing' },
-      { pattern: /\b(lifting|lifted|picked up)\b/gi, mechanism: 'lifting' },
-      { pattern: /\b(twisted|twisting)\b/gi, mechanism: 'twisted' },
-      { pattern: /\b(fell)\b/gi, mechanism: 'fell' }
+      { pattern: /\b(heard a pop|heard a crack|heard a snap|j'ai entendu un craquement|j'ai entendu un claquement)\b/gi, mechanism: 'heard a pop' },
+      { pattern: /\b(fell down|fell off|je suis tombé|je suis tombée|je suis tombé par terre)\b/gi, mechanism: 'fell down' },
+      { pattern: /\b(car accident|motor vehicle|mva|accident de voiture|accident automobile)\b/gi, mechanism: 'car accident' },
+      { pattern: /\b(work injury|workplace|on the job|blessure au travail|accident de travail)\b/gi, mechanism: 'work injury' },
+      { pattern: /\b(playing|sports|basketball|football|tennis|je jouais|sport|basketball|football|tennis)\b/gi, mechanism: 'playing' },
+      { pattern: /\b(lifting|lifted|picked up|soulever|j'ai soulevé|j'ai pris|boîte lourde|boite lourde|quelque chose de lourd)\b/gi, mechanism: 'lifting' },
+      { pattern: /\b(twisted|twisting|je me suis tordu|je me suis tordue|torsion)\b/gi, mechanism: 'twisted' },
+      { pattern: /\b(fell|je suis tombé|je suis tombée)\b/gi, mechanism: 'fell' }
     ];
     
     // Check patterns in order of priority (most important first)
@@ -1388,18 +1389,18 @@ class EnhancedTranscriptionProcessor {
       // Determine phase based on content analysis and conversation flow
       const turnText = turn.text.toLowerCase();
       
-      // Phase detection based on content
-      if (turnText.includes('orthopedic surgeon') || turnText.includes('i\'ll be your doctor')) {
+      // Phase detection based on content (English and French)
+      if (turnText.includes('orthopedic surgeon') || turnText.includes('i\'ll be your doctor') || turnText.includes('chirurgien orthopédique') || turnText.includes('je vais être votre docteur')) {
         currentPhase = 'greeting';
-      } else if (turnText.includes('what brings you in') || turnText.includes('why you\'re here') || turnText.includes('tell me about')) {
+      } else if (turnText.includes('what brings you in') || turnText.includes('why you\'re here') || turnText.includes('tell me about') || turnText.includes('qu\'est-ce qui vous amène') || turnText.includes('pourquoi êtes-vous ici') || turnText.includes('parlez-moi de') || turnText.includes('j\'ai mal à') || turnText.includes('j\'ai de la douleur')) {
         currentPhase = 'chief_complaint';
-      } else if (turnText.includes('when did this start') || turnText.includes('how did this happen') || turnText.includes('what were you doing')) {
+      } else if (turnText.includes('when did this start') || turnText.includes('how did this happen') || turnText.includes('what were you doing') || turnText.includes('quand est-ce que ça a commencé') || turnText.includes('comment est-ce arrivé') || turnText.includes('que faisiez-vous') || turnText.includes('ça a commencé') || turnText.includes('je faisais')) {
         currentPhase = 'history';
-      } else if (turnText.includes('let me take a look') || turnText.includes('examine') || turnText.includes('does this hurt')) {
+      } else if (turnText.includes('let me take a look') || turnText.includes('examine') || turnText.includes('does this hurt') || turnText.includes('laissez-moi regarder') || turnText.includes('examiner') || turnText.includes('est-ce que ça fait mal') || turnText.includes('ça fait mal') || turnText.includes('aïe')) {
         currentPhase = 'examination';
-      } else if (turnText.includes('what i think is going on') || turnText.includes('looks like you have') || turnText.includes('diagnosis')) {
+      } else if (turnText.includes('what i think is going on') || turnText.includes('looks like you have') || turnText.includes('diagnosis') || turnText.includes('ce que je pense qui se passe') || turnText.includes('il semble que vous ayez') || turnText.includes('diagnostic') || turnText.includes('qu\'est-ce que ça veut dire') || turnText.includes('est-ce grave')) {
         currentPhase = 'assessment';
-      } else if (turnText.includes('i\'d like to get') || turnText.includes('prescribe') || turnText.includes('follow up')) {
+      } else if (turnText.includes('i\'d like to get') || turnText.includes('prescribe') || turnText.includes('follow up') || turnText.includes('j\'aimerais faire') || turnText.includes('prescrire') || turnText.includes('suivi') || turnText.includes('que dois-je faire') || turnText.includes('quand est-ce que je dois revenir')) {
         currentPhase = 'plan';
       }
       
