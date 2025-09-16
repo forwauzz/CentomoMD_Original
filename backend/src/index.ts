@@ -23,6 +23,7 @@ import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import { securityMiddleware } from './server/security.js';
+import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
@@ -48,6 +49,9 @@ app.get('/health', (_req, res) => {
 
 // Config endpoint to expose flags to frontend
 app.get('/api/config', getConfig);
+
+// Performance metrics endpoint
+app.get('/api/performance', getPerformanceMetrics);
 
 // Auth endpoints
 app.post('/api/auth/ws-token', getWsToken);

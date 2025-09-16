@@ -856,10 +856,130 @@ class ConversationFlowCleaner {
   }
 }
 
+// Type declaration for performance.memory (Chrome-specific)
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory?: PerformanceMemory;
+}
+
+// Intelligent Memory Manager for performance optimization
+class IntelligentMemoryManager {
+  private cleanupInterval: number;
+  private processedSegments: Set<string>;
+  private lastCleanup: number;
+  private memoryThreshold: number;
+  
+  constructor(cleanupInterval: number = 60000) {
+    this.cleanupInterval = cleanupInterval;
+    this.processedSegments = new Set<string>();
+    this.lastCleanup = Date.now();
+    this.memoryThreshold = 0.8; // 80% memory usage threshold
+  }
+  
+  // Create unique hash for transcription segment to prevent duplicate processing
+  createSegmentHash(transcriptionData: {
+    text: string;
+    speaker?: string;
+    startTime?: number;
+    endTime?: number;
+  }): string {
+    const content = `${transcriptionData.text}_${transcriptionData.speaker}_${transcriptionData.startTime}_${transcriptionData.endTime}`;
+    // Simple hash function for performance
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString(36);
+  }
+  
+  // Check if segment should be processed (prevents infinite loops)
+  shouldProcessSegment(hash: string): boolean {
+    if (this.processedSegments.has(hash)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Skipping duplicate segment processing: ${hash.substring(0, 8)}...`);
+      }
+      return false;
+    }
+    this.processedSegments.add(hash);
+    return true;
+  }
+  
+  // Clean up old segments to prevent memory leaks
+  cleanupOldSegments(): void {
+    const now = Date.now();
+    
+    // Only cleanup if enough time has passed
+    if (now - this.lastCleanup < this.cleanupInterval) {
+      return;
+    }
+    
+    // Keep only recent 500 hashes to prevent memory growth
+    if (this.processedSegments.size > 1000) {
+      const recentHashes = Array.from(this.processedSegments).slice(-500);
+      this.processedSegments = new Set(recentHashes);
+      console.log(`Memory cleanup: reduced processed segments from 1000+ to ${recentHashes.length}`);
+    }
+    
+    this.lastCleanup = now;
+  }
+  
+  // Check memory usage and trigger cleanup if needed
+  checkMemoryPressure(): boolean {
+    if (typeof performance !== 'undefined') {
+      const perfWithMemory = performance as PerformanceWithMemory;
+      if (perfWithMemory.memory) {
+        const memoryInfo = perfWithMemory.memory;
+        const usedMB = memoryInfo.usedJSHeapSize / (1024 * 1024);
+        const totalMB = memoryInfo.totalJSHeapSize / (1024 * 1024);
+        const usageRatio = usedMB / totalMB;
+        
+        if (usageRatio > this.memoryThreshold) {
+          console.warn(`High memory usage detected: ${usedMB.toFixed(2)}MB / ${totalMB.toFixed(2)}MB (${(usageRatio * 100).toFixed(1)}%)`);
+          this.cleanupOldSegments();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  // Get memory statistics
+  getMemoryStats(): { usedMB: number; totalMB: number; usageRatio: number; segmentCount: number } {
+    let usedMB = 0;
+    let totalMB = 0;
+    let usageRatio = 0;
+    
+    if (typeof performance !== 'undefined') {
+      const perfWithMemory = performance as PerformanceWithMemory;
+      if (perfWithMemory.memory) {
+        const memoryInfo = perfWithMemory.memory;
+        usedMB = memoryInfo.usedJSHeapSize / (1024 * 1024);
+        totalMB = memoryInfo.totalJSHeapSize / (1024 * 1024);
+        usageRatio = usedMB / totalMB;
+      }
+    }
+    
+    return {
+      usedMB: Math.round(usedMB * 100) / 100,
+      totalMB: Math.round(totalMB * 100) / 100,
+      usageRatio: Math.round(usageRatio * 1000) / 1000,
+      segmentCount: this.processedSegments.size
+    };
+  }
+}
+
 // Enhanced transcription processor with conversation flow cleaning
 class EnhancedTranscriptionProcessor {
   private speakerCorrector: AdvancedSpeakerCorrection;
   private flowCleaner: ConversationFlowCleaner;
+  private memoryManager: IntelligentMemoryManager;
   private conversationHistory: Array<{
     text: string;
     speaker: string;
@@ -892,6 +1012,7 @@ class EnhancedTranscriptionProcessor {
   constructor() {
     this.speakerCorrector = new AdvancedSpeakerCorrection();
     this.flowCleaner = new ConversationFlowCleaner();
+    this.memoryManager = new IntelligentMemoryManager();
     this.conversationHistory = [];
     this.rawSegments = [];
     
@@ -920,6 +1041,30 @@ class EnhancedTranscriptionProcessor {
     orthopedicContext?: any;
   } {
     const { text, speaker: originalSpeaker, startTime, endTime } = result;
+    
+    // Check for duplicate processing to prevent infinite loops
+    const segmentHash = this.memoryManager.createSegmentHash({
+      text,
+      speaker: originalSpeaker,
+      startTime,
+      endTime
+    });
+    
+    if (!this.memoryManager.shouldProcessSegment(segmentHash)) {
+      // Return cached result for duplicate segment
+      return {
+        text,
+        speaker: originalSpeaker || 'unknown',
+        originalSpeaker: originalSpeaker || 'unknown',
+        startTime,
+        endTime,
+        wasCorrected: false,
+        orthopedicContext: this.getOrthopedicContext()
+      };
+    }
+    
+    // Check memory pressure and cleanup if needed
+    this.memoryManager.checkMemoryPressure();
     
     // Update orthopedic context before speaker correction
     this.updateOrthopedicContext(text, startTime);
@@ -953,8 +1098,8 @@ class EnhancedTranscriptionProcessor {
       wasQuestion: text.includes('?')
     });
     
-    // Log the correction
-    if (correctedSpeaker !== originalSpeaker) {
+    // Log the correction (only in development)
+    if (correctedSpeaker !== originalSpeaker && process.env.NODE_ENV === 'development') {
       console.log(`Speaker correction: "${text.substring(0, 50)}..." ${originalSpeaker} → ${correctedSpeaker}`);
     }
     
@@ -1014,9 +1159,27 @@ class EnhancedTranscriptionProcessor {
   }): void {
     this.conversationHistory.push(turn);
     
-    // Keep only recent history to prevent memory issues
-    if (this.conversationHistory.length > 20) {
-      this.conversationHistory = this.conversationHistory.slice(-15);
+    // Keep only recent history to prevent memory issues - REDUCED LIMITS
+    if (this.conversationHistory.length > 10) {
+      this.conversationHistory = this.conversationHistory.slice(-8);
+    }
+  }
+  
+  // Get memory statistics for monitoring
+  getMemoryStats(): { usedMB: number; totalMB: number; usageRatio: number; segmentCount: number } {
+    return this.memoryManager.getMemoryStats();
+  }
+  
+  // Force memory cleanup (useful for testing or manual cleanup)
+  forceMemoryCleanup(): void {
+    this.memoryManager.cleanupOldSegments();
+    // Also cleanup conversation history
+    if (this.conversationHistory.length > 5) {
+      this.conversationHistory = this.conversationHistory.slice(-5);
+    }
+    // Cleanup raw segments
+    if (this.rawSegments.length > 50) {
+      this.rawSegments = this.rawSegments.slice(-30);
     }
   }
 

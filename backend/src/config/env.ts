@@ -36,6 +36,12 @@ export interface Environment {
   // Logging
   LOG_LEVEL: 'error' | 'warn' | 'info' | 'debug';
   
+  // Performance Configuration
+  PERFORMANCE_LOGGING_ENABLED: boolean;
+  MEMORY_MONITORING_ENABLED: boolean;
+  SPEAKER_CORRECTION_LOGGING: boolean;
+  CONVERSATION_FLOW_LOGGING: boolean;
+  
   // Feature Flags
   AUTH_REQUIRED: boolean;
   WS_REQUIRE_AUTH: boolean;
@@ -52,6 +58,12 @@ export interface Environment {
   // Debug Configuration
   LOG_PAYLOADS: boolean;
   DIAG_MODE: boolean;
+  
+  // Performance Configuration
+  PERFORMANCE_LOGGING_ENABLED: boolean;
+  MEMORY_MONITORING_ENABLED: boolean;
+  SPEAKER_CORRECTION_LOGGING: boolean;
+  CONVERSATION_FLOW_LOGGING: boolean;
   
   // Authentication Strategy
   AUTH_VERIFY_STRATEGY: 'supabase' | 'jwks';
@@ -108,6 +120,12 @@ const hardcodedEnv: Environment = {
   // Debug Configuration
   LOG_PAYLOADS: false,
   DIAG_MODE: false,
+  
+  // Performance Configuration
+  PERFORMANCE_LOGGING_ENABLED: process.env['NODE_ENV'] === 'development',
+  MEMORY_MONITORING_ENABLED: true,
+  SPEAKER_CORRECTION_LOGGING: process.env['NODE_ENV'] === 'development',
+  CONVERSATION_FLOW_LOGGING: process.env['NODE_ENV'] === 'development',
   
   // Authentication Strategy - Default to working Supabase approach
   AUTH_VERIFY_STRATEGY: 'supabase',
