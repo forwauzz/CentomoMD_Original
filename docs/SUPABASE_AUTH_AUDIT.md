@@ -155,3 +155,34 @@ Fix/diagnose steps:
 
 If Dashboard user creation continues to 500, capture the request ID from the Network tab and open a Supabase support ticket with the timestamp and project ref; include any relevant entries from Project Logs → Auth.
 
+#### Possible database trigger/RLS interaction
+
+Because we auto-insert into `public.profiles` via an `AFTER INSERT` trigger on `auth.users`, a misaligned RLS policy can cause the trigger to fail and surface as a 500 to the caller.
+
+How to validate quickly:
+- Check Database → Logs for errors mentioning `on_auth_user_created` or `public.handle_new_user`.
+- Temporarily disable the trigger, then retry user creation in the Dashboard:
+  ```sql
+  alter table auth.users disable trigger on_auth_user_created;
+  -- retry Dashboard user create
+  alter table auth.users enable trigger on_auth_user_created;
+  ```
+- If creation succeeds while the trigger is disabled, review `profiles` RLS policies, especially the INSERT `WITH CHECK (auth.uid() = user_id)` condition.
+
+Adjustments that commonly fix trigger-related inserts:
+- Ensure the trigger function is `SECURITY DEFINER` (already set) and owned by a role with sufficient privileges.
+- Optionally set a safe search path on the function to avoid schema resolution issues:
+  ```sql
+  alter function public.handle_new_user() set search_path = public, extensions;
+  ```
+- As a diagnostic (not a permanent fix), relax the INSERT policy temporarily to confirm RLS is the cause:
+  ```sql
+  drop policy if exists users_can_insert_own_profile on profiles;
+  create policy users_can_insert_own_profile on profiles
+    for insert
+    with check (true);
+  -- after verifying, restore the strict policy
+  ```
+
+If relaxing the policy resolves the 500, reintroduce a stricter condition that still works with the trigger, or consider performing the insert via a small RPC called by the client after sign-in (bypassing the trigger), while keeping RLS strict for general inserts.
+
