@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "section": "8",
+    "name": "Subjective questionnaire and current condition",
+    "locale": "en-CA",
+    "version": "1.1.0",
+    "description": "Formatting and QA rules for Section 8."
+  },
+  "structure": {
+    "required_headings": [
+      "Subjective appreciation of progression",
+      "Complaints and problems",
+      "Functional impact",
+      "Neurological observations",
+      "Other observations",
+      "Exclusions/negative mentions",
+      "External references"
+    ],
+    "order_fixed": true
+  },
+  "style_rules": {
+    "clinical_tone": true,
+    "concise": true,
+    "preserve_negatives": true,
+    "forbid_diagnosis_creation": true,
+    "language": "en-CA"
+  },
+  "terminology": {
+    "pain_descriptors": ["burning","stabbing","stiffness","spasms","paresthesia","numbness"],
+    "neuro_terms": ["irradiation","dermatome","reflex","dexterity","weakness"],
+    "negative_markers": ["denies","no","none","without"]
+  },
+  "patterns": {
+    "pain_vas_regex": "\\b(\\d|10)\\s*/\\s*10\\b",
+    "degree_regex": "\\b\\d{1,3}\\s*°\\b"
+  },
+  "qa_checks": {
+    "require_all_headings": true,
+    "require_pain_if_complaint": true,
+    "preserve_negatives": true,
+    "forbid_invention": true,
+    "allow_annexe_references": true,
+    "anti_hallucination": true,
+    "context_anchoring": true,
+    "transcription_fidelity": true,
+    "diarization_handling": true
+  },
+  "anti_hallucination_rules": {
+    "forbid_anatomical_details": true,
+    "forbid_vague_to_precise_conversion": true,
+    "forbid_invented_scores": true,
+    "forbid_sentence_completion": true,
+    "use_undocumented_placeholder": "Not documented in dictation",
+    "preserve_external_references": true
+  },
+  "context_anchoring": {
+    "identify_accident_type": true,
+    "identify_affected_members": true,
+    "identify_treatments_received": true,
+    "identify_worker_profession": true,
+    "identify_time_since_accident": true,
+    "identify_medical_history": true,
+    "identify_current_medications": true
+  },
+  "transcription_fidelity": {
+    "preserve_hesitations": true,
+    "preserve_uncertainty_expressions": true,
+    "preserve_temporal_references": true,
+    "preserve_direct_quotes": true,
+    "convert_patient_to_worker": true
+  },
+  "diarization_handling": {
+    "identify_speaker": true,
+    "preserve_interruptions": true,
+    "mark_inaudible": "[inaudible]",
+    "preserve_reported_speech": true
+  },
+  "few_shot": [
+    { "input": "Pain 6/10, radiation left arm, numbness fingers", 
+      "output_snippet": "### Complaints and problems\nStabbing pain rated 6/10 radiating to the left arm, with numbness in the fingers.\n\n### Neurological observations\nRadiation to the left arm, numbness in the fingers." }
+  ]
+}

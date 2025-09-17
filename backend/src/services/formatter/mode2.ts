@@ -51,7 +51,7 @@ export class Mode2Formatter {
         case '7':
           return await this.formatSection7(transcript, options);
         case '8':
-          return await this.formatSection8(transcript, options);
+          return await this.formatSection8Enhanced(transcript, options);
         case '11':
           return await this.formatSection11(transcript, options);
         default:
@@ -73,6 +73,86 @@ export class Mode2Formatter {
    * Supports template combinations with modular layer system
    * Maintains backward compatibility with original Mode 2 pipeline
    */
+  private async formatSection8Enhanced(
+    transcript: string, 
+    options: Mode2FormattingOptions
+  ): Promise<Mode2FormattingResult> {
+    const issues: string[] = [];
+    
+    try {
+      // Check if Universal Cleanup is enabled
+      const universalCleanupEnabled = process.env['UNIVERSAL_CLEANUP_ENABLED'] === 'true';
+      
+      let clinicalEntities: any = null;
+      
+      if (universalCleanupEnabled) {
+        console.log('Universal Cleanup enabled - processing Section 8 with S7 UniversalCleanupLayer');
+        console.log('Section 8 - transcript length:', transcript.length);
+        console.log('Section 8 - language:', options.language);
+        
+        // Process with UniversalCleanupLayer to get CleanedInput
+        const cleanupResult = await this.universalCleanupLayer.process(transcript, {
+          language: options.language,
+          source: 'ambient' // Default to ambient, could be made configurable
+        });
+        
+        console.log('Section 8 - Universal Cleanup result:', {
+          success: cleanupResult.success,
+          hasData: !!cleanupResult.data,
+          error: cleanupResult.metadata?.error
+        });
+        
+        if (cleanupResult.success && cleanupResult.data) {
+          const cleanedData = cleanupResult.data;
+          clinicalEntities = cleanedData.clinical_entities;
+          console.log('Universal Cleanup completed successfully for Section 8');
+          
+          // Use TemplatePipeline to process CleanedInput
+          const templateResult = await this.templatePipeline.process(cleanedData, {
+            section: '8',
+            language: options.language,
+            templateId: options.templateCombo || 'section8-ai-formatter'
+          });
+          
+          return {
+            formatted: templateResult.formatted,
+            issues: templateResult.issues || [],
+            sources_used: ['universal-cleanup', 'template-pipeline'],
+            confidence_score: templateResult.confidence_score || 0.8,
+            clinical_entities: clinicalEntities
+          };
+        } else {
+          console.warn('Universal Cleanup failed, falling back to formatWithGuardrails');
+          issues.push('Universal Cleanup failed, using fallback formatting');
+        }
+      }
+
+      // Fallback to formatWithGuardrails (consistent with Section 7)
+      console.log('Using formatWithGuardrails for Section 8 formatting');
+      const result = await formatWithGuardrails('8', options.language, transcript);
+      
+      return {
+        formatted: result.formatted,
+        issues: [...issues, ...(result.issues || [])],
+        sources_used: ['section8-ai-formatter'],
+        confidence_score: 0.7,
+        clinical_entities: clinicalEntities
+      };
+      
+    } catch (error) {
+      console.error('Error in Section 8 formatting:', error);
+      issues.push(`Section 8 formatting error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      return {
+        formatted: transcript, // Fallback to original transcript
+        issues,
+        sources_used: ['fallback'],
+        confidence_score: 0.1,
+        clinical_entities: null
+      };
+    }
+  }
+
   private async formatSection7(
     transcript: string, 
     options: Mode2FormattingOptions
@@ -250,36 +330,6 @@ export class Mode2Formatter {
     }
   }
 
-  /**
-   * Format Section 8 (Clinical examination) with AI
-   */
-  private async formatSection8(
-    transcript: string, 
-    _options: Mode2FormattingOptions
-  ): Promise<Mode2FormattingResult> {
-    const issues: string[] = [];
-    
-    try {
-      // TODO: Implement Section 8 AI formatting
-      // For now, return original transcript
-      issues.push('Section 8 AI formatting not yet implemented');
-      
-      return {
-        formatted: transcript,
-        issues,
-        confidence_score: 0,
-        clinical_entities: null
-      };
-    } catch (error) {
-      issues.push(`Section 8 formatting error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return {
-        formatted: transcript,
-        issues,
-        confidence_score: 0,
-        clinical_entities: null
-      };
-    }
-  }
 
   /**
    * Format Section 11 (Conclusion) with AI

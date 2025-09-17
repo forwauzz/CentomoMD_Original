@@ -111,6 +111,18 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     // Step 1: Clean transcript and extract clinical entities
     setFormattingProgress('Extracting clinical entities...');
     
+    // Determine section from template metadata or fallback to template ID
+    let section = '7'; // Default fallback
+    if (template.meta?.templateConfig?.compatibleSections?.[0]) {
+      section = template.meta.templateConfig.compatibleSections[0].replace('section_', '');
+    } else if (template.id?.includes('section-8')) {
+      section = '8';
+    } else if (template.id?.includes('section-11')) {
+      section = '11';
+    }
+    
+    console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
+    
     const response = await fetch('/api/format/mode2', {
       method: 'POST',
       headers: {
@@ -120,7 +132,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       credentials: 'include',
       body: JSON.stringify({
         transcript: rawTranscript,
-        section: '7',
+        section: section,
         language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
         useUniversal: true,
         templateId: template.id

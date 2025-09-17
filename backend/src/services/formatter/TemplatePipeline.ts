@@ -53,6 +53,42 @@ export class TemplatePipeline {
   }
 
   /**
+   * Process Section 8 (Subjective questionnaire) with CleanedInput
+   */
+  private async processSection8(
+    cleanedInput: CleanedInput,
+    options: TemplatePipelineOptions
+  ): Promise<TemplatePipelineResult> {
+    const issues: string[] = [];
+    
+    try {
+      // Extract name whitelist from cleaned text
+      const nameWhitelist = extractNameWhitelist(cleanedInput.cleaned_text);
+      
+      // Apply AI formatting with guardrails using cleaned text and clinical entities
+      const result = await formatWithGuardrails('8', options.language, cleanedInput.cleaned_text, undefined, { 
+        nameWhitelist,
+        clinicalEntities: cleanedInput.clinical_entities
+      });
+      
+      return {
+        formatted: result.formatted,
+        issues: result.issues,
+        confidence_score: result.confidence_score || 0.8,
+        clinical_entities: cleanedInput.clinical_entities
+      };
+    } catch (error) {
+      issues.push(`Section 8 processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        formatted: cleanedInput.cleaned_text,
+        issues,
+        confidence_score: 0.1,
+        clinical_entities: cleanedInput.clinical_entities
+      };
+    }
+  }
+
+  /**
    * Process Section 7 (Historical narrative) with CleanedInput
    */
   private async processSection7(
@@ -85,36 +121,6 @@ export class TemplatePipeline {
     }
   }
 
-  /**
-   * Process Section 8 (Clinical examination) with CleanedInput
-   */
-  private async processSection8(
-    cleanedInput: CleanedInput,
-    _options: TemplatePipelineOptions
-  ): Promise<TemplatePipelineResult> {
-    const issues: string[] = [];
-    
-    try {
-      // TODO: Implement Section 8 AI formatting with clinical entities integration
-      // For now, return cleaned text with clinical entities
-      issues.push('Section 8 AI formatting not yet implemented');
-      
-      return {
-        formatted: cleanedInput.cleaned_text,
-        issues,
-        confidence_score: 0.5,
-        clinical_entities: cleanedInput.clinical_entities
-      };
-    } catch (error) {
-      issues.push(`Section 8 processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return {
-        formatted: cleanedInput.cleaned_text,
-        issues,
-        confidence_score: 0,
-        clinical_entities: cleanedInput.clinical_entities
-      };
-    }
-  }
 
   /**
    * Process Section 11 (Conclusion) with CleanedInput

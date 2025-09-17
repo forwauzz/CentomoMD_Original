@@ -265,6 +265,45 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       implementation: '6-step-flowchart'
     }
   },
+  'section8-ai-formatter': {
+    id: 'section8-ai-formatter',
+    name: 'Section 8 AI Formatter',
+    nameEn: 'Section 8 AI Formatter',
+    description: 'Enhanced AI-powered CNESST Section 8 formatting with comprehensive prompt system (6-step flowchart implementation)',
+    descriptionEn: 'Enhanced AI-powered CNESST Section 8 formatting with comprehensive prompt system (6-step flowchart implementation)',
+    type: 'formatting',
+    compatibleSections: ['section_8', 'section_7', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'ai-cnesst-section8-formatting-enhanced',
+      placeholders: ['subjective_assessment', 'complaints_problems', 'functional_impact', 'neurological_observations'],
+      validationRules: ['cnesst_compliance', 'section8_validation', 'medical_accuracy', 'prompt_injection_validation']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true,
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
+    },
+    configuration: {
+      priority: 3,
+      timeout: 45,
+      retryAttempts: 2,
+      promptFiles: ['master_prompt', 'json_config', 'golden_example']
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-8', 'cnesst', 'ai', 'medical', 'enhanced', 'flowchart', 'subjective'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      implementation: '6-step-flowchart'
+    }
+  },
   'section-7-only': {
     id: 'section-7-only',
     name: 'Section 7 Template Only',

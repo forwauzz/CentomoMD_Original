@@ -88,16 +88,19 @@ export class UniversalCleanupLayer implements LayerProcessor {
     }
 
     try {
+      console.log('UniversalCleanupLayer: Creating OpenAI completion for transcript length:', cleaned_text.length);
+      console.log('UniversalCleanupLayer: Using model:', process.env['OPENAI_MODEL'] || "gpt-4o-mini");
+      console.log('UniversalCleanupLayer: Using temperature:', process.env['OPENAI_TEMPERATURE'] || '0.1');
 
       const completion = await this.client.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: process.env['OPENAI_MODEL'] || "gpt-4o-mini",
         messages: [
           {
             role: "system",
             content: pickPrompt(opts.language, cleaned_text)
           }
         ],
-        temperature: 0.1,
+        temperature: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1'),
         response_format: { type: "json_object" },
         max_tokens: 800
       });

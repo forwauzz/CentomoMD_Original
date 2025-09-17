@@ -33,6 +33,12 @@
       "description": "Legacy clinical extraction template",
       "layers": ["universal-cleanup-layer"],
       "fallback": "template-only"
+    },
+    "section8-enhanced": {
+      "name": "Section 8 Enhanced",
+      "description": "Section 8 Enhanced with Universal Cleanup",
+      "layers": ["universal-cleanup-layer"],
+      "fallback": "template-only"
     }
   },
   "default": "template-only",
