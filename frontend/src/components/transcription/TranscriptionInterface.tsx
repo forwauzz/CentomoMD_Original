@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Save, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3 } from 'lucide-react';
+import { Mic, MicOff, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3 } from 'lucide-react';
 import { t } from '@/lib/utils';
 import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -12,6 +12,7 @@ import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 import { TemplateSelector } from './TemplateSelector';
+import { SaveToSectionDropdown, SaveToSectionOption } from './SaveToSectionDropdown';
 import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
@@ -302,13 +303,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
   }, []);
 
-  // Save to section functionality
-  const handleSaveToSection = useCallback(async () => {
-    if (!activeSection) {
-      console.error('No active section selected');
-      return;
-    }
-
+  // Save to section functionality with dropdown
+  const handleSaveToSection = useCallback(async (option: SaveToSectionOption) => {
     const transcriptToSave = editedTranscript || paragraphs.join('\n\n');
     if (!transcriptToSave.trim()) {
       console.error('No transcript content to save');
@@ -319,16 +315,27 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setSaveSuccess(false);
 
     try {
-      // Save transcript to the active section
-      updateSection(activeSection, {
-        transcript: transcriptToSave,
+      // Save transcript to the selected section and text box
+      const sectionData: Record<string, any> = {
         savedAt: new Date().toISOString(),
         mode: mode,
         language: selectedLanguage
+      };
+      
+      // Set the specific text box field
+      sectionData[option.textBoxId] = transcriptToSave;
+
+      console.log('Saving to section:', {
+        sectionId: option.sectionId,
+        textBoxId: option.textBoxId,
+        transcriptLength: transcriptToSave.length,
+        sectionData
       });
 
+      updateSection(option.sectionId, sectionData);
+
       setSaveSuccess(true);
-      console.log(`Transcript saved to section: ${activeSection}`);
+      console.log(`✅ Transcript saved to ${option.sectionId}.${option.textBoxId}`);
 
       // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -337,7 +344,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [activeSection, editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
+  }, [editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
@@ -1146,22 +1153,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   <MessageSquare className="h-4 w-4" />
                   <span>Voice Command</span>
                 </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
-                  onClick={handleSaveToSection}
-                  disabled={isSaving || (!editedTranscript && paragraphs.length === 0)}
-                >
-                  {saveSuccess ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  <span>
-                    {saveSuccess ? 'Saved!' : isSaving ? 'Saving...' : 'Save to Section'}
-                  </span>
-                </Button>
+                <SaveToSectionDropdown
+                  onSave={handleSaveToSection}
+                  isSaving={isSaving}
+                  disabled={!editedTranscript && paragraphs.length === 0}
+                />
               </div>
             </CardContent>
           </Card>

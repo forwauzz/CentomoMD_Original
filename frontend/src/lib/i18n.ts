@@ -90,6 +90,30 @@ export const translations = {
     additionalNotes: 'Notes additionnelles',
     additionalNotesPlaceholder: 'Notes additionnelles, commentaires...',
     
+    // Enhanced Section 7 - Historique d'évolution
+    historiqueEvolution: 'Historique d\'évolution',
+    mainContent: 'Contenu principal',
+    mainContentPlaceholder: 'Contenu principal de l\'historique...',
+    patientVerbatim: 'Verbatim du patient',
+    patientVerbatimPlaceholder: 'Mots exacts du patient...',
+    radiologistVerbatim: 'Verbatim du radiologiste',
+    radiologistVerbatimPlaceholder: 'Mots exacts du radiologiste...',
+    mergeAllSections: 'Fusionner toutes les sections',
+    aiFormat: 'Formatage IA',
+    mergingSections: 'Fusion des sections...',
+    mergeComplete: 'Fusion terminée',
+    
+    // Save to Section Dropdown
+    saveToSection: 'Sauvegarder vers la section',
+    selectSection: 'Sélectionner une section',
+    selectTextBox: 'Sélectionner une zone de texte',
+    section7Main: 'Section 7 - Contenu principal',
+    section7Patient: 'Section 7 - Verbatim patient',
+    section7Radiologist: 'Section 7 - Verbatim radiologiste',
+    section8Content: 'Section 8 - Contenu',
+    otherSections: 'Autres sections',
+    saveToSelected: 'Sauvegarder vers la sélection',
+    
     // Dictation
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
@@ -239,6 +263,30 @@ export const translations = {
     describeObservations: 'Describe observations for',
     additionalNotes: 'Additional Notes',
     additionalNotesPlaceholder: 'Additional notes, comments...',
+    
+    // Enhanced Section 7 - History of Evolution
+    historiqueEvolution: 'History of Evolution',
+    mainContent: 'Main Content',
+    mainContentPlaceholder: 'Main content of the history...',
+    patientVerbatim: 'Patient Verbatim',
+    patientVerbatimPlaceholder: 'Patient\'s exact words...',
+    radiologistVerbatim: 'Radiologist Verbatim',
+    radiologistVerbatimPlaceholder: 'Radiologist\'s exact words...',
+    mergeAllSections: 'Merge All Sections',
+    aiFormat: 'AI Format',
+    mergingSections: 'Merging sections...',
+    mergeComplete: 'Merge complete',
+    
+    // Save to Section Dropdown
+    saveToSection: 'Save to Section',
+    selectSection: 'Select a section',
+    selectTextBox: 'Select a text box',
+    section7Main: 'Section 7 - Main Content',
+    section7Patient: 'Section 7 - Patient Verbatim',
+    section7Radiologist: 'Section 7 - Radiologist Verbatim',
+    section8Content: 'Section 8 - Content',
+    otherSections: 'Other sections',
+    saveToSelected: 'Save to Selected',
     
     // Dictation
     goToDictation: 'Go to Dictation',
