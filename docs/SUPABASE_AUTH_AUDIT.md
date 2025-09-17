@@ -121,3 +121,37 @@ Last updated: 2025-09-17
 
 This audit confirms the current setup supports creating new users via Supabase and logging in via email magic-link and Google SSO, with profile auto-provisioning and RLS aligned to `auth.uid()`.
 
+### Troubleshooting: Creating Users shows 500 in browser console
+
+Observed console logs:
+- 500 from `https://api.supabase.com/platform/auth/<project-ref>/users`
+- 429 from Sentry (`*.ingest.us.sentry.io`)
+- CSP rejections for Monaco sourcemap URLs (`cdnjs.cloudflare.com/.../monaco-editor/...js.map`)
+
+What this means:
+- The 500 is from the Supabase Platform Admin API (used by the Supabase Dashboard when you click “Create user”). It is not your app endpoint and not caused by your frontend code.
+- The Sentry 429 and CSP sourcemap blocks are benign and unrelated to user creation.
+
+Fix/diagnose steps:
+- Supabase status and retries
+  - Check Supabase Status. If healthy, retry creating a user in the Dashboard after a minute; transient 5xxs can occur.
+  - Try a different browser/incognito to rule out extensions. The CSP sourcemap errors are harmless.
+- Auth configuration
+  - In Supabase → Authentication → Providers → Email: ensure signups are enabled or use the Dashboard “Invite” flow. If signups are disabled, programmatic signups may be blocked.
+  - Check “Restricted email domains” and “Allow list” settings.
+  - If you require email confirmations, confirm your email settings and that the Sender is valid for your project/region.
+- Project limits/billing
+  - Ensure the project is not suspended and within plan limits (auth emails, user count, etc.).
+- Server-side Admin API test (bypasses Dashboard UI)
+  - Run from a secure server environment using the service role key (never in the browser):
+  ```bash
+  node -e "import('node:process').then(async() => { const { createClient } = await import('@supabase/supabase-js'); const s = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY); const { data, error } = await s.auth.admin.createUser({ email: 'new.user@example.com', email_confirm: true }); console.log({ data, error }); });"  \
+  SUPABASE_URL=https://<project>.supabase.co  \
+  SUPABASE_SERVICE_ROLE_KEY=<service-role>
+  ```
+  - Expected: `error: null` and a new user object. If this fails, check Supabase Project → Logs (filter Service: auth, Level: error) for details.
+- App-side creation path
+  - Our app creates users via magic-link or Google OAuth on the client. No Admin API is called from the browser. Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set and that Supabase Auth has Google enabled with correct redirect URLs.
+
+If Dashboard user creation continues to 500, capture the request ID from the Network tab and open a Supabase support ticket with the timestamp and project ref; include any relevant entries from Project Logs → Auth.
+
