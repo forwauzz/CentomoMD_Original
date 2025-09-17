@@ -1,0 +1,21 @@
+{
+  "name": "universal-cleanup-layer",
+  "version": "1.0.0",
+  "description": "Universal Cleanup Layer - Clean transcript + extract clinical entities (FR/EN)",
+  "enabled": true,
+  "priority": 1,
+  "dependencies": [],
+  "fallback": {
+    "enabled": true,
+    "description": "Fallback to basic transcript cleaning without clinical extraction",
+    "action": "return_cleaned_text_only"
+  },
+  "validation": {
+    "enabled": true,
+    "checks": [
+      "transcript_not_empty",
+      "language_supported",
+      "openai_api_available"
+    ]
+  }
+}

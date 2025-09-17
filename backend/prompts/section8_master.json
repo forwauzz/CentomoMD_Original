@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "section": "8",
+    "name": "Questionnaire subjectif et état actuel",
+    "locale": "fr-CA",
+    "version": "1.1.0",
+    "description": "Règles de formatage et QA pour Section 8."
+  },
+  "structure": {
+    "required_headings": [
+      "Appréciation subjective de l'évolution",
+      "Plaintes et problèmes", 
+      "Impact sur AVQ/AVD"
+    ],
+    "order_fixed": true,
+    "section_title": ". Questionnaire subjectif et état actuel",
+    "format": "simple_headers_with_colons"
+  },
+  "style_rules": {
+    "clinical_tone": true,
+    "concise": true,
+    "preserve_negatives": true,
+    "forbid_diagnosis_creation": true,
+    "language": "fr-CA"
+  },
+  "terminology": {
+    "pain_descriptors": ["brûlure","élancement","raideur","spasmes","paresthésies","engourdissements"],
+    "neuro_terms": ["irradiation","dermatome","réflexe","dextérité","faiblesse"],
+    "negative_markers": ["nie","aucun","pas de"]
+  },
+  "patterns": {
+    "pain_vas_regex": "\\b(\\d|10)\\s*/\\s*10\\b",
+    "degree_regex": "\\b\\d{1,3}\\s*°\\b"
+  },
+  "qa_checks": {
+    "require_all_headings": true,
+    "require_pain_if_complaint": true,
+    "preserve_negatives": true,
+    "forbid_invention": true,
+    "allow_annexe_references": true,
+    "anti_hallucination": true,
+    "context_anchoring": true,
+    "transcription_fidelity": true,
+    "diarization_handling": true
+  },
+  "anti_hallucination_rules": {
+    "forbid_anatomical_details": true,
+    "forbid_vague_to_precise_conversion": true,
+    "forbid_invented_scores": true,
+    "forbid_sentence_completion": true,
+    "use_undocumented_placeholder": "Non documenté dans la dictée",
+    "preserve_external_references": true
+  },
+  "context_anchoring": {
+    "identify_accident_type": true,
+    "identify_affected_members": true,
+    "identify_treatments_received": true,
+    "identify_worker_profession": true,
+    "identify_time_since_accident": true,
+    "identify_medical_history": true,
+    "identify_current_medications": true
+  },
+  "transcription_fidelity": {
+    "preserve_hesitations": true,
+    "preserve_uncertainty_expressions": true,
+    "preserve_temporal_references": true,
+    "preserve_direct_quotes": true,
+    "convert_patient_to_worker": true
+  },
+  "diarization_handling": {
+    "identify_speaker": true,
+    "preserve_interruptions": true,
+    "mark_inaudible": "[inaudible]",
+    "preserve_reported_speech": true
+  },
+  "few_shot": [
+    { "input": "Douleur 6/10, irradiation bras gauche, engourdissements doigts", 
+      "output_snippet": "### Plaintes et problèmes\nDouleur de type élancement à 6/10 irradiant au bras gauche, avec engourdissements aux doigts.\n\n### Observations neurologiques\nIrradiation vers bras gauche, engourdissements aux doigts." }
+  ]
+}

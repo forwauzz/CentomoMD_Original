@@ -1,0 +1,253 @@
+{
+  "id": "history_evolution_template_fr",
+  "section": "history_evolution",
+  "name": "Historique d'évolution - Français",
+  "nameEn": "History of Evolution - English",
+  "description": "Template pour l'historique d'évolution des lésions professionnelles CNESST avec formatage IA spécialisé",
+  "descriptionEn": "Template for CNESST occupational injury evolution history with specialized AI formatting",
+  "language": "fr",
+  "version": "1.0.0",
+  "is_active": true,
+  "content": {
+    "structure": {
+      "title": "HISTORIQUE D'ÉVOLUTION",
+      "sections": [
+        {
+          "name": "description_incident",
+          "title": "Description de l'incident",
+          "template": "La fiche de réclamation du travailleur décrit l'événement suivant survenu le [DATE] :\n\n« [DESCRIPTION_INCIDENT] »",
+          "required": true,
+          "voice_triggers": [
+            "description incident",
+            "raconter accident",
+            "comment c'est arrivé",
+            "événement survenu"
+          ]
+        },
+        {
+          "name": "consultations_medicales",
+          "title": "Consultations médicales",
+          "template": "Le travailleur consulte le docteur [NOM_MEDECIN], le [DATE]. [DIAGNOSTIC_ET_TRAITEMENT].",
+          "required": true,
+          "voice_triggers": [
+            "consultation médicale",
+            "rencontre docteur",
+            "visite médecin",
+            "examen médical"
+          ]
+        },
+        {
+          "name": "examens_imagerie",
+          "title": "Examens d'imagerie",
+          "template": "Le travailleur obtient [TYPE_EXAMEN], le [DATE]. [RESULTATS_EXAMEN].",
+          "required": false,
+          "voice_triggers": [
+            "examens imagerie",
+            "radiographie",
+            "IRM",
+            "scanner",
+            "échographie",
+            "EMG"
+          ]
+        },
+        {
+          "name": "traitements_recus",
+          "title": "Traitements reçus",
+          "template": "Le travailleur reçoit [TYPE_TRAITEMENT], le [DATE]. [DETAILS_TRAITEMENT].",
+          "required": false,
+          "voice_triggers": [
+            "traitements reçus",
+            "physiothérapie",
+            "ergothérapie",
+            "infiltration",
+            "chirurgie",
+            "médicaments"
+          ]
+        },
+        {
+          "name": "evolution_clinique",
+          "title": "Évolution clinique",
+          "template": "Le travailleur revoit le docteur [NOM_MEDECIN], le [DATE]. [EVOLUTION_ET_PRONOSTIC].",
+          "required": true,
+          "voice_triggers": [
+            "évolution clinique",
+            "suivi médical",
+            "changement condition",
+            "amélioration",
+            "détérioration"
+          ]
+        },
+        {
+          "name": "impact_fonctionnel",
+          "title": "Impact fonctionnel",
+          "template": "L'accident a eu un impact significatif sur [ACTIVITES_AFFECTEES]. Le travailleur éprouve des difficultés avec [DIFFICULTES_FONCTIONNELLES].",
+          "required": true,
+          "voice_triggers": [
+            "impact fonctionnel",
+            "difficultés activités",
+            "limitations",
+            "incapacité travail"
+          ]
+        }
+      ]
+    },
+    "voice_commands": [
+      {
+        "trigger": "debut historique evolution",
+        "action": "start_section",
+        "parameters": {
+          "section": "history_evolution",
+          "mode": "narrative"
+        }
+      },
+      {
+        "trigger": "fin historique evolution",
+        "action": "end_section",
+        "parameters": {
+          "section": "history_evolution",
+          "save": true
+        }
+      },
+      {
+        "trigger": "nouveau paragraphe",
+        "action": "insert_paragraph_break",
+        "parameters": {}
+      },
+      {
+        "trigger": "insérer date",
+        "action": "insert_date_placeholder",
+        "parameters": {
+          "format": "DD/MM/YYYY"
+        }
+      },
+      {
+        "trigger": "insérer nom médecin",
+        "action": "insert_doctor_name_placeholder",
+        "parameters": {}
+      },
+      {
+        "trigger": "insérer diagnostic",
+        "action": "insert_diagnosis_placeholder",
+        "parameters": {}
+      },
+      {
+        "trigger": "insérer traitement",
+        "action": "insert_treatment_placeholder",
+        "parameters": {}
+      },
+      {
+        "trigger": "citation patient",
+        "action": "start_verbatim_quote",
+        "parameters": {
+          "type": "patient_quote"
+        }
+      },
+      {
+        "trigger": "fin citation",
+        "action": "end_verbatim_quote",
+        "parameters": {}
+      }
+    ],
+    "formatting_rules": {
+      "paragraph_spacing": "double",
+      "font_family": "Arial",
+      "font_size": "12pt",
+      "line_spacing": "1.5",
+      "margins": {
+        "top": "1in",
+        "bottom": "1in",
+        "left": "1in",
+        "right": "1in"
+      },
+      "worker_first_rule": true,
+      "chronological_order": true,
+      "medical_terminology_preservation": true
+    },
+    "validation_rules": {
+      "required_sections": [
+        "description_incident",
+        "consultations_medicales",
+        "evolution_clinique",
+        "impact_fonctionnel"
+      ],
+      "min_length": 300,
+      "max_length": 3000,
+      "date_format": "DD/MM/YYYY",
+      "worker_first_enforcement": true,
+      "medical_terminology_required": true
+    }
+  },
+  "voice_commands": [
+    {
+      "trigger": "debut historique evolution",
+      "action": "start_section",
+      "parameters": {
+        "section": "history_evolution",
+        "mode": "narrative"
+      }
+    },
+    {
+      "trigger": "fin historique evolution",
+      "action": "end_section",
+      "parameters": {
+        "section": "history_evolution",
+        "save": true
+      }
+    },
+    {
+      "trigger": "nouveau paragraphe",
+      "action": "insert_paragraph_break",
+      "parameters": {}
+    },
+    {
+      "trigger": "insérer date",
+      "action": "insert_date_placeholder",
+      "parameters": {
+        "format": "DD/MM/YYYY"
+      }
+    },
+    {
+      "trigger": "insérer nom médecin",
+      "action": "insert_doctor_name_placeholder",
+      "parameters": {}
+    },
+    {
+      "trigger": "insérer diagnostic",
+      "action": "insert_diagnosis_placeholder",
+      "parameters": {}
+    },
+    {
+      "trigger": "insérer traitement",
+      "action": "insert_treatment_placeholder",
+      "parameters": {}
+    },
+    {
+      "trigger": "citation patient",
+      "action": "start_verbatim_quote",
+      "parameters": {
+        "type": "patient_quote"
+      }
+    },
+    {
+      "trigger": "fin citation",
+      "action": "end_verbatim_quote",
+      "parameters": {}
+    }
+  ],
+  "ai_formatting": {
+    "enabled": true,
+    "prompt_file": "history-evolution-ai-formatting.md",
+    "model": "gpt-4o",
+    "temperature": 0.2,
+    "max_tokens": 4000,
+    "features": {
+      "worker_first_enforcement": true,
+      "chronological_ordering": true,
+      "medical_terminology_preservation": true,
+      "verbatim_quote_preservation": true,
+      "sentence_variation": true
+    }
+  },
+  "created_at": "2024-12-19T00:00:00Z",
+  "updated_at": "2024-12-19T00:00:00Z"
+}
