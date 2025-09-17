@@ -108,6 +108,8 @@ export class Mode2Formatter {
       const layerResults: string[] = [];
 
       // Process each enabled layer in priority order
+      let clinicalEntities: any = null;
+      
       for (const layer of enabledLayers) {
         try {
           switch (layer.name) {
@@ -118,6 +120,22 @@ export class Mode2Formatter {
             case 'voice-commands-layer':
               processedTranscript = await this.processVoiceCommandsLayer(processedTranscript, options.language, layer);
               layerResults.push('Voice commands layer processed');
+              break;
+            case 'clinical-extraction-layer':
+              // Process clinical extraction using LayerManager
+              const clinicalLayerResults = await this.layerManager.processLayers(processedTranscript, templateCombo, {
+                language: options.language,
+                correlationId: options.correlationId
+              });
+              
+              // Extract clinical entities from layer results
+              const clinicalResult = clinicalLayerResults.find(result => result.data && result.data.injury_location !== undefined);
+              if (clinicalResult && clinicalResult.success) {
+                clinicalEntities = clinicalResult.data;
+                layerResults.push('Clinical extraction layer processed');
+              } else {
+                layerResults.push('Clinical extraction layer failed, using fallback');
+              }
               break;
             default:
               console.warn(`Unknown layer: ${layer.name}`);
@@ -152,7 +170,8 @@ export class Mode2Formatter {
       return {
         formatted: finalFormatted,
         issues: [...result.issues, ...layerResults, ...issues],
-        confidence_score: result.confidence_score || 0.9
+        confidence_score: result.confidence_score || 0.9,
+        clinical_entities: clinicalEntities // S6.5 - Pass entities to frontend
       };
     } catch (error) {
       issues.push(`Section 7 formatting error: ${error instanceof Error ? error.message : 'Unknown error'}`);

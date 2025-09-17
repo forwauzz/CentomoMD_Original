@@ -21,6 +21,12 @@
       "description": "Full feature set with all layers",
       "layers": ["verbatim-layer", "voice-commands-layer"],
       "fallback": "template-verbatim"
+    },
+    "template-clinical-extraction": {
+      "name": "Section 7 + Clinical Extraction",
+      "description": "AI formatting with clinical entity extraction (French-English)",
+      "layers": ["clinical-extraction-layer"],
+      "fallback": "template-only"
     }
   },
   "default": "template-only",

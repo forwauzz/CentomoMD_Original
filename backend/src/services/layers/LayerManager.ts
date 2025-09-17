@@ -1,6 +1,26 @@
 import fs from 'fs';
 import path from 'path';
 
+export interface LayerOptions {
+  language: 'fr' | 'en';
+  correlationId?: string;
+  [key: string]: any;
+}
+
+export interface LayerResult {
+  success: boolean;
+  data: any;
+  metadata: {
+    processingTime: number;
+    language: 'fr' | 'en';
+    [key: string]: any;
+  };
+}
+
+export interface LayerProcessor {
+  process(transcript: string, options: LayerOptions): Promise<LayerResult>;
+}
+
 export interface LayerConfig {
   name: string;
   version: string;
@@ -55,7 +75,7 @@ export class LayerManager {
   private loadConfigurations(): void {
     try {
       // Load individual layer configs
-      const layerFiles = ['verbatim-layer.json', 'voice-commands-layer.json'];
+      const layerFiles = ['verbatim-layer.json', 'voice-commands-layer.json', 'clinical-extraction-layer.json'];
       
       for (const file of layerFiles) {
         const filePath = path.join(this.configPath, file);
@@ -92,7 +112,10 @@ export class LayerManager {
    * Get enabled layers for a template combination
    */
   getEnabledLayers(comboName: string): LayerConfig[] {
-    const combination = this.getTemplateCombination(comboName);
+    // Handle 'default' case by resolving to actual default combination
+    const actualComboName = comboName === 'default' ? this.getDefaultCombination() : comboName;
+    
+    const combination = this.getTemplateCombination(actualComboName);
     if (!combination) {
       return [];
     }
@@ -143,7 +166,10 @@ export class LayerManager {
       return { valid: false, errors };
     }
 
-    const combination = this.getTemplateCombination(comboName);
+    // Handle 'default' case by resolving to actual default combination
+    const actualComboName = comboName === 'default' ? this.getDefaultCombination() : comboName;
+    
+    const combination = this.getTemplateCombination(actualComboName);
     if (!combination) {
       errors.push(`Template combination '${comboName}' not found`);
       return { valid: false, errors };
@@ -166,8 +192,55 @@ export class LayerManager {
    * Get fallback combination for a given combination
    */
   getFallbackCombination(comboName: string): string {
-    const combination = this.getTemplateCombination(comboName);
+    // Handle 'default' case by resolving to actual default combination
+    const actualComboName = comboName === 'default' ? this.getDefaultCombination() : comboName;
+    
+    const combination = this.getTemplateCombination(actualComboName);
     return combination?.fallback || this.getDefaultCombination();
+  }
+
+  /**
+   * Process layers for a template combination
+   */
+  async processLayers(transcript: string, comboName: string, options: LayerOptions): Promise<LayerResult[]> {
+    const enabledLayers = this.getEnabledLayers(comboName);
+    const results: LayerResult[] = [];
+
+    for (const layerConfig of enabledLayers) {
+      try {
+        // Dynamically import and instantiate the layer processor
+        const processor = await this.getLayerProcessor(layerConfig.name);
+        if (processor) {
+          const result = await processor.process(transcript, options);
+          results.push(result);
+        }
+      } catch (error) {
+        console.error(`Layer ${layerConfig.name} processing failed:`, error);
+        // Continue with other layers even if one fails
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get layer processor instance
+   */
+  private async getLayerProcessor(layerName: string): Promise<LayerProcessor | null> {
+    try {
+      switch (layerName) {
+        case 'clinical-extraction-layer':
+          const { ClinicalExtractionLayer } = await import('./ClinicalExtractionLayer.js');
+          return new ClinicalExtractionLayer();
+        // Add other layer processors as needed
+        default:
+          console.warn(`No processor found for layer: ${layerName}`);
+          return null;
+      }
+    } catch (error) {
+      console.error(`Failed to load processor for layer ${layerName}:`, error);
+      return null;
+    }
   }
 
   /**

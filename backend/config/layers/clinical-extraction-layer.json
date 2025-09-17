@@ -1,0 +1,21 @@
+{
+  "name": "clinical-extraction-layer",
+  "version": "1.0.0",
+  "description": "Clinical entity extraction layer for French-English medical transcripts",
+  "enabled": true,
+  "priority": 10,
+  "dependencies": [],
+  "fallback": {
+    "enabled": true,
+    "description": "Return empty clinical entities on extraction failure",
+    "action": "graceful_degradation"
+  },
+  "validation": {
+    "enabled": true,
+    "checks": [
+      "transcript_not_empty",
+      "language_supported",
+      "openai_api_available"
+    ]
+  }
+}

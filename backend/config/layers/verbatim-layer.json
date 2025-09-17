@@ -2,7 +2,7 @@
   "name": "verbatim-layer",
   "version": "1.0.0",
   "description": "Verbatim text processing layer for preserving exact quotes and specific text",
-  "enabled": false,
+  "enabled": true,
   "priority": 1,
   "dependencies": [],
   "markers": {
