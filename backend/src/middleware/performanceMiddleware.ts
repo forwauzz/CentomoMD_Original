@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { performanceLogger, logger } from '@/utils/logger.js';
+import { performanceLogger, logger } from '../utils/logger.js';
 import { productionLogger } from '../utils/productionLogger.js';
 
 // Real-time performance monitoring with intelligent thresholds
@@ -409,7 +409,7 @@ export const errorRateMiddleware = (req: Request, res: Response, next: NextFunct
 export { performanceMonitor };
 
 // Performance metrics endpoint
-export const getPerformanceMetrics = (req: Request, res: Response) => {
+export const getPerformanceMetrics = (_req: Request, res: Response) => {
   try {
     const summary = performanceMonitor.getPerformanceSummary();
     res.json({

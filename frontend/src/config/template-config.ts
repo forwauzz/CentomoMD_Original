@@ -128,8 +128,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
       voiceCommandsSupport: false,
       aiFormatting: true,
       postProcessing: true,
-      comprehensivePrompts: true,
-      languageAware: true,
+      // comprehensivePrompts: true, // Removed - not in interface
+      // languageAware: true, // Removed - not in interface
       metadataTracking: true,
     },
     prompt: 'Enhanced AI-powered CNESST formatting with comprehensive prompt system. 6-step flowchart: 1) Load language files, 2-4) Construct system prompt, 5) OpenAI API call, 6) Post-processing validation.',
@@ -140,8 +140,8 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
       enforceWorkerFirst: true,
       chronologicalOrder: true,
       medicalTerminology: true,
-      comprehensivePrompts: true,
-      promptFiles: ['master_prompt', 'json_config', 'golden_example'],
+      // comprehensivePrompts: true, // Removed - not in interface
+      // promptFiles: ['master_prompt', 'json_config', 'golden_example'], // Removed - not in interface
       implementation: '6-step-flowchart'
     },
     usage: {
@@ -296,6 +296,43 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     usage: {
       count: 0,
       successRate: 92,
+    },
+    created: '2024-12-19',
+    updated: '2024-12-19',
+  },
+  {
+    id: 'section7-clinical-extraction',
+    name: 'Section 7 + Clinical Extraction',
+    nameFr: 'Section 7 + Extraction Clinique',
+    description: 'AI formatting with clinical entity extraction (French-English)',
+    descriptionFr: 'Formatage IA avec extraction d\'entités cliniques (Français-Anglais)',
+    type: 'template-combo',
+    compatibleSections: ['section_7', 'section_8'],
+    compatibleModes: ['smart_dictation', 'ambient'],
+    language: 'both',
+    complexity: 'high',
+    tags: ['clinical', 'extraction', 'ai', 'bilingual', 'template-combo'],
+    isActive: true,
+    isDefault: false,
+    features: {
+      verbatimSupport: true,
+      voiceCommandsSupport: true,
+      aiFormatting: true,
+      postProcessing: true,
+    },
+    prompt: 'Extract clinical entities from medical transcript and format using AI',
+    promptFr: 'Extraire les entités cliniques du transcript médical et formater avec IA',
+    config: {
+      templateCombo: 'template-clinical-extraction',
+      aiFormattingEnabled: true,
+      medicalTerminology: true,
+      language: 'both',
+      enforceWorkerFirst: true,
+      chronologicalOrder: true,
+    },
+    usage: {
+      count: 0,
+      successRate: 0,
     },
     created: '2024-12-19',
     updated: '2024-12-19',

@@ -59,12 +59,6 @@ export interface Environment {
   LOG_PAYLOADS: boolean;
   DIAG_MODE: boolean;
   
-  // Performance Configuration
-  PERFORMANCE_LOGGING_ENABLED: boolean;
-  MEMORY_MONITORING_ENABLED: boolean;
-  SPEAKER_CORRECTION_LOGGING: boolean;
-  CONVERSATION_FLOW_LOGGING: boolean;
-  
   // Authentication Strategy
   AUTH_VERIFY_STRATEGY: 'supabase' | 'jwks';
   
@@ -73,6 +67,10 @@ export interface Environment {
   OPENAI_MODEL: string;
   OPENAI_TEMPERATURE: number;
   OPENAI_MAX_TOKENS: number;
+
+  // Universal Cleanup Feature Flag
+  UNIVERSAL_CLEANUP_ENABLED: boolean;
+  UNIVERSAL_CLEANUP_SHADOW: boolean;
 }
 
 // Temporary hardcoded values to bypass PowerShell line-breaking issues
@@ -135,6 +133,10 @@ const hardcodedEnv: Environment = {
   OPENAI_MODEL: process.env['OPENAI_MODEL'] || 'gpt-4o-mini',
   OPENAI_TEMPERATURE: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.2'),
   OPENAI_MAX_TOKENS: parseInt(process.env['OPENAI_MAX_TOKENS'] || '4000'),
+
+  // Universal Cleanup Feature Flag
+  UNIVERSAL_CLEANUP_ENABLED: true, // Temporarily hardcoded for testing
+  UNIVERSAL_CLEANUP_SHADOW: true, // Temporarily hardcoded for testing
 };
 
 // Export the hardcoded environment
@@ -188,5 +190,9 @@ export const config = {
     model: hardcodedEnv.OPENAI_MODEL,
     temperature: hardcodedEnv.OPENAI_TEMPERATURE,
     maxTokens: hardcodedEnv.OPENAI_MAX_TOKENS,
+  },
+  features: {
+    universalCleanupEnabled: hardcodedEnv.UNIVERSAL_CLEANUP_ENABLED,
+    universalCleanupShadow: hardcodedEnv.UNIVERSAL_CLEANUP_SHADOW,
   }
 };

@@ -75,7 +75,7 @@ export class LayerManager {
   private loadConfigurations(): void {
     try {
       // Load individual layer configs
-      const layerFiles = ['verbatim-layer.json', 'voice-commands-layer.json', 'clinical-extraction-layer.json'];
+      const layerFiles = ['verbatim-layer.json', 'voice-commands-layer.json', 'clinical-extraction-layer.json', 'universal-cleanup-layer.json'];
       
       for (const file of layerFiles) {
         const filePath = path.join(this.configPath, file);
@@ -232,6 +232,9 @@ export class LayerManager {
         case 'clinical-extraction-layer':
           const { ClinicalExtractionLayer } = await import('./ClinicalExtractionLayer.js');
           return new ClinicalExtractionLayer();
+        case 'universal-cleanup-layer':
+          const { UniversalCleanupLayer } = await import('./UniversalCleanupLayer.js');
+          return new UniversalCleanupLayer();
         // Add other layer processors as needed
         default:
           console.warn(`No processor found for layer: ${layerName}`);

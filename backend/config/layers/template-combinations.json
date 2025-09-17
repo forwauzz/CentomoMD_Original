@@ -22,10 +22,16 @@
       "layers": ["verbatim-layer", "voice-commands-layer"],
       "fallback": "template-verbatim"
     },
+    "universal-cleanup": {
+      "name": "Universal Cleanup",
+      "description": "Cleanup + Clinical Entity Extraction (FR/EN)",
+      "layers": ["universal-cleanup-layer"],
+      "fallback": "template-only"
+    },
     "template-clinical-extraction": {
       "name": "Section 7 + Clinical Extraction",
-      "description": "AI formatting with clinical entity extraction (French-English)",
-      "layers": ["clinical-extraction-layer"],
+      "description": "Legacy clinical extraction template",
+      "layers": ["universal-cleanup-layer"],
       "fallback": "template-only"
     }
   },

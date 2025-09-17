@@ -186,7 +186,7 @@ Respond ONLY in JSON format.
       // Import OpenAI dynamically to avoid circular dependencies
       const { OpenAI } = await import('openai');
       const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+        apiKey: process.env['OPENAI_API_KEY']
       });
 
       const response = await openai.chat.completions.create({
@@ -276,7 +276,9 @@ Respond ONLY in JSON format.
     if (this.cache.size >= this.cacheSize) {
       // Remove oldest entry (FIFO)
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
     }
     
     this.cache.set(key, entities);
