@@ -23,6 +23,7 @@ import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import { securityMiddleware } from './server/security.js';
+import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
@@ -48,6 +49,9 @@ app.get('/health', (_req, res) => {
 
 // Config endpoint to expose flags to frontend
 app.get('/api/config', getConfig);
+
+// Performance metrics endpoint
+app.get('/api/performance', getPerformanceMetrics);
 
 // Auth endpoints
 app.post('/api/auth/ws-token', getWsToken);
@@ -2106,8 +2110,8 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
       return {
         ...config,
         show_speaker_labels: true,  // Mode 3: Enable speaker labels
-        max_speaker_labels: 2,  // Mode 3: Limit to 2 speakers (PATIENT vs CLINICIAN)
-        partial_results_stability: 'medium' as const
+        // max_speaker_labels removed - not available for streaming
+        partial_results_stability: 'high' as const  // Better for diarization
         // vocabulary_name omitted - will be undefined
       };
     default:

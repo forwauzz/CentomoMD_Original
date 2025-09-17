@@ -94,6 +94,11 @@ export interface AWSTranscribeResult {
   };
   results: {
     items: AWSTranscriptItem[];
+    language_code?: string;
+    language_identification?: Array<{
+      language_code: string;
+      score: number;
+    }>;
   };
 }
 
@@ -118,6 +123,7 @@ export interface AWSTranscriptItem {
     content: string;
   }>;
   type: 'pronunciation' | 'punctuation';
+  Speaker?: string;  // Speaker label for streaming format
 }
 
 // Pipeline stage result types
