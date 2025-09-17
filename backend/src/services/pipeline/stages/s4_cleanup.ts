@@ -117,11 +117,11 @@ export class S4Cleanup {
   /**
    * Preserve medical abbreviations and terms from being removed
    */
-  private preserveMedicalTokens(text: string): string {
-    // This method ensures medical terms are not accidentally removed
-    // by other cleanup processes
-    return text; // For now, medical preservation is handled in removeRepetitions
-  }
+  // private preserveMedicalTokens(text: string): string {
+  //   // This method ensures medical terms are not accidentally removed
+  //   // by other cleanup processes
+  //   return text; // For now, medical preservation is handled in removeRepetitions
+  // }
 
   private normalizeSpacing(text: string): string {
     return text

@@ -229,6 +229,12 @@ export const TranscriptAnalysisPage: React.FC = () => {
 
     console.log(`[Template Processing] Processing with template: ${templateId}`);
     
+    // Get template configuration to determine the correct section
+    const template = getAllTemplates().find(t => t.id === templateId);
+    const section = template?.compatibleSections?.[0]?.replace('section_', '') || '7';
+    
+    console.log(`[Template Processing] Using section: ${section} for template: ${templateId}`);
+    
     // Call the same backend endpoint as dictation page
     const response = await apiFetch('/api/format/mode2', {
       method: 'POST',
@@ -237,7 +243,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
       },
       body: JSON.stringify({
         transcript: content,
-        section: '7',
+        section: section,
         language: detectLanguage(content),
         templateCombo: templateId,
         verbatimSupport: false,
@@ -473,6 +479,16 @@ export const TranscriptAnalysisPage: React.FC = () => {
       // Section 7 specific checks
       if (!formatted.includes('Historique')) {
         issues.push('Section 7 header may be missing');
+      }
+    }
+    
+    if (templateId.includes('section-8')) {
+      // Section 8 specific checks
+      if (!formatted.includes('Questionnaire subjectif') && !formatted.includes('Subjective questionnaire')) {
+        issues.push('Section 8 header may be missing');
+      }
+      if (!formatted.includes('Appréciation subjective') && !formatted.includes('Subjective appreciation')) {
+        issues.push('Section 8 subjective assessment section may be missing');
       }
     }
     

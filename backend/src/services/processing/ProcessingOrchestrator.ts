@@ -333,6 +333,12 @@ export class ProcessingOrchestrator {
       return await this.processSection7AIFormatter(content, template, request);
     }
     
+    // Handle Section 8 AI Formatter template
+    if (template.id === 'section8-ai-formatter') {
+      console.log(`[${correlationId}] Routing to processSection8AIFormatter`);
+      return await this.processSection8AIFormatter(content, template, request);
+    }
+    
     // Handle History of Evolution AI Formatter template
     if (template.id === 'history-evolution-ai-formatter') {
       console.log(`[${correlationId}] Routing to processHistoryEvolutionAIFormatter`);
@@ -557,6 +563,42 @@ export class ProcessingOrchestrator {
       return processedContent;
     } catch (error) {
       console.error(`[${correlationId}] Section 7 AI formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 8 AI Formatter template
+   */
+  private async processSection8AIFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 8 AI Formatter template: ${template.id}`);
+      
+      // Use formatWithGuardrails for consistent processing with Section 7
+      const { formatWithGuardrails } = await import('../../services/formatter/shared.js');
+      
+      const result = await formatWithGuardrails('8', request.language as 'fr' | 'en', content);
+      
+      const processedContent = result.formatted;
+      
+      // Log any issues
+      if (result.issues && result.issues.length > 0) {
+        console.warn(`[${correlationId}] Section 8 AI formatting issues:`, result.issues);
+      }
+      
+      console.log(`[${correlationId}] Section 8 AI formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id,
+        hasIssues: result.issues ? result.issues.length > 0 : false
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 8 AI formatting error:`, error);
       // Return original content if formatting fails
       return content;
     }

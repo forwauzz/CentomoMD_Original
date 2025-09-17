@@ -1,5 +1,5 @@
 // Simple test to verify the layer system works correctly
-const { LayerManager } = require('./dist/src/services/layers/LayerManager.js');
+import { LayerManager } from './dist/src/services/layers/LayerManager.js';
 
 async function testLayerSystem() {
   console.log('🧪 Testing Layer System...\n');

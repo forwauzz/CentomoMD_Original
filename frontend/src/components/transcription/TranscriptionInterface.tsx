@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Save, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3 } from 'lucide-react';
+import { Mic, MicOff, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3 } from 'lucide-react';
 import { t } from '@/lib/utils';
 import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -12,9 +12,11 @@ import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 import { TemplateSelector } from './TemplateSelector';
+import { SaveToSectionDropdown, SaveToSectionOption } from './SaveToSectionDropdown';
 import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
+import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -45,6 +47,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
   const [aiStepStatus, setAiStepStatus] = useState<'success' | 'skipped' | 'error' | null>(null);
+  
+  // Clinical entities state (S6.4 - Caching for Reuse)
+  const [, setClinicalEntities] = useState<ClinicalEntities | null>(null);
   
   // Transcript analysis pipeline state
   const [capturedTranscripts, setCapturedTranscripts] = useState<{
@@ -82,6 +87,75 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setCapturedTranscripts(null);
   }, [capturedTranscripts]);
 
+  // Function to check if Universal Cleanup is enabled
+  const checkUniversalCleanupEnabled = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/config');
+      if (!response.ok) return false;
+      
+      const config = await response.json();
+      return config.universalCleanupEnabled === true;
+    } catch (error) {
+      console.warn('Failed to fetch config for Universal Cleanup check:', error);
+      return false;
+    }
+  }, []);
+
+  // Function to handle Universal Cleanup formatting
+  const handleUniversalCleanupFormatting = useCallback(async (
+    rawTranscript: string,
+    template: TemplateJSON
+  ): Promise<UniversalCleanupResponse> => {
+    setFormattingProgress('Cleaning transcript...');
+    
+    // Step 1: Clean transcript and extract clinical entities
+    setFormattingProgress('Extracting clinical entities...');
+    
+    // Determine section from template metadata or fallback to template ID
+    let section = '7'; // Default fallback
+    if (template.meta?.templateConfig?.compatibleSections?.[0]) {
+      section = template.meta.templateConfig.compatibleSections[0].replace('section_', '');
+    } else if (template.id?.includes('section-8')) {
+      section = '8';
+    } else if (template.id?.includes('section-11')) {
+      section = '11';
+    }
+    
+    console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
+    
+    const response = await fetch('/api/format/mode2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        transcript: rawTranscript,
+        section: section,
+        language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+        useUniversal: true,
+        templateId: template.id
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Universal Cleanup failed: ${response.status}`);
+    }
+    
+    const result: UniversalCleanupResponse = await response.json();
+    
+    setFormattingProgress('Formatting...');
+    
+    // Store clinical entities for reuse
+    if (result.clinical_entities) {
+      console.log('Clinical entities extracted via Universal Cleanup:', result.clinical_entities);
+      setClinicalEntities(result.clinical_entities);
+    }
+    
+    return result;
+  }, [selectedLanguage]);
+
   const handleLanguageChange = (newLanguage: string) => {
     console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
     // Convert dictation format (fr-CA/en-US) to UI store format (fr/en)
@@ -106,7 +180,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setActiveSection,
     mode3Narrative,
     mode3Progress,
-    cleanedConversation,
+    // cleanedConversation,
     orthopedicNarrative
   } = useTranscription(sessionId, selectedLanguage, mode);
 
@@ -241,13 +315,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
   }, []);
 
-  // Save to section functionality
-  const handleSaveToSection = useCallback(async () => {
-    if (!activeSection) {
-      console.error('No active section selected');
-      return;
-    }
-
+  // Save to section functionality with dropdown
+  const handleSaveToSection = useCallback(async (option: SaveToSectionOption) => {
     const transcriptToSave = editedTranscript || paragraphs.join('\n\n');
     if (!transcriptToSave.trim()) {
       console.error('No transcript content to save');
@@ -258,16 +327,27 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setSaveSuccess(false);
 
     try {
-      // Save transcript to the active section
-      updateSection(activeSection, {
-        transcript: transcriptToSave,
+      // Save transcript to the selected section and text box
+      const sectionData: Record<string, any> = {
         savedAt: new Date().toISOString(),
         mode: mode,
         language: selectedLanguage
+      };
+      
+      // Set the specific text box field
+      sectionData[option.textBoxId] = transcriptToSave;
+
+      console.log('Saving to section:', {
+        sectionId: option.sectionId,
+        textBoxId: option.textBoxId,
+        transcriptLength: transcriptToSave.length,
+        sectionData
       });
 
+      updateSection(option.sectionId, sectionData);
+
       setSaveSuccess(true);
-      console.log(`Transcript saved to section: ${activeSection}`);
+      console.log(`✅ Transcript saved to ${option.sectionId}.${option.textBoxId}`);
 
       // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -276,7 +356,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [activeSection, editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
+  }, [editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
@@ -288,6 +368,46 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     // Set loading state
     setIsFormatting(true);
     setFormattingProgress('Initializing formatting...');
+    
+    // Check if Universal Cleanup is enabled
+    const universalCleanupEnabled = await checkUniversalCleanupEnabled();
+    console.log('Universal Cleanup enabled:', universalCleanupEnabled);
+    
+    // Get the current raw transcript (prioritize saved edited content, then current editing, then paragraphs)
+    const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+    
+    if (universalCleanupEnabled && rawTranscript && rawTranscript.trim()) {
+      console.log('Using Universal Cleanup flow for template:', template.title);
+      
+      try {
+        const result = await handleUniversalCleanupFormatting(rawTranscript, template);
+        
+        // Update the transcript with formatted content
+        if (isEditing) {
+          setEditedTranscript(result.formatted);
+        } else {
+          setEditedTranscript(result.formatted);
+          setIsEditing(true);
+        }
+        
+        setFormattingProgress('Universal Cleanup completed');
+        setAiStepStatus('success');
+        
+        // Capture transcripts for analysis
+        captureTranscriptsForAnalysis(rawTranscript, result.formatted, template.title);
+        
+        setIsFormatting(false);
+        setFormattingProgress('');
+        return;
+      } catch (error) {
+        console.error('Universal Cleanup formatting error:', error);
+        setAiStepStatus('error');
+        alert(`Universal Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIsFormatting(false);
+        setFormattingProgress('');
+        return;
+      }
+    }
     
     // Check if this is a Word-for-Word formatter template (either basic or with AI)
     if (template.id === 'word-for-word-formatter' || template.id === 'word-for-word-with-ai') {
@@ -413,6 +533,61 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         setFormattingProgress('');
         return;
       }
+    }
+    
+    // Check if this is a clinical extraction template
+    if (template.id === 'section7-clinical-extraction') {
+      console.log('Applying Clinical Extraction formatting to current transcript');
+      setFormattingProgress('Extracting clinical context...');
+      
+      // Get the current raw transcript
+      const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+      
+      if (rawTranscript && rawTranscript.trim()) {
+        try {
+          setFormattingProgress('Processing clinical extraction...');
+          
+          // Call Mode 2 formatter with clinical extraction template combination
+          const response = await fetch('/api/format/mode2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transcript: rawTranscript,
+              section: '7',
+              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+              templateCombo: 'template-clinical-extraction',
+              correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Clinical extraction failed: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          setFormattingProgress('Clinical extraction completed');
+          
+          // Store clinical entities for reuse (S6.4 - Caching for Reuse)
+          if (result.clinical_entities) {
+            console.log('Clinical entities extracted:', result.clinical_entities);
+            // Store in component state for potential reuse
+            setClinicalEntities(result.clinical_entities);
+          }
+          
+          setEditedTranscript(result.formatted);
+          setAiStepStatus('success');
+          
+        } catch (error) {
+          console.error('Clinical extraction error:', error);
+          setAiStepStatus('error');
+          alert('Clinical extraction failed. Please try again.');
+        }
+      }
+      
+      setIsFormatting(false);
+      setFormattingProgress('');
+      return;
     }
     
     // Check if this is a Section 7 AI formatter template or template combination
@@ -990,22 +1165,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   <MessageSquare className="h-4 w-4" />
                   <span>Voice Command</span>
                 </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
-                  onClick={handleSaveToSection}
-                  disabled={isSaving || (!editedTranscript && paragraphs.length === 0)}
-                >
-                  {saveSuccess ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  <span>
-                    {saveSuccess ? 'Saved!' : isSaving ? 'Saving...' : 'Save to Section'}
-                  </span>
-                </Button>
+                <SaveToSectionDropdown
+                  onSave={handleSaveToSection}
+                  isSaving={isSaving}
+                  disabled={!editedTranscript && paragraphs.length === 0}
+                />
               </div>
             </CardContent>
           </Card>

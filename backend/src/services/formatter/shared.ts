@@ -35,7 +35,7 @@ export async function formatWithGuardrails(
   language: 'fr' | 'en',
   input: string,
   extra?: string,
-  options?: { nameWhitelist?: string[] }
+  options?: { nameWhitelist?: string[], clinicalEntities?: any }
 ): Promise<FormattingResult> {
   try {
     // 1. Pre-parse: Extract name whitelist from raw transcript
@@ -47,13 +47,18 @@ export async function formatWithGuardrails(
     const guardrails = await loadGuardrailsFile(`section${section}_master${suffix}.json`);
     const goldenExample = await loadGoldenExampleFile(`section${section}_golden_example${suffix}.md`);
 
-    // Prepare user message with name whitelist constraint
+    // Prepare user message with name whitelist constraint and clinical entities
     const nameConstraint = nameWhitelist.length > 0 
       ? `\n\n[Contrainte de noms autorisés]\n${nameWhitelist.join('; ')}`
       : '';
+    
+    const clinicalEntitiesConstraint = options?.clinicalEntities 
+      ? `\n\n[Entités cliniques extraites]\n${JSON.stringify(options.clinicalEntities, null, 2)}`
+      : '';
+    
     const userMessage = extra 
-      ? `${input}\n\n[Extra Context]\n${extra}${nameConstraint}` 
-      : `${input}${nameConstraint}`;
+      ? `${input}\n\n[Extra Context]\n${extra}${nameConstraint}${clinicalEntitiesConstraint}` 
+      : `${input}${nameConstraint}${clinicalEntitiesConstraint}`;
 
     // Call OpenAI with our prompt system
     let formatted = await callOpenAI(systemPrompt, userMessage, goldenExample, guardrails, nameWhitelist);

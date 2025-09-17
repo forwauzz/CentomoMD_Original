@@ -13,6 +13,7 @@ import { transcriptionService } from './services/transcriptionService.js';
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
 import { Mode2Formatter } from './services/formatter/mode2.js';
+import { ShadowModeHook } from './services/shadow/ShadowModeHook.js';
 import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
@@ -1885,13 +1886,24 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
       voiceCommandsSupport
     });
 
+    // Run shadow mode comparison if enabled
+    const shadowResult = await ShadowModeHook.runShadowComparison({
+      transcript,
+      section: section as '7' | '8' | '11',
+      language: language as 'fr' | 'en',
+      templateId: case_id
+    });
+
     // Return the formatted result
     res.json({
       formatted: result.formatted,
       issues: result.issues,
       sources_used: result.sources_used,
       confidence_score: result.confidence_score,
-      success: true
+      clinical_entities: result.clinical_entities,
+      success: true,
+      // Include shadow comparison result in development
+      ...(shadowResult && { shadowComparison: shadowResult })
     });
 
   } catch (error) {
@@ -2038,6 +2050,9 @@ app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
       return res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
     }
     const a = rows[0];
+    if (!a) {
+      return res.json({ ir: null, role_map: null, narrative: null, processing_time: null });
+    }
     return res.json({ ir: a.ir, role_map: a.role_map, narrative: a.narrative, processing_time: a.processing_time });
 
   } catch (error) {
