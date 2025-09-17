@@ -100,7 +100,7 @@ const getIntendedPath = () => localStorage.getItem(INTENDED_KEY);
 const clearIntendedPath = () => localStorage.removeItem(INTENDED_KEY);
 
 // OAuth state helpers
-const encodeState = (obj: Record<string, any>) => btoa(encodeURIComponent(JSON.stringify(obj)));
+// const encodeState = (obj: Record<string, any>) => btoa(encodeURIComponent(JSON.stringify(obj)));
 const decodeState = (state: string) => {
   try { 
     return JSON.parse(decodeURIComponent(atob(state))); 
@@ -244,7 +244,7 @@ export const useAuth = () => {
       saveIntendedPath(intended);
 
       // Use state parameter for OAuth (preferred method)
-      const state = encodeState({ intended });
+      // const state = encodeState({ intended });
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -254,8 +254,7 @@ export const useAuth = () => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          },
-          state
+          }
         },
       });
       if (error) throw error;
