@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/authClient';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { API_CONFIG } from '@/lib/constants';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -54,7 +55,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         setConfig({ 
           authRequired: false, 
           wsRequireAuth: false, 
-          publicWsUrl: 'ws://localhost:3001', 
+          publicWsUrl: API_CONFIG.WS_URL, 
           useWss: false 
         });
       } finally {

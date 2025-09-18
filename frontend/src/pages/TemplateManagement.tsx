@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { apiFetch } from '@/lib/api';
+import { API_CONFIG } from '@/lib/constants';
 import { 
   Plus, 
   Search, 
@@ -215,8 +216,8 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
       console.log('Saving template:', template);
       
       const url = template.id?.startsWith('template_') 
-        ? `http://localhost:3001/api/templates` 
-        : `http://localhost:3001/api/templates/${template.id}`;
+        ? `${API_CONFIG.BASE_URL}/api/templates` 
+        : `${API_CONFIG.BASE_URL}/api/templates/${template.id}`;
       
       const method = template.id?.startsWith('template_') ? 'POST' : 'PUT';
       
