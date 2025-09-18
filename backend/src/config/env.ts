@@ -113,7 +113,7 @@ const hardcodedEnv: Environment = {
   USE_WSS: false,
   
   // CORS Configuration
-  CORS_ALLOWED_ORIGINS: 'http://localhost:5173',
+  CORS_ALLOWED_ORIGINS: 'http://localhost:5173,https://centomo-md-original-kskp.vercel.app,https://*.vercel.app,https://innovations-shares-correlation-surely.trycloudflare.com',
   
   // Debug Configuration
   LOG_PAYLOADS: false,
@@ -178,7 +178,7 @@ export const config = {
     useWss: hardcodedEnv.USE_WSS,
   },
   security: {
-    corsOrigins: [hardcodedEnv.FRONTEND_URL],
+    corsOrigins: hardcodedEnv.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
     rateLimitEnabled: hardcodedEnv.RATE_LIMIT_ENABLED,
   },
   debug: {

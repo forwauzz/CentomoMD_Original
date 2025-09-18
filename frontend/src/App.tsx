@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { NewCasePage } from '@/pages/NewCasePage';
 import { DictationPage } from '@/pages/DictationPage';

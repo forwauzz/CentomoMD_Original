@@ -2341,8 +2341,9 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    server.listen(3001, () => {
-      console.log("✅ Backend listening on http://localhost:3001");
+    const PORT = process.env.PORT || 3001;
+    server.listen(PORT, () => {
+      console.log(`✅ Backend listening on port ${PORT}`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
       console.log("🚀 Phase 3: AWS Transcribe integration active");
       console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
@@ -2365,8 +2366,9 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-server.listen(3001, () => {
-  console.log("✅ Backend listening on http://localhost:3001");
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`✅ Backend listening on port ${PORT}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
