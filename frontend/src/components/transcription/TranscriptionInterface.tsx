@@ -123,6 +123,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
     
     console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
+    console.log(`[Universal Cleanup] Raw transcript length: ${rawTranscript?.length || 0}`);
+    console.log(`[Universal Cleanup] Raw transcript preview: ${rawTranscript?.substring(0, 100)}...`);
+    
+    // Validate transcript before making API call
+    if (!rawTranscript || typeof rawTranscript !== 'string' || rawTranscript.trim().length === 0) {
+      throw new Error('Transcript is empty or invalid. Please ensure you have transcribed content before applying templates.');
+    }
     
     const result: UniversalCleanupResponse = await apiFetch('/api/format/mode2', {
       method: 'POST',
@@ -133,8 +140,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         transcript: rawTranscript,
         section: section,
         language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
-        useUniversal: true,
-        templateId: template.id
+        case_id: template.id,
+        templateCombo: 'universal-cleanup'
       })
     });
     
