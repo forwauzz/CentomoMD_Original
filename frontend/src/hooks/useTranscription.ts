@@ -4,6 +4,7 @@ import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
+import { API_CONFIG } from '@/lib/constants';
 
 // Advanced speaker correction with weighted scoring and conversation context
 class AdvancedSpeakerCorrection {
@@ -1931,7 +1932,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     try {
       console.log('Starting transcription with language:', languageCode);
       
-      const ws = new WebSocket('ws://localhost:3001/ws/transcription');
+      const ws = new WebSocket(`${API_CONFIG.WS_URL}/ws/transcription`);
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
