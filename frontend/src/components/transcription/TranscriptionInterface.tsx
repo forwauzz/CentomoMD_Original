@@ -18,6 +18,7 @@ import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { FeedbackFab } from '@/components/feedback/FeedbackFab';
+import { apiFetch } from '@/lib/api';
 import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 
 interface TranscriptionInterfaceProps {
@@ -93,10 +94,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   // Function to check if Universal Cleanup is enabled
   const checkUniversalCleanupEnabled = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/config');
-      if (!response.ok) return false;
-      
-      const config = await response.json();
+      const config = await apiFetch('/api/config');
       return config.universalCleanupEnabled === true;
     } catch (error) {
       console.warn('Failed to fetch config for Universal Cleanup check:', error);
@@ -126,13 +124,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     
     console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
     
-    const response = await fetch('/api/format/mode2', {
+    const result: UniversalCleanupResponse = await apiFetch('/api/format/mode2', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       },
-      credentials: 'include',
       body: JSON.stringify({
         transcript: rawTranscript,
         section: section,
@@ -141,12 +137,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         templateId: template.id
       })
     });
-    
-    if (!response.ok) {
-      throw new Error(`Universal Cleanup failed: ${response.status}`);
-    }
-    
-    const result: UniversalCleanupResponse = await response.json();
     
     setFormattingProgress('Formatting...');
     
@@ -551,9 +541,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setFormattingProgress('Processing clinical extraction...');
           
           // Call Mode 2 formatter with clinical extraction template combination
-          const response = await fetch('/api/format/mode2', {
+          const result = await apiFetch('/api/format/mode2', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               transcript: rawTranscript,
               section: '7',
@@ -562,12 +551,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
             })
           });
-          
-          if (!response.ok) {
-            throw new Error(`Clinical extraction failed: ${response.status}`);
-          }
-          
-          const result = await response.json();
           
           setFormattingProgress('Clinical extraction completed');
           

@@ -5,6 +5,7 @@ import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { API_CONFIG } from '@/lib/constants';
+import { apiFetch } from '@/lib/api';
 
 // Advanced speaker correction with weighted scoring and conversation context
 class AdvancedSpeakerCorrection {
@@ -1703,9 +1704,8 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     section: string;
     rawAwsJson: any;
   }) => {
-    const res = await fetch('/api/transcribe/process', {
+    return apiFetch('/api/transcribe/process', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId: params.sessionId,
         modeId: 'ambient',
@@ -1713,9 +1713,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         section: params.section,
         rawAwsJson: params.rawAwsJson
       })
-    });
-    if (!res.ok) throw new Error(`process failed: ${res.status}`);
-    return res.json() as Promise<{
+    }) as Promise<{
       narrative: string;
       irSummary: any;
       roleMap: Record<string,string>;

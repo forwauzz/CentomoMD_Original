@@ -255,18 +255,9 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
   const handleDeleteTemplate = async (template: TemplateJSON) => {
     if (window.confirm(`Are you sure you want to delete "${template.title}"?`)) {
       try {
-        const response = await fetch(`/api/templates/${template.id}?section=${template.section}`, {
+        const result = await apiFetch(`/api/templates/${template.id}?section=${template.section}`, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
         
         if (!result.success) {
           throw new Error(result.error || 'Failed to delete template');
@@ -283,19 +274,16 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
   const handleExportTemplates = async () => {
     try {
-              const response = await fetch(`/api/templates/export${selectedSection !== 'all' ? `?section=${selectedSection}` : ''}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          const dataStr = JSON.stringify(result.data, null, 2);
-          const dataBlob = new Blob([dataStr], { type: 'application/json' });
-          const url = URL.createObjectURL(dataBlob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `templates_export_${new Date().toISOString().split('T')[0]}.json`;
-          link.click();
-          URL.revokeObjectURL(url);
-        }
+      const result = await apiFetch(`/api/templates/export${selectedSection !== 'all' ? `?section=${selectedSection}` : ''}`);
+      if (result.success) {
+        const dataStr = JSON.stringify(result.data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `templates_export_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Error exporting templates:', error);
@@ -314,20 +302,14 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
           const text = await file.text();
           const templates = JSON.parse(text);
           
-          const response = await fetch('/api/templates/import', {
+          const result = await apiFetch('/api/templates/import', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ templates }),
           });
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              alert(result.message);
-              await loadTemplates();
-            }
+          if (result.success) {
+            alert(result.message);
+            await loadTemplates();
           }
         } catch (error) {
           console.error('Error importing templates:', error);
@@ -346,24 +328,18 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
     if (bulkAction === 'status') {
       try {
-        const response = await fetch('/api/templates/bulk/status', {
+        const result = await apiFetch('/api/templates/bulk/status', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             templateIds: selectedVersions,
             status: bulkStatus
           }),
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            alert(result.message);
-            setSelectedVersions([]);
-            await loadTemplates();
-          }
+        if (result.success) {
+          alert(result.message);
+          setSelectedVersions([]);
+          await loadTemplates();
         }
       } catch (error) {
         console.error('Error performing bulk status update:', error);
@@ -372,23 +348,17 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
     } else if (bulkAction === 'delete') {
       if (window.confirm(`Are you sure you want to delete ${selectedVersions.length} templates?`)) {
         try {
-          const response = await fetch('/api/templates/bulk/delete', {
+          const result = await apiFetch('/api/templates/bulk/delete', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
               templateIds: selectedVersions
             }),
           });
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              alert(result.message);
-              setSelectedVersions([]);
-              await loadTemplates();
-            }
+          if (result.success) {
+            alert(result.message);
+            setSelectedVersions([]);
+            await loadTemplates();
           }
         } catch (error) {
           console.error('Error performing bulk delete:', error);

@@ -1,88 +1,67 @@
-import { supabase } from './authClient.js';
+/**
+ * API utility functions for consistent backend communication
+ */
 
-// TODO: API response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
+export const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+/**
+ * Constructs a full API URL from a path
+ * @param path - API path (with or without leading slash)
+ * @returns Full API URL
+ */
+export function apiUrl(path: string): string {
+  if (!API_BASE) {
+    console.error('Missing VITE_API_BASE_URL environment variable');
+    throw new Error('API_BASE_URL not configured');
+  }
+  
+  // Ensure path starts with /
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE}${normalizedPath}`;
 }
 
-// TODO: API error types
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-// TODO: Config cache
-let configCache: { authRequired: boolean; wsRequireAuth: boolean } | null = null;
-
-// TODO: Get config from server
-const getConfig = async () => {
-  if (configCache) return configCache;
-  
-  try {
-    const response = await fetch('/api/config');
-    if (!response.ok) throw new Error('Failed to fetch config');
-    
-    configCache = await response.json();
-    return configCache;
-  } catch (error) {
-    console.warn('Failed to fetch config, using defaults:', error);
-    return { authRequired: false, wsRequireAuth: false };
-  }
-};
-
-// TODO: API fetch function with auth
-export const apiFetch = async <T = any>(
-  path: string,
-  init: RequestInit = {}
-): Promise<T> => {
-  const config = await getConfig();
-  
-  // TODO: Get access token if available
-  let accessToken: string | undefined;
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    accessToken = session?.access_token;
-  } catch (error) {
-    // TODO: Handle case when Supabase is not configured
-    console.warn('Supabase not configured, proceeding without auth token');
-  }
-  
-  // TODO: Prepare headers
-  const headers = new Headers(init.headers);
-  
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
-  }
-  
-  // TODO: Make request
-  const response = await fetch(path, {
-    ...init,
-    headers,
-  });
-  
-  // TODO: Handle 401 responses
-  if (response.status === 401 && config?.authRequired) {
-    // TODO: Redirect to login if auth is required
-    window.location.href = '/login';
-    throw new ApiError('Authentication required', 401);
-  }
-  
+/**
+ * Defensive JSON parsing with error handling
+ * @param response - Fetch response object
+ * @returns Parsed JSON or throws descriptive error
+ */
+export async function parseJsonResponse(response: Response): Promise<any> {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ApiError(
-      errorData.message || `HTTP ${response.status}`,
-      response.status,
-      errorData.code
-    );
+    const errorText = await response.text();
+    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
   }
+
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`Expected JSON response but got ${contentType}. Response: ${text.slice(0, 200)}`);
+  }
+
+  try {
+    return await response.json();
+  } catch (error) {
+    const text = await response.text();
+    throw new Error(`Failed to parse JSON response: ${error}. Response: ${text.slice(0, 200)}`);
+  }
+}
+
+/**
+ * Standard API fetch wrapper with error handling
+ * @param path - API path
+ * @param options - Fetch options
+ * @returns Parsed JSON response
+ */
+export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+  const url = apiUrl(path);
   
-  return response.json();
-};
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include',
+  };
+
+  const response = await fetch(url, { ...defaultOptions, ...options });
+  return parseJsonResponse(response);
+}

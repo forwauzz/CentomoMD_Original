@@ -16,8 +16,9 @@ import { AuthCallback } from '@/pages/AuthCallback';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
 import { SelectClinicPage } from '@/pages/SelectClinicPage';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { API_BASE } from '@/lib/api';
 import { Settings, Globe, LogOut, Mic, FileText, Home } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -26,6 +27,14 @@ import { TemplateProvider } from '@/contexts/TemplateContext';
 
 function App() {
   const featureFlags = useFeatureFlags();
+
+  // Log API configuration on app boot
+  useEffect(() => {
+    console.log('🚀 App starting with API_BASE:', API_BASE);
+    if (!API_BASE) {
+      console.error('⚠️ VITE_API_BASE_URL is not configured! API calls will fail.');
+    }
+  }, []);
 
   return (
     <TemplateProvider>
