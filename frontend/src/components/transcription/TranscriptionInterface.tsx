@@ -131,7 +131,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       throw new Error('Transcript is empty or invalid. Please ensure you have transcribed content before applying templates.');
     }
     
-    const result: UniversalCleanupResponse = await apiFetch('/api/format/mode2', {
+    const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -548,7 +548,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setFormattingProgress('Processing clinical extraction...');
           
           // Call Mode 2 formatter with clinical extraction template combination
-          const result = await apiFetch('/api/format/mode2', {
+          const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
             method: 'POST',
             body: JSON.stringify({
               transcript: rawTranscript,
@@ -637,7 +637,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           });
           
           // Call Mode2Formatter API for Section 7 using proper authentication
-          const result = await apiFetch('/api/format/mode2', {
+          const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

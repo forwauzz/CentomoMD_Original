@@ -236,7 +236,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
     console.log(`[Template Processing] Using section: ${section} for template: ${templateId}`);
     
     // Call the same backend endpoint as dictation page
-    const response = await apiFetch('/api/format/mode2', {
+    const response = await apiFetch<any>('/api/format/mode2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
