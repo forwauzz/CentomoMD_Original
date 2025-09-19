@@ -13,6 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { validateAndNormalizeEmail } from './backend/src/utils/email.js';
 
 // Load environment variables
 dotenv.config();
@@ -55,14 +56,20 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 async function createDrCentomoUser() {
   console.log('🏥 Creating Dr. Centomo user account...');
-  console.log('📧 Email: hugocentomo@gmail.com');
-  console.log('🔐 Password: CentomoMD2025!');
   
+  // Normalize email to prevent duplicate accounts
+  const rawEmail = 'hugocentomo@gmail.com';
+  const normalizedEmail = validateAndNormalizeEmail(rawEmail);
+  
+  console.log('📧 Raw Email:', rawEmail);
+  console.log('📧 Normalized Email:', normalizedEmail);
+  console.log('🔐 Password: CentomoMD2025!');
+
   try {
     // Try creating user with minimal parameters first
     console.log('🔄 Attempting to create user with minimal parameters...');
     const { data, error } = await supabase.auth.admin.createUser({
-      email: 'hugocentomo@gmail.com',
+      email: normalizedEmail,
       password: 'CentomoMD2025!',
       email_confirm: true
     });
@@ -83,7 +90,7 @@ async function createDrCentomoUser() {
         if (getUserError) {
           console.error('❌ Error getting existing user:', getUserError.message);
         } else {
-          const user = existingUser.users.find(u => u.email === 'hugocentomo@gmail.com');
+          const user = existingUser.users.find(u => u.email === normalizedEmail);
           if (user) {
             console.log('✅ User already exists:', user.email);
             console.log('📋 User ID:', user.id);
@@ -110,7 +117,7 @@ async function createDrCentomoUser() {
         if (getUserError) {
           console.error('❌ Error checking existing user:', getUserError.message);
         } else {
-          const user = existingUser.users.find(u => u.email === 'hugocentomo@gmail.com');
+          const user = existingUser.users.find(u => u.email === normalizedEmail);
           if (user) {
             console.log('✅ User already exists:', user.email);
             console.log('📋 User ID:', user.id);

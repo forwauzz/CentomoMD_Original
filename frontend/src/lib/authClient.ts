@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User, type Session } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
+import { validateAndNormalizeEmail } from './email';
 
 /**
  * Vite exposes client-safe vars via import.meta.env when prefixed with VITE_.
@@ -205,8 +206,11 @@ export const useAuth = () => {
       const intended = window.location.pathname + window.location.search;
       saveIntendedPath(intended);
 
+      // Normalize email to prevent duplicate accounts
+      const normalizedEmail = validateAndNormalizeEmail(email);
+
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: normalizedEmail,
         options: {
           emailRedirectTo: `${getSiteUrl()}/auth/callback`,
         },
