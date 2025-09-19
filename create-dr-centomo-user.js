@@ -60,17 +60,18 @@ async function createDrCentomoUser() {
   // Normalize email to prevent duplicate accounts
   const rawEmail = 'hugocentomo@gmail.com';
   const normalizedEmail = validateAndNormalizeEmail(rawEmail);
+  const password = process.env.DR_CENTOMO_PASSWORD || 'CentomoMD2025!';
   
   console.log('📧 Raw Email:', rawEmail);
   console.log('📧 Normalized Email:', normalizedEmail);
-  console.log('🔐 Password: CentomoMD2025!');
+  console.log('🔐 Password: [REDACTED]');
 
   try {
     // Try creating user with minimal parameters first
     console.log('🔄 Attempting to create user with minimal parameters...');
     const { data, error } = await supabase.auth.admin.createUser({
       email: normalizedEmail,
-      password: 'CentomoMD2025!',
+      password: password,
       email_confirm: true
     });
 
@@ -137,7 +138,7 @@ async function createDrCentomoUser() {
     
     console.log('\n🎉 Account Details:');
     console.log('   Email: hugocentomo@gmail.com');
-    console.log('   Password: CentomoMD2025!');
+    console.log('   Password: [REDACTED]');
     console.log('   Role: Doctor');
     console.log('   Status: Active & Email Confirmed');
     
