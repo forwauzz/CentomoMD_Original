@@ -107,7 +107,7 @@ ws://localhost:3001/ws/transcription?ws_token=<jwt>
 ### JWKS Endpoint Test
 ```bash
 # Should return 200 OK
-curl -i "https://kbjulpxgbkshqsme.supabase.co/auth/v1/.well-known/jwks.json"
+curl -i "https://[PROJECT-ID].supabase.co/auth/v1/.well-known/jwks.json"
 ```
 
 ### JOSE Library Test

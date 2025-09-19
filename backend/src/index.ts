@@ -1,10 +1,9 @@
+// Import environment validation (this will load dotenv and validate)
+import './env.js';
+
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
@@ -18,6 +17,7 @@ import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
+import { PORT } from './env.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
@@ -29,10 +29,11 @@ import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
 import { bootProbe, getDb } from './database/connection.js';
-import { artifacts } from './database/schema.js';
-import { eq, desc } from 'drizzle-orm';
+import { artifacts, feedback } from './database/schema.js';
+import { eq, desc, sql } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
 import { logger } from './utils/logger.js';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 const server = http.createServer(app);
@@ -2141,6 +2142,217 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   }
 };
 
+// Rate limiting for feedback endpoints
+const feedbackRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many feedback submissions, please try again later'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const feedbackReadRateLimit = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30, // limit each IP to 30 requests per minute
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Feedback API Endpoints (Development Feature)
+// Save feedback to database
+app.post('/api/feedback', feedbackRateLimit, async (req, res): Promise<void> => {
+  try {
+    const { content, ttl_days = 30 } = req.body;
+    
+    // Input validation
+    if (!content) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Content is required' 
+      });
+      return;
+    }
+
+    if (typeof content !== 'object' || Array.isArray(content)) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Content must be a valid object' 
+      });
+      return;
+    }
+
+    // Size validation (10KB limit)
+    const contentSize = JSON.stringify(content).length;
+    if (contentSize > 10240) { // 10KB
+      res.status(400).json({ 
+        success: false, 
+        error: 'Content too large (max 10KB)' 
+      });
+      return;
+    }
+
+    // TTL validation
+    if (typeof ttl_days !== 'number' || ttl_days < 1 || ttl_days > 365) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'TTL must be between 1 and 365 days' 
+      });
+      return;
+    }
+
+    // Basic content structure validation
+    if (!content.id || !content.created_at || !content.meta) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Invalid feedback structure' 
+      });
+      return;
+    }
+
+    const db = getDb();
+    const [newFeedback] = await db.insert(feedback).values({
+      content,
+      ttl_days
+    }).returning();
+
+    if (!newFeedback) {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to create feedback' 
+      });
+      return;
+    }
+
+    // Log successful submission
+    logger.info('Feedback submitted', {
+      id: newFeedback.id,
+      contentSize,
+      ttl_days,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({ 
+      success: true, 
+      id: newFeedback.id 
+    });
+  } catch (error) {
+    console.error('Failed to save feedback:', error);
+    logger.error('Feedback submission failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      timestamp: new Date().toISOString()
+    });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to save feedback' 
+    });
+  }
+});
+
+// Get all feedback (no auth required for development)
+app.get('/api/feedback', feedbackReadRateLimit, async (req, res): Promise<void> => {
+  try {
+    const { limit = 100, offset = 0 } = req.query;
+    
+    // Validate pagination parameters
+    const limitNum = parseInt(limit as string, 10);
+    const offsetNum = parseInt(offset as string, 10);
+    
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 1000) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Limit must be between 1 and 1000' 
+      });
+      return;
+    }
+    
+    if (isNaN(offsetNum) || offsetNum < 0) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Offset must be 0 or greater' 
+      });
+      return;
+    }
+
+    const db = getDb();
+    const allFeedback = await db.select().from(feedback)
+      .orderBy(desc(feedback.created_at))
+      .limit(limitNum)
+      .offset(offsetNum);
+
+    // Get total count for pagination info
+    const totalCount = await db.select({ count: sql<number>`count(*)` }).from(feedback);
+
+    res.json({ 
+      success: true, 
+      items: allFeedback.map(item => ({
+        id: item.id,
+        ...(item.content as any),
+        created_at: item.created_at,
+        ttl_days: item.ttl_days
+      })),
+      pagination: {
+        limit: limitNum,
+        offset: offsetNum,
+        total: totalCount[0]?.count || 0,
+        hasMore: offsetNum + limitNum < (totalCount[0]?.count || 0)
+      }
+    });
+  } catch (error) {
+    console.error('Failed to fetch feedback:', error);
+    logger.error('Feedback fetch failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      timestamp: new Date().toISOString()
+    });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch feedback' 
+    });
+  }
+});
+
+// TTL Cleanup mechanism for feedback
+const cleanupExpiredFeedback = async () => {
+  try {
+    const db = getDb();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const result = await db.delete(feedback)
+      .where(sql`${feedback.created_at} < ${thirtyDaysAgo}`)
+      .returning({ id: feedback.id });
+    
+    if (result.length > 0) {
+      logger.info('Cleaned up expired feedback', {
+        count: result.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to cleanup expired feedback', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Run cleanup every 24 hours
+setInterval(cleanupExpiredFeedback, 24 * 60 * 60 * 1000);
+
+// Run initial cleanup on startup
+setTimeout(cleanupExpiredFeedback, 5000); // Wait 5 seconds after startup
+
 const wss = new WebSocketServer({ server });
 
 // Store active transcription sessions - integrated with AWS Transcribe
@@ -2341,7 +2553,6 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    const PORT = process.env.PORT || 3001;
     server.listen(PORT, () => {
       console.log(`✅ Backend listening on port ${PORT}`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
@@ -2366,7 +2577,6 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`✅ Backend listening on port ${PORT}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");

@@ -525,15 +525,15 @@ export class ProcessingOrchestrator {
   }
 
   /**
-   * Process Section 7 AI Formatter template
+   * Process Section 7 AI Formatter template with enhanced name preservation
    */
   private async processSection7AIFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
     const correlationId = request.correlationId || 'no-correlation-id';
     
     try {
-      console.log(`[${correlationId}] Processing Section 7 AI Formatter template: ${template.id}`);
+      console.log(`[${correlationId}] Processing Section 7 AI Formatter template with enhanced name preservation: ${template.id}`);
       
-      // Use the original Section 7 AI formatter (working version)
+      // Use the original Section 7 AI formatter (now with enhanced name preservation)
       const { Section7AIFormatter } = await import('../../services/formatter/section7AI.js');
       
       const result = await Section7AIFormatter.formatSection7Content(
@@ -543,21 +543,34 @@ export class ProcessingOrchestrator {
       
       const processedContent = result.formatted;
       
-      // Log any issues or suggestions
+      // Enhanced logging for name preservation
       if (result.issues && result.issues.length > 0) {
+        const nameIssues = result.issues.filter(issue => 
+          issue.includes('name') || issue.includes('CRITICAL') || issue.includes('truncated')
+        );
+        if (nameIssues.length > 0) {
+          console.warn(`[${correlationId}] 🚨 Name preservation issues detected:`, nameIssues);
+        }
         console.warn(`[${correlationId}] Section 7 AI formatting issues:`, result.issues);
       }
       
       if (result.suggestions && result.suggestions.length > 0) {
+        const nameSuggestions = result.suggestions.filter(suggestion => 
+          suggestion.includes('name') || suggestion.includes('restored')
+        );
+        if (nameSuggestions.length > 0) {
+          console.info(`[${correlationId}] ✅ Name preservation actions:`, nameSuggestions);
+        }
         console.info(`[${correlationId}] Section 7 AI formatting suggestions:`, result.suggestions);
       }
       
-      console.log(`[${correlationId}] Section 7 AI formatting completed`, {
+      console.log(`[${correlationId}] Section 7 AI formatting completed with enhanced name preservation`, {
         originalLength: content.length,
         processedLength: processedContent.length,
         templateId: template.id,
         hasIssues: result.issues ? result.issues.length > 0 : false,
-        hasSuggestions: result.suggestions ? result.suggestions.length > 0 : false
+        hasSuggestions: result.suggestions ? result.suggestions.length > 0 : false,
+        namePreservationEnabled: true
       });
       
       return processedContent;

@@ -11,18 +11,17 @@ SECTION CIBLE : Section 8 - Questionnaire subjectif et état actuel
 📌 STRUCTURE OBLIGATOIRE
 Format de sortie EXACT :
 
-. Questionnaire subjectif et état actuel
-
 Appréciation subjective de l'évolution : [contenu]
 Plaintes et problèmes : [contenu]
-Impact sur AVQ/AVD : [contenu]
+Impact sur AVQ/AVD : cf feuille en annexe
 
 RÈGLES DE FORMATAGE :
-- Commencer par ". Questionnaire subjectif et état actuel"
+- Commencer directement par "Appréciation subjective de l'évolution"
 - Utiliser des en-têtes simples (sans **) avec deux points
 - Pas de saut de ligne entre l'en-tête et le contenu
 - Contenu directement après les deux points
 - Structure en 3 sections principales uniquement
+- **OBLIGATOIRE** : La section "Impact sur AVQ/AVD" doit TOUJOURS contenir exactement "cf feuille en annexe"
 
 ⚠️ RÈGLES STRICTES
 - Utiliser exclusivement « Le travailleur » ou « La travailleuse » (jamais « Le patient »).
@@ -30,6 +29,7 @@ RÈGLES DE FORMATAGE :
 - Préserver les citations entre guillemets « ... ».
 - Ne pas transformer les mentions négatives en positives.
 - Si les mesures sont vagues (ex. « bonne force »), retranscrire tel quel sans inventer de score.
+- **CRITIQUE** : Ignorer tout contenu dicté pour "Impact sur AVQ/AVD" et utiliser UNIQUEMENT "cf feuille en annexe"
 
 🔒 RÈGLES DE FIDÉLITÉ TRANSCRIPTION
 - Si le médecin dit "le patient", transcrire "Le travailleur/La travailleuse" mais préserver tout autre contenu exact
@@ -96,8 +96,6 @@ Avant soumission, confirmer:
 ---
 
 ### GOLDEN STANDARD EXEMPLE
-
-. Questionnaire subjectif et état actuel
 
 Appréciation subjective de l'évolution : La travailleuse rapporte une nette amélioration depuis son accident. Elle rapporte que dans les derniers mois, elle a observé peu d'amélioration au niveau de sa condition et juge d'elle-même qu'elle a atteint un plateau thérapeutique en physiothérapie et ergothérapie. Elle a des doutes quant à sa capacité de reprendre son travail comme chauffeur de taxi adapté étant donné la marchepied «step» qu'elle doit toujours utiliser pour monter et descendre de son véhicule. Elle doute aussi d'être en mesure de pousser ou tirer les patients en chaise roulante. Elle juge son amélioration à environ 75 à 80% de son état de base.
 

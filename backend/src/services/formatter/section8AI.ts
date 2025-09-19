@@ -276,6 +276,7 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
 
   /**
    * Post-process and validate result (Flowchart Step 6)
+   * Enforces AVQ/AVD default text regardless of dictated content
    */
   private static postProcessResult(
     result: string,
@@ -291,6 +292,12 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
       
       const processingTime = Date.now() - startTime;
       const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      
+      // REMOVE SECTION HEADERS
+      let processedResult = this.removeSectionHeaders(result, language, correlationId);
+      
+      // ENFORCE AVQ/AVD DEFAULT TEXT
+      processedResult = this.enforceAVQAVDDefaultText(processedResult, language, correlationId);
       
       // Basic validation
       const issues: string[] = [];
@@ -332,7 +339,7 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
       });
       
       return {
-        formatted: result,
+        formatted: processedResult,
         ...(suggestions.length > 0 && { suggestions }),
         ...(issues.length > 0 && { issues }),
         metadata: {
@@ -347,6 +354,94 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
     } catch (error) {
       console.error(`[${correlationId}] ❌ Error in post-processing:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Remove section headers that should not appear in the output
+   * This ensures clean formatting without unnecessary headers
+   */
+  private static removeSectionHeaders(
+    result: string,
+    language: 'fr' | 'en',
+    correlationId: string
+  ): string {
+    try {
+      console.log(`[${correlationId}] 🧹 Removing section headers for ${language}`);
+      
+      // Define headers to remove
+      const headersToRemove = [
+        // French headers
+        '8. Questionnaire subjectif et état actuel',
+        '. Questionnaire subjectif et état actuel',
+        'Questionnaire subjectif et état actuel',
+        // English headers
+        '8. Subjective questionnaire and current condition',
+        '. Subjective questionnaire and current condition',
+        'Subjective questionnaire and current condition'
+      ];
+      
+      let processedResult = result;
+      
+      // Remove each header if found
+      for (const header of headersToRemove) {
+        const headerPattern = new RegExp(`^\\s*${header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\n?`, 'gim');
+        processedResult = processedResult.replace(headerPattern, '');
+      }
+      
+      // Clean up any extra whitespace at the beginning
+      processedResult = processedResult.replace(/^\s+/, '');
+      
+      console.log(`[${correlationId}] ✅ Section headers removed`);
+      return processedResult;
+      
+    } catch (error) {
+      console.error(`[${correlationId}] ❌ Error removing section headers:`, error);
+      return result; // Return original if removal fails
+    }
+  }
+
+  /**
+   * Enforce AVQ/AVD default text regardless of dictated content
+   * This ensures the section always contains the standard reference text
+   */
+  private static enforceAVQAVDDefaultText(
+    result: string,
+    language: 'fr' | 'en',
+    correlationId: string
+  ): string {
+    try {
+      console.log(`[${correlationId}] 🔒 Enforcing AVQ/AVD default text for ${language}`);
+      
+      const sectionName = language === 'fr' ? 'Impact sur AVQ/AVD' : 'Impact on ADLs/IADLs';
+      const defaultText = language === 'fr' ? 'cf feuille en annexe' : 'see annex sheet';
+      
+      // Create regex pattern to match the AVQ/AVD section
+      const sectionPattern = new RegExp(
+        `(${sectionName}\\s*:\\s*)(.*?)(?=\\n\\n|$)`,
+        'gis'
+      );
+      
+      // Check if section exists first
+      const hasSection = sectionPattern.test(result);
+      
+      // Replace any content after the section header with the default text
+      const processedResult = result.replace(sectionPattern, `$1${defaultText}`);
+      
+      // If no section was found, add it at the end
+      if (!hasSection) {
+        console.log(`[${correlationId}] ⚠️ AVQ/AVD section not found, adding at end`);
+        const finalResult = processedResult.trim() + `\n\n${sectionName} : ${defaultText}`;
+        console.log(`[${correlationId}] ✅ AVQ/AVD default text enforced`);
+        return finalResult;
+      }
+      
+      console.log(`[${correlationId}] ✅ AVQ/AVD default text enforced`);
+      return processedResult;
+      
+    } catch (error) {
+      console.error(`[${correlationId}] ❌ Error enforcing AVQ/AVD default text:`, error);
+      return result; // Return original if enforcement fails
     }
   }
 

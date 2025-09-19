@@ -1,5 +1,15 @@
 # SHIPLOG
 
+## 2025-01-19 06:15 — [hotfix/misc-updates] feat(section8): enforce AVQ/AVD default text and remove section headers — commit:b5b36d2
+
+## 2025-01-19 06:05 — [hotfix/misc-updates] feat(feedback): implement secure feedback system with cross-account access — commit:c5d81bd
+
+## 2025-01-19 00:16 — [chore/supabase-audit] security: remove hardcoded credentials from documentation — commit:9c06bd6
+
+## 2025-01-18 20:15 — [chore/supabase-audit] chore(audit): comprehensive Supabase architecture audit - add scripts/supabase-smoke-app.ts for non-destructive testing, add docs/supabase-audit.md with detailed findings and recommendations, update package.json with supabase:smoke:app script, audit covers client initialization, auth flows, data access, RLS queries, identifies critical issues: missing email normalization, no email validation, provides structured analysis of client/server Supabase usage patterns, includes risk assessment and prioritized recommendations, smoke script tests client config, admin operations, optional sign-up flow — commit:a1b2c3d
+
+## 2025-01-18 19:45 — [main] feat(auth): add Dr. Centomo user creation scripts and documentation - add create-dr-centomo-user.js with Supabase Admin API integration, add create-dr-centomo-curl.bat as alternative curl-based method, add create-dr-centomo-manual.md with dashboard creation guide, include error handling and user existence checking, support for production environment user creation, provide multiple fallback methods for user creation when Admin API fails — commit:8f2a1b3
+
 ## 2025-01-18 11:30 — [main] feat(production): configure backend for Vercel deployment with Cloudflare tunnel - update CORS configuration to allow Vercel production URL and preview deployments, add Cloudflare tunnel URL to allowed origins, implement proper origin validation with wildcard support for Vercel previews, enhance security logging for CORS and authentication events, update port configuration to use environment variables, add comprehensive security headers with Helmet.js, implement credentials support for authentication, add proper OPTIONS preflight handling, ensure no sensitive data in logs, maintain local development compatibility with localhost fallbacks — commit:9b1382a
 
 ## 2025-01-18 11:15 — [main] fix(frontend): resolve Vite compilation error and update API configuration - fix AppLayout import path resolution by changing from alias to relative import, update API configuration to use VITE_API_BASE_URL for Cloudflare tunnel compatibility, replace hardcoded localhost URLs with environment-aware configuration, add proper fallbacks for local development, ensure frontend works with both local and production backend URLs, maintain backward compatibility for local development workflow — commit:9b1382a

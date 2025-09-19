@@ -53,6 +53,14 @@
     "use_undocumented_placeholder": "Not documented in dictation",
     "preserve_external_references": true
   },
+  "avq_avd_default_text": {
+    "enforce_default": true,
+    "french_text": "cf feuille en annexe",
+    "english_text": "see annex sheet",
+    "ignore_dictated_content": true,
+    "section_name_french": "Impact sur AVQ/AVD",
+    "section_name_english": "Impact on ADLs/IADLs"
+  },
   "context_anchoring": {
     "identify_accident_type": true,
     "identify_affected_members": true,
