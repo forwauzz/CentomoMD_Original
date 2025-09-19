@@ -73,7 +73,7 @@ export default defineConfig({
 Create a new `frontend/.env` file with this exact content (ensure no line breaks):
 
 ```bash
-VITE_SUPABASE_URL=https://kbjulpxgjqzgbkshqsme.supabase.co
+VITE_SUPABASE_URL=https://[PROJECT-ID].supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 

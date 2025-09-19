@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Save, User, Globe, Shield, Mail, Plus, Key } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useUserStore } from '@/stores/userStore';
-import { dbLocaleToUi, uiToDbLocale } from '@/lib/i18n';
+import { dbLocaleToUi } from '@/lib/i18n';
 import { supabase } from '@/lib/authClient';
 
 // Profile types - matches backend API response

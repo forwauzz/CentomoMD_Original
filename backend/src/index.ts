@@ -1,10 +1,9 @@
+// Import environment validation (this will load dotenv and validate)
+import './env.js';
+
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
@@ -18,6 +17,7 @@ import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
+import { PORT } from './env.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
@@ -2341,8 +2341,8 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    server.listen(3001, () => {
-      console.log("✅ Backend listening on http://localhost:3001");
+    server.listen(PORT, () => {
+      console.log(`✅ Backend listening on port ${PORT}`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
       console.log("🚀 Phase 3: AWS Transcribe integration active");
       console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
@@ -2365,8 +2365,8 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-server.listen(3001, () => {
-  console.log("✅ Backend listening on http://localhost:3001");
+server.listen(PORT, () => {
+  console.log(`✅ Backend listening on port ${PORT}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);

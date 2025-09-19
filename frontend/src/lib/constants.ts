@@ -166,6 +166,12 @@ export const LANGUAGES = {
   EN: 'en',
 } as const;
 
+// API Configuration
+export const API_CONFIG = {
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  WS_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+} as const;
+
 // Default values
 export const DEFAULTS = {
   LANGUAGE: LANGUAGES.FR,

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User, type Session } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
+import { validateAndNormalizeEmail } from './email';
 
 /**
  * Vite exposes client-safe vars via import.meta.env when prefixed with VITE_.
@@ -12,10 +13,16 @@ function readSupabaseEnv() {
   const urlStr = String(url ?? '').trim();
   const keyStr = String(key ?? '').trim();
 
+  // Enhanced validation
+  const isValidUrl = urlStr && urlStr.startsWith('https://') && urlStr.includes('.supabase.co');
+  const isValidKey = keyStr && keyStr.length >= 20 && keyStr.startsWith('eyJ');
+
   return {
-    ok: Boolean(urlStr) && Boolean(keyStr),
+    ok: Boolean(urlStr) && Boolean(keyStr) && isValidUrl && isValidKey,
     url: urlStr,
     key: keyStr,
+    isValidUrl,
+    isValidKey,
   };
 }
 
@@ -27,18 +34,30 @@ export function getSupabase(): SupabaseClient {
   const { ok, url, key } = readSupabaseEnv();
 
   if (!ok) {
-    // Dev-friendly breadcrumbs without leaking secrets
+    // Enhanced error reporting with specific validation failures
+    const envInfo = readSupabaseEnv();
     // eslint-disable-next-line no-console
-    console.error('Supabase env not configured', {
+    console.error('❌ Supabase environment validation failed', {
       hasUrl: Boolean(url),
       hasKey: Boolean(key),
+      isValidUrl: envInfo.isValidUrl,
+      isValidKey: envInfo.isValidKey,
+      urlFormat: url ? (url.startsWith('https://') ? '✅' : '❌ Missing https://') : '❌ Missing',
+      keyFormat: key ? (key.startsWith('eyJ') ? '✅' : '❌ Invalid JWT format') : '❌ Missing',
       mode: (import.meta as any)?.env?.MODE,
       viteVars: (import.meta as any)?.env
         ? Object.keys((import.meta as any).env).filter((k) => k.startsWith('VITE_'))
         : [],
       origin: typeof window !== 'undefined' ? window.location.origin : 'no-window',
     });
-    throw new Error('Supabase environment not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+    
+    let errorMessage = 'Supabase environment not configured:';
+    if (!url) errorMessage += ' VITE_SUPABASE_URL is missing';
+    if (!key) errorMessage += ' VITE_SUPABASE_ANON_KEY is missing';
+    if (url && !envInfo.isValidUrl) errorMessage += ' VITE_SUPABASE_URL must be a valid Supabase URL (https://*.supabase.co)';
+    if (key && !envInfo.isValidKey) errorMessage += ' VITE_SUPABASE_ANON_KEY must be a valid JWT token';
+    
+    throw new Error(errorMessage);
   }
 
   _client = createClient(url, key, {
@@ -100,7 +119,7 @@ const getIntendedPath = () => localStorage.getItem(INTENDED_KEY);
 const clearIntendedPath = () => localStorage.removeItem(INTENDED_KEY);
 
 // OAuth state helpers
-const encodeState = (obj: Record<string, any>) => btoa(encodeURIComponent(JSON.stringify(obj)));
+// const encodeState = (obj: Record<string, any>) => btoa(encodeURIComponent(JSON.stringify(obj)));
 const decodeState = (state: string) => {
   try { 
     return JSON.parse(decodeURIComponent(atob(state))); 
@@ -205,8 +224,11 @@ export const useAuth = () => {
       const intended = window.location.pathname + window.location.search;
       saveIntendedPath(intended);
 
+      // Normalize email to prevent duplicate accounts
+      const normalizedEmail = validateAndNormalizeEmail(email);
+
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: normalizedEmail,
         options: {
           emailRedirectTo: `${getSiteUrl()}/auth/callback`,
         },
@@ -244,7 +266,7 @@ export const useAuth = () => {
       saveIntendedPath(intended);
 
       // Use state parameter for OAuth (preferred method)
-      const state = encodeState({ intended });
+      // const state = encodeState({ intended });
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -254,8 +276,7 @@ export const useAuth = () => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          },
-          state
+          }
         },
       });
       if (error) throw error;

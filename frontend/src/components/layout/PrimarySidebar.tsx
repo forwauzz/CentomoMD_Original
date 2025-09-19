@@ -210,6 +210,7 @@ export const PrimarySidebar: React.FC = () => {
             .map(renderSidebarItem)}
         </div>
       </div>
+
     </div>
   );
 };

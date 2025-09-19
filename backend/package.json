@@ -20,7 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-transcribe-streaming": "^3.470.0",
     "@aws-sdk/credential-providers": "^3.470.0",
-    "@supabase/supabase-js": "^2.38.4",
+    "@supabase/supabase-js": "^2.57.4",
     "@types/jsonwebtoken": "^9.0.10",
     "aws-sdk": "^2.1490.0",
     "cors": "^2.8.5",

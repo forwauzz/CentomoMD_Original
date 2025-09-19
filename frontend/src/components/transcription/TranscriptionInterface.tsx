@@ -17,6 +17,8 @@ import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
+import { FeedbackFab } from '@/components/feedback/FeedbackFab';
+import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -47,6 +49,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
   const [aiStepStatus, setAiStepStatus] = useState<'success' | 'skipped' | 'error' | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   
   // Clinical entities state (S6.4 - Caching for Reuse)
   const [, setClinicalEntities] = useState<ClinicalEntities | null>(null);
@@ -1259,6 +1262,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           <OrthopedicNarrative narrative={orthopedicNarrative} />
         </div>
       )}
+
+      {/* Feedback FAB */}
+      <FeedbackFab onClick={() => setShowFeedbackModal(true)} />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+      />
     </div>
   );
 };
