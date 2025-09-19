@@ -33,7 +33,7 @@ The backend server is running successfully, but the **profile API is failing** w
 ### Database Connection (Working)
 ```
 🔍 DATABASE_URL length: 112
-🔍 DATABASE_URL preview: postgresql://postgres.kbjulpxgjqzgbkshqsme:Product...
+🔍 DATABASE_URL preview: postgresql://postgres.[PROJECT-ID]:[PASSWORD]...
 🔍 DATABASE_URL contains newlines: false
 🔍 Parsing DATABASE_URL...
 🔍 Host: aws-1-ca-central-1.pooler.supabase.com Port: 6543 Protocol: postgresql:
@@ -46,7 +46,7 @@ The backend server is running successfully, but the **profile API is failing** w
 ### Database Setup
 - **Database**: Supabase PostgreSQL (pooled connection on port 6543)
 - **ORM**: Drizzle ORM with postgres-js
-- **Connection**: `postgresql://postgres.kbjulpxgjqzgbkshqsme:Production.2.678@aws-1-ca-central-1.pooler.supabase.com:6543/postgres`
+- **Connection**: `postgresql://postgres.[PROJECT-ID]:[PASSWORD]@aws-1-ca-central-1.pooler.supabase.com:6543/postgres`
 - **SSL**: Required and configured
 
 ### Profile Routes

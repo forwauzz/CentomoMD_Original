@@ -110,7 +110,7 @@ const { error } = await supabase.auth.signInWithOAuth({
 // create-dr-centomo-user.js:64-68
 const { data, error } = await supabase.auth.admin.createUser({
   email: 'hugocentomo@gmail.com',
-  password: 'CentomoMD2025!',
+  password: '[REDACTED]',
   email_confirm: true
 });
 ```
@@ -209,13 +209,13 @@ const profileRows = await db
 ### Environment Variables Found
 ```bash
 # Backend (.env)
-SUPABASE_URL=https://kbjulpxgjqzgbkshqsme.supabase.co
+SUPABASE_URL=https://[PROJECT-ID].supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_JWT_SECRET=your_jwt_secret
 
 # Frontend (VITE_ prefixed)
-VITE_SUPABASE_URL=https://kbjulpxgjqzgbkshqsme.supabase.co
+VITE_SUPABASE_URL=https://[PROJECT-ID].supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 VITE_SITE_URL=https://centomo-md-original-kskp.vercel.app
 ```
