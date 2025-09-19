@@ -9,13 +9,11 @@ TARGET SECTION: Section 8 – Subjective questionnaire and current condition
 - Never invent absent content; if information is referred to ("see appendix"), keep the mention as is.
 
 📌 MANDATORY STRUCTURE
-1. **Subjective appreciation of progression**: current state, improvement or deterioration, therapeutic plateau, work tolerance, % improvement if specified.
-2. **Complaints and problems**: pain (location, irradiation, intensity if provided), type (stabbing, burning, numbness, paresthesia), aggravating/relieving factors, sleep impact.
-3. **Functional impact**: work limitations, ADLs/IADLs, leisure, tolerances (walking, lifting, static positions).
-4. **Neurological observations**: irradiation, dermatomes affected, numbness, reduced strength/endurance, fine dexterity, reflexes.
-5. **Other observations**: treatment tolerance, subjective remarks (frustration, anxiety, motivation, career reorientation considerations).
-6. **Exclusions/negative mentions**: preserve any explicitly denied information (stiffness, claudication, sphincter symptoms).
-7. **External references**: preserve references to annexed documents (e.g., "see appendix sheet").
+Format de sortie EXACT :
+
+Subjective appreciation of progression: [content]
+Complaints and problems: [content]
+Impact on ADLs/IADLs: see annex sheet
 
 ⚠️ STRICT RULES
 - Always use "The worker" (never "the patient").
@@ -23,6 +21,7 @@ TARGET SECTION: Section 8 – Subjective questionnaire and current condition
 - Preserve citations in quotation marks « … ».
 - Do not transform negatives into positives.
 - If measures are vague (e.g., "good strength"), transcribe them as-is without inventing scores.
+- **CRITICAL**: Ignore any dictated content for "Impact on ADLs/IADLs" and use ONLY "see annex sheet"
 
 🔒 TRANSCRIPTION FIDELITY RULES
 - If doctor says "the patient", transcribe as "The worker" but preserve all other exact content
@@ -90,15 +89,13 @@ Before submission, confirm:
 
 ### GOLDEN STANDARD EXAMPLE
 
-Insert here the firefighter case with sprain/synovitis/gonarthrosis formatted in full as the model reference:
+Subjective appreciation of progression: The worker reports not being able to resume his pre-injury work. He has not considered career reorientation and does not know what else he could do besides his job as a countertop installer. He is frustrated by the situation.
 
-**Subjective appreciation of progression**: The worker reports not being able to resume his pre-injury work. He has not considered career reorientation and does not know what else he could do besides his job as a countertop installer. He is frustrated by the situation.
-
-**Complaints and problems**: He mainly complains of pain and inflammation in the left shoulder. He describes the pain as stabbing. He reports exacerbation of the pain in the left shoulder with overhead movements. He notes difficulty with pulling motions and decreased strength and endurance in the left upper limb.
+Complaints and problems: He mainly complains of pain and inflammation in the left shoulder. He describes the pain as stabbing. He reports exacerbation of the pain in the left shoulder with overhead movements. He notes difficulty with pulling motions and decreased strength and endurance in the left upper limb.
 
 At the cervical spine, he notes pain radiating to the left shoulder, pectoralis major, and left scapula. He describes radiating pain down the arm and into the left D4 and D5 fingers. He occasionally reports numbness in both arms during prolonged sitting. He notes decreased fine dexterity in the left hand.
 He reports nocturnal awakenings secondary to left shoulder pain and numbness in the left upper limb.
 
 He denies morning stiffness and any sphincter symptoms.
 
-**Impact on ADLs/IADLs**: see annex sheet.
+Impact on ADLs/IADLs: see annex sheet.

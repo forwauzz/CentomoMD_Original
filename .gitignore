@@ -118,3 +118,13 @@ out/
 
 # AWS credentials (if accidentally committed)
 .aws/
+
+# Sensitive admin scripts with secrets
+create-dr-centomo-user.js
+create-dr-centomo-curl.bat
+create-dr-centomo-manual.md
+
+# Any files with hardcoded secrets
+*secrets*
+*credentials*
+*keys*

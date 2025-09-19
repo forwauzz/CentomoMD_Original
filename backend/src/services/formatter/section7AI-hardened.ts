@@ -322,6 +322,118 @@ export class Section7Guards {
     
     return { text, violations };
   }
+  
+  // NamePreservationGuard: CRITICAL - Ensure doctor names are never truncated
+  static namePreservationGuard(
+    text: string, 
+    originalContent: string, 
+    language: 'fr' | 'en'
+  ): { text: string; violations: string[]; metadata: any } {
+    const violations: string[] = [];
+    const metadata: any = { 
+      name_restorations: [],
+      suggestions: []
+    };
+    let processedText = text;
+    
+    // Import the NamePreservationEngine
+    const { NamePreservationEngine } = require('./NamePreservationEngine');
+    
+    // Extract doctor names from original content
+    const originalNames = NamePreservationEngine.extractDoctorNames(originalContent, language);
+    
+    // Custom accent-aware boundaries
+    const B = '(?:^|\\s)';
+    const E = '(?=\\s|,|\\.|$)';
+    
+    // Check for name truncation and restore both Title + Last and Title + First
+    originalNames.forEach((originalName: any) => {
+      if (originalName.isComplete) {
+        // Escape special regex characters
+        const escapedTitle = originalName.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedLastName = originalName.lastName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedFirstName = originalName.firstName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedFullName = originalName.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // Check if full name already exists (no need to restore)
+        const fullNamePattern = new RegExp(`${B}${escapedFullName}${E}`, 'gi');
+        if (fullNamePattern.test(processedText)) {
+          return; // Full name already present
+        }
+        
+        // 1. Check for Title + Last name truncation
+        const titleLastPattern = new RegExp(`${B}${escapedTitle}\\s+${escapedLastName}${E}`, 'gi');
+        if (titleLastPattern.test(processedText)) {
+          processedText = processedText.replace(titleLastPattern, originalName.fullName);
+          metadata.name_restorations.push({
+            from: `${originalName.title} ${originalName.lastName}`,
+            to: originalName.fullName,
+            reason: 'title_last_truncation_detected',
+            type: 'auto_fix'
+          });
+          return;
+        }
+        
+        // 2. Check for Title + First name truncation (with article preservation)
+        const titleFirstPattern = new RegExp(`(le\\s+)?${escapedTitle}\\s+${escapedFirstName}${E}`, 'gi');
+        if (titleFirstPattern.test(processedText)) {
+          processedText = processedText.replace(titleFirstPattern, (match) => {
+            const hasLe = match.toLowerCase().startsWith('le ');
+            return (hasLe ? 'le ' : '') + originalName.fullName;
+          });
+          metadata.name_restorations.push({
+            from: `${originalName.title} ${originalName.firstName}`,
+            to: originalName.fullName,
+            reason: 'title_first_truncation_detected',
+            type: 'auto_fix'
+          });
+          return;
+        }
+      }
+    });
+    
+    // Check for name inconsistencies in original content (suggestions only)
+    const nameVariants = new Map();
+    originalNames.forEach((name: any) => {
+      if (name.isComplete && name.firstName) {
+        const key = name.firstName.toLowerCase();
+        if (!nameVariants.has(key)) {
+          nameVariants.set(key, []);
+        }
+        nameVariants.get(key).push(name.lastName);
+      }
+    });
+    
+    // Add suggestions for name inconsistencies
+    nameVariants.forEach((lastNames, firstName) => {
+      if (lastNames.length > 1) {
+        const uniqueLastNames = [...new Set(lastNames)];
+        if (uniqueLastNames.length > 1) {
+          metadata.suggestions.push({
+            type: 'name_inconsistency',
+            message: `Multiple last name variants found for "${firstName}": ${uniqueLastNames.join(', ')}. Please verify spelling.`,
+            firstName,
+            variants: uniqueLastNames
+          });
+        }
+      }
+    });
+    
+    // Final validation - only add violations for unresolved issues
+    const validation = NamePreservationEngine.validateNamePreservation(originalContent, processedText, language);
+    
+    // Filter out violations that were already auto-fixed
+    const unresolvedViolations = validation.violations.filter(violation => {
+      // Check if this violation was already addressed by our auto-fixes
+      return !metadata.name_restorations.some((restoration: any) => 
+        violation.includes(restoration.from) || violation.includes(restoration.to)
+      );
+    });
+    
+    violations.push(...unresolvedViolations);
+    
+    return { text: processedText, violations, metadata };
+  }
 }
 
 /**
@@ -635,6 +747,12 @@ export class Section7AIFormatter {
     allViolations.push(...sectionHeaderResult.violations);
     if (sectionHeaderResult.violations.length > 0) guardApplied.push('SectionHeaderGuard');
     
+    // CRITICAL: NamePreservationGuard - MUST be applied early
+    const namePreservationResult = Section7Guards.namePreservationGuard(processedText, _originalContent, language);
+    processedText = namePreservationResult.text;
+    allViolations.push(...namePreservationResult.violations);
+    if (namePreservationResult.violations.length > 0) guardApplied.push('NamePreservationGuard');
+    
     const terminologyResult = Section7Guards.terminologyGuard(processedText, language);
     processedText = terminologyResult.text;
     allViolations.push(...terminologyResult.violations);
@@ -662,7 +780,8 @@ export class Section7AIFormatter {
     
     // SECTION7_GUARD: Make QA a hard gate
     const criticalViolations = allViolations.filter(v => 
-      ['date_first_opener', 'worker_first', 'chronology_fail', 'incomplete_quotes'].includes(v)
+      ['date_first_opener', 'worker_first', 'chronology_fail', 'incomplete_quotes', 'name_truncation_fixed'].includes(v) ||
+      v.startsWith('CRITICAL: Doctor name truncated')
     );
     
     const finalOk = criticalViolations.length === 0 && aiResponse.ok;

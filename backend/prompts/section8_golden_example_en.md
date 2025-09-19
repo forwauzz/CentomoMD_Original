@@ -1,5 +1,3 @@
-8. Subjective questionnaire and current condition
-
 Subjective appreciation of progression: The worker reports significant improvement since her accident. She reports that in recent months, she has observed little improvement in her condition and judges that she has reached a therapeutic plateau in physiotherapy and occupational therapy. She has doubts about her ability to resume her work as an adapted taxi driver given the step she must still use to get in and out of her vehicle. She also doubts being able to push or pull patients in wheelchairs. She estimates her improvement at approximately 75 to 80% of her baseline condition.
 
 Complaints and problems: She mainly complains of intermittent burning sensations in her right calf and in the anterior aspect of her right leg. She cannot report any triggering factors for her pain and they occur suddenly. She reports pain in the right ankle especially at the end of joint range of motion. She reports having less pain and better tolerance to effort when she does warm-ups before her activities as prescribed and demonstrated in physiotherapy.

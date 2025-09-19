@@ -85,6 +85,7 @@ export interface FeedbackStoreActions {
   exportAll: () => Promise<{ json: Blob; files: Array<{ key: string; blob: Blob }> }>;
   nukeAll: () => Promise<void>;
   pruneExpiredNow: () => Promise<void>;
+  loadServerFeedback: () => Promise<void>;
 }
 
 export type FeedbackStore = FeedbackStoreState & FeedbackStoreActions;

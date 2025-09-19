@@ -157,7 +157,7 @@ export class Section7AIFormatter {
 
   /**
    * Construct comprehensive system prompt from all components (Flowchart Step 2-4)
-   * Implements exact system prompt assembly from flowchart
+   * Implements exact system prompt assembly from flowchart with enhanced name preservation
    */
   private static constructSystemPrompt(
     promptFiles: { masterPrompt: string; jsonConfig: any; goldenExample: string },
@@ -165,16 +165,20 @@ export class Section7AIFormatter {
     correlationId: string
   ): { systemPrompt: string; promptLength: number } {
     try {
-      console.log(`[${correlationId}] 🔧 Constructing comprehensive system prompt (Steps 2-4)`);
+      console.log(`[${correlationId}] 🔧 Constructing comprehensive system prompt with enhanced name preservation (Steps 2-4)`);
       
-      // STEP 2: Start with master prompt (Base foundation)
-      let systemPrompt = promptFiles.masterPrompt;
+      // STEP 1: Start with CRITICAL name preservation rules (Priority #1)
+      const { NamePreservationEngine } = require('./NamePreservationEngine');
+      let systemPrompt = NamePreservationEngine.generateNamePreservationPrompt(language);
+      
+      // STEP 2: Add master prompt (Base foundation)
+      systemPrompt += '\n\n' + promptFiles.masterPrompt;
       
       // STEP 3: Add golden example (Reference structure)
       systemPrompt += '\n\n## REFERENCE EXAMPLE:\n';
       systemPrompt += language === 'fr' 
-        ? 'Utilise cet exemple uniquement comme **référence de structure et de style**. Ne pas copier mot à mot. Adapter au contenu dicté.\n\n'
-        : 'Use this example only as a **reference for structure and style**. Do not copy word for word. Adapt to the dictated content.\n\n';
+        ? 'Utilise cet exemple uniquement comme **référence de structure et de style**. CRITIQUE: Notez comment les noms complets des médecins sont préservés. Ne pas copier mot à mot. Adapter au contenu dicté.\n\n'
+        : 'Use this example only as a **reference for structure and style**. CRITICAL: Note how complete doctor names are preserved. Do not copy word for word. Adapt to the dictated content.\n\n';
       systemPrompt += promptFiles.goldenExample;
       
       // STEP 4: Add JSON configuration rules (Rules & validation)
@@ -182,9 +186,10 @@ export class Section7AIFormatter {
       
       const promptLength = systemPrompt.length;
       
-      console.log(`[${correlationId}] ✅ System prompt constructed successfully`, {
+      console.log(`[${correlationId}] ✅ Enhanced system prompt constructed successfully`, {
         totalLength: promptLength,
         components: {
+          namePreservationRules: NamePreservationEngine.generateNamePreservationPrompt(language).length,
           masterPrompt: promptFiles.masterPrompt.length,
           goldenExample: promptFiles.goldenExample.length,
           jsonConfig: systemPrompt.length - promptFiles.masterPrompt.length - promptFiles.goldenExample.length
@@ -194,8 +199,8 @@ export class Section7AIFormatter {
       return { systemPrompt, promptLength };
       
     } catch (error) {
-      console.error(`[${correlationId}] ❌ Failed to construct system prompt:`, error);
-      throw new Error('Failed to construct Section 7 system prompt');
+      console.error(`[${correlationId}] ❌ Failed to construct enhanced system prompt:`, error);
+      throw new Error('Failed to construct Section 7 enhanced system prompt');
     }
   }
 
@@ -387,62 +392,32 @@ export class Section7AIFormatter {
       suggestions.push('Verify medical terminology preservation');
     }
     
-    // DOCTOR NAME PRESERVATION FIX: Restore truncated doctor names
-    console.log(`[${correlationId}] 🔧 Applying doctor name preservation fix`);
-    let fixedFormatted = cleanedFormatted;
+    // ENHANCED DOCTOR NAME PRESERVATION: Use NamePreservationEngine
+    console.log(`[${correlationId}] 🔧 Applying enhanced doctor name preservation`);
+    const { NamePreservationEngine } = require('./NamePreservationEngine');
     
-    // Extract full doctor names from original content
-    const doctorNamePattern = /(docteur|dr\.?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z-]+)*)/gi;
-    const originalDoctorNames = originalContent.match(doctorNamePattern) || [];
+    // Validate name preservation
+    const nameValidation = NamePreservationEngine.validateNamePreservation(originalContent, cleanedFormatted, language);
     
-    // Create a map of truncated names to full names
-    const nameMap = new Map<string, string>();
-    originalDoctorNames.forEach(fullName => {
-      const parts = fullName.split(/\s+/);
-      if (parts.length >= 3) { // Has first and last name
-        const title = parts[0]; // "docteur" or "dr."
-        const firstName = parts[1]; // First name
-        const truncatedName = `${title} ${firstName}`;
-        nameMap.set(truncatedName.toLowerCase(), fullName);
-      }
-    });
+    if (!nameValidation.success) {
+      console.warn(`[${correlationId}] 🚨 Name preservation issues detected:`, nameValidation.violations);
+      validationIssues.push(...nameValidation.violations);
+    }
     
-    // Only replace if the name is actually truncated (not already full)
-    let namesFixed = 0;
-    nameMap.forEach((fullName, truncatedName) => {
-      // Check if the truncated version exists but the full version doesn't
-      const truncatedRegex = new RegExp(`\\b${truncatedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      const fullNameRegex = new RegExp(`\\b${fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      
-      if (truncatedRegex.test(fixedFormatted) && !fullNameRegex.test(fixedFormatted)) {
-        fixedFormatted = fixedFormatted.replace(truncatedRegex, fullName);
-        namesFixed++;
-      }
-    });
+    // Restore truncated names
+    const restorationResult = NamePreservationEngine.restoreTruncatedNames(originalContent, cleanedFormatted, language);
     
-    // SPECIAL FIX: Handle AI name standardization errors (e.g., "Durousseau" → "Durusso")
-    const nameStandardizationFixes = [
-      { wrong: 'docteur Durusso', correct: 'docteur Durousseau' },
-      { wrong: 'docteur Bouchard', correct: 'docteur Bouchard-Bellavance' }
-    ];
-    
-    nameStandardizationFixes.forEach(fix => {
-      const wrongRegex = new RegExp(`\\b${fix.wrong.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      const correctRegex = new RegExp(`\\b${fix.correct.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      
-      // Only fix if the wrong version exists and the correct version doesn't
-      if (wrongRegex.test(fixedFormatted) && !correctRegex.test(fixedFormatted)) {
-        fixedFormatted = fixedFormatted.replace(wrongRegex, fix.correct);
-        namesFixed++;
-        console.log(`[${correlationId}] 🔧 Fixed name standardization: "${fix.wrong}" → "${fix.correct}"`);
-      }
-    });
-    
-    if (namesFixed > 0) {
-      console.log(`[${correlationId}] ✅ Doctor names restored: ${namesFixed} names fixed`);
-      cleanedFormatted = fixedFormatted;
+    if (restorationResult.namesRestored > 0) {
+      console.log(`[${correlationId}] ✅ Doctor names restored: ${restorationResult.namesRestored} names fixed`);
+      cleanedFormatted = restorationResult.restoredContent;
+      suggestions.push(`Restored ${restorationResult.namesRestored} truncated doctor names`);
     } else {
       console.log(`[${correlationId}] ✅ Doctor names already complete - no fixes needed`);
+    }
+    
+    // Add name preservation suggestions
+    if (nameValidation.suggestions.length > 0) {
+      suggestions.push(...nameValidation.suggestions);
     }
     
     console.log(`[${correlationId}] ✅ Post-processing completed`, {

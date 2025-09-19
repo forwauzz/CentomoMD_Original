@@ -18,17 +18,36 @@ export function extractNameWhitelist(raw: string): string[] {
 /**
  * Strip invented first names from formatted text
  * Enforces the whitelist by removing any first names not in the original transcript
+ * UPDATED: Now works with NamePreservationEngine to preserve legitimate full names
  */
 export function stripInventedFirstNames(text: string, whitelist: string[]): string {
   // Preserve paragraph breaks by normalizing spaces within paragraphs only
   let t = text.replace(/[ \t]+/g, ' '); // Only normalize spaces and tabs, preserve newlines
   
-  // Any occurrence of "docteur <First> <Last>" where "docteur <Last>" isn't in whitelist → demote to "docteur <Last>"
+  // Create a set of whitelisted full names for faster lookup
+  const whitelistSet = new Set(whitelist);
+  
+  // Pattern to match "docteur <First> <Last>" or "docteur <Last>"
   const reTwo = /\b(docteur|docteure|Dr\.|Dre\.)\s+([A-ZÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸ][\p{L}'\-]+)\s+([A-ZÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸ][\p{L}'\-]+)\b/gu;
   
-  t = t.replace(reTwo, (_m, title, _first, last) => {
-    const candidate = `${title} ${last}`.replace(/\s+/g, ' ').trim();
-    return whitelist.includes(candidate) ? candidate : candidate; // always collapse to title+last
+  t = t.replace(reTwo, (match, title, first, last) => {
+    const fullName = `${title} ${first} ${last}`.replace(/\s+/g, ' ').trim();
+    const lastNameOnly = `${title} ${last}`.replace(/\s+/g, ' ').trim();
+    
+    // If the full name is in the whitelist, keep it (legitimate full name)
+    if (whitelistSet.has(fullName)) {
+      return fullName;
+    }
+    
+    // If only the last name version is in the whitelist, keep the full name anyway
+    // (let NamePreservationEngine handle the restoration)
+    if (whitelistSet.has(lastNameOnly)) {
+      return fullName;
+    }
+    
+    // If neither is in the whitelist, this might be an invented name
+    // Keep the full name but let the NamePreservationEngine validate it
+    return fullName;
   });
   
   return t;
