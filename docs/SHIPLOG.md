@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-01-19 00:16 — [chore/supabase-audit] security: remove hardcoded credentials from documentation — commit:9c06bd6
+
 ## 2025-01-18 20:15 — [chore/supabase-audit] chore(audit): comprehensive Supabase architecture audit - add scripts/supabase-smoke-app.ts for non-destructive testing, add docs/supabase-audit.md with detailed findings and recommendations, update package.json with supabase:smoke:app script, audit covers client initialization, auth flows, data access, RLS queries, identifies critical issues: missing email normalization, no email validation, provides structured analysis of client/server Supabase usage patterns, includes risk assessment and prioritized recommendations, smoke script tests client config, admin operations, optional sign-up flow — commit:a1b2c3d
 
 ## 2025-01-18 19:45 — [main] feat(auth): add Dr. Centomo user creation scripts and documentation - add create-dr-centomo-user.js with Supabase Admin API integration, add create-dr-centomo-curl.bat as alternative curl-based method, add create-dr-centomo-manual.md with dashboard creation guide, include error handling and user existence checking, support for production environment user creation, provide multiple fallback methods for user creation when Admin API fails — commit:8f2a1b3
