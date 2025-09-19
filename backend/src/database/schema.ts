@@ -154,6 +154,9 @@ export const feedback = pgTable('feedback', {
   content: jsonb('content').notNull(), // Full FeedbackItem JSON
   created_at: timestamp('created_at').defaultNow().notNull(),
   ttl_days: integer('ttl_days').notNull().default(30), // Configurable TTL
+  user_id: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  template_id: uuid('template_id').references(() => templates.id, { onDelete: 'set null' }),
 });
 
 // Relations
@@ -162,6 +165,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   audit_logs: many(audit_logs),
   export_history: many(export_history),
   memberships: many(memberships),
+  feedback: many(feedback),
 }));
 
 export const profilesRelations = relations(profiles, ({ one }) => ({
@@ -199,6 +203,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   audit_logs: many(audit_logs),
   export_history: many(export_history),
   artifacts: many(artifacts),
+  feedback: many(feedback),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -210,6 +215,22 @@ export const transcriptsRelations = relations(transcripts, ({ one }) => ({
 
 export const templatesRelations = relations(templates, ({ many }) => ({
   voice_command_mappings: many(voice_command_mappings),
+  feedback: many(feedback),
+}));
+
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(users, {
+    fields: [feedback.user_id],
+    references: [users.id],
+  }),
+  session: one(sessions, {
+    fields: [feedback.session_id],
+    references: [sessions.id],
+  }),
+  template: one(templates, {
+    fields: [feedback.template_id],
+    references: [templates.id],
+  }),
 }));
 
 export const voiceCommandMappingsRelations = relations(voice_command_mappings, ({ one }) => ({

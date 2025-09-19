@@ -2169,7 +2169,7 @@ const feedbackReadRateLimit = rateLimit({
 // Save feedback to database
 app.post('/api/feedback', feedbackRateLimit, async (req, res): Promise<void> => {
   try {
-    const { content, ttl_days = 30 } = req.body;
+    const { content, ttl_days = 30, user_id, session_id, template_id } = req.body;
     
     // Input validation
     if (!content) {
@@ -2216,10 +2216,39 @@ app.post('/api/feedback', feedbackRateLimit, async (req, res): Promise<void> => 
       return;
     }
 
+    // Validate foreign key fields (optional but must be valid UUIDs if provided)
+    if (user_id && typeof user_id !== 'string') {
+      res.status(400).json({ 
+        success: false, 
+        error: 'user_id must be a valid UUID string' 
+      });
+      return;
+    }
+    if (session_id && typeof session_id !== 'string') {
+      res.status(400).json({ 
+        success: false, 
+        error: 'session_id must be a valid UUID string' 
+      });
+      return;
+    }
+    if (template_id && typeof template_id !== 'string') {
+      res.status(400).json({ 
+        success: false, 
+        error: 'template_id must be a valid UUID string' 
+      });
+      return;
+    }
+
+    // Note: Context fields are optional for now to allow anonymous feedback
+    // In the future, we might want to require at least one context field
+
     const db = getDb();
     const [newFeedback] = await db.insert(feedback).values({
       content,
-      ttl_days
+      ttl_days,
+      user_id: user_id || null,
+      session_id: session_id || null,
+      template_id: template_id || null,
     }).returning();
 
     if (!newFeedback) {
@@ -2235,6 +2264,9 @@ app.post('/api/feedback', feedbackRateLimit, async (req, res): Promise<void> => 
       id: newFeedback.id,
       contentSize,
       ttl_days,
+      user_id: user_id || null,
+      session_id: session_id || null,
+      template_id: template_id || null,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
       timestamp: new Date().toISOString()

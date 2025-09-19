@@ -1241,6 +1241,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       <FeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
+        sessionId={sessionId}
+        templateId={selectedTemplate?.id}
       />
     </div>
   );

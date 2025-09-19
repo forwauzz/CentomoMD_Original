@@ -13,13 +13,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { FEEDBACK_STRINGS } from '@/types/feedback';
 import { useFeedbackStore } from '@/stores/feedbackStore';
+import { useAuth } from '@/lib/authClient';
 
 interface FullCaseFormProps {
   onClose: () => void;
+  sessionId?: string;
+  templateId?: string;
 }
 
-export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose }) => {
+export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose, sessionId, templateId }) => {
   const { addItem } = useFeedbackStore();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [containsPhi, setContainsPhi] = useState(false);
   
@@ -87,8 +91,12 @@ export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose }) => {
         ttl_days: 30,
       };
 
-      // Save to store
-      await addItem(feedbackItem);
+      // Save to store with context
+      await addItem(feedbackItem, {}, {
+        user_id: user?.id || undefined,
+        session_id: sessionId || undefined,
+        template_id: templateId || undefined,
+      });
       
       // Reset form
       setRunContext({

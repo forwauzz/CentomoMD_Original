@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import { feedbackDB } from '../lib/idb';
 import { FeedbackItem, FeedbackFilters, FeedbackStore } from '../types/feedback';
+import { useAuth } from '../lib/authClient';
+import { apiFetch } from '../lib/api';
 
 export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
   // Initial state
@@ -71,7 +73,7 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
     }
   },
 
-  addItem: async (itemData, blobs = {}) => {
+  addItem: async (itemData, blobs = {}, context = {}) => {
     const { flagEnabled } = get();
     if (!flagEnabled) return;
 
@@ -103,23 +105,17 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
 
       // NEW: Save to server (graceful failure)
       try {
-        const response = await fetch('/api/feedback', {
+        const result = await apiFetch('/api/feedback', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             content: item,
-            ttl_days: item.ttl_days || 30
+            ttl_days: item.ttl_days || 30,
+            user_id: context.user_id || null,
+            session_id: context.session_id || null,
+            template_id: context.template_id || null,
           })
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Server responded with ${response.status}`);
-        }
-
-        const result = await response.json();
         if (result.success) {
           console.log('✅ Feedback synced to server:', result.id);
         } else {
@@ -308,14 +304,7 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
     set({ isLoading: true, error: undefined });
 
     try {
-      const response = await fetch('/api/feedback?limit=100&offset=0');
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = await apiFetch('/api/feedback?limit=100&offset=0');
       
       if (result.success && result.items && result.items.length > 0) {
         // Filter out duplicates (items that already exist locally)

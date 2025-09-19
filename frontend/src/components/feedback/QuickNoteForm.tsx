@@ -10,13 +10,17 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FEEDBACK_STRINGS } from '@/types/feedback';
 import { useFeedbackStore } from '@/stores/feedbackStore';
+import { useAuth } from '@/lib/authClient';
 
 interface QuickNoteFormProps {
   onClose: () => void;
+  sessionId?: string;
+  templateId?: string;
 }
 
-export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose }) => {
+export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose, sessionId, templateId }) => {
   const { addItem } = useFeedbackStore();
+  const { user } = useAuth();
   const [ratings, setRatings] = useState({
     dictation: undefined as 'good' | 'meh' | 'bad' | undefined,
     transcription: undefined as 'good' | 'meh' | 'bad' | undefined,
@@ -65,8 +69,12 @@ export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose }) => {
         ttl_days: 30,
       };
 
-      // Save to store
-      await addItem(feedbackItem);
+      // Save to store with context
+      await addItem(feedbackItem, {}, {
+        user_id: user?.id || undefined,
+        session_id: sessionId || undefined,
+        template_id: templateId || undefined,
+      });
       
       // Reset form
       setRatings({

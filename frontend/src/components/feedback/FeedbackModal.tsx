@@ -18,11 +18,15 @@ import { ReviewTab } from './ReviewTab';
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
+  sessionId?: string;
+  templateId?: string;
 }
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  sessionId,
+  templateId
 }) => {
   const featureFlags = useFeatureFlags();
   const { init } = useFeedbackStore();
@@ -80,11 +84,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             
             <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
               <TabsContent value="quick-note" className="mt-0">
-                <QuickNoteForm onClose={onClose} />
+                <QuickNoteForm onClose={onClose} sessionId={sessionId} templateId={templateId} />
               </TabsContent>
               
               <TabsContent value="full-case" className="mt-0">
-                <FullCaseForm onClose={onClose} />
+                <FullCaseForm onClose={onClose} sessionId={sessionId} templateId={templateId} />
               </TabsContent>
               
               <TabsContent value="review" className="mt-0">

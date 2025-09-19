@@ -56,6 +56,9 @@ export interface FeedbackItem {
   attachments: string[]; // blob keys
   status: 'open' | 'triaged' | 'resolved';
   ttl_days?: number; // default 30
+  user_id?: string; // UUID of user who submitted feedback
+  session_id?: string; // UUID of session context
+  template_id?: string; // UUID of template context
 }
 
 export interface FeedbackFilters {
@@ -78,7 +81,7 @@ export interface FeedbackStoreState {
 
 export interface FeedbackStoreActions {
   init: (flagEnabled: boolean) => Promise<void>;
-  addItem: (item: Omit<FeedbackItem, 'id' | 'created_at'>, blobs?: Record<string, Blob>) => Promise<void>;
+  addItem: (item: Omit<FeedbackItem, 'id' | 'created_at'>, blobs?: Record<string, Blob>, context?: { user_id?: string; session_id?: string; template_id?: string }) => Promise<void>;
   updateItem: (id: string, partial: Partial<FeedbackItem>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   setFilters: (filters: Partial<FeedbackFilters>) => void;
