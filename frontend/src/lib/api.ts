@@ -65,3 +65,53 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
   const response = await fetch(url, { ...defaultOptions, ...options });
   return parseJsonResponse(response);
 }
+
+/**
+ * Get authentication token from localStorage
+ * @returns Token string or null if not available
+ */
+function getAuthToken(): string | null {
+  try {
+    const token = localStorage.getItem('access_token');
+    return token && token !== 'null' && token !== 'undefined' ? token : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Format transcript using Mode 2 API with proper Content-Type and conditional auth
+ * @param params - Formatting parameters
+ * @returns Formatted result
+ */
+export async function formatWithMode2(params: {
+  transcript: string;
+  section: string;                 // e.g. "8"
+  templateKey?: string;            // e.g. "section8-ai-formatter"
+  templateCombo?: string;          // e.g. "universal-cleanup"
+  language?: string;               // e.g. "en-US"
+}): Promise<any> {
+  const { transcript, section, templateKey, templateCombo, language } = params;
+
+  const token = getAuthToken();
+  const url = apiUrl('/api/format/mode2');
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      transcript,           // REQUIRED: lowercase key, string
+      section,
+      case_id: templateKey,
+      templateCombo,
+      language,
+    }),
+  });
+
+  return parseJsonResponse(response);
+}

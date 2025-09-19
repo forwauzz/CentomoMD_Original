@@ -18,7 +18,7 @@ import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { FeedbackFab } from '@/components/feedback/FeedbackFab';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, formatWithMode2 } from '@/lib/api';
 import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 
 interface TranscriptionInterfaceProps {
@@ -131,18 +131,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       throw new Error('Transcript is empty or invalid. Please ensure you have transcribed content before applying templates.');
     }
     
-    const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({
-        transcript: rawTranscript,
-        section: section,
-        language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
-        case_id: template.id,
-        templateCombo: 'universal-cleanup'
-      })
+    const result = await formatWithMode2({
+      transcript: rawTranscript,
+      section: section,
+      templateKey: template.id,
+      templateCombo: 'universal-cleanup',
+      language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
     });
     
     setFormattingProgress('Formatting...');
@@ -548,15 +542,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setFormattingProgress('Processing clinical extraction...');
           
           // Call Mode 2 formatter with clinical extraction template combination
-          const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
-            method: 'POST',
-            body: JSON.stringify({
-              transcript: rawTranscript,
-              section: '7',
-              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
-              templateCombo: 'template-clinical-extraction',
-              correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-            })
+          const result = await formatWithMode2({
+            transcript: rawTranscript,
+            section: '7',
+            language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+            templateCombo: 'template-clinical-extraction'
           });
           
           setFormattingProgress('Clinical extraction completed');
@@ -600,8 +590,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         try {
           setFormattingProgress('Checking authentication...');
           
-          // Import apiFetch and auth utilities
-          const { apiFetch } = await import('../../lib/api');
+          // Use apiFetch and auth utilities
           const { supabase } = await import('../../lib/authClient');
           
           // Check if user is authenticated
@@ -637,19 +626,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           });
           
           // Call Mode2Formatter API for Section 7 using proper authentication
-          const result = await apiFetch<UniversalCleanupResponse>('/api/format/mode2', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              transcript: rawTranscript,
-              section: '7',
-              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
-              templateCombo,
-              verbatimSupport,
-              voiceCommandsSupport
-            })
+          const result = await formatWithMode2({
+            transcript: rawTranscript,
+            section: '7',
+            language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+            templateCombo
           });
           
           console.log('Section 7 AI formatting successful');

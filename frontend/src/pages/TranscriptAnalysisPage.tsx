@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, formatWithMode2 } from '@/lib/api';
 // Using TemplateContext for standardized template loading
 import { TemplatePreview } from '@/components/transcription/TemplatePreview';
 import { useTemplates } from '@/contexts/TemplateContext';
@@ -236,19 +236,12 @@ export const TranscriptAnalysisPage: React.FC = () => {
     console.log(`[Template Processing] Using section: ${section} for template: ${templateId}`);
     
     // Call the same backend endpoint as dictation page
-    const response = await apiFetch<any>('/api/format/mode2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        transcript: content,
-        section: section,
-        language: detectLanguage(content),
-        templateCombo: templateId,
-        verbatimSupport: false,
-        voiceCommandsSupport: false
-      })
+    const response = await formatWithMode2({
+      transcript: content,
+      section: section,
+      language: detectLanguage(content),
+      templateKey: templateId,
+      templateCombo: templateId
     });
 
     if (!response.success) {
