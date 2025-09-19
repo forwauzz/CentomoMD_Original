@@ -194,54 +194,11 @@ export class Section7AIFormatter {
   }
 
   /**
-   * NEW: Get doctor name preservation rules as the FIRST and MOST IMPORTANT instructions
+   * NEW: Get doctor name preservation rules using unified engine
    */
   private static getDoctorNamePreservationRules(language: 'fr' | 'en'): string {
-    if (language === 'fr') {
-      return `# 🚨 RÈGLE CRITIQUE #1 - PRÉSERVATION DES NOMS DE MÉDECINS
-
-## RÈGLE ABSOLUE - JAMAIS TRONQUER LES NOMS DE MÉDECINS
-- **PRÉSERVE TOUJOURS** les noms complets avec prénom + nom de famille quand disponibles
-- **FORMAT OBLIGATOIRE**: "docteur [Prénom] [Nom de famille]" (ex: "docteur Jean-Pierre Martin")
-- **JAMAIS** de noms tronqués ou partiels - utilise le nom complet disponible
-- **RÈGLE ABSOLUE**: Dans les documents médicaux/légaux, JAMAIS tronquer les noms professionnels
-- **VALIDATION LÉGALE**: Chaque référence médicale doit inclure prénom + nom pour validité légale
-
-## EXEMPLES CRITIQUES:
-✅ CORRECT: "docteur Harry Durusso" (nom complet préservé)
-❌ INCORRECT: "docteur Durusso" (prénom supprimé - INTERDIT)
-
-✅ CORRECT: "docteur Roxanne Bouchard-Bellavance" (nom complet préservé)
-❌ INCORRECT: "docteur Bouchard-Bellavance" (prénom supprimé - INTERDIT)
-
-## GESTION DES NOMS INCOMPLETS:
-- Si seul le prénom est disponible: "docteur [Prénom] (nom de famille non spécifié)"
-- Si seul le nom de famille est disponible: "docteur [Nom de famille] (prénom non spécifié)"
-
-## ⚠️ ATTENTION: Cette règle est CRITIQUE et doit être respectée à 100%`;
-    } else {
-      return `# 🚨 CRITICAL RULE #1 - DOCTOR NAME PRESERVATION
-
-## ABSOLUTE RULE - NEVER TRUNCATE DOCTOR NAMES
-- **PRESERVE ALWAYS** full names with first name + surname when available
-- **REQUIRED FORMAT**: "Dr. [First Name] [Last Name]" (ex: "Dr. Jean-Pierre Martin")
-- **NEVER** truncate or partial names - use the complete name available
-- **ABSOLUTE RULE**: In medical/legal documents, NEVER truncate professional names
-- **LEGAL VALIDATION**: Every medical reference must include first name + surname for legal validity
-
-## CRITICAL EXAMPLES:
-✅ CORRECT: "Dr. Harry Durusso" (full name preserved)
-❌ INCORRECT: "Dr. Durusso" (first name removed - FORBIDDEN)
-
-✅ CORRECT: "Dr. Roxanne Bouchard-Bellavance" (full name preserved)
-❌ INCORRECT: "Dr. Bouchard-Bellavance" (first name removed - FORBIDDEN)
-
-## INCOMPLETE NAME HANDLING:
-- If only first name available: "Dr. [First Name] (last name not specified)"
-- If only last name available: "Dr. [Last Name] (first name not specified)"
-
-## ⚠️ WARNING: This rule is CRITICAL and must be followed 100%`;
-    }
+    const { NamePreservationEngine } = require('./NamePreservationEngine');
+    return NamePreservationEngine.generateNamePreservationPrompt(language);
   }
 
   /**
@@ -444,45 +401,39 @@ export class Section7AIFormatter {
       .replace(/\s+$/, '') // Remove trailing whitespace
       .trim();
     
-    // CRITICAL FIX: Doctor name validation
+    // ENHANCED DOCTOR NAME VALIDATION: Use NamePreservationEngine
     const nameValidationIssues: string[] = [];
     const suggestions: string[] = [];
     
-    // Extract doctor names from original content
-    const doctorNamePattern = language === 'fr' 
-      ? /docteur\s+([A-Za-zÀ-ÿ\s-]+?)(?=,|\s+le\s+\d|$)/gi
-      : /Dr\.\s+([A-Za-z\s-]+?)(?=,|\s+on\s+\d|$)/gi;
+    const { NamePreservationEngine } = require('./NamePreservationEngine');
     
-    const originalMatches = originalContent.match(doctorNamePattern) || [];
-    const formattedMatches = cleanedFormatted.match(doctorNamePattern) || [];
+    // Validate name preservation
+    const nameValidation = NamePreservationEngine.validateNamePreservation(originalContent, cleanedFormatted, language);
     
-    console.log(`[${correlationId}] Doctor name validation:`, {
-      originalNames: originalMatches.length,
-      formattedNames: formattedMatches.length,
-      originalNamesList: originalMatches,
-      formattedNamesList: formattedMatches
-    });
+    if (!nameValidation.success) {
+      console.warn(`[${correlationId}] 🚨 Name preservation issues detected:`, nameValidation.violations);
+      nameValidationIssues.push(...nameValidation.violations);
+    }
     
-    // Check for name truncation
-    originalMatches.forEach(originalName => {
-      const cleanOriginalName = originalName.trim();
-      const nameParts = cleanOriginalName.split(/\s+/);
-      
-      if (nameParts.length >= 3) { // Has title + first name + last name
-        const firstName = nameParts[1];
-        const lastName = nameParts[nameParts.length - 1];
-        const truncatedVersion = `${nameParts[0]} ${lastName}`;
-        
-        // Check if the truncated version exists but full name doesn't
-        if (cleanedFormatted.includes(truncatedVersion) && !cleanedFormatted.includes(cleanOriginalName)) {
-          nameValidationIssues.push(`CRITICAL: Doctor name truncated - "${cleanOriginalName}" became "${truncatedVersion}"`);
-          console.error(`[${correlationId}] 🚨 NAME TRUNCATION DETECTED:`, {
-            original: cleanOriginalName,
-            truncated: truncatedVersion,
-            missingFirstName: firstName
-          });
-        }
-      }
+    // Restore truncated names
+    const restorationResult = NamePreservationEngine.restoreTruncatedNames(originalContent, cleanedFormatted, language);
+    
+    if (restorationResult.namesRestored > 0) {
+      console.log(`[${correlationId}] ✅ Doctor names restored: ${restorationResult.namesRestored} names fixed`);
+      cleanedFormatted = restorationResult.restoredContent;
+      suggestions.push(`Restored ${restorationResult.namesRestored} truncated doctor names`);
+    }
+    
+    // Add name preservation suggestions
+    if (nameValidation.suggestions.length > 0) {
+      suggestions.push(...nameValidation.suggestions);
+    }
+    
+    console.log(`[${correlationId}] Enhanced doctor name validation:`, {
+      originalNames: nameValidation.preservedNames.length,
+      truncatedNames: nameValidation.truncatedNames.length,
+      namesRestored: restorationResult.namesRestored,
+      violations: nameValidation.violations.length
     });
     
     // Check worker-first rule
