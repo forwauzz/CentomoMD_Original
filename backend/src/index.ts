@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Import environment validation (this will validate and throw if invalid)
+import './env.js';
+
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
 import { transcriptionService } from './services/transcriptionService.js';
@@ -18,6 +21,7 @@ import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
+import { PORT } from './env.js';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
@@ -2341,7 +2345,6 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    const PORT = process.env.PORT || 3001;
     server.listen(PORT, () => {
       console.log(`✅ Backend listening on port ${PORT}`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
@@ -2366,7 +2369,6 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`✅ Backend listening on port ${PORT}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");

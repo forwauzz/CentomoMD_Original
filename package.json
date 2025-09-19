@@ -17,7 +17,8 @@
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test",
-    "supabase:smoke:app": "tsx scripts/supabase-smoke-app.ts"
+    "supabase:smoke:app": "tsx scripts/supabase-smoke-app.ts",
+    "admin:create-user": "tsx scripts/admin-create-user.ts"
   },
   "keywords": [
     "medical",
