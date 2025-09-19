@@ -101,6 +101,36 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
       // Save to IDB
       await feedbackDB.saveItem(item);
 
+      // NEW: Save to server (graceful failure)
+      try {
+        const response = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: item,
+            ttl_days: item.ttl_days || 30
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          console.log('✅ Feedback synced to server:', result.id);
+        } else {
+          throw new Error(result.error || 'Unknown server error');
+        }
+      } catch (serverError) {
+        console.warn('⚠️ Failed to sync feedback to server:', serverError);
+        // Continue - don't fail the whole operation
+        // Could add a retry mechanism here in the future
+      }
+
       // Update state
       set((state) => ({
         items: [...state.items, item],
@@ -267,6 +297,52 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to prune expired items:', error);
+    }
+  },
+
+  // Optional: Load server feedback (for cross-account access)
+  loadServerFeedback: async () => {
+    const { flagEnabled } = get();
+    if (!flagEnabled) return;
+
+    set({ isLoading: true, error: undefined });
+
+    try {
+      const response = await fetch('/api/feedback?limit=100&offset=0');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.items && result.items.length > 0) {
+        // Filter out duplicates (items that already exist locally)
+        const existingIds = new Set(get().items.map(item => item.id));
+        const newItems = result.items.filter((item: any) => !existingIds.has(item.id));
+        
+        if (newItems.length > 0) {
+          set((state) => ({
+            items: [...state.items, ...newItems],
+            isLoading: false
+          }));
+          console.log(`✅ Loaded ${newItems.length} new feedback items from server`);
+        } else {
+          console.log('ℹ️ No new feedback items from server');
+          set({ isLoading: false });
+        }
+      } else {
+        console.log('ℹ️ No feedback items available from server');
+        set({ isLoading: false });
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load server feedback:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to load server feedback',
+        isLoading: false 
+      });
+      // Don't fail - this is optional
     }
   },
 }));

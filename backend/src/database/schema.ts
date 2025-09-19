@@ -148,6 +148,14 @@ export const artifacts = pgTable('artifacts', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Feedback table for development feedback collection
+export const feedback = pgTable('feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  content: jsonb('content').notNull(), // Full FeedbackItem JSON
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  ttl_days: integer('ttl_days').notNull().default(30), // Configurable TTL
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -257,6 +265,7 @@ export type DatabaseSchema = {
   voice_command_mappings: typeof voice_command_mappings;
   export_history: typeof export_history;
   artifacts: typeof artifacts;
+  feedback: typeof feedback;
 };
 
 // Row types
@@ -282,3 +291,5 @@ export type ExportHistory = typeof export_history.$inferSelect;
 export type NewExportHistory = typeof export_history.$inferInsert;
 export type Artifact = typeof artifacts.$inferSelect;
 export type NewArtifact = typeof artifacts.$inferInsert;
+export type Feedback = typeof feedback.$inferSelect;
+export type NewFeedback = typeof feedback.$inferInsert;
