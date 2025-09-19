@@ -6,6 +6,19 @@
  */
 
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from the backend directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const result = dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
+if (result.error) {
+  console.error('❌ Error loading .env file:', result.error);
+  process.exit(1);
+}
 
 // Define the environment schema with validation rules
 const envSchema = z.object({
@@ -19,7 +32,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url('DATABASE_URL must be a valid URL'),
   
   // Server Configuration
-  PORT: z.string().regex(/^\d+$/, 'PORT must be a number').transform(Number).optional().default(3001),
+  PORT: z.string().regex(/^\d+$/, 'PORT must be a number').transform(Number).optional().default('3001'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   
   // AWS Configuration (optional for some features)
@@ -35,12 +48,22 @@ const envSchema = z.object({
   
   // Rate Limiting
   RATE_LIMIT_ENABLED: z.string().transform(val => val === 'true').default('true'),
-  RATE_LIMIT_WINDOW_MS: z.string().regex(/^\d+$/).transform(Number).default(900000), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: z.string().regex(/^\d+$/).transform(Number).default(100),
+  RATE_LIMIT_WINDOW_MS: z.string().regex(/^\d+$/).transform(Number).default('900000'), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: z.string().regex(/^\d+$/).transform(Number).default('100'),
 });
 
 // Parse and validate environment variables
-export const env = envSchema.parse(process.env);
+let env;
+try {
+  env = envSchema.parse(process.env);
+} catch (error) {
+  console.error('❌ Environment validation failed:', error);
+  console.error('💡 Make sure your .env file is in the backend directory and contains all required variables');
+  console.error('📋 Required variables: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET, DATABASE_URL');
+  process.exit(1);
+}
+
+export { env };
 
 // Export individual validated variables for convenience
 export const {

@@ -1,13 +1,9 @@
+// Import environment validation (this will load dotenv and validate)
+import './env.js';
+
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
-
-// Import environment validation (this will validate and throw if invalid)
-import './env.js';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
