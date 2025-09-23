@@ -109,7 +109,9 @@ export const CNESST_SECTIONS = [
 
 // App Routes
 export const ROUTES = {
+  SPECIALTY_SELECTION: '/specialty-selection',
   DASHBOARD: '/dashboard',
+  NEURO_DASHBOARD: '/neuro-dashboard',
   NEW_CASE: '/case/new',
   TEMPLATES: '/templates',
   TEMPLATE_COMBINATIONS: '/template-combinations',

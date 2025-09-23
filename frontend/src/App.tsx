@@ -23,19 +23,23 @@ import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
+import { SpecialtyProvider } from '@/contexts/SpecialtyContext';
+import { SpecialtySelectionPage } from '@/pages/SpecialtySelectionPage';
 
 function App() {
   const featureFlags = useFeatureFlags();
 
   return (
-    <TemplateProvider>
-      <BrowserRouter>
-      <Routes>
-        {/* Auth and utility routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/unauthorized" element={<UnauthorizedPage />} />
-        <Route path="/select-clinic" element={<SelectClinicPage />} />
+    <SpecialtyProvider>
+      <TemplateProvider>
+        <BrowserRouter>
+        <Routes>
+          {/* Auth and utility routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/select-clinic" element={<SelectClinicPage />} />
+          <Route path="/specialty-selection" element={<SpecialtySelectionPage />} />
         
         {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
@@ -115,6 +119,7 @@ function App() {
       </Routes>
     </BrowserRouter>
     </TemplateProvider>
+    </SpecialtyProvider>
   );
 }
 
