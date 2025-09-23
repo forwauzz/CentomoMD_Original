@@ -8,6 +8,7 @@ import http from 'http';
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
 import { transcriptionService } from './services/transcriptionService.js';
+import { audioRecordingService } from './services/audioRecordingService.js';
 // import { templateLibrary } from './template-library/index.js'; // Archived - using core template registry instead
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
@@ -2097,6 +2098,74 @@ app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
   }
 });
 
+// AWS Troubleshooting Endpoints (Temporary)
+app.get('/api/troubleshoot/session/:id', async (req, res): Promise<void> => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!sessionId) {
+      res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+      return;
+    }
+
+    // Get transcription service troubleshooting data
+    const transcriptionData = transcriptionService.getTroubleshootingData(sessionId);
+    
+    // Get audio recording info
+    const audioInfo = audioRecordingService.getRecordingInfo(sessionId);
+    
+    res.json({
+      sessionId,
+      transcription: transcriptionData,
+      audio: audioInfo,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error fetching troubleshooting data:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch troubleshooting data' 
+    });
+  }
+});
+
+app.get('/api/troubleshoot/recordings', async (_req, res): Promise<void> => {
+  try {
+    const recordingFiles = await audioRecordingService.getRecordingFiles();
+    
+    res.json({
+      recordings: recordingFiles,
+      count: recordingFiles.length,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error fetching recording files:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch recording files' 
+    });
+  }
+});
+
+app.get('/api/troubleshoot/cleanup', async (_req, res): Promise<void> => {
+  try {
+    await audioRecordingService.cleanupOldRecordings();
+    
+    res.json({
+      message: 'Old recordings cleaned up successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error cleaning up recordings:', error);
+    res.status(500).json({ 
+      error: 'Failed to cleanup recordings' 
+    });
+  }
+});
+
 // Phase 0: Mode-specific AWS configuration function
 const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   const config = {
@@ -2212,6 +2281,9 @@ wss.on('connection', (ws, req) => {
           media_sample_rate_hz: msg.sampleRate ?? 16000
         });
 
+        // Start audio recording for troubleshooting (temporary)
+        await audioRecordingService.startRecording(sessionId, msg.sampleRate ?? 16000);
+
         // Start AWS stream (non-blocking) and expose feeder immediately
         const { pushAudio: feeder, endAudio: ender } =
           transcriptionService.startStreamingTranscription(
@@ -2271,6 +2343,9 @@ wss.on('connection', (ws, req) => {
         // Optional debug:
         // console.log('chunk bytes:', buf.length);
         pushAudio(new Uint8Array(buf));
+        
+        // Record audio for troubleshooting (temporary)
+        audioRecordingService.addAudioChunk(sessionId, new Uint8Array(buf));
       }
       return;
     }
@@ -2293,8 +2368,14 @@ wss.on('connection', (ws, req) => {
     } catch {}
   });
 
-  ws.on('close', () => {
+  ws.on('close', async () => {
     endAudio?.();
+    
+    // Stop audio recording for troubleshooting (temporary)
+    const audioFilePath = await audioRecordingService.stopRecording(sessionId);
+    if (audioFilePath) {
+      console.log(`🎙️ Audio recording saved: ${audioFilePath}`);
+    }
     
     // Clean up session
     if (activeSessions.has(sessionId)) {

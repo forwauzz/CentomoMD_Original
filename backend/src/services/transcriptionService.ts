@@ -10,10 +10,12 @@ import {
 } from '@aws-sdk/client-transcribe-streaming';
 import { config } from '../config/env.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
+import { complianceLogger } from '../utils/logger.js';
 
 export class TranscriptionService {
   private client: TranscribeStreamingClient;
   private activeStreams: Map<string, TranscriptResultStream> = new Map();
+  private sessionMetadata: Map<string, { awsRequestId?: string; awsSessionId?: string; startTime: Date }> = new Map();
 
   constructor() {
     this.client = new TranscribeStreamingClient({
@@ -70,11 +72,32 @@ export class TranscriptionService {
     // Create streaming command
     const command = new StartStreamTranscriptionCommand(cmdInput);
     
+    // Initialize session metadata
+    this.sessionMetadata.set(sessionId, { startTime: new Date() });
+
     // Start AWS handshake in background (don't await)
     this.client.send(command).then(async (response) => {
       try {
         if (!response.TranscriptResultStream) {
           throw new Error('Failed to create transcript result stream');
+        }
+
+        // Capture AWS request IDs from response headers
+        const metadata = this.sessionMetadata.get(sessionId);
+        if (metadata) {
+          // Note: AWS SDK v3 doesn't expose response headers directly in streaming responses
+          // We'll capture what we can from the response object
+          metadata.awsRequestId = (response as any).$metadata?.requestId;
+          metadata.awsSessionId = (response as any).$metadata?.sessionId;
+          
+          // Log AWS session initialization
+          complianceLogger.logTranscription(sessionId, 'aws_session_started', {
+            awsRequestId: metadata.awsRequestId,
+            awsSessionId: metadata.awsSessionId,
+            language: config.language_code,
+            showSpeakerLabels: config.show_speaker_labels,
+            partialResultsStability: config.partial_results_stability
+          });
         }
 
         // Store the stream for this session
@@ -163,6 +186,10 @@ export class TranscriptionService {
       }
     };
 
+    // Track speaker changes for inconsistency detection
+    let lastSpeaker: string | null = null;
+    let speakerChangeCount = 0;
+
     try {
       for await (const evt of stream as any) {
         if (!evt.TranscriptEvent) continue;
@@ -175,6 +202,24 @@ export class TranscriptionService {
           // FIX: partial flag (true means partial)
           // Extract speaker information (best-effort)
           const speaker = alt?.Items?.[0]?.Speaker || null;
+          
+          // Track speaker changes for troubleshooting
+          if (speaker && speaker !== lastSpeaker) {
+            speakerChangeCount++;
+            
+            // Log speaker changes for AWS troubleshooting
+            complianceLogger.logTranscription(sessionId, 'speaker_change', {
+              fromSpeaker: lastSpeaker,
+              toSpeaker: speaker,
+              changeCount: speakerChangeCount,
+              resultId: r.ResultId,
+              isPartial: r.IsPartial,
+              confidence: alt.Confidence,
+              transcript: alt.Transcript.substring(0, 100) // First 100 chars only
+            });
+            
+            lastSpeaker = speaker;
+          }
           
           // Build complete AWS result for Mode 3
           if (!r.IsPartial) {
@@ -193,7 +238,8 @@ export class TranscriptionService {
                     confidence: item.Confidence?.toString() || "0.0",
                     content: item.Content || ""
                   }],
-                  type: item.Type || "pronunciation"
+                  type: item.Type || "pronunciation",
+                  speaker: item.Speaker // Include speaker in items for debugging
                 });
               }
             }
@@ -252,6 +298,18 @@ export class TranscriptionService {
         (this as any).doneFlags.delete(sessionId);
       }
 
+      // Log session end for troubleshooting
+      const metadata = this.sessionMetadata.get(sessionId);
+      if (metadata) {
+        const duration = Date.now() - metadata.startTime.getTime();
+        complianceLogger.logTranscription(sessionId, 'session_ended', {
+          awsRequestId: metadata.awsRequestId,
+          awsSessionId: metadata.awsSessionId,
+          durationMs: duration
+        });
+        this.sessionMetadata.delete(sessionId);
+      }
+
       console.log(`Transcription stopped for session: ${sessionId}`);
     } catch (error) {
       console.error(`Error stopping transcription for session ${sessionId}:`, error);
@@ -287,6 +345,22 @@ export class TranscriptionService {
     return {
       activeStreams: this.activeStreams.size,
       region: config.aws.region
+    };
+  }
+
+  /**
+   * Get troubleshooting data for a session (for AWS support)
+   */
+  getTroubleshootingData(sessionId: string): { 
+    sessionMetadata?: { awsRequestId?: string; awsSessionId?: string; startTime: Date };
+    isActive: boolean;
+  } {
+    const metadata = this.sessionMetadata.get(sessionId);
+    const isActive = this.activeStreams.has(sessionId);
+    
+    return {
+      sessionMetadata: metadata ? { ...metadata } : undefined,
+      isActive
     };
   }
 
