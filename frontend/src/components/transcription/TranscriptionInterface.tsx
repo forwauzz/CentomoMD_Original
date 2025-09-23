@@ -19,6 +19,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { FeedbackFab } from '@/components/feedback/FeedbackFab';
 import { FeedbackModal } from '@/components/feedback/FeedbackModal';
+import { useNeuroSession } from '@/hooks/useNeuroSession';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -32,6 +33,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 }) => {
   const featureFlags = useFeatureFlags();
   const { language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
+  const { saveToNeuroSession } = useNeuroSession();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
   // Convert UI store language (fr/en) to dictation format (fr-CA/en-US)
@@ -330,6 +332,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setSaveSuccess(false);
 
     try {
+      // Handle Neuro session case
+      if (option.sectionId === 'neuro_session') {
+        // Save formatted content to Neuro session
+        saveToNeuroSession(transcriptToSave);
+        setSaveSuccess(true);
+        console.log('✅ Transcript saved to Neuro session');
+        return;
+      }
+
       // Save transcript to the selected section and text box
       const sectionData: Record<string, any> = {
         savedAt: new Date().toISOString(),
@@ -359,7 +370,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
+  }, [editedTranscript, paragraphs, mode, selectedLanguage, updateSection, saveToNeuroSession]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {

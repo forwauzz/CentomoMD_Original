@@ -5,6 +5,7 @@ import { Select } from '@/components/ui/select';
 import { Save, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { CNESST_SECTIONS } from '@/lib/constants';
+import { useNeuroSession } from '@/hooks/useNeuroSession';
 
 export interface SaveToSectionOption {
   sectionId: string;
@@ -24,12 +25,19 @@ export const SaveToSectionDropdown: React.FC<SaveToSectionDropdownProps> = ({
   disabled = false
 }) => {
   const { t, language } = useI18n();
+  const { isNeuroSession } = useNeuroSession();
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [selectedTextBox, setSelectedTextBox] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
 
   // Define available save options
   const saveOptions: SaveToSectionOption[] = [
+    // Neuro Session option (if in Neuro context)
+    ...(isNeuroSession() ? [{
+      sectionId: 'neuro_session',
+      textBoxId: 'sessionContent',
+      label: 'Return to Neuro Session'
+    }] : []),
     // Section 7 options
     {
       sectionId: 'section_7',
@@ -80,7 +88,15 @@ export const SaveToSectionDropdown: React.FC<SaveToSectionDropdownProps> = ({
         opt => opt.sectionId === selectedSection && opt.textBoxId === selectedTextBox
       );
       if (option) {
-        onSave(option);
+        // Handle Neuro session case
+        if (option.sectionId === 'neuro_session') {
+          // Get the current transcript content from the parent component
+          // This will be handled by the parent component
+          onSave(option);
+        } else {
+          // Handle regular section save
+          onSave(option);
+        }
         setIsOpen(false);
         // Reset selections
         setSelectedSection('');

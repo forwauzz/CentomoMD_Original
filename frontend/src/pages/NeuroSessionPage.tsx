@@ -74,6 +74,35 @@ export const NeuroSessionPage: React.FC = () => {
     }
   }, []);
 
+  // Check for dictation results when component mounts
+  React.useEffect(() => {
+    const checkForDictationResults = () => {
+      const dictationResults = localStorage.getItem('neuroDictationResults');
+      if (dictationResults) {
+        try {
+          const results = JSON.parse(dictationResults);
+          if (results.formattedContent) {
+            // Append the formatted content to existing session content
+            setSessionContent(prev => {
+              const separator = prev.trim() ? '\n\n---\n\n' : '';
+              return prev + separator + results.formattedContent;
+            });
+            
+            // Clear the dictation results
+            localStorage.removeItem('neuroDictationResults');
+            
+            // Show success message
+            alert('Dictation content has been added to your session!');
+          }
+        } catch (error) {
+          console.error('Error processing dictation results:', error);
+        }
+      }
+    };
+
+    checkForDictationResults();
+  }, []);
+
   return (
     <div className="neuro-dashboard min-h-screen">
       {/* Header */}
