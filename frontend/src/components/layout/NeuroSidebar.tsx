@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Plus,
   Mic,
   FileText as Template,
   BarChart3,
@@ -49,12 +48,6 @@ export const NeuroSidebar: React.FC = () => {
   }
 
   const neuroSidebarItems: NeuroSidebarItem[] = [
-    {
-      id: 'new-case',
-      label: t('newCase'),
-      icon: Plus,
-      href: ROUTES.NEW_CASE,
-    },
     {
       id: 'templates',
       label: t('templates'),

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Mic, Brain, ArrowRight, Sparkles } from 'lucide-react';
+import { Mic, Brain, ArrowRight, Sparkles } from 'lucide-react';
 import { ROUTES } from '@/lib/constants';
 import { useSpecialty } from '@/contexts/SpecialtyContext';
 
@@ -16,10 +16,6 @@ export const NeuroDashboardPage: React.FC = () => {
       setSpecialty('neuro');
     }
   }, [isNeuro, setSpecialty]);
-
-  const handleNewCase = () => {
-    navigate(ROUTES.NEW_CASE);
-  };
 
   const handleStartDictation = () => {
     navigate(ROUTES.DICTATION);
@@ -74,47 +70,9 @@ export const NeuroDashboardPage: React.FC = () => {
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Start New Case Card */}
-          <div className="neuro-dashboard-card p-8 group cursor-pointer" onClick={handleNewCase}>
-            <CardHeader className="text-center pb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-neuro-primary to-neuro-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 neuro-glow group-hover:animate-glow">
-                <Plus className="w-10 h-10 text-white" />
-              </div>
-              <CardTitle className="text-2xl text-neuro-text mb-2">
-                Start New Case
-              </CardTitle>
-              <CardDescription className="text-neuro-text-secondary text-base">
-                Create a new neurological case with AI-assisted documentation and analysis.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center text-sm text-neuro-text-secondary">
-                  <div className="w-2 h-2 bg-neuro-primary rounded-full mr-3"></div>
-                  AI-Powered Case Analysis
-                </div>
-                <div className="flex items-center text-sm text-neuro-text-secondary">
-                  <div className="w-2 h-2 bg-neuro-primary rounded-full mr-3"></div>
-                  Neurological Templates
-                </div>
-                <div className="flex items-center text-sm text-neuro-text-secondary">
-                  <div className="w-2 h-2 bg-neuro-primary rounded-full mr-3"></div>
-                  Smart Documentation
-                </div>
-              </div>
-              <Button 
-                className="neuro-button w-full group-hover:animate-glow"
-                size="lg"
-              >
-                Create New Case
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </div>
-
+        <div className="flex justify-center max-w-4xl mx-auto">
           {/* Start Dictation Card */}
-          <div className="neuro-dashboard-card p-8 group cursor-pointer" onClick={handleStartDictation}>
+          <div className="neuro-dashboard-card p-8 group cursor-pointer w-full max-w-md" onClick={handleStartDictation}>
             <CardHeader className="text-center pb-4">
               <div className="w-20 h-20 bg-gradient-to-br from-neuro-accent to-neuro-primary rounded-2xl flex items-center justify-center mx-auto mb-4 neuro-glow group-hover:animate-glow">
                 <Mic className="w-10 h-10 text-white" />
@@ -144,7 +102,6 @@ export const NeuroDashboardPage: React.FC = () => {
               <Button 
                 className="neuro-button w-full group-hover:animate-glow"
                 size="lg"
-                variant="outline"
               >
                 Start Dictation
                 <ArrowRight className="w-4 h-4 ml-2" />
