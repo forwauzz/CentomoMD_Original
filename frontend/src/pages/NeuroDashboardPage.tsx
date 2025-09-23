@@ -33,11 +33,8 @@ export const NeuroDashboardPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-neuro-text neuro-text-glow">
-                  Neuro Dashboard
+                  Welcome back Dr Ryder-Cook
                 </h1>
-                <p className="text-neuro-text-secondary text-lg">
-                  AI-Powered Neurological Documentation
-                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2 text-sm text-neuro-text-secondary">
