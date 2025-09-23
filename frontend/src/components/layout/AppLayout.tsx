@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PrimarySidebar } from './PrimarySidebar';
+import { NeuroSidebar } from './NeuroSidebar';
 import { AppHeader } from './AppHeader';
+import { useSpecialty } from '@/contexts/SpecialtyContext';
 
 
 export const AppLayout: React.FC = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { isNeuro } = useSpecialty();
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -17,13 +20,13 @@ export const AppLayout: React.FC = () => {
         />
       )}
 
-      {/* Primary Sidebar */}
+      {/* Sidebar - Conditional rendering based on specialty */}
       <div className={`
         fixed lg:relative z-50
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         transition-transform duration-300 ease-in-out
       `}>
-        <PrimarySidebar />
+        {isNeuro ? <NeuroSidebar /> : <PrimarySidebar />}
       </div>
       
       {/* Main Content Area */}

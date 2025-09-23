@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { NewCasePage } from '@/pages/NewCasePage';
@@ -25,6 +25,8 @@ import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
 import { SpecialtyProvider } from '@/contexts/SpecialtyContext';
 import { SpecialtySelectionPage } from '@/pages/SpecialtySelectionPage';
+import { NeuroDashboardPage } from '@/pages/NeuroDashboardPage';
+import { DefaultRouteHandler } from '@/components/DefaultRouteHandler';
 
 function App() {
   const featureFlags = useFeatureFlags();
@@ -43,11 +45,14 @@ function App() {
         
         {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
-          {/* Default route redirects to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Default route redirects based on specialty */}
+          <Route path="/" element={<DefaultRouteHandler />} />
           
           {/* Dashboard - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/dashboard" element={<DashboardPage />} />
+          
+          {/* Neuro Dashboard */}
+          <Route path="/neuro-dashboard" element={<NeuroDashboardPage />} />
           
           {/* New Case - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/case/new" element={<NewCasePage />} />
