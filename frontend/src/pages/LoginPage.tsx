@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
               <Plus className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">CentomoMD</h1>
+              <h1 className="text-xl font-bold">TecheMD</h1>
               <p className="text-sm text-blue-100">Professional Medical Documentation</p>
             </div>
           </div>

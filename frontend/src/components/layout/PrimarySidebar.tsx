@@ -175,7 +175,7 @@ export const PrimarySidebar: React.FC = () => {
         {!sidebarCollapsed && (
           <div className="flex items-center gap-2">
             <Mic className="h-6 w-6 text-blue-600" />
-            <h1 className="text-lg font-bold text-slate-700">CentomoMD</h1>
+            <h1 className="text-lg font-bold text-slate-700">TecheMD</h1>
           </div>
         )}
         <Button
