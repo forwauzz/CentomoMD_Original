@@ -8,13 +8,14 @@ import { useSpecialty } from '@/contexts/SpecialtyContext';
 
 export const NeuroDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isNeuro } = useSpecialty();
+  const { isNeuro, setSpecialty } = useSpecialty();
 
-  // Redirect if not Neuro specialty
-  if (!isNeuro) {
-    navigate(ROUTES.SPECIALTY_SELECTION);
-    return null;
-  }
+  // If accessing neuro-dashboard directly, set specialty to neuro
+  React.useEffect(() => {
+    if (!isNeuro) {
+      setSpecialty('neuro');
+    }
+  }, [isNeuro, setSpecialty]);
 
   const handleNewCase = () => {
     navigate(ROUTES.NEW_CASE);

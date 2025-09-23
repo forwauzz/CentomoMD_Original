@@ -34,7 +34,14 @@ export const NeuroSidebar: React.FC = () => {
   const location = useLocation();
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const { t } = useI18n();
-  const { isNeuro } = useSpecialty();
+  const { isNeuro, setSpecialty } = useSpecialty();
+
+  // If on neuro-dashboard route, ensure specialty is set to neuro
+  React.useEffect(() => {
+    if (location.pathname === ROUTES.NEURO_DASHBOARD && !isNeuro) {
+      setSpecialty('neuro');
+    }
+  }, [location.pathname, isNeuro, setSpecialty]);
 
   // Only show Neuro sidebar if user selected Neuro specialty
   if (!isNeuro) {
