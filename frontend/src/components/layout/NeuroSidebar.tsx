@@ -6,7 +6,8 @@ import {
   BarChart3,
   ChevronLeft, 
   ChevronRight,
-  Brain
+  Brain,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -48,6 +49,12 @@ export const NeuroSidebar: React.FC = () => {
   }
 
   const neuroSidebarItems: NeuroSidebarItem[] = [
+    {
+      id: 'new-session',
+      label: 'New Session',
+      icon: Plus,
+      href: ROUTES.NEURO_SESSION,
+    },
     {
       id: 'templates',
       label: t('templates'),

@@ -26,6 +26,7 @@ import { TemplateProvider } from '@/contexts/TemplateContext';
 import { SpecialtyProvider } from '@/contexts/SpecialtyContext';
 import { SpecialtySelectionPage } from '@/pages/SpecialtySelectionPage';
 import { NeuroDashboardPage } from '@/pages/NeuroDashboardPage';
+import { NeuroSessionPage } from '@/pages/NeuroSessionPage';
 import { DefaultRouteHandler } from '@/components/DefaultRouteHandler';
 
 function App() {
@@ -53,6 +54,9 @@ function App() {
           
           {/* Neuro Dashboard */}
           <Route path="/neuro-dashboard" element={<NeuroDashboardPage />} />
+          
+          {/* Neuro Session */}
+          <Route path="/neuro-session" element={<NeuroSessionPage />} />
           
           {/* New Case - TODO: Wrap with ProtectedRoute after verification */}
           <Route path="/case/new" element={<NewCasePage />} />

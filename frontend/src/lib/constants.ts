@@ -112,6 +112,7 @@ export const ROUTES = {
   SPECIALTY_SELECTION: '/specialty-selection',
   DASHBOARD: '/dashboard',
   NEURO_DASHBOARD: '/neuro-dashboard',
+  NEURO_SESSION: '/neuro-session',
   NEW_CASE: '/case/new',
   TEMPLATES: '/templates',
   TEMPLATE_COMBINATIONS: '/template-combinations',
