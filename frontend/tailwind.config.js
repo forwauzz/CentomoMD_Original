@@ -59,6 +59,18 @@ module.exports = {
           danger: "#dc2626", // Red for critical
           success: "#16a34a", // Green for success
         },
+        // Neuro theme colors (white/green futuristic)
+        neuro: {
+          primary: "#10b981", // Emerald green
+          secondary: "#059669", // Darker green
+          accent: "#34d399", // Light green
+          background: "#ffffff", // Pure white
+          surface: "#f8fafc", // Light gray
+          text: "#1f2937", // Dark gray
+          textSecondary: "#6b7280", // Medium gray
+          border: "#e5e7eb", // Light border
+          glow: "#10b981", // Green glow effect
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -86,6 +98,24 @@ module.exports = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
         },
+        "glow": {
+          "0%, 100%": { 
+            boxShadow: "0 0 5px #10b981, 0 0 10px #10b981, 0 0 15px #10b981",
+            transform: "scale(1)"
+          },
+          "50%": { 
+            boxShadow: "0 0 10px #10b981, 0 0 20px #10b981, 0 0 30px #10b981",
+            transform: "scale(1.02)"
+          },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "slide-up": {
+          "0%": { transform: "translateY(20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -93,6 +123,9 @@ module.exports = {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
         "pulse-slow": "pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "glow": "glow 2s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
+        "slide-up": "slide-up 0.5s ease-out",
       },
     },
   },

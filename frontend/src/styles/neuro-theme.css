@@ -1,0 +1,173 @@
+/* Neuro Theme - Futuristic White/Green Styling */
+
+/* Base Neuro Theme Variables */
+:root {
+  --neuro-primary: #10b981;
+  --neuro-secondary: #059669;
+  --neuro-accent: #34d399;
+  --neuro-background: #ffffff;
+  --neuro-surface: #f8fafc;
+  --neuro-text: #1f2937;
+  --neuro-text-secondary: #6b7280;
+  --neuro-border: #e5e7eb;
+  --neuro-glow: #10b981;
+}
+
+/* Neuro Theme Classes */
+.neuro-theme {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: var(--neuro-text);
+}
+
+.neuro-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(16, 185, 129, 0.1);
+  transition: all 0.3s ease;
+}
+
+.neuro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(16, 185, 129, 0.3),
+    0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.neuro-button {
+  background: linear-gradient(135deg, var(--neuro-primary) 0%, var(--neuro-secondary) 100%);
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.neuro-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.neuro-button:hover::before {
+  left: 100%;
+}
+
+.neuro-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.neuro-glow {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.neuro-text-glow {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.neuro-border-glow {
+  border: 1px solid var(--neuro-primary);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Futuristic Grid Pattern */
+.neuro-grid {
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Animated Background */
+.neuro-animated-bg {
+  background: linear-gradient(-45deg, #ffffff, #f8fafc, #ffffff, #f0fdf4);
+  background-size: 400% 400%;
+  animation: neuro-gradient 15s ease infinite;
+}
+
+@keyframes neuro-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Neuro Navigation Styles */
+.neuro-nav-item {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.neuro-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--neuro-primary), var(--neuro-accent));
+  transition: width 0.3s ease;
+}
+
+.neuro-nav-item:hover::before {
+  width: 4px;
+}
+
+.neuro-nav-item.active::before {
+  width: 4px;
+}
+
+/* Neuro Dashboard Specific */
+.neuro-dashboard {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  min-height: 100vh;
+}
+
+.neuro-dashboard-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neuro-dashboard-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(16, 185, 129, 0.3),
+    0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+/* Neuro Icon Styles */
+.neuro-icon {
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
+  transition: all 0.3s ease;
+}
+
+.neuro-icon:hover {
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6));
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .neuro-card {
+    backdrop-filter: blur(5px);
+  }
+  
+  .neuro-dashboard-card {
+    backdrop-filter: blur(10px);
+  }
+}

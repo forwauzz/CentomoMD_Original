@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Neuro Theme */
+@import './styles/neuro-theme.css';
+
 @layer base {
   :root {
     --background: 0 0% 100%;
