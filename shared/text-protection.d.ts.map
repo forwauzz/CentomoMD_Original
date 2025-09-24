@@ -1,1 +1,0 @@
-{"version":3,"file":"text-protection.d.ts","sourceRoot":"","sources":["text-protection.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,cAAc,yBAAyB,CAAC;AACrD,eAAO,MAAM,YAAY,uBAAyB,CAAC;AACnD,eAAO,MAAM,cAAc,yBAAyB,CAAC;AACrD,eAAO,MAAM,YAAY,uBAAyB,CAAC;AAEnD,wBAAgB,wBAAwB,CAAC,IAAI,EAAE,MAAM;UAC1B,MAAM;iBAAe,OAAO;IAUtD"}
