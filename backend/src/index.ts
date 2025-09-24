@@ -27,7 +27,7 @@ import { securityMiddleware } from './server/security.js';
 import jwt from 'jsonwebtoken';
 import { ENV } from './config/env.js';
 import { bootProbe, getDb } from './database/connection.js';
-import { artifacts } from './database/schema.js';
+import { artifacts, cases } from './database/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
 import { logger } from './utils/logger.js';
@@ -1894,6 +1894,63 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
     console.error('Mode 2 formatting error:', error);
     res.status(500).json({ 
       error: 'Failed to format transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Cases API Endpoints
+app.post('/api/cases/save', async (req, res) => {
+  try {
+    const { draft, user_id, clinic_id } = req.body;
+    
+    if (!draft || typeof draft !== 'object') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Draft data is required and must be an object' 
+      });
+    }
+
+    if (!user_id || !clinic_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'user_id and clinic_id are required' 
+      });
+    }
+
+    // Get database connection
+    const db = getDb();
+
+    // For now, we'll use a mock user_id and clinic_id for development
+    // In production, these would come from authentication
+    const mockUserId = user_id || '00000000-0000-0000-0000-000000000001';
+    const mockClinicId = clinic_id || '00000000-0000-0000-0000-000000000001';
+
+    // Insert case in database
+    // Note: Since uid is auto-generated, we'll always create a new case
+    // In production, you might want to implement update logic based on user_id + clinic_id
+    const result = await db.insert(cases).values({
+      user_id: mockUserId,
+      clinic_id: mockClinicId,
+      draft: draft,
+      updated_at: new Date()
+    }).returning();
+
+    console.log('✅ Case saved successfully:', result[0]);
+
+    res.json({
+      success: true,
+      data: {
+        uid: result[0].uid,
+        message: 'Case saved successfully'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error saving case:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to save case',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }

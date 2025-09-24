@@ -118,3 +118,9 @@ out/
 
 # AWS credentials (if accidentally committed)
 .aws/
+
+# Environment files with secrets
+backend/src/config/centomomd.env
+*.env
+!env.example
+!local.env

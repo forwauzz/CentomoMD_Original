@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, json, jsonb, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer, json, jsonb, uuid, varchar, decimal, unique, serial } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table
@@ -148,12 +148,23 @@ export const artifacts = pgTable('artifacts', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Cases table
+export const cases = pgTable('cases', {
+  uid: serial('uid').primaryKey(),
+  user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  clinic_id: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
+  draft: jsonb('draft').$type<Record<string, any>>(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   audit_logs: many(audit_logs),
   export_history: many(export_history),
   memberships: many(memberships),
+  cases: many(cases),
 }));
 
 export const profilesRelations = relations(profiles, ({ one }) => ({
@@ -176,6 +187,7 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
 
 export const clinicsRelations = relations(clinics, ({ many }) => ({
   memberships: many(memberships),
+  cases: many(cases),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -244,6 +256,17 @@ export const artifactsRelations = relations(artifacts, ({ one }) => ({
   }),
 }));
 
+export const casesRelations = relations(cases, ({ one }) => ({
+  user: one(users, {
+    fields: [cases.user_id],
+    references: [users.id],
+  }),
+  clinic: one(clinics, {
+    fields: [cases.clinic_id],
+    references: [clinics.id],
+  }),
+}));
+
 // Database schema type
 export type DatabaseSchema = {
   users: typeof users;
@@ -257,6 +280,7 @@ export type DatabaseSchema = {
   voice_command_mappings: typeof voice_command_mappings;
   export_history: typeof export_history;
   artifacts: typeof artifacts;
+  cases: typeof cases;
 };
 
 // Row types
@@ -282,3 +306,5 @@ export type ExportHistory = typeof export_history.$inferSelect;
 export type NewExportHistory = typeof export_history.$inferInsert;
 export type Artifact = typeof artifacts.$inferSelect;
 export type NewArtifact = typeof artifacts.$inferInsert;
+export type Case = typeof cases.$inferSelect;
+export type NewCase = typeof cases.$inferInsert;

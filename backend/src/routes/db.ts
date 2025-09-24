@@ -16,4 +16,34 @@ router.get('/api/db/ping', async (_req, res) => {
   }
 });
 
+// GET /api/db/clinics - Get all clinics
+router.get('/api/db/clinics', async (_req, res) => {
+  try {
+    const sql = getSql();
+    const clinics = await sql`
+      SELECT 
+        id,
+        name,
+        address,
+        phone,
+        email,
+        created_at,
+        updated_at
+      FROM clinics
+      ORDER BY name ASC
+    `;
+    
+    res.json({ 
+      success: true, 
+      clinics: clinics || [] 
+    });
+  } catch (e: any) {
+    console.error('Error fetching clinics:', e);
+    res.status(500).json({ 
+      success: false, 
+      error: e?.message ?? 'Failed to fetch clinics' 
+    });
+  }
+});
+
 export default router;

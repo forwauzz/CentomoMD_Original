@@ -25,6 +25,7 @@ interface CaseState {
   updateSectionTitles: (sectionTitles: Record<string, string>) => void;
   getSectionStatus: (sectionId: string) => Section['status'];
   getAutosaveTimestamp: (sectionId: string) => string | null;
+  saveCaseToDatabase: (user_id: string, clinic_id: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useCaseStore = create<CaseState>()(
@@ -115,6 +116,56 @@ export const useCaseStore = create<CaseState>()(
       
       getAutosaveTimestamp: (sectionId) => {
         return get().autosaveTimestamps[sectionId] || null;
+      },
+      
+      saveCaseToDatabase: async (user_id: string, clinic_id: string) => {
+        try {
+          const state = get();
+          
+          // Convert all sections data into a single draft object
+          const draft = {
+            sections: state.sections.map(section => ({
+              id: section.id,
+              title: section.title,
+              status: section.status,
+              data: section.data,
+              lastModified: section.lastModified,
+              audioRequired: section.audioRequired
+            })),
+            activeSectionId: state.activeSectionId,
+            autosaveTimestamps: state.autosaveTimestamps,
+            savedAt: new Date().toISOString()
+          };
+
+          // Send to backend API
+          const response = await fetch('/api/cases/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              draft,
+              user_id,
+              clinic_id
+            })
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to save case');
+          }
+
+          console.log('✅ Case saved to database successfully:', result.data);
+          return { success: true };
+
+        } catch (error) {
+          console.error('❌ Error saving case to database:', error);
+          return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
       },
     }),
     {

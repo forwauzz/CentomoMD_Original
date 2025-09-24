@@ -6,16 +6,18 @@ export default defineConfig({
   plugins: [react()],
 
   // Ensure .env files are read from the frontend folder regardless of CWD
-  envDir: path.resolve(__dirname),
+  envDir: path.resolve(process.cwd()),
 
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(process.cwd(), './src'),
     },
   },
 
   server: {
     port: 5173,
+    host: 'localhost',
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -32,4 +34,12 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+
+  // Windows-specific optimizations
+  optimizeDeps: {
+    force: true,
+  },
+  
+  // Use a different cache directory to avoid permission issues
+  cacheDir: 'node_modules/.vite-cache',
 });

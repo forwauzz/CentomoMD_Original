@@ -27,7 +27,10 @@ const getConfig = async () => {
   if (configCache) return configCache;
   
   try {
-    const response = await fetch('/api/config');
+    const response = await fetch('/api/config', {
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(5000)
+    });
     if (!response.ok) throw new Error('Failed to fetch config');
     
     configCache = await response.json();
@@ -85,4 +88,44 @@ export const apiFetch = async <T = any>(
   }
   
   return response.json();
+};
+
+// Clinic types
+export interface Clinic {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClinicsResponse {
+  success: boolean;
+  clinics: Clinic[];
+  error?: string;
+}
+
+// Clinic API functions
+export const fetchClinics = async (): Promise<Clinic[]> => {
+  try {
+    const response = await apiFetch<ClinicsResponse>('/api/db/clinics', {
+      // Add timeout for clinic fetching
+      signal: AbortSignal.timeout(10000)
+    });
+    if (response.success) {
+      return response.clinics;
+    } else {
+      throw new Error(response.error || 'Failed to fetch clinics');
+    }
+  } catch (error) {
+    console.error('Error fetching clinics:', error);
+    // Return empty array instead of throwing to prevent component crashes
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('Clinic fetch timed out, returning empty array');
+      return [];
+    }
+    throw error;
+  }
 };

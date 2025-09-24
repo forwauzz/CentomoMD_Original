@@ -1,10 +1,12 @@
-import React from 'react';
-import { CheckCircle, Circle, FileText, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle, Circle, FileText, Download, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
 import { useCaseStore } from '@/stores/caseStore';
+import { getSelectedClinic } from '@/lib/clinicSession';
+import { getDevUser } from '@/lib/devAuth';
 
 interface SecondarySectionNavProps {
   onExport: () => void;
@@ -12,7 +14,9 @@ interface SecondarySectionNavProps {
 
 export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExport }) => {
   const { t, language } = useI18n();
-  const { activeSectionId, getSectionStatus, setActiveSection } = useCaseStore();
+  const { activeSectionId, getSectionStatus, setActiveSection, saveCaseToDatabase } = useCaseStore();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const getStatusIcon = (sectionId: string) => {
     const status = getSectionStatus(sectionId);
@@ -35,6 +39,41 @@ export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExpo
         return 'text-blue-600 bg-blue-50 border-blue-200';
       default:
         return 'text-gray-600 bg-white border-gray-200';
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveStatus('idle');
+
+    try {
+      // Get user and clinic IDs from session/auth
+      const devUser = getDevUser();
+      const selectedClinic = getSelectedClinic();
+      
+      // Use dev user ID and selected clinic ID (or fallback to dev user's clinic_id)
+      const userId = devUser.id;
+      const clinicId = selectedClinic?.id || devUser.clinic_id;
+
+      if (!clinicId) {
+        throw new Error('No clinic selected. Please select a clinic before saving.');
+      }
+
+      const result = await saveCaseToDatabase(userId, clinicId);
+
+      if (result.success) {
+        setSaveStatus('success');
+        // Reset success status after 3 seconds
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      } else {
+        setSaveStatus('error');
+        console.error('Save failed:', result.error);
+      }
+    } catch (error) {
+      setSaveStatus('error');
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,8 +124,37 @@ export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExpo
         </nav>
       </div>
 
-      {/* Export Button */}
-      <div className="p-4 border-t border-gray-200">
+      {/* Action Buttons */}
+      <div className="p-4 border-t border-gray-200 space-y-3">
+        {/* Save Button */}
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          className={cn(
+            "w-full",
+            saveStatus === 'success' 
+              ? "bg-green-600 hover:bg-green-700 text-white" 
+              : saveStatus === 'error'
+              ? "bg-red-600 hover:bg-red-700 text-white"
+              : "bg-gray-600 hover:bg-gray-700 text-white"
+          )}
+        >
+          {isSaving ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          {isSaving 
+            ? (language === 'fr' ? 'Sauvegarde...' : 'Saving...')
+            : saveStatus === 'success'
+            ? (language === 'fr' ? 'Sauvegardé!' : 'Saved!')
+            : saveStatus === 'error'
+            ? (language === 'fr' ? 'Erreur' : 'Error')
+            : (language === 'fr' ? 'Sauvegarder' : 'Save')
+          }
+        </Button>
+
+        {/* Export Button */}
         <Button
           onClick={onExport}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white"

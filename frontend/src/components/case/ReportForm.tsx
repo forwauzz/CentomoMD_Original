@@ -13,6 +13,10 @@ import { InterviewModalityForm } from './InterviewModalityForm';
 import { IdentificationForm } from './IdentificationForm';
 import { CurrentMedicationForm } from './CurrentMedicationForm';
 import { AntecedentsForm } from './AntecedentsForm';
+import { HistoryForm } from './HistoryForm';
+import { QuestionnaireForm } from './QuestionnaireForm';
+import { PhysicalExamForm } from './PhysicalExamForm';
+import { ConclusionsForm } from './ConclusionsForm';
 
 interface ReportFormProps {
   sectionId: string;
@@ -116,13 +120,37 @@ export const ReportForm: React.FC<ReportFormProps> = ({ sectionId }) => {
             <AntecedentsForm sectionId={`${sectionId}_antecedents`} />
           )}
           
+          {/* Render History Form if selected */}
+          {formData.selectedOption === 'history' && (
+            <HistoryForm sectionId={`${sectionId}_history`} />
+          )}
+          
+          {/* Render Questionnaire Form if selected */}
+          {formData.selectedOption === 'questionnaireCurrentState' && (
+            <QuestionnaireForm sectionId={`${sectionId}_questionnaireCurrentState`} />
+          )}
+          
+          {/* Render Physical Exam Form if selected */}
+          {formData.selectedOption === 'physicalExam' && (
+            <PhysicalExamForm sectionId={`${sectionId}_physicalExam`} />
+          )}
+          
+          {/* Render Conclusions Form if selected */}
+          {formData.selectedOption === 'conclusions' && (
+            <ConclusionsForm sectionId={`${sectionId}_conclusions`} />
+          )}
+          
           {/* Render other content if no specific option is selected or if it's not one of the linked options */}
           {formData.selectedOption !== 'evaluationMandate' && 
            formData.selectedOption !== 'diagnosesAccepted' && 
            formData.selectedOption !== 'interviewModality' && 
            formData.selectedOption !== 'identification' && 
            formData.selectedOption !== 'currentMedication' && 
-           formData.selectedOption !== 'antecedents' && (
+           formData.selectedOption !== 'antecedents' && 
+           formData.selectedOption !== 'history' && 
+           formData.selectedOption !== 'questionnaireCurrentState' && 
+           formData.selectedOption !== 'physicalExam' && 
+           formData.selectedOption !== 'conclusions' && (
             <>
               {/* Evaluation Goal Header */}
               <Card>

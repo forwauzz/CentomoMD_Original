@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase, getIntendedPath, clearIntendedPath, decodeState } from '@/lib/authClient';
+import { shouldBypassAuth, getDevUser } from '@/lib/devAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
@@ -49,10 +50,6 @@ export const AuthCallback: React.FC = () => {
       try {
         console.log('🔍 Auth callback triggered, processing...');
         
-        // Get the hash fragment from the URL (Supabase puts tokens here)
-        const hash = location.hash;
-        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
-        
         // Extract intended path in priority order
         const getIntendedDestination = () => {
           // 1. Check URL state parameter (from OAuth)
@@ -88,6 +85,26 @@ export const AuthCallback: React.FC = () => {
           console.log('🔍 No intended path found, defaulting to /');
           return '/';
         };
+        
+        // Check if we should bypass authentication in development
+        if (shouldBypassAuth()) {
+          console.log('🔧 Development mode: Bypassing authentication');
+          setStatus('success');
+          setMessage('Development mode: Authentication bypassed! Redirecting...');
+          
+          // Get intended destination and redirect
+          const intendedDestination = getIntendedDestination();
+          clearIntendedPath();
+          
+          setTimeout(() => {
+            navigate(intendedDestination, { replace: true });
+          }, 1000);
+          return;
+        }
+        
+        // Get the hash fragment from the URL (Supabase puts tokens here)
+        const hash = location.hash;
+        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
         
         if (hash) {
           // Parse the hash to extract access_token and refresh_token

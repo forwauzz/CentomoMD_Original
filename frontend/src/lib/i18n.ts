@@ -200,10 +200,46 @@ export const translations = {
     others: 'Autres',
     enterOthers: 'Entrez les détails des autres accidents...',
     
+    // History Section
+    historySectionTitle: 'Section Historique',
+    historyHeader: 'Historique',
+    historyDetails: 'Détails de l\'historique',
+    enterHistoryDetails: 'Entrez les détails de l\'historique...',
+    historyNotes: 'Notes sur l\'historique',
+    enterHistoryNotes: 'Entrez les notes supplémentaires sur l\'historique...',
+    
+    // Questionnaire Section
+    questionnaireSection: 'Section Questionnaire et état actuel',
+    questionnaireHeader: 'Questionnaire et état actuel',
+    questionnaireDetails: 'Détails du questionnaire',
+    enterQuestionnaireDetails: 'Entrez les détails du questionnaire et de l\'état actuel...',
+    currentState: 'État actuel',
+    enterCurrentState: 'Entrez les détails de l\'état actuel...',
+    questionnaireNotes: 'Notes du questionnaire',
+    enterQuestionnaireNotes: 'Entrez les notes supplémentaires du questionnaire...',
+    
+    // Physical Exam Section
+    physicalExamSection: 'Section Examen physique',
+    physicalExamHeader: 'Examen physique',
+    physicalExamDetails: 'Détails de l\'examen physique',
+    enterPhysicalExamDetails: 'Entrez les détails de l\'examen physique...',
+    physicalExamNotes: 'Notes de l\'examen physique',
+    enterPhysicalExamNotes: 'Entrez les notes supplémentaires de l\'examen physique...',
+    
+    // Conclusions Section
+    conclusionsSection: 'Section Conclusions',
+    conclusionsHeader: 'Conclusions',
+    conclusionsDetails: 'Détails des conclusions',
+    enterConclusionsDetails: 'Entrez les détails des conclusions...',
+    conclusionsNotes: 'Notes des conclusions',
+    enterConclusionsNotes: 'Entrez les notes supplémentaires des conclusions...',
+    
     // Dictation
     goToDictation: 'Aller à la dictée',
     goToDictationPage: 'Aller à la page de dictée',
     dictationInfo: 'La dictée pour cette section est gérée sur la page dédiée à la dictée.',
+    enterDictationMode: 'Entrer en mode dictée',
+    exitDictationMode: 'Sortir du mode dictée',
     live: 'En direct',
     history: 'Historique',
     dictationHistory: 'Historique des dictées',
@@ -460,10 +496,46 @@ export const translations = {
     others: 'Others',
     enterOthers: 'Enter details about other accidents...',
     
+    // History Section
+    historySectionTitle: 'History Section',
+    historyHeader: 'History',
+    historyDetails: 'History Details',
+    enterHistoryDetails: 'Enter history details...',
+    historyNotes: 'History Notes',
+    enterHistoryNotes: 'Enter additional history notes...',
+    
+    // Questionnaire Section
+    questionnaireSection: 'Questionnaire and Current State Section',
+    questionnaireHeader: 'Questionnaire and Current State',
+    questionnaireDetails: 'Questionnaire Details',
+    enterQuestionnaireDetails: 'Enter questionnaire and current state details...',
+    currentState: 'Current State',
+    enterCurrentState: 'Enter current state details...',
+    questionnaireNotes: 'Questionnaire Notes',
+    enterQuestionnaireNotes: 'Enter additional questionnaire notes...',
+    
+    // Physical Exam Section
+    physicalExamSection: 'Physical Exam Section',
+    physicalExamHeader: 'Physical Exam',
+    physicalExamDetails: 'Physical Exam Details',
+    enterPhysicalExamDetails: 'Enter physical exam details...',
+    physicalExamNotes: 'Physical Exam Notes',
+    enterPhysicalExamNotes: 'Enter additional physical exam notes...',
+    
+    // Conclusions Section
+    conclusionsSection: 'Conclusions Section',
+    conclusionsHeader: 'Conclusions',
+    conclusionsDetails: 'Conclusions Details',
+    enterConclusionsDetails: 'Enter conclusions details...',
+    conclusionsNotes: 'Conclusions Notes',
+    enterConclusionsNotes: 'Enter additional conclusions notes...',
+    
     // Dictation
     goToDictation: 'Go to Dictation',
     goToDictationPage: 'Go to Dictation page',
     dictationInfo: 'Dictation for this section is managed on the dedicated Dictation page.',
+    enterDictationMode: 'Enter Dictation Mode',
+    exitDictationMode: 'Exit Dictation Mode',
     live: 'Live',
     history: 'History',
     dictationHistory: 'Dictation History',

@@ -8,11 +8,11 @@ import { useI18n } from '@/lib/i18n';
 import { useCaseStore } from '@/stores/caseStore';
 import { TranscriptionInterface } from '@/components/transcription/TranscriptionInterface';
 
-interface CurrentMedicationFormProps {
+interface PhysicalExamFormProps {
   sectionId: string;
 }
 
-export const CurrentMedicationForm: React.FC<CurrentMedicationFormProps> = ({ sectionId }) => {
+export const PhysicalExamForm: React.FC<PhysicalExamFormProps> = ({ sectionId }) => {
   const { t, language } = useI18n();
   const { updateSection, getSectionStatus, getAutosaveTimestamp } = useCaseStore();
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -52,8 +52,8 @@ export const CurrentMedicationForm: React.FC<CurrentMedicationFormProps> = ({ se
   };
 
   const handleTranscriptionUpdate = (transcript: string) => {
-    // Update the medication details with the transcribed text
-    handleInputChange('currentMedicationDetails', transcript);
+    // Update the physical exam details with the transcribed text
+    handleInputChange('physicalExamDetails', transcript);
   };
 
   const toggleDictation = () => {
@@ -67,10 +67,10 @@ export const CurrentMedicationForm: React.FC<CurrentMedicationFormProps> = ({ se
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-700">
-              {t('currentMedicationHeader')}
+              {t('physicalExamHeader')}
             </h1>
             <p className="text-gray-500 mt-1">
-              {t('currentMedicationSection')}
+              {t('physicalExamSection')}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -113,41 +113,21 @@ export const CurrentMedicationForm: React.FC<CurrentMedicationFormProps> = ({ se
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl space-y-6">
-          {/* Current Medication Details */}
+          {/* Physical Exam Details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">{t('currentMedicationDetails')}</CardTitle>
+              <CardTitle className="text-lg">{t('physicalExamDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="currentMedicationDetails">{t('currentMedicationDetails')}</Label>
+                <Label htmlFor="physicalExamDetails">{t('physicalExamDetails')}</Label>
                 <Textarea
-                  id="currentMedicationDetails"
-                  value={formData.currentMedicationDetails || ''}
-                  onChange={(e) => handleInputChange('currentMedicationDetails', e.target.value)}
-                  placeholder={t('enterCurrentMedicationDetails')}
-                  rows={8}
-                  className="min-h-[200px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Therapeutic Measures */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t('therapeuticMeasures')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="therapeuticMeasures">{t('therapeuticMeasures')}</Label>
-                <Textarea
-                  id="therapeuticMeasures"
-                  value={formData.therapeuticMeasures || ''}
-                  onChange={(e) => handleInputChange('therapeuticMeasures', e.target.value)}
-                  placeholder={t('enterTherapeuticMeasures')}
-                  rows={6}
-                  className="min-h-[150px]"
+                  id="physicalExamDetails"
+                  value={formData.physicalExamDetails || ''}
+                  onChange={(e) => handleInputChange('physicalExamDetails', e.target.value)}
+                  placeholder={t('enterPhysicalExamDetails')}
+                  rows={12}
+                  className="min-h-[300px]"
                 />
               </div>
             </CardContent>
@@ -171,6 +151,26 @@ export const CurrentMedicationForm: React.FC<CurrentMedicationFormProps> = ({ se
               </CardContent>
             </Card>
           )}
+
+          {/* Physical Exam Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t('physicalExamNotes')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="physicalExamNotes">{t('physicalExamNotes')}</Label>
+                <Textarea
+                  id="physicalExamNotes"
+                  value={formData.physicalExamNotes || ''}
+                  onChange={(e) => handleInputChange('physicalExamNotes', e.target.value)}
+                  placeholder={t('enterPhysicalExamNotes')}
+                  rows={6}
+                  className="min-h-[150px]"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Additional Notes */}
           <Card>

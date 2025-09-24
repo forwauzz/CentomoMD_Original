@@ -9,6 +9,8 @@ import { useAuth } from '@/lib/authClient';
 import { useUserStore, useEnsureProfileLoaded } from '@/stores/userStore';
 import { resolveDisplayName } from '@/lib/resolveDisplayName';
 import { supabase } from '@/lib/authClient';
+import { ClinicSelector } from '@/components/ClinicSelector';
+import { useClinic } from '@/hooks/useClinic';
 
 interface AppHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -23,6 +25,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   const profile = useUserStore((s) => s.profile);
   const refreshProfile = useUserStore((s) => s.refreshProfile);
   const [authUser, setAuthUser] = useState<import('@supabase/supabase-js').User | null>(null);
+  const { selectedClinic } = useClinic();
 
   // Ensure profile is loaded on first render
   useEnsureProfileLoaded();
@@ -150,6 +153,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
 
         {/* Right side actions */}
         <div className="flex items-center space-x-2 lg:space-x-3">
+          {/* Clinic Selector */}
+          <div className="hidden md:block min-w-[200px]">
+            <ClinicSelector 
+              className="text-sm"
+              placeholder="Select clinic..."
+            />
+          </div>
+
           {/* Language toggle */}
           <Button
             variant="ghost"
