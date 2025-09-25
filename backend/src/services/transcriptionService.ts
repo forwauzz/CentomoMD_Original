@@ -59,7 +59,7 @@ export class TranscriptionService {
     const cmdInput: StartStreamTranscriptionCommandInput = {
       LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
       MediaEncoding: 'pcm',
-      MediaSampleRateHertz: config.media_sample_rate_hz || 44100,
+      MediaSampleRateHertz: config.media_sample_rate_hz || 16000,
       AudioStream: audioIterable,
       ShowSpeakerLabel: config.show_speaker_labels || true,     // Mode-specific speaker attribution
       // MaxSpeakerLabels removed - not available for streaming transcription
