@@ -43,7 +43,7 @@
   ws.send(JSON.stringify({ 
     type: 'start_transcription', 
     languageCode, 
-    sampleRate: 16000,
+    sampleRate: 44100,
     mode: state.mode,  // Add mode parameter for Phase 0
     sessionId 
   }));
@@ -56,7 +56,7 @@
   ```typescript
   const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
     language_code: msg.languageCode, 
-    media_sample_rate_hz: msg.sampleRate ?? 16000
+    media_sample_rate_hz: msg.sampleRate ?? 44100
   });
   ```
 - **Finding**: Mode properly applied to AWS configuration

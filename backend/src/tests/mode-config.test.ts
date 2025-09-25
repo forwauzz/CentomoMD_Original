@@ -43,7 +43,7 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
 describe('Mode-Specific AWS Transcribe Configuration', () => {
   const baseConfig = {
     language_code: 'fr-CA',
-    media_sample_rate_hz: 16000
+    media_sample_rate_hz: 44100
   };
 
   describe('Mode 1 (Word-for-Word)', () => {
@@ -69,7 +69,7 @@ describe('Mode-Specific AWS Transcribe Configuration', () => {
       const config = getModeSpecificConfig('word_for_word', baseConfig);
       
       expect(config.language_code).toBe('fr-CA');
-      expect(config.media_sample_rate_hz).toBe(16000);
+      expect(config.media_sample_rate_hz).toBe(44100);
     });
   });
 
@@ -96,7 +96,7 @@ describe('Mode-Specific AWS Transcribe Configuration', () => {
       const config = getModeSpecificConfig('smart_dictation', baseConfig);
       
       expect(config.language_code).toBe('fr-CA');
-      expect(config.media_sample_rate_hz).toBe(16000);
+      expect(config.media_sample_rate_hz).toBe(44100);
     });
   });
 
@@ -123,7 +123,7 @@ describe('Mode-Specific AWS Transcribe Configuration', () => {
       const config = getModeSpecificConfig('ambient', baseConfig);
       
       expect(config.language_code).toBe('fr-CA');
-      expect(config.media_sample_rate_hz).toBe(16000);
+      expect(config.media_sample_rate_hz).toBe(44100);
     });
   });
 
@@ -140,7 +140,7 @@ describe('Mode-Specific AWS Transcribe Configuration', () => {
       const config = getModeSpecificConfig('unknown_mode', baseConfig);
       
       expect(config.language_code).toBe('fr-CA');
-      expect(config.media_sample_rate_hz).toBe(16000);
+      expect(config.media_sample_rate_hz).toBe(44100);
     });
   });
 
@@ -179,7 +179,7 @@ describe('Mode-Specific AWS Transcribe Configuration', () => {
     it('should handle different language codes', () => {
       const englishConfig = {
         language_code: 'en-US',
-        media_sample_rate_hz: 16000
+        media_sample_rate_hz: 44100
       };
 
       const mode1Config = getModeSpecificConfig('word_for_word', englishConfig);

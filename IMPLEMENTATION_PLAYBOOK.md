@@ -83,7 +83,7 @@ ws.onmessage = async (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.type === 'stream_ready') {
       // Only start mic after backend is ready
-      const audioContext = new AudioContext({ sampleRate: 16000 });
+      const audioContext = new AudioContext({ sampleRate: 44100 });
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,

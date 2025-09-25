@@ -1941,7 +1941,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         ws.send(JSON.stringify({ 
           type: 'start_transcription', 
           languageCode, 
-          sampleRate: 16000,
+          sampleRate: 44100,
           mode: state.mode,  // Add mode parameter for Phase 0
           sessionId 
         }));
@@ -1956,12 +1956,12 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
           if (msg.type === 'stream_ready') {
             console.log('Stream ready, starting audio capture');
             // Only start mic after backend is ready
-            const audioContext = new AudioContext({ sampleRate: 16000 });
+            const audioContext = new AudioContext({ sampleRate: 44100 });
             audioContextRef.current = audioContext;
             
             const stream = await navigator.mediaDevices.getUserMedia({
               audio: {
-                sampleRate: 16000,        // Ensure 16kHz for best diarization
+                sampleRate: 44100,        // Ensure 44.1kHz for full voice frequency range
                 channelCount: 1,          // Mono audio works better for diarization
                 echoCancellation: false,   // Turn OFF - can interfere with speaker detection
                 noiseSuppression: false,   // Turn OFF - can merge speakers

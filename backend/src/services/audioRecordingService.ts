@@ -31,7 +31,7 @@ export class AudioRecordingService {
   /**
    * Start recording audio for a session
    */
-  async startRecording(sessionId: string, sampleRate: number = 16000): Promise<void> {
+  async startRecording(sessionId: string, sampleRate: number = 44100): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `session_${sessionId}_${timestamp}.wav`;

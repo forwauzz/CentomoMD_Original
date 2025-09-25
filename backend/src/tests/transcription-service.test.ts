@@ -22,7 +22,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should create AWS command without ShowSpeakerLabel or MaxSpeakerLabels for Mode 1', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: false,
         max_speaker_labels: undefined,
         partial_results_stability: 'high'
@@ -77,7 +77,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should create AWS command without ShowSpeakerLabel or MaxSpeakerLabels for Mode 2', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: false,
         max_speaker_labels: undefined,
         partial_results_stability: 'high'
@@ -132,7 +132,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should create AWS command with ShowSpeakerLabel=true and MaxSpeakerLabels=2 for Mode 3', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: true,
         max_speaker_labels: 2,
         partial_results_stability: 'medium'
@@ -185,7 +185,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should handle custom MaxSpeakerLabels values for Mode 3', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: true,
         max_speaker_labels: 3,  // Custom value
         partial_results_stability: 'medium'
@@ -225,7 +225,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should handle undefined max_speaker_labels gracefully', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: false,
         max_speaker_labels: undefined,
         partial_results_stability: 'high'
@@ -263,7 +263,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should handle null max_speaker_labels gracefully', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: false,
         max_speaker_labels: null as any,
         partial_results_stability: 'high'
@@ -301,7 +301,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should handle zero max_speaker_labels gracefully', async () => {
       const config: TranscriptionConfig = {
         language_code: 'fr-CA',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: true,
         max_speaker_labels: 0,
         partial_results_stability: 'medium'
@@ -341,7 +341,7 @@ describe('TranscriptionService AWS Configuration', () => {
     it('should preserve language code in AWS command', async () => {
       const config: TranscriptionConfig = {
         language_code: 'en-US',
-        media_sample_rate_hz: 16000,
+        media_sample_rate_hz: 44100,
         show_speaker_labels: true,
         max_speaker_labels: 2,
         partial_results_stability: 'medium'

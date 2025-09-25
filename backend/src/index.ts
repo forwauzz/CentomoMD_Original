@@ -2278,11 +2278,11 @@ wss.on('connection', (ws, req) => {
         // Phase 0: Use mode-specific configuration
         const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
           language_code: msg.languageCode, 
-          media_sample_rate_hz: msg.sampleRate ?? 16000
+          media_sample_rate_hz: msg.sampleRate ?? 44100
         });
 
         // Start audio recording for troubleshooting (temporary)
-        await audioRecordingService.startRecording(sessionId, msg.sampleRate ?? 16000);
+        await audioRecordingService.startRecording(sessionId, msg.sampleRate ?? 44100);
 
         // Start AWS stream (non-blocking) and expose feeder immediately
         const { pushAudio: feeder, endAudio: ender } =
