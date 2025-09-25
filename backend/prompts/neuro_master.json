@@ -1,0 +1,183 @@
+{
+  "template_id": "neuro-expertise-formatter",
+  "version": "1.0.0",
+  "language": "fr",
+  "section": "neuro_expertise",
+  "description": "Configuration pour le formateur d'expertise neurologique - Français",
+  
+  "system_prompt_config": {
+    "role": "assistant médical expert spécialisé en neurologie",
+    "context": "rapports médicaux neurologiques selon les standards professionnels québécois pour les lésions professionnelles CNESST",
+    "objective": "reformater le texte brut dicté en un document clair, structuré, médicalement précis et conforme aux standards CNESST pour les évaluations neurologiques"
+  },
+
+  "structure_rules": {
+    "mandatory_sections": [
+      "MANDAT D'ÉVALUATION",
+      "DIAGNOSTIC À L'ÉTUDE", 
+      "DOCUMENTS CONSULTÉS",
+      "IDENTIFICATION",
+      "ANTÉCÉDENTS PERSONNELS",
+      "MÉDICATION",
+      "ANAMNÈSE",
+      "REVUE DU DOSSIER",
+      "ÉTUDES DIAGNOSTIQUES",
+      "ÉTAT ACTUEL",
+      "ANTÉCÉDENTS FAMILIAUX",
+      "REVUE DES SYSTÈMES",
+      "EXAMEN CLINIQUE",
+      "EXAMEN NEUROLOGIQUE",
+      "RÉSUMÉ",
+      "DISCUSSION",
+      "EN RÉPONSE AU MANDAT"
+    ],
+    "header_format": ". Évaluation neurologique et expertise médicale",
+    "section_format": "SECTION_NAME : [contenu]",
+    "no_line_breaks_after_headers": true,
+    "content_directly_after_colon": true
+  },
+
+  "terminology_rules": {
+    "patient_reference": {
+      "replace_with": "Le travailleur/La travailleuse",
+      "never_use": ["Le patient", "La patiente", "le patient", "la patiente"]
+    },
+    "preserve_exact": [
+      "terminologie neurologique",
+      "anatomie cérébrale", 
+      "diagnostics neurologiques",
+      "examens spécialisés",
+      "scores d'évaluations cognitives",
+      "résultats d'examens neurologiques",
+      "échelles de symptômes postcommotionnels"
+    ],
+    "medical_terms": [
+      "traumatisme craniocérébral",
+      "syndrome postcommotionnel",
+      "évaluation cognitive de Montréal",
+      "nerfs crâniens",
+      "fonctions cérébelleuses",
+      "réflexes ostéotendineux",
+      "équilibre et coordination",
+      "stimulation magnétique transcrânienne"
+    ]
+  },
+
+  "scoring_preservation": {
+    "mandatory_preserve": [
+      "scores cognitifs (ex: 25/30, 14/30)",
+      "échelles de symptômes (ex: 58/132)",
+      "mesures anthropométriques",
+      "durées exactes",
+      "pourcentages d'amélioration",
+      "scores de douleur (ex: 5/10)"
+    ],
+    "neurological_scales": [
+      "Évaluation cognitive de Montréal (MoCA)",
+      "Échelle des symptômes postcommotionnels",
+      "Modified Balance Error Scoring System",
+      "Inventaire de dépression de Beck",
+      "Échelle d'anxiété"
+    ]
+  },
+
+  "anti_hallucination_rules": {
+    "never_invent": [
+      "détails neurologiques non mentionnés",
+      "scores ou échelles non dictés",
+      "résultats d'examens",
+      "mesures précises à partir de descriptions vagues",
+      "completions de phrases interrompues"
+    ],
+    "fallback_text": "Non documenté dans la dictée",
+    "reference_preservation": "cf [référence mentionnée]"
+  },
+
+  "cnest_compliance": {
+    "work_assessment_focus": true,
+    "functional_limitations": true,
+    "prognosis_requirements": true,
+    "return_to_work_recommendations": true,
+    "treatment_adequacy": true
+  },
+
+  "neurological_specifics": {
+    "cranial_nerves": [
+      "I (olfactif)", "II (optique)", "III (oculomoteur)", "IV (trochléaire)",
+      "V (trijumeau)", "VI (abducens)", "VII (facial)", "VIII (vestibulocochléaire)",
+      "IX (glossopharyngien)", "X (vague)", "XI (accessoire)", "XII (hypoglosse)"
+    ],
+    "cognitive_functions": [
+      "langage", "mémoire", "attention", "fonctions exécutives",
+      "orientation", "calcul", "abstraction", "praxies"
+    ],
+    "motor_functions": [
+      "force musculaire", "tonus", "coordination", "mouvements fins",
+      "marche", "équilibre", "réflexes"
+    ],
+    "sensory_functions": [
+      "sensibilité superficielle", "sensibilité profonde", "vibration",
+      "position", "température", "douleur"
+    ]
+  },
+
+  "post_processing_rules": {
+    "quote_management": "strategic_quotes_only",
+    "paragraph_formatting": "proper_medical_structure",
+    "name_stripping": "remove_invented_first_names",
+    "validation_checks": [
+      "neurological_assessment_completeness",
+      "medical_accuracy",
+      "cnest_compliance",
+      "score_consistency"
+    ]
+  },
+
+  "error_handling": {
+    "fallback_behavior": "return_original_content",
+    "missing_sections": "mark_as_undocumented",
+    "inconsistent_scores": "preserve_as_dictated",
+    "validation_failures": "log_and_continue"
+  },
+
+  "quality_metrics": {
+    "min_confidence_score": 0.7,
+    "required_elements": [
+      "mandat_clear",
+      "neurological_exam_complete",
+      "work_assessment_present",
+      "prognosis_provided"
+    ],
+    "validation_thresholds": {
+      "medical_accuracy": 0.9,
+      "cnest_compliance": 0.8,
+      "neurological_completeness": 0.85
+    }
+  },
+
+  "voice_commands": {
+    "neurological_triggers": [
+      "examen neurologique",
+      "fonctions cognitives",
+      "nerfs crâniens",
+      "évaluation cognitive",
+      "syndrome postcommotionnel",
+      "traumatisme craniocérébral"
+    ],
+    "assessment_triggers": [
+      "aptitude au travail",
+      "limitations fonctionnelles",
+      "pronostic",
+      "retour au travail",
+      "diagnostic"
+    ]
+  },
+
+  "metadata": {
+    "category": "specialty_specific",
+    "tags": ["neuro", "neurology", "ai", "medical", "enhanced", "flowchart", "specialty"],
+    "version": "1.0.0",
+    "author": "CentomoMD",
+    "implementation": "6-step-flowchart"
+  }
+}

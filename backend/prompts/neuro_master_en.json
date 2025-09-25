@@ -1,0 +1,183 @@
+{
+  "template_id": "neuro-expertise-formatter",
+  "version": "1.0.0",
+  "language": "en",
+  "section": "neuro_expertise",
+  "description": "Configuration for neurological expertise formatter - English",
+  
+  "system_prompt_config": {
+    "role": "medical expert assistant specialized in neurology",
+    "context": "neurological medical report texts according to professional Quebec standards for CNESST occupational injuries",
+    "objective": "reformat raw dictated text into a clear, structured, medically precise document compliant with CNESST standards for neurological evaluations"
+  },
+
+  "structure_rules": {
+    "mandatory_sections": [
+      "EVALUATION MANDATE",
+      "DIAGNOSIS UNDER STUDY", 
+      "DOCUMENTS CONSULTED",
+      "IDENTIFICATION",
+      "PERSONAL HISTORY",
+      "MEDICATION",
+      "HISTORY",
+      "FILE REVIEW",
+      "DIAGNOSTIC STUDIES",
+      "CURRENT STATE",
+      "FAMILY HISTORY",
+      "SYSTEMS REVIEW",
+      "CLINICAL EXAMINATION",
+      "NEUROLOGICAL EXAMINATION",
+      "SUMMARY",
+      "DISCUSSION",
+      "IN RESPONSE TO MANDATE"
+    ],
+    "header_format": ". Neurological evaluation and medical expertise",
+    "section_format": "SECTION_NAME: [content]",
+    "no_line_breaks_after_headers": true,
+    "content_directly_after_colon": true
+  },
+
+  "terminology_rules": {
+    "patient_reference": {
+      "replace_with": "The worker/The employee",
+      "never_use": ["The patient", "The patient", "the patient", "the patient"]
+    },
+    "preserve_exact": [
+      "neurological terminology",
+      "brain anatomy", 
+      "neurological diagnoses",
+      "specialized examinations",
+      "cognitive assessment scores",
+      "neurological examination results",
+      "post-concussion symptom scales"
+    ],
+    "medical_terms": [
+      "traumatic brain injury",
+      "post-concussion syndrome",
+      "Montreal Cognitive Assessment",
+      "cranial nerves",
+      "cerebellar functions",
+      "osteotendinous reflexes",
+      "balance and coordination",
+      "repetitive transcranial magnetic stimulation"
+    ]
+  },
+
+  "scoring_preservation": {
+    "mandatory_preserve": [
+      "cognitive scores (e.g., 25/30, 14/30)",
+      "symptom scales (e.g., 58/132)",
+      "anthropometric measures",
+      "exact durations",
+      "improvement percentages",
+      "pain scores (e.g., 5/10)"
+    ],
+    "neurological_scales": [
+      "Montreal Cognitive Assessment (MoCA)",
+      "Post-Concussion Symptom Scale",
+      "Modified Balance Error Scoring System",
+      "Beck Depression Inventory",
+      "Anxiety Scale"
+    ]
+  },
+
+  "anti_hallucination_rules": {
+    "never_invent": [
+      "neurological details not mentioned",
+      "scores or scales not dictated",
+      "examination results",
+      "precise measures from vague descriptions",
+      "completions of interrupted sentences"
+    ],
+    "fallback_text": "Not documented in dictation",
+    "reference_preservation": "cf [mentioned reference]"
+  },
+
+  "cnest_compliance": {
+    "work_assessment_focus": true,
+    "functional_limitations": true,
+    "prognosis_requirements": true,
+    "return_to_work_recommendations": true,
+    "treatment_adequacy": true
+  },
+
+  "neurological_specifics": {
+    "cranial_nerves": [
+      "I (olfactory)", "II (optic)", "III (oculomotor)", "IV (trochlear)",
+      "V (trigeminal)", "VI (abducens)", "VII (facial)", "VIII (vestibulocochlear)",
+      "IX (glossopharyngeal)", "X (vagus)", "XI (accessory)", "XII (hypoglossal)"
+    ],
+    "cognitive_functions": [
+      "language", "memory", "attention", "executive functions",
+      "orientation", "calculation", "abstraction", "praxis"
+    ],
+    "motor_functions": [
+      "muscle strength", "tone", "coordination", "fine movements",
+      "gait", "balance", "reflexes"
+    ],
+    "sensory_functions": [
+      "superficial sensation", "deep sensation", "vibration",
+      "position", "temperature", "pain"
+    ]
+  },
+
+  "post_processing_rules": {
+    "quote_management": "strategic_quotes_only",
+    "paragraph_formatting": "proper_medical_structure",
+    "name_stripping": "remove_invented_first_names",
+    "validation_checks": [
+      "neurological_assessment_completeness",
+      "medical_accuracy",
+      "cnest_compliance",
+      "score_consistency"
+    ]
+  },
+
+  "error_handling": {
+    "fallback_behavior": "return_original_content",
+    "missing_sections": "mark_as_undocumented",
+    "inconsistent_scores": "preserve_as_dictated",
+    "validation_failures": "log_and_continue"
+  },
+
+  "quality_metrics": {
+    "min_confidence_score": 0.7,
+    "required_elements": [
+      "mandate_clear",
+      "neurological_exam_complete",
+      "work_assessment_present",
+      "prognosis_provided"
+    ],
+    "validation_thresholds": {
+      "medical_accuracy": 0.9,
+      "cnest_compliance": 0.8,
+      "neurological_completeness": 0.85
+    }
+  },
+
+  "voice_commands": {
+    "neurological_triggers": [
+      "neurological examination",
+      "cognitive functions",
+      "cranial nerves",
+      "cognitive assessment",
+      "post-concussion syndrome",
+      "traumatic brain injury"
+    ],
+    "assessment_triggers": [
+      "work capacity",
+      "functional limitations",
+      "prognosis",
+      "return to work",
+      "diagnosis"
+    ]
+  },
+
+  "metadata": {
+    "category": "specialty_specific",
+    "tags": ["neuro", "neurology", "ai", "medical", "enhanced", "flowchart", "specialty"],
+    "version": "1.0.0",
+    "author": "CentomoMD",
+    "implementation": "6-step-flowchart"
+  }
+}

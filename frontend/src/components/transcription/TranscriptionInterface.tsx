@@ -20,6 +20,7 @@ import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { FeedbackFab } from '@/components/feedback/FeedbackFab';
 import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 import { useNeuroSession } from '@/hooks/useNeuroSession';
+import { useSpecialty } from '@/contexts/SpecialtyContext';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -34,6 +35,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const featureFlags = useFeatureFlags();
   const { language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
   const { saveToNeuroSession } = useNeuroSession();
+  const { specialty, isNeuro } = useSpecialty();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
   // Convert UI store language (fr/en) to dictation format (fr-CA/en-US)
@@ -249,6 +251,42 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       handleAutoSave();
     }
   }, [sessionDuration, isRecording]);
+
+  // Auto-select Neuro Expertise template when in neuro specialty context
+  useEffect(() => {
+    if (isNeuro && !selectedTemplate) {
+      console.log('Neuro specialty detected, auto-selecting Neuro Expertise template');
+      // Import the template config to get the Neuro Expertise template
+      import('@/config/template-config').then(({ TEMPLATE_CONFIGS }) => {
+        const neuroTemplate = TEMPLATE_CONFIGS.find(t => t.id === 'neuro-expertise-formatter');
+        if (neuroTemplate) {
+          console.log('Auto-selecting Neuro Expertise template:', neuroTemplate);
+          // Convert TemplateConfig to TemplateJSON format
+          const templateJSON: TemplateJSON = {
+            id: neuroTemplate.id,
+            name: neuroTemplate.name,
+            nameFr: neuroTemplate.nameFr,
+            description: neuroTemplate.description,
+            descriptionFr: neuroTemplate.descriptionFr,
+            category: neuroTemplate.type,
+            content: neuroTemplate.prompt || '',
+            contentFr: neuroTemplate.promptFr || '',
+            config: neuroTemplate.config,
+            meta: {
+              templateConfig: neuroTemplate,
+              aiFormatter: {
+                templateCombo: neuroTemplate.config.templateCombo || neuroTemplate.id,
+                verbatimSupport: neuroTemplate.features.verbatimSupport,
+                voiceCommandsSupport: neuroTemplate.features.voiceCommandsSupport
+              }
+            }
+          };
+          setSelectedTemplate(templateJSON);
+          setTemplateContent(templateJSON.content);
+        }
+      });
+    }
+  }, [isNeuro, selectedTemplate]);
 
   const handleStartRecording = useCallback(async () => {
     try {
@@ -654,23 +692,29 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             templateCombo,
             verbatimSupport,
             voiceCommandsSupport,
-            templateConfig: templateConfig?.id
+            templateConfig: templateConfig?.id,
+            templateId: template.id,
+            templateName: template.name
           });
           
           // Call Mode2Formatter API for Section 7 using proper authentication
+          const requestBody = {
+            transcript: rawTranscript,
+            section: (activeSection?.replace('section_', '') || (isNeuro ? 'custom' : '7')),
+            language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+            templateCombo,
+            verbatimSupport,
+            voiceCommandsSupport
+          };
+          
+          console.log('API request body:', requestBody);
+          
           const result = await apiFetch('/api/format/mode2', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              transcript: rawTranscript,
-              section: '7',
-              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
-              templateCombo,
-              verbatimSupport,
-              voiceCommandsSupport
-            })
+            body: JSON.stringify(requestBody)
           });
           
           console.log('Section 7 AI formatting successful');
@@ -732,7 +776,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       if (template.id === 'history-evolution-ai-formatter') {
         formatSection = 'history_evolution';
       } else {
-        formatSection = (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11";
+        formatSection = (activeSection?.replace('section_', '') || (isNeuro ? 'custom' : '7')) as "7" | "8" | "11" | "custom";
       }
       
       // Convert language format (fr-CA -> fr, en-US -> en)
@@ -799,7 +843,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       const basicFormatted = FormattingService.applyBasicFormatting(
         template.content,
         {
-          section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
+          section: (activeSection?.replace('section_', '') || (isNeuro ? 'custom' : '7')) as "7" | "8" | "11" | "custom",
           language: template.language || 'fr'
         }
       );
@@ -857,7 +901,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Template</label>
                 <TemplateDropdown
-                  currentSection={activeSection || 'section_7'}
+                  currentSection={activeSection || (isNeuro ? 'section_custom' : 'section_7')}
                   currentLanguage={selectedLanguage}
                   selectedTemplate={selectedTemplate}
                   onTemplateSelect={(template) => {
@@ -1213,7 +1257,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             injectTemplateContent(template);
             setShowTemplateModal(false);
           }}
-          currentSection={activeSection || 'section_7'}
+          currentSection={activeSection || (isNeuro ? 'section_custom' : 'section_7')}
           currentLanguage={selectedLanguage}
           isFormatting={isFormatting}
         />

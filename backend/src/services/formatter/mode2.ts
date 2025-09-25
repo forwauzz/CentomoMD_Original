@@ -54,6 +54,8 @@ export class Mode2Formatter {
           return await this.formatSection8Enhanced(transcript, options);
         case '11':
           return await this.formatSection11(transcript, options);
+        case 'neuro':
+          return await this.formatNeuroExpertise(transcript, options);
         default:
           throw new Error(`Unsupported section: ${options.section}`);
       }
@@ -142,6 +144,99 @@ export class Mode2Formatter {
     } catch (error) {
       console.error('Error in Section 8 formatting:', error);
       issues.push(`Section 8 formatting error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      return {
+        formatted: transcript, // Fallback to original transcript
+        issues,
+        sources_used: ['fallback'],
+        confidence_score: 0.1,
+        clinical_entities: null
+      };
+    }
+  }
+
+  /**
+   * Format Neuro Expertise with AI
+   * Supports template combinations with modular layer system
+   * Maintains backward compatibility with original Mode 2 pipeline
+   */
+  private async formatNeuroExpertise(
+    transcript: string, 
+    options: Mode2FormattingOptions
+  ): Promise<Mode2FormattingResult> {
+    const issues: string[] = [];
+    
+    try {
+      // Check if Universal Cleanup is enabled
+      const universalCleanupEnabled = process.env['UNIVERSAL_CLEANUP_ENABLED'] === 'true';
+      
+      let clinicalEntities: any = null;
+      
+      if (universalCleanupEnabled) {
+        console.log('Universal Cleanup enabled - processing Neuro Expertise with S7 UniversalCleanupLayer');
+        console.log('Neuro Expertise - transcript length:', transcript.length);
+        console.log('Neuro Expertise - language:', options.language);
+        
+        // Process with UniversalCleanupLayer to get CleanedInput
+        const cleanupResult = await this.universalCleanupLayer.process(transcript, {
+          language: options.language,
+          source: 'ambient' // Default to ambient, could be made configurable
+        });
+        
+        console.log('Neuro Expertise - Universal Cleanup result:', {
+          success: cleanupResult.success,
+          hasData: !!cleanupResult.data,
+          error: cleanupResult.metadata?.error
+        });
+        
+        if (cleanupResult.success && cleanupResult.data) {
+          const cleanedData = cleanupResult.data;
+          clinicalEntities = cleanedData.clinical_entities;
+          console.log('Universal Cleanup completed successfully for Neuro Expertise');
+          
+          // Use NeuroExpertiseAIFormatter for specialized neurological processing
+          const { NeuroExpertiseAIFormatter } = await import('../formatter/neuroExpertiseAI.js');
+          
+          const result = await NeuroExpertiseAIFormatter.formatNeuroExpertiseContent(
+            cleanedData.cleaned_text,
+            clinicalEntities,
+            options.language as 'fr' | 'en'
+          );
+          
+          return {
+            formatted: result.formatted,
+            issues: result.issues || [],
+            sources_used: ['universal-cleanup', 'neuro-expertise-ai-formatter'],
+            confidence_score: result.confidence_score || 0.8,
+            clinical_entities: clinicalEntities
+          };
+        } else {
+          console.warn('Universal Cleanup failed, falling back to NeuroExpertiseAIFormatter');
+          issues.push('Universal Cleanup failed, using fallback formatting');
+        }
+      }
+
+      // Fallback to NeuroExpertiseAIFormatter
+      console.log('Using NeuroExpertiseAIFormatter for Neuro Expertise formatting');
+      const { NeuroExpertiseAIFormatter } = await import('../formatter/neuroExpertiseAI.js');
+      
+      const result = await NeuroExpertiseAIFormatter.formatNeuroExpertiseContent(
+        transcript,
+        clinicalEntities || { language: options.language, issues: [], extracted_entities: {} },
+        options.language as 'fr' | 'en'
+      );
+      
+      return {
+        formatted: result.formatted,
+        issues: [...issues, ...(result.issues || [])],
+        sources_used: ['neuro-expertise-ai-formatter'],
+        confidence_score: result.confidence_score || 0.7,
+        clinical_entities: clinicalEntities
+      };
+      
+    } catch (error) {
+      console.error('Error in Neuro Expertise formatting:', error);
+      issues.push(`Neuro Expertise formatting error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       return {
         formatted: transcript, // Fallback to original transcript

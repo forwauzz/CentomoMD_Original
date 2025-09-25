@@ -304,6 +304,45 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       implementation: '6-step-flowchart'
     }
   },
+  'neuro-expertise-formatter': {
+    id: 'neuro-expertise-formatter',
+    name: 'Neuro Expertise Formatter',
+    nameEn: 'Neuro Expertise Formatter',
+    description: 'Enhanced AI-powered neurological expertise formatting with comprehensive prompt system (6-step flowchart implementation)',
+    descriptionEn: 'Enhanced AI-powered neurological expertise formatting with comprehensive prompt system (6-step flowchart implementation)',
+    type: 'formatting',
+    compatibleSections: ['section_7', 'section_8', 'section_11', 'section_custom'],
+    compatibleModes: ['mode1', 'mode2', 'mode3'],
+    supportedLanguages: ['fr', 'en'],
+    content: {
+      structure: 'ai-neuro-expertise-formatting-enhanced',
+      placeholders: ['neurological_assessment', 'cognitive_functions', 'motor_functions', 'sensory_functions', 'reflexes', 'coordination'],
+      validationRules: ['neuro_compliance', 'medical_accuracy', 'prompt_injection_validation']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true,
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
+    },
+    configuration: {
+      priority: 3,
+      timeout: 45,
+      retryAttempts: 2,
+      promptFiles: ['master_prompt', 'json_config', 'golden_example']
+    },
+    metadata: {
+      category: 'specialty_specific',
+      tags: ['neuro', 'neurology', 'ai', 'medical', 'enhanced', 'flowchart', 'specialty'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      implementation: '6-step-flowchart'
+    }
+  },
   'section-7-only': {
     id: 'section-7-only',
     name: 'Section 7 Template Only',

@@ -339,6 +339,12 @@ export class ProcessingOrchestrator {
       return await this.processSection8AIFormatter(content, template, request);
     }
     
+    // Handle Neuro Expertise AI Formatter template
+    if (template.id === 'neuro-expertise-formatter') {
+      console.log(`[${correlationId}] Routing to processNeuroExpertiseAIFormatter`);
+      return await this.processNeuroExpertiseAIFormatter(content, template, request);
+    }
+    
     // Handle History of Evolution AI Formatter template
     if (template.id === 'history-evolution-ai-formatter') {
       console.log(`[${correlationId}] Routing to processHistoryEvolutionAIFormatter`);
@@ -599,6 +605,55 @@ export class ProcessingOrchestrator {
       return processedContent;
     } catch (error) {
       console.error(`[${correlationId}] Section 8 AI formatting error:`, error);
+      // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Neuro Expertise AI Formatter template
+   */
+  private async processNeuroExpertiseAIFormatter(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Neuro Expertise AI Formatter template: ${template.id}`);
+      
+      // Use NeuroExpertiseAIFormatter for specialized neurological processing
+      const { NeuroExpertiseAIFormatter } = await import('../../services/formatter/neuroExpertiseAI.js');
+      
+      // Create clinical entities from request context
+      const clinicalEntities: any = {
+        language: request.language,
+        issues: [],
+        extracted_entities: {}
+      };
+      
+      const result = await NeuroExpertiseAIFormatter.formatNeuroExpertiseContent(
+        content,
+        clinicalEntities,
+        request.language as 'fr' | 'en'
+      );
+      
+      const processedContent = result.formatted;
+      
+      // Log any issues
+      if (result.issues && result.issues.length > 0) {
+        console.warn(`[${correlationId}] Neuro Expertise AI formatting issues:`, result.issues);
+      }
+      
+      console.log(`[${correlationId}] Neuro Expertise AI formatting completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id,
+        confidenceScore: result.confidence_score,
+        hasIssues: result.issues ? result.issues.length > 0 : false,
+        processingTime: result.metadata?.processing_time
+      });
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Neuro Expertise AI formatting error:`, error);
       // Return original content if formatting fails
       return content;
     }
