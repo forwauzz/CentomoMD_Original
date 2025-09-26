@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient, type User, type Session } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { validateAndNormalizeEmail } from './email';
+import { getAuthRedirectUrl } from './redirect';
 
 /**
  * Vite exposes client-safe vars via import.meta.env when prefixed with VITE_.
@@ -111,7 +112,6 @@ export const isAuthConfigured = () => {
 };
 
 // Helper functions for intended path preservation
-const getSiteUrl = () => import.meta.env.VITE_SITE_URL || window.location.origin;
 
 const INTENDED_KEY = 'auth_intended_path';
 const saveIntendedPath = (path: string) => localStorage.setItem(INTENDED_KEY, path);
@@ -230,7 +230,7 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
         options: {
-          emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+          emailRedirectTo: getAuthRedirectUrl(),
         },
       });
       
@@ -271,7 +271,7 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getSiteUrl()}/auth/callback`,
+          redirectTo: getAuthRedirectUrl(),
           scopes: 'openid email profile',
           queryParams: {
             access_type: 'offline',

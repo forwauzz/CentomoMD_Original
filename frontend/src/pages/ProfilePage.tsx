@@ -13,6 +13,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useUserStore } from '@/stores/userStore';
 import { dbLocaleToUi } from '@/lib/i18n';
 import { supabase } from '@/lib/authClient';
+import { getAuthRedirectUrl } from '@/lib/redirect';
 
 // Profile types - matches backend API response
 interface ProfileData {
@@ -277,7 +278,7 @@ export const ProfilePage: React.FC = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/reset-callback`
+        redirectTo: getAuthRedirectUrl()
       });
 
       if (error) {
