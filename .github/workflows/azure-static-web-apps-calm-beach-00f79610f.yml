@@ -3,7 +3,7 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - azure-production          # <- change if you want main/develop
+      - azure-production
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -28,18 +28,6 @@ jobs:
         with:
           node-version: '20'
 
-      # Optional: only if you really need OIDC; not required for most SWA builds
-      # - name: Install OIDC Client from Core Package
-      #   run: npm install @actions/core@1.6.0 @actions/http-client
-      # - name: Get Id Token
-      #   uses: actions/github-script@v6
-      #   id: idtoken
-      #   with:
-      #     script: |
-      #       const coredemo = require('@actions/core')
-      #       return await coredemo.getIDToken()
-      #     result-encoding: string
-
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -47,12 +35,10 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_BEACH_00F79610F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          # --- Paths for Vite app inside "frontend" folder ---
-          app_location: "frontend"        # (no ./)
-          api_location: ""                # not using Functions
-          output_location: "dist"         # Vite’s build output
+          app_location: "frontend"     # source lives here
+          api_location: ""             # not using Functions
+          output_location: "dist"      # vite build output
           app_build_command: "npm ci && npm run build"
-          # github_id_token: ${{ steps.idtoken.outputs.result }} # only if you keep OIDC step above
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
