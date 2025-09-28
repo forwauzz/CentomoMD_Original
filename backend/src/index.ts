@@ -4,6 +4,7 @@ import './env.js';
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import cors from 'cors';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
@@ -36,6 +37,38 @@ import dbRouter from './routes/db.js';
 import { logger } from './utils/logger.js';
 
 const app = express();
+app.set('trust proxy', 1);
+
+// --- CORS ---
+/**
+ * Allow Amplify UI and optional custom domains.
+ * You can also pass a comma-separated list via env: ALLOWED_ORIGINS
+ */
+const defaultAllowed = [
+  'https://azure-production.d1deo9tihdnt50.amplifyapp.com',
+  // 'https://www.your-custom-domain.com' // add later if needed
+];
+const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowed, ...envAllowed])];
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow server-to-server or curl (no origin)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked origin: ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization']
+  })
+);
+
 const server = http.createServer(app);
 
 // TODO: Apply security middleware
@@ -45,9 +78,8 @@ app.use(securityMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
+// --- Basic routes ---
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 
 // Config endpoint to expose flags to frontend
 app.get('/api/config', getConfig);
@@ -2210,7 +2242,7 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   }
 };
 
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: '/ws' });
 
 // Store active transcription sessions - integrated with AWS Transcribe
 const activeSessions = new Map();
@@ -2422,8 +2454,11 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    server.listen(PORT, () => {
-      console.log(`✅ Backend listening on port ${PORT}`);
+    const SERVER_PORT = process.env.PORT ? Number(process.env.PORT) : PORT;
+    server.listen(SERVER_PORT, '0.0.0.0', () => {
+      console.log(`API listening on ${SERVER_PORT}`);
+      console.log(`Health: GET /healthz`);
+      console.log(`WebSocket path: /ws`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
       console.log("🚀 Phase 3: AWS Transcribe integration active");
       console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
@@ -2446,8 +2481,11 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-server.listen(PORT, () => {
-  console.log(`✅ Backend listening on port ${PORT}`);
+const SERVER_PORT = process.env.PORT ? Number(process.env.PORT) : PORT;
+server.listen(SERVER_PORT, '0.0.0.0', () => {
+  console.log(`API listening on ${SERVER_PORT}`);
+  console.log(`Health: GET /healthz`);
+  console.log(`WebSocket path: /ws`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
