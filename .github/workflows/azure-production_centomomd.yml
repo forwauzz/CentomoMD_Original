@@ -33,6 +33,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_APP_NAME }}  # or hardcode: Centomomd
-          publish-profile: ${{ secrets.AZURE_APPSERVICE_PUBLISH_PROFILE }}
+          app-name: Centomomd  # 💡 This is the backend App Service name
           package: backend
