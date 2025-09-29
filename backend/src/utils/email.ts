@@ -33,7 +33,7 @@ export function normalizeEmail(email: string): string {
   // Gmail-specific normalization
   if (domain === 'gmail.com' || domain === 'googlemail.com') {
     // Remove plus tags (everything after +)
-    const noPlus = local.split('+')[0];
+    const noPlus = local.split('+')[0] ?? local;
     // Remove dots from local part
     const normalizedLocal = noPlus.replace(/\./g, '');
     return `${normalizedLocal}@gmail.com`;

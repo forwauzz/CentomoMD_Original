@@ -70,7 +70,7 @@ const rateLimitMiddleware = rateLimit({
 });
 
 // Security logging middleware
-const securityLoggingMiddleware = (req: any, res: any, next: any) => {
+const securityLoggingMiddleware = (req: any, _res: any, next: any) => {
   // Log security-relevant events without sensitive data
   if (req.method === 'OPTIONS') {
     console.log(`🔒 CORS preflight request from: ${req.get('Origin') || 'unknown'}`);

@@ -1,28 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { getSupabaseClient } from '@/lib/supabaseClient.js';
+import { getSupabaseClient } from '@/utils/supabaseClient';
 import { logger, complianceLogger } from '@/utils/logger.js';
-
-// Extend Express Request interface to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        user_id: string;
-        email: string;
-        name: string;
-        role: string;
-        clinic_id?: string;
-        profile?: {
-          display_name?: string;
-          locale: string;
-          consent_pipeda: boolean;
-          consent_marketing: boolean;
-          default_clinic_id?: string;
-        };
-      };
-    }
-  }
-}
+import '@/types/express';
 
 export const authMiddleware = async (
   req: Request,
@@ -37,6 +16,7 @@ export const authMiddleware = async (
       // If Supabase is not configured, allow access for development
       logger.info('Mock authentication for development - Supabase not configured');
       req.user = {
+        id: 'dev-user-id',
         user_id: 'dev-user-id',
         email: 'dev@example.com',
         name: 'Development User',
@@ -80,7 +60,7 @@ export const authMiddleware = async (
       .from('profiles')
       .select('user_id, display_name, locale, consent_pipeda, consent_marketing, default_clinic_id')
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (profileError || !profile) {
       logger.error('User profile not found', {
@@ -91,20 +71,21 @@ export const authMiddleware = async (
       // For development mode, create a mock profile
       const mockProfile = {
         user_id: user.id,
-        display_name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown User',
+        display_name: user.user_metadata?.['name'] || user.email?.split('@')[0] || 'Unknown User',
         locale: 'fr-CA',
         consent_pipeda: false,
         consent_marketing: false,
-        default_clinic_id: null
+        default_clinic_id: null as string | null
       };
 
       // Attach user to request with mock profile data
       req.user = {
+        id: user.id,
         user_id: user.id,
         email: user.email || '',
-        name: mockProfile.display_name,
+        name: mockProfile.display_name || 'Unknown User',
         role: 'physician',
-        clinic_id: mockProfile.default_clinic_id,
+        clinic_id: mockProfile.default_clinic_id || undefined,
         profile: mockProfile
       };
 
@@ -120,23 +101,26 @@ export const authMiddleware = async (
     }
 
     // Attach user to request with profile data
+    // At this point, profile is guaranteed to be non-null due to the check above
+    const validProfile = profile!;
     req.user = {
-      user_id: profile.user_id,
-      email: user.email,
-      name: profile.display_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown User',
+      id: user.id,
+      user_id: validProfile.user_id,
+      email: user.email || '',
+      name: validProfile.display_name || user.user_metadata?.['name'] || user.email?.split('@')[0] || 'Unknown User',
       role: 'physician', // Default role, can be enhanced later with role management
-      clinic_id: profile.default_clinic_id,
+      clinic_id: validProfile.default_clinic_id || undefined,
       profile: {
-        display_name: profile.display_name,
-        locale: profile.locale,
-        consent_pipeda: profile.consent_pipeda,
-        consent_marketing: profile.consent_marketing,
-        default_clinic_id: profile.default_clinic_id
+        display_name: validProfile.display_name,
+        locale: validProfile.locale,
+        consent_pipeda: validProfile.consent_pipeda,
+        consent_marketing: validProfile.consent_marketing,
+        default_clinic_id: validProfile.default_clinic_id
       }
     };
 
     // Log successful authentication
-    complianceLogger.logAuth(profile.user_id, 'api_access', true, {
+    complianceLogger.logAuth(validProfile.user_id, 'api_access', true, {
       endpoint: req.path,
       method: req.method,
       ip: req.ip,
@@ -173,7 +157,7 @@ export const requireRole = (allowedRoles: string[]) => {
 
     if (!allowedRoles.includes(req.user.role)) {
       logger.warn('Insufficient permissions', {
-        userId: req.user.id,
+        userId: req.user?.id ?? req.user?.user_id,
         userRole: req.user.role,
         requiredRoles: allowedRoles,
         endpoint: req.path,
@@ -210,7 +194,7 @@ export const requireClinicAccess = (req: Request, res: Response, next: NextFunct
   
   if (requestedClinicId && req.user.clinic_id !== requestedClinicId) {
     logger.warn('Clinic access denied', {
-      userId: req.user.id,
+      userId: req.user?.id ?? req.user?.user_id,
       userClinicId: req.user.clinic_id,
       requestedClinicId,
       endpoint: req.path,
@@ -248,12 +232,14 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
   }
 
   try {
+    const supabase = getSupabaseClient();
+    
     // Check if user owns the session or is admin
     const { data: session, error } = await supabase
       .from('sessions')
       .select('user_id')
       .eq('id', sessionId)
-      .single();
+      .single() as { data: any; error: any };
 
     if (error || !session) {
       return res.status(404).json({
@@ -263,9 +249,9 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
       });
     }
 
-    if (req.user.role !== 'admin' && session.user_id !== req.user.id) {
+    if (req.user.role !== 'admin' && session.user_id !== (req.user?.id ?? req.user?.user_id)) {
       logger.warn('Session access denied', {
-        userId: req.user.id,
+        userId: req.user?.id ?? req.user?.user_id,
         sessionId,
         sessionOwnerId: session.user_id,
         endpoint: req.path,
@@ -284,7 +270,7 @@ export const requireSessionOwnership = async (req: Request, res: Response, next:
   } catch (error) {
     logger.error('Session ownership verification error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      userId: req.user.id,
+      userId: req.user?.id ?? req.user?.user_id,
       sessionId
     });
 
@@ -307,6 +293,7 @@ export const optionalAuth = async (req: Request, _res: Response, next: NextFunct
     }
 
     const token = authHeader.substring(7);
+    const supabase = getSupabaseClient();
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -316,25 +303,28 @@ export const optionalAuth = async (req: Request, _res: Response, next: NextFunct
     }
 
     // Get user profile
+    const supabaseClient = getSupabaseClient();
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('user_id, display_name, locale, consent_pipeda, consent_marketing, default_clinic_id')
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (profile) {
+      const validProfile = profile;
       req.user = {
-        user_id: profile.user_id,
-        email: user.email,
-        name: profile.display_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown User',
+        id: user.id,
+        user_id: validProfile.user_id,
+        email: user.email || '',
+        name: validProfile.display_name || user.user_metadata?.['name'] || user.email?.split('@')[0] || 'Unknown User',
         role: 'physician',
-        clinic_id: profile.default_clinic_id,
+        clinic_id: validProfile.default_clinic_id || undefined,
         profile: {
-          display_name: profile.display_name,
-          locale: profile.locale,
-          consent_pipeda: profile.consent_pipeda,
-          consent_marketing: profile.consent_marketing,
-          default_clinic_id: profile.default_clinic_id
+          display_name: validProfile.display_name,
+          locale: validProfile.locale,
+          consent_pipeda: validProfile.consent_pipeda,
+          consent_marketing: validProfile.consent_marketing,
+          default_clinic_id: validProfile.default_clinic_id
         }
       };
     }

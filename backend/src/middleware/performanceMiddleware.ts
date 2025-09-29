@@ -23,7 +23,6 @@ class RealTimePerformanceMonitor {
     maxProcessingTime: number;
     maxErrorRate: number;
   };
-  private lastCleanup: number;
   
   constructor() {
     this.metrics = {
@@ -45,7 +44,6 @@ class RealTimePerformanceMonitor {
       maxProcessingTime: 2000, // 2 seconds
       maxErrorRate: 0.05 // 5%
     };
-    this.lastCleanup = Date.now();
   }
   
   // Record transcription latency

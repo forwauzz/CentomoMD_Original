@@ -25,8 +25,10 @@ export class S1IngestAWS {
       }
       
       // Method 2: From LanguageIdentification array (when using language detection)
-      if (result.language_identification?.length > 0) {
-        return result.language_identification[0].language_code;
+      const langs = result.language_identification ?? [];
+      if (langs.length > 0) {
+        const primaryLang = langs[0] ?? { language_code: 'unknown' };
+        return primaryLang.language_code;
       }
     }
     

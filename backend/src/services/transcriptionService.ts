@@ -359,7 +359,7 @@ export class TranscriptionService {
     const isActive = this.activeStreams.has(sessionId);
     
     return {
-      sessionMetadata: metadata ? { ...metadata } : undefined,
+      ...(metadata && { sessionMetadata: { ...metadata } }),
       isActive
     };
   }

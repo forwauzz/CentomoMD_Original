@@ -48,7 +48,7 @@ const defaultAllowed = [
   'https://azure-production.d1deo9tihdnt50.amplifyapp.com',
   // 'https://www.your-custom-domain.com' // add later if needed
 ];
-const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+const envAllowed = (process.env['ALLOWED_ORIGINS'] || '')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
@@ -77,6 +77,8 @@ app.use(securityMiddleware);
 // TODO: Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Response helpers removed - using explicit return statements instead
 
 // --- Basic routes ---
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
@@ -652,7 +654,7 @@ app.get('/api/templates', (req, res) => {
       templatesReturned: Array.isArray(templates) ? templates.length : Object.keys(templates).length
     });
     
-    res.json({ success: true, data: templates });
+    return res.json({ success: true, data: templates });
   } catch (error) {
     // Audit logging for errors
     logger.error('Templates access failed', {
@@ -666,7 +668,7 @@ app.get('/api/templates', (req, res) => {
     });
 
     console.error('Error fetching templates:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch templates' });
   }
 });
 
@@ -704,7 +706,7 @@ app.get('/api/templates/stats',  (req, res) => {
       statsReturned: Object.keys(stats).length
     });
     
-    res.json({ success: true, data: stats });
+    return res.json({ success: true, data: stats });
   } catch (error) {
     // Audit logging for errors
     logger.error('Template stats access failed', {
@@ -718,7 +720,7 @@ app.get('/api/templates/stats',  (req, res) => {
     });
 
     console.error('Error fetching template stats:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch template stats' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch template stats' });
   }
 });
 
@@ -1165,7 +1167,7 @@ app.get('/api/templates/analytics',  (req, res) => {
       analyticsReturned: analytics ? Object.keys(analytics).length : 0
     });
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: analytics || {}
     });
@@ -1182,7 +1184,7 @@ app.get('/api/templates/analytics',  (req, res) => {
     });
 
     console.error('Error fetching template analytics:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch template analytics' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch template analytics' });
   }
 });
 
@@ -1378,7 +1380,7 @@ app.post('/api/templates/search',  (req, res) => {
       templatesReturned: templates.length
     });
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: templates 
     });
@@ -1395,7 +1397,7 @@ app.post('/api/templates/search',  (req, res) => {
     });
 
     console.error('Error performing advanced search:', error);
-    res.status(500).json({ success: false, error: 'Failed to perform search' });
+    return res.status(500).json({ success: false, error: 'Failed to perform search' });
   }
 });
 
@@ -1439,7 +1441,7 @@ app.get('/api/templates/export',  (req, res) => {
       templatesExported: templates.length
     });
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       data: templates 
     });
@@ -1456,7 +1458,7 @@ app.get('/api/templates/export',  (req, res) => {
     });
 
     console.error('Error exporting templates:', error);
-    res.status(500).json({ success: false, error: 'Failed to export templates' });
+    return res.status(500).json({ success: false, error: 'Failed to export templates' });
   }
 });
 
@@ -1649,22 +1651,20 @@ app.post('/api/templates/bulk/delete',  async (req, res) => {
 });
 
 // Mode 1 Formatting Endpoint
-app.post('/api/format/mode1', async (req, res): Promise<void> => {
+app.post('/api/format/mode1', async (req, res) => {
   try {
     const { transcript, language, quote_style, radiology_mode, section } = req.body;
     
     if (!transcript || typeof transcript !== 'string') {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Transcript is required and must be a string' 
       });
-      return;
     }
 
     if (!language || !['fr', 'en'].includes(language)) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Language must be either "fr" or "en"' 
       });
-      return;
     }
 
     // Development mode: no auth required
@@ -1701,7 +1701,7 @@ app.post('/api/format/mode1', async (req, res): Promise<void> => {
       }
     }
 
-    res.json({
+    return res.json({
       formatted: result.formatted,
       issues: result.issues,
       verbatim_blocks: result.verbatim_blocks,
@@ -1711,7 +1711,7 @@ app.post('/api/format/mode1', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Mode 1 formatting error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to format transcript',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -1719,7 +1719,7 @@ app.post('/api/format/mode1', async (req, res): Promise<void> => {
 });
 
 // Word-for-Word (with AI) Formatting Endpoint
-app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
+app.post('/api/format/word-for-word-ai', async (req, res) => {
   // Generate or read correlation ID
   const correlationId = req.headers['x-correlation-id'] as string || `be-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
@@ -1734,20 +1734,18 @@ app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
     
     if (!transcript || typeof transcript !== 'string') {
       console.warn(`[${correlationId}] Invalid transcript provided`);
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Transcript is required and must be a string',
         correlationId
       });
-      return;
     }
 
     if (!language || !['fr', 'en'].includes(language)) {
       console.warn(`[${correlationId}] Invalid language provided: ${language}`);
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Language must be either "fr" or "en"',
         correlationId
       });
-      return;
     }
 
     // Development mode: no auth required
@@ -1772,14 +1770,14 @@ app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
     });
 
     if (result.success) {
-      res.json({
+      return res.json({
         success: true,
         formatted: result.processedContent,
         metadata: result.metadata,
         correlationId
       });
     } else {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Processing failed',
         details: result.metadata.errors,
@@ -1791,7 +1789,7 @@ app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
     console.error(`[${correlationId}] Word-for-Word (with AI) formatting error:`, error);
     
     // Return 200 with fallback content instead of 500
-    res.status(200).json({
+    return res.status(200).json({
       success: false,
       formatted: req.body.transcript || '', // Return original content
       issues: ['ai_failed', error instanceof Error ? error.constructor.name : 'UnknownError'],
@@ -1801,7 +1799,7 @@ app.post('/api/format/word-for-word-ai', async (req, res): Promise<void> => {
 });
 
 // History of Evolution Formatting Endpoint
-app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
+app.post('/api/format-history-evolution', async (req, res) => {
   const correlationId = req.headers['x-correlation-id'] as string || `he-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
   try {
@@ -1815,20 +1813,18 @@ app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
     
     if (!text || typeof text !== 'string') {
       console.warn(`[${correlationId}] Invalid text provided`);
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Text is required and must be a string',
         correlationId
       });
-      return;
     }
 
     if (!language || !['fr', 'en'].includes(language)) {
       console.warn(`[${correlationId}] Invalid language provided: ${language}`);
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Language must be either "fr" or "en"',
         correlationId
       });
-      return;
     }
 
     // Development mode: no auth required
@@ -1845,7 +1841,7 @@ app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
       outputLength: formatted.length
     });
 
-    res.json({
+    return res.json({
       success: true,
       formatted,
       correlationId
@@ -1855,7 +1851,7 @@ app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
     console.error(`[${correlationId}] History of Evolution formatting error:`, error);
     
     // Return 200 with fallback content instead of 500
-    res.status(200).json({
+    return res.status(200).json({
       success: false,
       formatted: req.body.text || '', // Return original content
       issues: ['ai_failed', error instanceof Error ? error.constructor.name : 'UnknownError'],
@@ -1865,7 +1861,7 @@ app.post('/api/format-history-evolution', async (req, res): Promise<void> => {
 });
 
 // Mode 2 Formatting Endpoint (Smart Dictation)
-app.post('/api/format/mode2', async (req, res): Promise<void> => {
+app.post('/api/format/mode2', async (req, res) => {
   try {
     const { 
       transcript, 
@@ -1881,24 +1877,21 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
     } = req.body;
     
     if (!transcript || typeof transcript !== 'string') {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Transcript is required and must be a string' 
       });
-      return;
     }
 
     if (!section || !['7', '8', '11'].includes(section)) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Section must be "7", "8", or "11"' 
       });
-      return;
     }
 
     if (!language || !['fr', 'en'].includes(language)) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Language must be either "fr" or "en"' 
       });
-      return;
     }
 
     // Development mode: no auth required
@@ -1928,7 +1921,7 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
     });
 
     // Return the formatted result
-    res.json({
+    return res.json({
       formatted: result.formatted,
       issues: result.issues,
       sources_used: result.sources_used,
@@ -1941,7 +1934,7 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Mode 2 formatting error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to format transcript',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -1949,36 +1942,32 @@ app.post('/api/format/mode2', async (req, res): Promise<void> => {
 });
 
 // Mode 3 Transcribe Processing Endpoint
-app.post('/api/transcribe/process', async (req, res): Promise<void> => {
+app.post('/api/transcribe/process', async (req, res) => {
   try {
     const { sessionId, modeId, language, section, rawAwsJson } = req.body;
     
     if (!sessionId || !modeId || !language || !section || !rawAwsJson) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Missing required fields: sessionId, modeId, language, section, rawAwsJson' 
       });
-      return;
     }
 
     if (modeId !== 'ambient') {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'This endpoint only supports ambient mode' 
       });
-      return;
     }
 
     if (!['section_7', 'section_8', 'section_11'].includes(section)) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Section must be "section_7", "section_8", or "section_11"' 
       });
-      return;
     }
 
     if (!['fr', 'en'].includes(language)) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Language must be either "fr" or "en"' 
       });
-      return;
     }
 
     // Import Mode3Pipeline dynamically
@@ -1990,30 +1979,27 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
     try {
       awsResult = typeof rawAwsJson === 'string' ? JSON.parse(rawAwsJson) : rawAwsJson;
     } catch (parseError) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Invalid AWS Transcribe JSON format' 
       });
-      return;
     }
 
     const validation = pipeline.validateAWSResult(awsResult);
     if (!validation.valid) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Invalid AWS result', 
         details: validation.errors 
       });
-      return;
     }
 
     // Execute S1→S5 pipeline
     const result = await pipeline.execute(awsResult, 'default');
     
     if (!result.success) {
-      res.status(500).json({ 
+      return res.status(500).json({ 
         error: 'Pipeline processing failed', 
         details: result.error 
       });
-      return;
     }
 
     // result from pipeline
@@ -2035,7 +2021,7 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
     });
 
     // Return pipeline artifacts
-    res.json({
+    return res.json({
       narrative: data.narrative,
       irSummary: {
         turnCount: data.ir.turns.length,
@@ -2052,7 +2038,7 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Mode 3 transcribe processing error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to process transcribe data',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -2060,15 +2046,14 @@ app.post('/api/transcribe/process', async (req, res): Promise<void> => {
 });
 
 // Get Session Artifacts Endpoint
-app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
+app.get('/api/sessions/:id/artifacts', async (req, res) => {
   try {
     const { id: sessionId } = req.params;
     
     if (!sessionId) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Session ID is required' 
       });
-      return;
     }
 
     // Get database instance
@@ -2090,7 +2075,7 @@ app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Get session artifacts error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to retrieve session artifacts',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -2098,15 +2083,14 @@ app.get('/api/sessions/:id/artifacts', async (req, res): Promise<void> => {
 });
 
 // Role Swap Endpoint (Admin/Support only)
-app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
+app.post('/api/sessions/:id/roles/swap', async (req, res) => {
   try {
     const { id: sessionId } = req.params;
     
     if (!sessionId) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Session ID is required' 
       });
-      return;
     }
 
     // TODO: Implement role swap logic
@@ -2115,7 +2099,7 @@ app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
     // 3. Re-run S5 narrative generation
     // 4. Update database with new narrative
     
-    res.json({
+    return res.json({
       message: 'Role swap endpoint ready - database integration pending',
       sessionId,
       note: 'This endpoint will flip PATIENT ↔ CLINICIAN roles and regenerate narrative'
@@ -2123,7 +2107,7 @@ app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Role swap error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to swap roles',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -2131,15 +2115,14 @@ app.post('/api/sessions/:id/roles/swap', async (req, res): Promise<void> => {
 });
 
 // AWS Troubleshooting Endpoints (Temporary)
-app.get('/api/troubleshoot/session/:id', async (req, res): Promise<void> => {
+app.get('/api/troubleshoot/session/:id', async (req, res) => {
   try {
     const { id: sessionId } = req.params;
     
     if (!sessionId) {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         error: 'Session ID is required' 
       });
-      return;
     }
 
     // Get transcription service troubleshooting data
@@ -2148,7 +2131,7 @@ app.get('/api/troubleshoot/session/:id', async (req, res): Promise<void> => {
     // Get audio recording info
     const audioInfo = audioRecordingService.getRecordingInfo(sessionId);
     
-    res.json({
+    return res.json({
       sessionId,
       transcription: transcriptionData,
       audio: audioInfo,
@@ -2157,17 +2140,17 @@ app.get('/api/troubleshoot/session/:id', async (req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Error fetching troubleshooting data:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch troubleshooting data' 
     });
   }
 });
 
-app.get('/api/troubleshoot/recordings', async (_req, res): Promise<void> => {
+app.get('/api/troubleshoot/recordings', async (_req, res) => {
   try {
     const recordingFiles = await audioRecordingService.getRecordingFiles();
     
-    res.json({
+    return res.json({
       recordings: recordingFiles,
       count: recordingFiles.length,
       timestamp: new Date().toISOString()
@@ -2175,24 +2158,24 @@ app.get('/api/troubleshoot/recordings', async (_req, res): Promise<void> => {
 
   } catch (error) {
     console.error('Error fetching recording files:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch recording files' 
     });
   }
 });
 
-app.get('/api/troubleshoot/cleanup', async (_req, res): Promise<void> => {
+app.get('/api/troubleshoot/cleanup', async (_req, res) => {
   try {
     await audioRecordingService.cleanupOldRecordings();
     
-    res.json({
+    return res.json({
       message: 'Old recordings cleaned up successfully',
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Error cleaning up recordings:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to cleanup recordings' 
     });
   }
@@ -2454,7 +2437,7 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    const SERVER_PORT = process.env.PORT ? Number(process.env.PORT) : PORT;
+    const SERVER_PORT = process.env['PORT'] ? Number(process.env['PORT']) : PORT;
     server.listen(SERVER_PORT, '0.0.0.0', () => {
       console.log(`API listening on ${SERVER_PORT}`);
       console.log(`Health: GET /healthz`);
@@ -2481,7 +2464,7 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-const SERVER_PORT = process.env.PORT ? Number(process.env.PORT) : PORT;
+const SERVER_PORT = process.env['PORT'] ? Number(process.env['PORT']) : PORT;
 server.listen(SERVER_PORT, '0.0.0.0', () => {
   console.log(`API listening on ${SERVER_PORT}`);
   console.log(`Health: GET /healthz`);

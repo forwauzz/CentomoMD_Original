@@ -109,6 +109,7 @@ export class Mode3Pipeline {
         data: {
           ir: artifacts.ir!,
           roleMap: artifacts.roleMap!,
+          cleaned: artifacts.cleaned!,
           narrative: artifacts.narrative!,
           processingTime: artifacts.processingTime!
         },

@@ -99,7 +99,7 @@ export class Mode2Formatter {
         console.log('Section 8 - Universal Cleanup result:', {
           success: cleanupResult.success,
           hasData: !!cleanupResult.data,
-          error: cleanupResult.metadata?.error
+          error: cleanupResult.metadata?.['error']
         });
         
         if (cleanupResult.success && cleanupResult.data) {

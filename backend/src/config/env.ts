@@ -74,9 +74,9 @@ export interface Environment {
 }
 
 // Environment-aware configuration with production support
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env['NODE_ENV'] === 'production';
 const hardcodedEnv: Environment = {
-  NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
+  NODE_ENV: (process.env['NODE_ENV'] as 'development' | 'production' | 'test') || 'development',
   PORT: isProduction ? 8080 : 3001,
   HOST: isProduction ? '0.0.0.0' : 'localhost',
   FRONTEND_URL: isProduction 

@@ -10,3 +10,4 @@ export const getAuthRedirectUrl = () => {
   }
   return `${base}/auth/callback`;
 };
+
