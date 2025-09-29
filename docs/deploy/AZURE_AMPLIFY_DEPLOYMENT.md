@@ -12,9 +12,13 @@ This document outlines the deployment configuration for the CentomoMD applicatio
 ### Azure App Service (Configuration > Application settings)
 
 ```bash
-ALLOWED_ORIGINS=https://azure-production.d1deo9tihdnt50.amplifyapp.com
 NODE_ENV=production
 PORT=8080
+HOST=0.0.0.0
+FRONTEND_URL=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+CORS_ALLOWED_ORIGINS=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+USE_WSS=true
+PUBLIC_WS_URL=wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net
 # Add your existing keys (Supabase, AWS, etc.)
 ```
 
@@ -23,6 +27,34 @@ PORT=8080
 ```bash
 VITE_API_BASE_URL=https://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net
 VITE_WS_URL=wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net/ws
+VITE_SITE_URL=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## Production Environment Files
+
+### Backend Production Environment
+Create `backend/.env.production` with production-specific values:
+```bash
+NODE_ENV=production
+PORT=8080
+HOST=0.0.0.0
+FRONTEND_URL=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+CORS_ALLOWED_ORIGINS=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+USE_WSS=true
+PUBLIC_WS_URL=wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net
+# Add all other production environment variables
+```
+
+### Frontend Production Environment
+Create `frontend/.env.production` with production-specific values:
+```bash
+VITE_API_BASE_URL=https://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net
+VITE_WS_URL=wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net/ws
+VITE_SITE_URL=https://azure-production.d1deo9tihdnt50.amplifyapp.com
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## Azure Configuration

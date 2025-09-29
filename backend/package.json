@@ -9,6 +9,7 @@
     "build": "tsc",
     "postinstall": "npm run build",
     "start": "node dist/src/boot.js",
+    "start:prod": "NODE_ENV=production node dist/src/boot.js",
     "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest --config vitest.config.ts --coverage",
     "db:setup": "node scripts/create-tables.js",

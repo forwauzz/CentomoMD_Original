@@ -73,12 +73,15 @@ export interface Environment {
   UNIVERSAL_CLEANUP_SHADOW: boolean;
 }
 
-// Temporary hardcoded values to bypass PowerShell line-breaking issues
+// Environment-aware configuration with production support
+const isProduction = process.env.NODE_ENV === 'production';
 const hardcodedEnv: Environment = {
-  NODE_ENV: 'development',
-  PORT: 3001,
-  HOST: 'localhost',
-  FRONTEND_URL: 'http://localhost:5173',
+  NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
+  PORT: isProduction ? 8080 : 3001,
+  HOST: isProduction ? '0.0.0.0' : 'localhost',
+  FRONTEND_URL: isProduction 
+    ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
+    : 'http://localhost:5173',
   
   // Database
   DATABASE_URL: process.env['DATABASE_URL'] || '',
@@ -109,21 +112,25 @@ const hardcodedEnv: Environment = {
   
   // WebSocket Configuration
   WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
-  PUBLIC_WS_URL: 'ws://localhost:3001',
-  USE_WSS: false,
+  PUBLIC_WS_URL: isProduction 
+    ? 'wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net'
+    : 'ws://localhost:3001',
+  USE_WSS: isProduction,
   
   // CORS Configuration
-  CORS_ALLOWED_ORIGINS: 'http://localhost:5173,https://centomo-md-original-kskp.vercel.app,https://*.vercel.app,https://sierra-lips-gets-size.trycloudflare.com',
+  CORS_ALLOWED_ORIGINS: isProduction 
+    ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
+    : 'http://localhost:5173,https://centomo-md-original-kskp.vercel.app,https://*.vercel.app,https://sierra-lips-gets-size.trycloudflare.com',
   
   // Debug Configuration
   LOG_PAYLOADS: false,
   DIAG_MODE: false,
   
   // Performance Configuration
-  PERFORMANCE_LOGGING_ENABLED: process.env['NODE_ENV'] === 'development',
+  PERFORMANCE_LOGGING_ENABLED: !isProduction,
   MEMORY_MONITORING_ENABLED: true,
-  SPEAKER_CORRECTION_LOGGING: process.env['NODE_ENV'] === 'development',
-  CONVERSATION_FLOW_LOGGING: process.env['NODE_ENV'] === 'development',
+  SPEAKER_CORRECTION_LOGGING: !isProduction,
+  CONVERSATION_FLOW_LOGGING: !isProduction,
   
   // Authentication Strategy - Default to working Supabase approach
   AUTH_VERIFY_STRATEGY: 'supabase',

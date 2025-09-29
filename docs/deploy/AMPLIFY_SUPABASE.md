@@ -6,20 +6,20 @@
 
 **Site URL (prod):**
 ```
-https://azure-production.dldeo9tihdnt50.amplifyapp.com
+https://azure-production.d1deo9tihdnt50.amplifyapp.com
 ```
 
 **Redirect URLs (add all):**
 ```
-https://azure-production.dldeo9tihdnt50.amplifyapp.com
-https://azure-production.dldeo9tihdnt50.amplifyapp.com/auth/callback
+https://azure-production.d1deo9tihdnt50.amplifyapp.com
+https://azure-production.d1deo9tihdnt50.amplifyapp.com/auth/callback
 http://localhost:5173
 http://localhost:5173/auth/callback
 ```
 
 **Allowed origins (CORS):**
 ```
-https://azure-production.dldeo9tihdnt50.amplifyapp.com
+https://azure-production.d1deo9tihdnt50.amplifyapp.com
 http://localhost:5173
 ```
 
@@ -29,11 +29,11 @@ http://localhost:5173
 Set these in AWS Amplify Console → App Settings → Environment Variables:
 
 ```
-VITE_SITE_URL=https://azure-production.dldeo9tihdnt50.amplifyapp.com
+VITE_SITE_URL=https://azure-production.d1deo9tihdnt50.amplifyapp.com
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_API_BASE_URL=https://your-backend-api.com
-VITE_WS_URL=wss://your-backend-websocket.com
+VITE_API_BASE_URL=https://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net
+VITE_WS_URL=wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net/ws
 ```
 
 ### In .env.local (dev):
@@ -70,3 +70,5 @@ After deployment, test:
 - [ ] Google OAuth sign-in redirects properly  
 - [ ] Password reset emails work
 - [ ] No console errors about missing VITE_SITE_URL
+
+
