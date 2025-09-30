@@ -60,9 +60,11 @@ export function validatePatientId(patientId: string): boolean {
 // WebSocket utilities - Updated to support ws_token parameter
 export function createWebSocketUrl(path: string, wsToken?: string): string {
   // Use environment variable for WebSocket URL, fallback to localhost for dev
-  const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
+  const baseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
+  // Remove trailing /ws if present to avoid double paths
+  const wsBaseUrl = baseUrl.replace(/\/ws$/, '');
   
-  let url = `${wsBaseUrl}${path}`;
+  let url = `${wsBaseUrl}/ws${path}`;
   
   // Add ws_token parameter if provided
   if (wsToken) {

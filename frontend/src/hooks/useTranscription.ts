@@ -1932,7 +1932,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       console.log('Starting transcription with language:', languageCode);
       
       const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
-      const ws = new WebSocket(`${wsUrl}/ws/transcription`);
+      const ws = new WebSocket(`${wsUrl}/transcription`);
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 

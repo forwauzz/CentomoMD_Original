@@ -113,7 +113,7 @@ const hardcodedEnv: Environment = {
   // WebSocket Configuration
   WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
   PUBLIC_WS_URL: isProduction 
-    ? 'wss://centomomd-behsfacjb8c2adef.canadacentral-01.azurewebsites.net'
+    ? 'wss://api.alie.app/ws'
     : 'ws://localhost:3001',
   USE_WSS: isProduction,
   
