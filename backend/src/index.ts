@@ -44,6 +44,8 @@ app.set('trust proxy', 1);
  * Allow Amplify UI and optional custom domains.
  * You can also pass a comma-separated list via env: ALLOWED_ORIGINS
  */
+console.log('[CORS] Raw CORS_ALLOWED_ORIGINS:', process.env.CORS_ALLOWED_ORIGINS);
+
 const defaultAllowed = [
   'https://azure-production.d1deo9tihdnt50.amplifyapp.com',
   // 'https://www.your-custom-domain.com' // add later if needed
@@ -54,6 +56,19 @@ const envAllowed = (process.env['ALLOWED_ORIGINS'] || '')
   .filter(Boolean);
 
 const allowedOrigins = [...new Set([...defaultAllowed, ...envAllowed])];
+
+console.log('[CORS] Parsed allowedOrigins:', allowedOrigins);
+
+app.use((req, _res, next) => {
+  if (req.method === 'OPTIONS' || req.headers.origin) {
+    console.log('[CORS] Incoming:', {
+      method: req.method,
+      url: req.url,
+      origin: req.headers.origin
+    });
+  }
+  next();
+});
 
 app.use(
   cors({
