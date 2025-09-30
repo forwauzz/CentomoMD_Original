@@ -5,7 +5,6 @@ import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { api } from '@/lib/api';
-import { createWebSocketUrl } from '@/lib/utils';
 
 // Advanced speaker correction with weighted scoring and conversation context
 class AdvancedSpeakerCorrection {
@@ -1932,8 +1931,8 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     try {
       console.log('Starting transcription with language:', languageCode);
       
-      const wsUrl = createWebSocketUrl('/transcription');
-      const ws = new WebSocket(wsUrl);
+      const base = (import.meta.env.VITE_WS_URL || '').replace(/\/+$/, ''); // base only, e.g. wss://api.alie.app
+      const ws = new WebSocket(`${base}/ws/transcription`);
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
