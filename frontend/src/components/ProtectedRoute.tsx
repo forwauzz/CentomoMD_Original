@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/authClient';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { API_CONFIG } from '@/lib/constants';
+import { api } from '@/lib/api';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -34,13 +35,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const fetchConfig = async (retryCount = 0) => {
       try {
         setConfigError(null);
-        const response = await fetch('/api/config');
-        if (response.ok) {
-          const configData = await response.json();
-          setConfig(configData);
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        const response = await api('/api/config');
+        const configData = await response.json();
+        setConfig(configData);
       } catch (error) {
         console.warn('Failed to fetch config:', error);
         setConfigError(error instanceof Error ? error.message : 'Unknown error');

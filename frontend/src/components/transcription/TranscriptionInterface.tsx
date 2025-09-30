@@ -13,6 +13,7 @@ import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 import { TemplateSelector } from './TemplateSelector';
 import { SaveToSectionDropdown, SaveToSectionOption } from './SaveToSectionDropdown';
+import { api } from '@/lib/api';
 import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
@@ -93,9 +94,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   // Function to check if Universal Cleanup is enabled
   const checkUniversalCleanupEnabled = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/config');
-      if (!response.ok) return false;
-      
+      const response = await api('/api/config');
       const config = await response.json();
       return config.universalCleanupEnabled === true;
     } catch (error) {
@@ -126,7 +125,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     
     console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
     
-    const response = await fetch('/api/format/mode2', {
+    const response = await api('/api/format/mode2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -551,7 +550,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setFormattingProgress('Processing clinical extraction...');
           
           // Call Mode 2 formatter with clinical extraction template combination
-          const response = await fetch('/api/format/mode2', {
+          const response = await api('/api/format/mode2', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, api } from '@/lib/api';
 import { API_CONFIG } from '@/lib/constants';
 import { 
   Plus, 
@@ -314,7 +314,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
           const text = await file.text();
           const templates = JSON.parse(text);
           
-          const response = await fetch('/api/templates/import', {
+          const response = await api('/api/templates/import', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -322,12 +322,10 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
             body: JSON.stringify({ templates }),
           });
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              alert(result.message);
-              await loadTemplates();
-            }
+          const result = await response.json();
+          if (result.success) {
+            alert(result.message);
+            await loadTemplates();
           }
         } catch (error) {
           console.error('Error importing templates:', error);
@@ -346,7 +344,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
 
     if (bulkAction === 'status') {
       try {
-        const response = await fetch('/api/templates/bulk/status', {
+        const response = await api('/api/templates/bulk/status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -372,7 +370,7 @@ export const TemplateManagement: React.FC<TemplateManagementProps> = () => {
     } else if (bulkAction === 'delete') {
       if (window.confirm(`Are you sure you want to delete ${selectedVersions.length} templates?`)) {
         try {
-          const response = await fetch('/api/templates/bulk/delete', {
+          const response = await api('/api/templates/bulk/delete', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

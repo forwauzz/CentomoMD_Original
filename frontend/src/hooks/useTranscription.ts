@@ -4,7 +4,7 @@ import { detectVerbatimCmd } from '../voice/verbatim-commands';
 import { detectCoreCommand } from '../voice/commands-core';
 import { VoiceCommandEvent } from '../components/transcription/VoiceCommandFeedback';
 import { useFeatureFlags } from '@/lib/featureFlags';
-import { API_CONFIG } from '@/lib/constants';
+import { api } from '@/lib/api';
 
 // Advanced speaker correction with weighted scoring and conversation context
 class AdvancedSpeakerCorrection {
@@ -1703,7 +1703,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     section: string;
     rawAwsJson: any;
   }) => {
-    const res = await fetch('/api/transcribe/process', {
+    const res = await api('/api/transcribe/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1714,7 +1714,6 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         rawAwsJson: params.rawAwsJson
       })
     });
-    if (!res.ok) throw new Error(`process failed: ${res.status}`);
     return res.json() as Promise<{
       narrative: string;
       irSummary: any;
@@ -1932,7 +1931,8 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
     try {
       console.log('Starting transcription with language:', languageCode);
       
-      const ws = new WebSocket(`${API_CONFIG.WS_URL}/ws/transcription`);
+      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
+      const ws = new WebSocket(`${wsUrl}/ws/transcription`);
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 

@@ -59,11 +59,10 @@ export function validatePatientId(patientId: string): boolean {
 
 // WebSocket utilities - Updated to support ws_token parameter
 export function createWebSocketUrl(path: string, wsToken?: string): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  // Use backend port (3001) instead of frontend port (5173)
-  const host = window.location.hostname + ':3001';
+  // Use environment variable for WebSocket URL, fallback to localhost for dev
+  const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
   
-  let url = `${protocol}//${host}${path}`;
+  let url = `${wsBaseUrl}${path}`;
   
   // Add ws_token parameter if provided
   if (wsToken) {

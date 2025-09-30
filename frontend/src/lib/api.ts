@@ -1,13 +1,21 @@
 import { supabase } from './authClient.js';
 
-// TODO: API response types
+// Environment-driven base URL selection
+const devFallback =
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+    ? 'http://localhost:3001'
+    : '';
+
+const BASE = (import.meta.env.VITE_API_BASE_URL || devFallback).replace(/\/+$/, '');
+
+// API response types
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
 }
 
-// TODO: API error types
+// API error types
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -19,17 +27,15 @@ export class ApiError extends Error {
   }
 }
 
-// TODO: Config cache
+// Config cache
 let configCache: { authRequired: boolean; wsRequireAuth: boolean } | null = null;
 
-// TODO: Get config from server
+// Get config from server
 const getConfig = async () => {
   if (configCache) return configCache;
   
   try {
-    const response = await fetch('/api/config');
-    if (!response.ok) throw new Error('Failed to fetch config');
-    
+    const response = await api('/api/config');
     configCache = await response.json();
     return configCache;
   } catch (error) {
@@ -38,39 +44,60 @@ const getConfig = async () => {
   }
 };
 
-// TODO: API fetch function with auth
+// Core API function with environment-driven base URL
+export async function api(path: string, init: RequestInit = {}) {
+  const url = `${BASE}${path.startsWith('/') ? '' : '/'}${path}`;
+  const res = await fetch(url, { credentials: 'include', ...init });
+  if (!res.ok) {
+    let body = '';
+    try { body = await res.text(); } catch {}
+    throw new Error(`HTTP ${res.status}: ${body}`);
+  }
+  return res;
+}
+
+// JSON API helper
+export async function apiJSON<T = unknown>(path: string, init: RequestInit = {}) {
+  const res = await api(path, init);
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json')
+    ? (await res.json() as T)
+    : (await res.text() as unknown as T);
+}
+
+// API fetch function with auth (legacy compatibility)
 export const apiFetch = async <T = any>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> => {
   const config = await getConfig();
   
-  // TODO: Get access token if available
+  // Get access token if available
   let accessToken: string | undefined;
   try {
     const { data: { session } } = await supabase.auth.getSession();
     accessToken = session?.access_token;
   } catch (error) {
-    // TODO: Handle case when Supabase is not configured
+    // Handle case when Supabase is not configured
     console.warn('Supabase not configured, proceeding without auth token');
   }
   
-  // TODO: Prepare headers
+  // Prepare headers
   const headers = new Headers(init.headers);
   
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
   
-  // TODO: Make request
-  const response = await fetch(path, {
+  // Make request using the new api function
+  const response = await api(path, {
     ...init,
     headers,
   });
   
-  // TODO: Handle 401 responses
+  // Handle 401 responses
   if (response.status === 401 && config?.authRequired) {
-    // TODO: Redirect to login if auth is required
+    // Redirect to login if auth is required
     window.location.href = '/login';
     throw new ApiError('Authentication required', 401);
   }

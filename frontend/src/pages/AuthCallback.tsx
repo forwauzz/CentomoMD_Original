@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase, getIntendedPath, clearIntendedPath, decodeState } from '@/lib/authClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export const AuthCallback: React.FC = () => {
     try {
       console.log('🔧 Creating user profile...');
       
-      const response = await fetch('/api/profile', {
+      const response = await api('/api/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -23,20 +24,9 @@ export const AuthCallback: React.FC = () => {
         }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Profile created successfully:', result);
-        return true;
-      } else if (response.status === 409) {
-        // Profile already exists, that's fine
-        console.log('ℹ️ Profile already exists');
-        return true;
-      } else {
-        const error = await response.json();
-        console.warn('⚠️ Profile creation failed:', error);
-        // Don't fail the auth process if profile creation fails
-        return false;
-      }
+      const result = await response.json();
+      console.log('✅ Profile created successfully:', result);
+      return true;
     } catch (error) {
       console.warn('⚠️ Profile creation error:', error);
       // Don't fail the auth process if profile creation fails
