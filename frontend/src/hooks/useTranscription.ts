@@ -1932,7 +1932,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
       console.log('Starting transcription with language:', languageCode);
       
       const base = (import.meta.env.VITE_WS_URL || '').replace(/\/+$/, ''); // base only, e.g. wss://api.alie.app
-      const ws = new WebSocket(`${base}/ws/transcription`);
+      const ws = new WebSocket(`${base}/ws`); // backend serves /ws
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
