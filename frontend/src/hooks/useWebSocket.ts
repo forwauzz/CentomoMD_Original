@@ -17,7 +17,7 @@ export const useWebSocket = (onMessage?: (message: any) => void): UseWebSocketRe
   const connect = useCallback(async () => {
     try {
       // TODO: Get WS token if auth is required
-      let wsUrl = createWebSocketUrl('/transcription');
+      let wsUrl = createWebSocketUrl('');
       
       try {
         const config = await apiFetch('/api/config');
