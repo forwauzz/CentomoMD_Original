@@ -44,7 +44,7 @@ app.set('trust proxy', 1);
  * Allow Amplify UI and optional custom domains.
  * You can also pass a comma-separated list via env: ALLOWED_ORIGINS
  */
-console.log('[CORS] Raw CORS_ALLOWED_ORIGINS:', process.env.CORS_ALLOWED_ORIGINS);
+console.log('[CORS] Raw CORS_ALLOWED_ORIGINS:', process.env['CORS_ALLOWED_ORIGINS']);
 
 const defaultAllowed = [
   'https://azure-production.d1deo9tihdnt50.amplifyapp.com',
