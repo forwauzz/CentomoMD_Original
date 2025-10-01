@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { WS_URL } from '../config';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -58,14 +59,10 @@ export function validatePatientId(patientId: string): boolean {
 }
 
 // WebSocket utilities - Updated to support ws_token parameter
-export function createWebSocketUrl(path: string, wsToken?: string): string {
-  const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
-  let url = wsBaseUrl; // Nginx handles mapping in prod
-
-  // Only append path in local dev (avoid double /ws in prod)
-  if (path && !wsBaseUrl.includes('api.alie.app')) {
-    url += path;
-  }
+export function createWebSocketUrl(wsToken?: string): string {
+  // Return the FULL URL; do not append paths here.
+  // Path must already be included in VITE_WS_URL.
+  let url = WS_URL;
 
   if (wsToken) {
     url += `?ws_token=${encodeURIComponent(wsToken)}`;

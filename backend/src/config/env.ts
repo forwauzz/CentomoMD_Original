@@ -5,6 +5,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Runtime environment logging for WebSocket configuration
+console.log(`[ENV] WS_PATH=${process.env['WS_PATH'] || '/ws'} PUBLIC_WS_URL=${process.env['PUBLIC_WS_URL'] || 'default'}`);
+
 export interface Environment {
   // Node environment
   NODE_ENV: 'development' | 'production' | 'test';
@@ -49,6 +52,7 @@ export interface Environment {
   
   // WebSocket Configuration
   WS_JWT_SECRET?: string;
+  WS_PATH: string;
   PUBLIC_WS_URL: string;
   USE_WSS: boolean;
   
@@ -116,15 +120,16 @@ const hardcodedEnv: Environment = {
   
   // WebSocket Configuration
   WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
-  PUBLIC_WS_URL: isProduction 
+  WS_PATH: process.env['WS_PATH'] || '/ws',
+  PUBLIC_WS_URL: process.env['PUBLIC_WS_URL'] || (isProduction 
     ? 'wss://api.alie.app/ws'
-    : 'ws://localhost:3001',
+    : 'ws://localhost:3001/ws'),
   USE_WSS: isProduction,
   
   // CORS Configuration
   CORS_ALLOWED_ORIGINS: isProduction 
     ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
-    : 'http://localhost:5173,https://centomo-md-original-kskp.vercel.app,https://*.vercel.app,https://sierra-lips-gets-size.trycloudflare.com',
+    : 'http://localhost:5173',
   
   // Debug Configuration
   LOG_PAYLOADS: false,

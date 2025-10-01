@@ -2240,7 +2240,9 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   }
 };
 
-const wss = new WebSocketServer({ server, path: '/ws' });
+const wsPath = ENV.WS_PATH || '/ws';
+const wss = new WebSocketServer({ server, path: wsPath });
+console.log(`[BOOT] WebSocketServer listening on path ${wsPath}`);
 
 // Store active transcription sessions - integrated with AWS Transcribe
 const activeSessions = new Map();
@@ -2483,7 +2485,8 @@ const SERVER_PORT = process.env['PORT'] ? Number(process.env['PORT']) : PORT;
 server.listen(SERVER_PORT, '0.0.0.0', () => {
   console.log(`API listening on ${SERVER_PORT}`);
   console.log(`Health: GET /healthz`);
-  console.log(`WebSocket path: /ws`);
+  console.log(`WebSocket path: ${wsPath}`);
+  console.log(`[BOOT] WS path ${wsPath} -> expecting Nginx /ws -> backend ${wsPath}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
