@@ -1,5 +1,5 @@
 import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
-import { PROMPT_FR, PROMPT_EN } from "../../prompts/clinical";
+import { PROMPT_FR, PROMPT_EN } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
 import { openai as defaultOpenAI } from "../../lib/openai";
