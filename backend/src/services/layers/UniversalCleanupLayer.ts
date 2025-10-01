@@ -2,7 +2,7 @@ import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
 import { PROMPT_FR, PROMPT_EN } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
-import { openai as defaultOpenAI } from "../../lib/openai";
+import { openai as defaultOpenAI } from "../../lib/openai.js";
 
 function pickPrompt(lang: 'fr' | 'en', t: string): string { 
   return (lang === 'fr' ? PROMPT_FR : PROMPT_EN).replace('{{TRANSCRIPT}}', t);
