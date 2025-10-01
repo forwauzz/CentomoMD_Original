@@ -71,6 +71,10 @@ export interface Environment {
   // Universal Cleanup Feature Flag
   UNIVERSAL_CLEANUP_ENABLED: boolean;
   UNIVERSAL_CLEANUP_SHADOW: boolean;
+  
+  // Transcription Feature Flags
+  USE_48K_AUDIO: boolean;
+  ENABLE_SPEAKER_LABELS: boolean;
 }
 
 // Environment-aware configuration with production support
@@ -144,6 +148,10 @@ const hardcodedEnv: Environment = {
   // Universal Cleanup Feature Flag
   UNIVERSAL_CLEANUP_ENABLED: true, // Temporarily hardcoded for testing
   UNIVERSAL_CLEANUP_SHADOW: true, // Temporarily hardcoded for testing
+  
+  // Transcription Feature Flags
+  USE_48K_AUDIO: (process.env['USE_48K_AUDIO'] ?? 'true') === 'true',
+  ENABLE_SPEAKER_LABELS: (process.env['ENABLE_SPEAKER_LABELS'] ?? 'true') === 'true',
 };
 
 // Export the hardcoded environment

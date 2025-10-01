@@ -8,7 +8,7 @@ import {
   LimitExceededException,
   ServiceUnavailableException
 } from '@aws-sdk/client-transcribe-streaming';
-import { config } from '../config/env.js';
+import { config, ENV as env } from '../config/env.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
 import { complianceLogger } from '../utils/logger.js';
 
@@ -56,12 +56,16 @@ export class TranscriptionService {
     })();
 
     // Phase 0: Prepare AWS Transcribe configuration with mode-specific parameters
+    const use48k = env.USE_48K_AUDIO;
+    const enableLabels = env.ENABLE_SPEAKER_LABELS;
+    const sampleRate = config.media_sample_rate_hz ?? (use48k ? 48000 : 16000);
+    
     const cmdInput: StartStreamTranscriptionCommandInput = {
       LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
       MediaEncoding: 'pcm',
-      MediaSampleRateHertz: config.media_sample_rate_hz ?? 48000,
+      MediaSampleRateHertz: sampleRate,
       AudioStream: audioIterable,
-      ShowSpeakerLabel: config.show_speaker_labels || true,     // Mode-specific speaker attribution
+      ShowSpeakerLabel: config.show_speaker_labels ?? enableLabels,     // Mode-specific speaker attribution
       // MaxSpeakerLabels removed - not available for streaming transcription
       EnablePartialResultsStabilization: true,
       PartialResultsStability: (config.partial_results_stability || 'high') as any,  // Mode-specific stability
@@ -73,6 +77,7 @@ export class TranscriptionService {
     const command = new StartStreamTranscriptionCommand(cmdInput);
     
     // Log startup configuration
+    console.log(`[ASR] Flags → USE_48K_AUDIO=${use48k}, ENABLE_SPEAKER_LABELS=${enableLabels}, sr=${sampleRate}`);
     console.log(`[ASR] Start stream → ${cmdInput.MediaSampleRateHertz} Hz, encoding=pcm, lang=${cmdInput.LanguageCode}`);
     
     // Initialize session metadata
