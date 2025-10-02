@@ -1,15 +1,16 @@
-// Import environment validation (this will load dotenv and validate)
-import './env.js';
-
 import express from 'express';
-import { WebSocketServer } from 'ws';
-import http from 'http';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import { ENV, logNonSecretEnv } from './config/env.js';
+import { requireAuth } from './middleware/auth.js';
+import { wsAuthCheck } from './ws/auth.js';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
 
 import { transcriptionService } from './services/transcriptionService.js';
 import { audioRecordingService } from './services/audioRecordingService.js';
+import { FLAGS } from './config/flags.js';
+import { createSession, updateSessionSampleRate, cleanupSession } from './ws/session.js';
 // import { templateLibrary } from './template-library/index.js'; // Archived - using core template registry instead
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
@@ -19,7 +20,8 @@ import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
 import { Section7Validator } from './services/formatter/validators/section7.js';
-import { PORT } from './env.js';
+import { WebSocketServer } from 'ws';
+import http from 'http';
 import { Section8Validator } from './services/formatter/validators/section8.js';
 import { Section11Validator } from './services/formatter/validators/section11.js';
 import { getConfig } from './routes/config.js';
@@ -29,7 +31,6 @@ import { securityMiddleware } from './server/security.js';
 import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
-import { ENV } from './config/env.js';
 import { bootProbe, getDb } from './database/connection.js';
 import { artifacts } from './database/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -39,50 +40,53 @@ import { logger } from './utils/logger.js';
 const app = express();
 app.set('trust proxy', 1);
 
-// --- CORS ---
-/**
- * Allow Amplify UI and optional custom domains.
- * You can also pass a comma-separated list via env: ALLOWED_ORIGINS
- */
-console.log('[CORS] Raw CORS_ALLOWED_ORIGINS:', process.env['CORS_ALLOWED_ORIGINS']);
+// CORS must be before routes
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // curl/postman
+    return ENV.CORS_ALLOWED_ORIGINS.includes(origin)
+      ? cb(null, true)
+      : cb(new Error(`CORS not allowed for origin: ${origin}`));
+  },
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With','Accept','Origin'],
+  credentials: true,
+  maxAge: 86400,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
-const defaultAllowed = [
-  'https://azure-production.d1deo9tihdnt50.amplifyapp.com',
-  // 'https://www.your-custom-domain.com' // add later if needed
-];
-const envAllowed = (process.env['ALLOWED_ORIGINS'] || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+// Rate limit (flag controlled)
+if (ENV.RATE_LIMIT_ENABLED) {
+  const limiter = rateLimit({
+    windowMs: ENV.RATE_LIMIT_WINDOW_MS,
+    max: ENV.RATE_LIMIT_MAX_REQUESTS,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/', limiter);
+}
 
-const allowedOrigins = [...new Set([...defaultAllowed, ...envAllowed])];
+// REST auth (flag controlled)
+app.use('/api/', requireAuth);
 
-console.log('[CORS] Parsed allowedOrigins:', allowedOrigins);
+// Health & readiness (simple versions)
+app.get('/healthz', (_req, res) => res.status(200).json({
+  ok: true,
+  uptime: process.uptime(),
+  region: ENV.AWS_REGION
+}));
+app.get('/readyz', (_req, res) => res.status(200).json({ ready: true }));
 
-app.use((req, _res, next) => {
-  if (req.method === 'OPTIONS' || req.headers.origin) {
-    console.log('[CORS] Incoming:', {
-      method: req.method,
-      url: req.url,
-      origin: req.headers.origin
-    });
-  }
-  next();
-});
+// Log non-secret env once on startup
+logNonSecretEnv();
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // allow server-to-server or curl (no origin)
-      if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`CORS blocked origin: ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Authorization']
-  })
-);
+// Optional: quick dev check route to see allowlist (DEV ONLY; remove/comment for prod)
+if (ENV.NODE_ENV !== 'production') {
+  app.get('/api/_debug/cors', (_req, res) => {
+    res.json({ allowed: ENV.CORS_ALLOWED_ORIGINS });
+  });
+}
 
 const server = http.createServer(app);
 
@@ -96,7 +100,6 @@ app.use(express.urlencoded({ extended: true }));
 // Response helpers removed - using explicit return statements instead
 
 // --- Basic routes ---
-app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 
 // Config endpoint to expose flags to frontend
 app.get('/api/config', getConfig);
@@ -2240,9 +2243,20 @@ const getModeSpecificConfig = (mode: string, baseConfig: any) => {
   }
 };
 
-const wsPath = ENV.WS_PATH || '/ws';
-const wss = new WebSocketServer({ server, path: wsPath });
-console.log(`[BOOT] WebSocketServer listening on path ${wsPath}`);
+const wss = new WebSocketServer({ server, path: ENV.WS_PATH });
+console.log(`[BOOT] WebSocketServer listening on path ${ENV.WS_PATH}`);
+
+// WS auth during upgrade
+server.on('upgrade', async (req, socket, _head) => {
+  // If your WS library uses its own upgrade hook, adapt this accordingly.
+  const ok = await wsAuthCheck(req);
+  if (!ok) {
+    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+  // continue with your existing wss.handleUpgrade(...) if used
+});
 
 // Store active transcription sessions - integrated with AWS Transcribe
 const activeSessions = new Map();
@@ -2254,6 +2268,9 @@ wss.on('connection', (ws, req) => {
   let endAudio: (() => void) | null = null;
 
   console.log("WebSocket connection established", { sessionId });
+  
+  // Create session state for this connection
+  const sessionState = createSession(ws, sessionId);
   
   // TODO: Add authentication here when WS_REQUIRE_AUTH is enabled
   let authenticatedUser: { userId: string; userEmail: string } | null = null;
@@ -2297,111 +2314,145 @@ wss.on('connection', (ws, req) => {
   (ws as any).user = authenticatedUser;
 
   ws.on('message', async (data, isBinary) => {
-    if (!started) {
-      // Expect the very first message to be start JSON
+    if (!isBinary) {
+      // JSON control messages
       try {
         const msg = JSON.parse(data.toString());
-        if (msg?.type !== 'start_transcription' || !['fr-CA','en-US'].includes(msg.languageCode)) {
-          ws.send(JSON.stringify({ type: 'transcription_error', error: 'Invalid languageCode' }));
-          return ws.close();
+        
+        // Handle audio_init message for sample rate negotiation
+        if (msg?.type === 'audio_init' && FLAGS.AUDIO_SR_NEGOTIATE) {
+          const sr = Number(msg.sampleRate);
+          if (updateSessionSampleRate(ws, sr)) {
+            console.log(`[WS] init: sampleRate=${sessionState.sampleRate}, mono=true, enc=pcm16, frame=${msg.frameMs || 100}ms`);
+          } else {
+            // Fallback to safe default
+            sessionState.sampleRate = 48000;
+            sessionState.isInitialized = true;
+            console.log(`[WS] init: invalid sampleRate=${sr}, using default=48000`);
+          }
+          return;
         }
-        started = true;
+        
+        if (!started) {
+          // Expect the very first message to be start JSON
+          if (msg?.type !== 'start_transcription' || !['fr-CA','en-US'].includes(msg.languageCode)) {
+            ws.send(JSON.stringify({ type: 'transcription_error', error: 'Invalid languageCode' }));
+            return ws.close();
+          }
+          started = true;
 
-        // Phase 0: Use mode-specific configuration
-        const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
-          language_code: msg.languageCode, 
-          media_sample_rate_hz: msg.sampleRate ?? 44100
-        });
+          // Determine effective sample rate: negotiated > default
+          let effectiveSR = 48000; // default
+          if (FLAGS.AUDIO_SR_NEGOTIATE && sessionState.sampleRate && (sessionState.sampleRate === 44100 || sessionState.sampleRate === 48000)) {
+            effectiveSR = sessionState.sampleRate;
+          }
 
-        // Start audio recording for troubleshooting (temporary)
-        await audioRecordingService.startRecording(sessionId, msg.sampleRate ?? 44100);
+          // Phase 0: Use mode-specific configuration
+          const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
+            language_code: msg.languageCode, 
+            media_sample_rate_hz: effectiveSR
+          });
 
-        // Start AWS stream (non-blocking) and expose feeder immediately
-        const { pushAudio: feeder, endAudio: ender } =
-          transcriptionService.startStreamingTranscription(
-            sessionId,
-            modeConfig,
-            (res) => {
-              // Check if this is the final AWS result for Mode 3
-              if (res.resultId === 'final_aws_result' && res.awsResult && msg.mode === 'ambient') {
-                console.log(`[${sessionId}] Sending final AWS result for Mode 3 pipeline`);
-                ws.send(JSON.stringify({ 
-                  type: 'transcription_final', 
-                  mode: 'ambient',
-                  payload: res.awsResult
-                }));
-              } else {
-                // Regular transcription result
-                ws.send(JSON.stringify({ 
-                  type: 'transcription_result', 
-                  resultId: res.resultId,                         // stable key
-                  startTime: res.startTime ?? null,
-                  endTime: res.endTime ?? null,
-                  text: res.transcript, 
-                  isFinal: !res.is_partial,
-                  language_detected: res.language_detected,
-                  confidence_score: res.confidence_score,
-                  speaker: res.speaker                           // PATIENT vs CLINICIAN
-                }));
-              }
-            },
-            (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
-          );
+          // Start audio recording for troubleshooting (temporary)
+          await audioRecordingService.startRecording(sessionId, effectiveSR);
 
-        pushAudio = feeder;
-        endAudio = ender;
+          // Start AWS stream (non-blocking) and expose feeder immediately
+          const { pushAudio: feeder, endAudio: ender } =
+            transcriptionService.startStreamingTranscription(
+              sessionId,
+              modeConfig,
+              (res) => {
+                // Check if this is the final AWS result for Mode 3
+                if (res.resultId === 'final_aws_result' && res.awsResult && msg.mode === 'ambient') {
+                  console.log(`[${sessionId}] Sending final AWS result for Mode 3 pipeline`);
+                  ws.send(JSON.stringify({ 
+                    type: 'transcription_final', 
+                    mode: 'ambient',
+                    payload: res.awsResult
+                  }));
+                } else {
+                  // Regular transcription result
+                  ws.send(JSON.stringify({ 
+                    type: 'transcription_result', 
+                    resultId: res.resultId,                         // stable key
+                    startTime: res.startTime ?? null,
+                    endTime: res.endTime ?? null,
+                    text: res.transcript, 
+                    isFinal: !res.is_partial,
+                    language_detected: res.language_detected,
+                    confidence_score: res.confidence_score,
+                    speaker: res.speaker                           // PATIENT vs CLINICIAN
+                  }));
+                }
+              },
+              (err) => ws.send(JSON.stringify({ type: 'transcription_error', error: String(err) }))
+            );
 
-        // Store session info
-        activeSessions.set(sessionId, { 
-          ws, 
-          pushAudio: feeder,
-          endAudio: ender,
-          config: msg
-        });
+          pushAudio = feeder;
+          endAudio = ender;
 
-        // Tell client to start mic now
-        ws.send(JSON.stringify({ type: 'stream_ready' }));
+          // Store session info
+          activeSessions.set(sessionId, { 
+            ws, 
+            pushAudio: feeder,
+            endAudio: ender,
+            config: msg
+          });
+
+          // Tell client to start mic now
+          ws.send(JSON.stringify({ type: 'stream_ready' }));
+          return;
+        }
+
+        // Handle control messages after start
+        if (msg?.type === 'stop_transcription') endAudio?.();
+        
+        // Handle voice commands
+        if (msg?.type === 'cmd.save') {
+          // TODO: implement save functionality
+          console.log('Save command received for session:', sessionId);
+          ws.send(JSON.stringify({ type:'cmd_ack', cmd:'save', ok:true }));
+        }
+        if (msg?.type === 'cmd.export') {
+          // TODO: implement export functionality
+          console.log('Export command received for session:', sessionId);
+          ws.send(JSON.stringify({ type:'cmd_ack', cmd:'export', ok:true }));
+        }
       } catch {
-        ws.send(JSON.stringify({ type: 'transcription_error', error: 'Expected start_transcription JSON' }));
-        return ws.close();
+        // Ignore non-JSON messages
       }
       return;
     }
 
-    // After start: binary = audio; JSON = control
-    if (isBinary) {
+    // Binary: raw PCM16 mono frames (~100ms each)
+    if (isBinary && started) {
       const buf = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
       if (buf.length && pushAudio) {
-        // Optional debug:
-        // console.log('chunk bytes:', buf.length);
+        // Write to session PCM pipe for potential future use
+        sessionState.pcmPipe.write(buf);
+        
+        // Continue using existing audio feeder
         pushAudio(new Uint8Array(buf));
         
         // Record audio for troubleshooting (temporary)
         audioRecordingService.addAudioChunk(sessionId, new Uint8Array(buf));
-      }
-      return;
-    }
 
-    try {
-      const msg = JSON.parse(data.toString());
-      if (msg?.type === 'stop_transcription') endAudio?.();
-      
-      // Handle voice commands
-      if (msg?.type === 'cmd.save') {
-        // TODO: implement save functionality
-        console.log('Save command received for session:', sessionId);
-        ws.send(JSON.stringify({ type:'cmd_ack', cmd:'save', ok:true }));
+        // Debug logging for binary frames
+        if (FLAGS.WS_DEBUG_BINARY_LOG) {
+          sessionState.frames = (sessionState.frames ?? 0) + 1;
+          if (sessionState.frames % 10 === 0) {
+            console.log(`[WS] ~1s of audio, last=${buf.byteLength}B, sr=${sessionState.sampleRate ?? 'n/a'}`);
+          }
+        }
       }
-      if (msg?.type === 'cmd.export') {
-        // TODO: implement export functionality
-        console.log('Export command received for session:', sessionId);
-        ws.send(JSON.stringify({ type:'cmd_ack', cmd:'export', ok:true }));
-      }
-    } catch {}
+    }
   });
 
   ws.on('close', async () => {
     endAudio?.();
+    
+    // Clean up session state
+    cleanupSession(ws);
     
     // Stop audio recording for troubleshooting (temporary)
     const audioFilePath = await audioRecordingService.stopRecording(sessionId);
@@ -2454,11 +2505,10 @@ process.on('SIGINT', async () => {
 
 export default async function run() {
   return new Promise<void>((resolve) => {
-    const SERVER_PORT = process.env['PORT'] ? Number(process.env['PORT']) : PORT;
-    server.listen(SERVER_PORT, '0.0.0.0', () => {
-      console.log(`API listening on ${SERVER_PORT}`);
+    server.listen(ENV.PORT, ENV.HOST, () => {
+      console.log(`HTTP listening on http://${ENV.HOST}:${ENV.PORT}`);
       console.log(`Health: GET /healthz`);
-      console.log(`WebSocket path: /ws`);
+      console.log(`WebSocket path: ${ENV.WS_PATH}`);
       console.log("📋 Phase 2: Raw PCM16 streaming implemented");
       console.log("🚀 Phase 3: AWS Transcribe integration active");
       console.log("🌍 AWS Region:", transcriptionService.getStatus().region);
@@ -2481,12 +2531,11 @@ export default async function run() {
 }
 
 // Start the HTTP server immediately when this file is executed
-const SERVER_PORT = process.env['PORT'] ? Number(process.env['PORT']) : PORT;
-server.listen(SERVER_PORT, '0.0.0.0', () => {
-  console.log(`API listening on ${SERVER_PORT}`);
+server.listen(ENV.PORT, ENV.HOST, () => {
+  console.log(`HTTP listening on http://${ENV.HOST}:${ENV.PORT}`);
   console.log(`Health: GET /healthz`);
-  console.log(`WebSocket path: ${wsPath}`);
-  console.log(`[BOOT] WS path ${wsPath} -> expecting Nginx /ws -> backend ${wsPath}`);
+  console.log(`WebSocket path: ${ENV.WS_PATH}`);
+  console.log(`[BOOT] WS path ${ENV.WS_PATH} -> expecting Nginx /ws -> backend ${ENV.WS_PATH}`);
   console.log("📋 Phase 2: Raw PCM16 streaming implemented");
   console.log("🚀 Phase 3: AWS Transcribe integration active");
   console.log("🌍 AWS Region:", transcriptionService.getStatus().region);

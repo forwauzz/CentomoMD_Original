@@ -1,218 +1,99 @@
-// Centralized environment configuration
-// This file provides type-safe access to all environment variables
+import 'dotenv/config';
 
-// Load environment variables from .env file
-import dotenv from 'dotenv';
-dotenv.config();
+const isProd = (process.env['NODE_ENV'] ?? 'development') === 'production';
+const parseList = (v?: string) => (v ?? '').split(',').map(s => s.trim()).filter(Boolean);
 
-// Runtime environment logging for WebSocket configuration
-console.log(`[ENV] WS_PATH=${process.env['WS_PATH'] || '/ws'} PUBLIC_WS_URL=${process.env['PUBLIC_WS_URL'] || 'default'}`);
+const PUBLIC_WS_URL = process.env['PUBLIC_WS_URL']
+  ?? (isProd ? 'wss://api.alie.app/ws' : 'ws://localhost:3001/ws');
 
-export interface Environment {
-  // Node environment
-  NODE_ENV: 'development' | 'production' | 'test';
-  
-  // Database
-  DATABASE_URL: string;
-  
-  // AWS Configuration
-  AWS_REGION: string;
-  AWS_ACCESS_KEY_ID: string;
-  AWS_SECRET_ACCESS_KEY: string;
-  S3_BUCKET_NAME: string;
-  
-  // Supabase Configuration
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
-  SUPABASE_JWT_SECRET: string;
-  
-  // Security
-  ENCRYPTION_KEY: string;
-  JWT_SECRET: string;
-  
-  // Server Configuration
-  PORT: number;
-  HOST: string;
-  FRONTEND_URL: string;
-  
-  // Logging
-  LOG_LEVEL: 'error' | 'warn' | 'info' | 'debug';
-  
-  // Performance Configuration
-  PERFORMANCE_LOGGING_ENABLED: boolean;
-  MEMORY_MONITORING_ENABLED: boolean;
-  SPEAKER_CORRECTION_LOGGING: boolean;
-  CONVERSATION_FLOW_LOGGING: boolean;
-  
-  // Feature Flags
-  AUTH_REQUIRED: boolean;
-  WS_REQUIRE_AUTH: boolean;
-  RATE_LIMIT_ENABLED: boolean;
-  
-  // WebSocket Configuration
-  WS_JWT_SECRET?: string;
-  WS_PATH: string;
-  PUBLIC_WS_URL: string;
-  USE_WSS: boolean;
-  
-  // CORS Configuration
-  CORS_ALLOWED_ORIGINS: string;
-  
-  // Debug Configuration
-  LOG_PAYLOADS: boolean;
-  DIAG_MODE: boolean;
-  
-  // Authentication Strategy
-  AUTH_VERIFY_STRATEGY: 'supabase' | 'jwks';
-  
-  // OpenAI Configuration
-  OPENAI_API_KEY: string;
-  OPENAI_MODEL: string;
-  OPENAI_TEMPERATURE: number;
-  OPENAI_MAX_TOKENS: number;
+const USE_WSS = PUBLIC_WS_URL.startsWith('wss://');
+const PHI_FREE = (process.env['COMPLIANCE_PHI_FREE_LOGGING'] ?? 'false') === 'true';
 
-  // Universal Cleanup Feature Flag
-  UNIVERSAL_CLEANUP_ENABLED: boolean;
-  UNIVERSAL_CLEANUP_SHADOW: boolean;
-  
-  // Transcription Feature Flags
-  USE_48K_AUDIO: boolean;
-  ENABLE_SPEAKER_LABELS: boolean;
+export const ENV = {
+  // Core server
+  NODE_ENV: process.env['NODE_ENV'] ?? 'development',
+  HOST: process.env['HOST'] ?? '0.0.0.0',
+  PORT: Number(process.env['PORT'] ?? 3001),
+  AWS_REGION: process.env['AWS_REGION'] ?? 'ca-central-1',
+
+  // WebSocket
+  WS_PATH: process.env['WS_PATH'] ?? '/ws',
+  PUBLIC_WS_URL,
+  USE_WSS,
+
+  // CORS single source of truth
+  CORS_ALLOWED_ORIGINS: parseList(
+    process.env['CORS_ALLOWED_ORIGINS']
+      ?? (isProd
+          ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
+          : 'http://localhost:5173')
+  ),
+
+  // API hygiene
+  RATE_LIMIT_ENABLED: (process.env['RATE_LIMIT_ENABLED'] ?? 'false') === 'true',
+  RATE_LIMIT_WINDOW_MS: Number(process.env['RATE_LIMIT_WINDOW_MS'] ?? 15*60*1000),
+  RATE_LIMIT_MAX_REQUESTS: Number(process.env['RATE_LIMIT_MAX_REQUESTS'] ?? 100),
+
+  // === Legacy compatibility (referenced elsewhere) ===
+  DATABASE_URL: process.env['DATABASE_URL'] ?? '',
+  SUPABASE_URL: process.env['SUPABASE_URL'] ?? '',
+  SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] ?? '',
+
+  AUTH_VERIFY_STRATEGY: (process.env['AUTH_VERIFY_STRATEGY'] ?? 'supabase') as 'supabase'|'jwks',
+  JWKS_URL: process.env['JWKS_URL'] ?? '',
+
+  AUTH_REQUIRED: (process.env['AUTH_REQUIRED'] ?? 'false') === 'true',
+  WS_REQUIRE_AUTH: (process.env['WS_REQUIRE_AUTH'] ?? 'false') === 'true',
+  WS_JWT_SECRET: process.env['WS_JWT_SECRET'] ?? '',
+  JWT_SECRET: process.env['JWT_SECRET'] ?? '',
+
+  SPEAKER_CORRECTION_LOGGING: PHI_FREE ? false : !isProd,
+  CONVERSATION_FLOW_LOGGING: PHI_FREE ? false : !isProd,
+} as const;
+
+// Safe, non-secret startup log
+export function logNonSecretEnv() {
+  console.log('[ENV]', {
+    NODE_ENV: ENV.NODE_ENV,
+    HOST: ENV.HOST,
+    PORT: ENV.PORT,
+    WS_PATH: ENV.WS_PATH,
+    PUBLIC_WS_URL: ENV.PUBLIC_WS_URL,
+    CORS_ALLOWED_ORIGINS: ENV.CORS_ALLOWED_ORIGINS,
+    RATE_LIMIT_ENABLED: ENV.RATE_LIMIT_ENABLED,
+    AUTH_REQUIRED: ENV.AUTH_REQUIRED,
+    WS_REQUIRE_AUTH: ENV.WS_REQUIRE_AUTH,
+  });
 }
 
-// Environment-aware configuration with production support
-const isProduction = process.env['NODE_ENV'] === 'production';
-const hardcodedEnv: Environment = {
-  NODE_ENV: (process.env['NODE_ENV'] as 'development' | 'production' | 'test') || 'development',
-  PORT: isProduction ? 8080 : 3001,
-  HOST: isProduction ? '0.0.0.0' : 'localhost',
-  FRONTEND_URL: isProduction 
-    ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
-    : 'http://localhost:5173',
-  
-  // Database
-  DATABASE_URL: process.env['DATABASE_URL'] || '',
-    
-  // AWS Configuration
-  AWS_REGION: 'ca-central-1',
-  AWS_ACCESS_KEY_ID: process.env['AWS_ACCESS_KEY_ID'] || '',
-  AWS_SECRET_ACCESS_KEY: process.env['AWS_SECRET_ACCESS_KEY'] || '',
-  S3_BUCKET_NAME: 'centomomd-input-2025',
-  
-  // Supabase Configuration
-  SUPABASE_URL: process.env['SUPABASE_URL'] || '',
-  SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'] || '',
-  SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'] || '',
-  SUPABASE_JWT_SECRET: process.env['SUPABASE_JWT_SECRET'] || '',
-  
-  // Security
-  ENCRYPTION_KEY: process.env['ENCRYPTION_KEY'] || '',
-  JWT_SECRET: process.env['JWT_SECRET'] || '',
-  
-  // Logging
-  LOG_LEVEL: 'info',
-  
-  // Feature Flags
-  AUTH_REQUIRED: false,
-  WS_REQUIRE_AUTH: false,
-  RATE_LIMIT_ENABLED: false,
-  
-  // WebSocket Configuration
-  WS_JWT_SECRET: process.env['WS_JWT_SECRET'] || '',
-  WS_PATH: process.env['WS_PATH'] || '/ws',
-  PUBLIC_WS_URL: process.env['PUBLIC_WS_URL'] || (isProduction 
-    ? 'wss://api.alie.app/ws'
-    : 'ws://localhost:3001/ws'),
-  USE_WSS: isProduction,
-  
-  // CORS Configuration
-  CORS_ALLOWED_ORIGINS: isProduction 
-    ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
-    : 'http://localhost:5173',
-  
-  // Debug Configuration
-  LOG_PAYLOADS: false,
-  DIAG_MODE: false,
-  
-  // Performance Configuration
-  PERFORMANCE_LOGGING_ENABLED: !isProduction,
-  MEMORY_MONITORING_ENABLED: true,
-  SPEAKER_CORRECTION_LOGGING: !isProduction,
-  CONVERSATION_FLOW_LOGGING: !isProduction,
-  
-  // Authentication Strategy - Default to working Supabase approach
-  AUTH_VERIFY_STRATEGY: 'supabase',
-  
-  // OpenAI Configuration
-  OPENAI_API_KEY: process.env['OPENAI_API_KEY'] || '',
-  OPENAI_MODEL: process.env['OPENAI_MODEL'] || 'gpt-4o-mini',
-  OPENAI_TEMPERATURE: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.2'),
-  OPENAI_MAX_TOKENS: parseInt(process.env['OPENAI_MAX_TOKENS'] || '4000'),
-
-  // Universal Cleanup Feature Flag
-  UNIVERSAL_CLEANUP_ENABLED: true, // Temporarily hardcoded for testing
-  UNIVERSAL_CLEANUP_SHADOW: true, // Temporarily hardcoded for testing
-  
-  // Transcription Feature Flags
-  USE_48K_AUDIO: (process.env['USE_48K_AUDIO'] ?? 'true') === 'true',
-  ENABLE_SPEAKER_LABELS: (process.env['ENABLE_SPEAKER_LABELS'] ?? 'true') === 'true',
-};
-
-// Export the hardcoded environment
-export const ENV: Environment = hardcodedEnv;
-
-// Export config object for backward compatibility
+// Legacy compatibility exports for existing code
 export const config = {
   aws: {
-    region: hardcodedEnv.AWS_REGION,
+    region: ENV.AWS_REGION,
     credentials: {
-      accessKeyId: hardcodedEnv.AWS_ACCESS_KEY_ID,
-      secretAccessKey: hardcodedEnv.AWS_SECRET_ACCESS_KEY,
+      accessKeyId: process.env['AWS_ACCESS_KEY_ID'] || '',
+      secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'] || '',
     }
-  },
-  supabase: {
-    url: hardcodedEnv.SUPABASE_URL,
-    anonKey: hardcodedEnv.SUPABASE_ANON_KEY,
-    serviceRoleKey: hardcodedEnv.SUPABASE_SERVICE_ROLE_KEY,
-    jwtSecret: hardcodedEnv.SUPABASE_JWT_SECRET,
-  },
-  database: {
-    url: hardcodedEnv.DATABASE_URL,
-    ssl: true,
   },
   server: {
-    port: hardcodedEnv.PORT,
-    host: hardcodedEnv.HOST,
-    cors: {
-      origin: hardcodedEnv.FRONTEND_URL,
-    }
-  },
-  auth: {
-    required: hardcodedEnv.AUTH_REQUIRED,
-    wsRequireAuth: hardcodedEnv.WS_REQUIRE_AUTH,
-    wsJwtSecret: hardcodedEnv.WS_JWT_SECRET,
-  },
-  ws: {
-    publicUrl: hardcodedEnv.PUBLIC_WS_URL,
-    useWss: hardcodedEnv.USE_WSS,
+    port: ENV.PORT,
+    host: ENV.HOST,
   },
   security: {
-    corsOrigins: hardcodedEnv.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
-    rateLimitEnabled: hardcodedEnv.RATE_LIMIT_ENABLED,
+    corsOrigins: ENV.CORS_ALLOWED_ORIGINS,
+    rateLimitEnabled: ENV.RATE_LIMIT_ENABLED,
   },
-  debug: {
-    logPayloads: hardcodedEnv.LOG_PAYLOADS,
-    diagMode: hardcodedEnv.DIAG_MODE,
+  auth: {
+    required: ENV.AUTH_REQUIRED,
+    wsRequireAuth: ENV.WS_REQUIRE_AUTH,
+    wsJwtSecret: ENV.WS_JWT_SECRET,
   },
-  openai: {
-    apiKey: hardcodedEnv.OPENAI_API_KEY,
-    model: hardcodedEnv.OPENAI_MODEL,
-    temperature: hardcodedEnv.OPENAI_TEMPERATURE,
-    maxTokens: hardcodedEnv.OPENAI_MAX_TOKENS,
+  ws: {
+    publicUrl: ENV.PUBLIC_WS_URL,
+    useWss: ENV.USE_WSS,
   },
   features: {
-    universalCleanupEnabled: hardcodedEnv.UNIVERSAL_CLEANUP_ENABLED,
-    universalCleanupShadow: hardcodedEnv.UNIVERSAL_CLEANUP_SHADOW,
+    universalCleanupEnabled: true,
+    universalCleanupShadow: true,
   }
 };

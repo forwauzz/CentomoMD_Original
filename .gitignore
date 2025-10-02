@@ -63,6 +63,8 @@ jspm_packages/
 # dotenv environment variables file
 .env
 .env.local
+.env.development
+.env.production
 .env.development.local
 .env.test.local
 .env.production.local
@@ -128,3 +130,6 @@ create-dr-centomo-manual.md
 *secrets*
 *credentials*
 *keys*
+
+# Audio recordings (temporary)
+backend/temp_audio_recordings/
