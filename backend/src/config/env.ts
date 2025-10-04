@@ -49,6 +49,10 @@ export const ENV = {
 
   SPEAKER_CORRECTION_LOGGING: PHI_FREE ? false : !isProd,
   CONVERSATION_FLOW_LOGGING: PHI_FREE ? false : !isProd,
+  
+  // Audio and transcription flags
+  USE_48K_AUDIO: (process.env['USE_48K_AUDIO'] ?? 'true') !== 'false',
+  ENABLE_SPEAKER_LABELS: (process.env['ENABLE_SPEAKER_LABELS'] ?? 'false') === 'true',
 } as const;
 
 // Safe, non-secret startup log

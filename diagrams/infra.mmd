@@ -1,0 +1,101 @@
+graph TB
+    %% User and Browser
+    User[👤 User] --> Browser[🌐 Browser<br/>Chrome/Firefox/Safari]
+    
+    %% Frontend Hosting
+    Browser --> Amplify[🚀 AWS Amplify<br/>Frontend Hosting<br/>azure-production.d1deo9tihdnt50.amplifyapp.com]
+    
+    %% Edge Layer
+    Amplify --> Cloudflare[☁️ Cloudflare<br/>Edge Proxy<br/>DNS + SSL Termination<br/>Full Strict Mode]
+    
+    %% Backend Infrastructure
+    Cloudflare --> Nginx[🔧 Nginx<br/>Reverse Proxy<br/>api.alie.app<br/>Let's Encrypt SSL]
+    
+    %% Backend Application
+    Nginx --> NodeJS[⚡ Node.js/Express<br/>Backend Server<br/>Port 3001<br/>WebSocket Server]
+    
+    %% External Services
+    NodeJS --> Supabase[🗄️ Supabase<br/>Database + Auth<br/>PostgreSQL<br/>Row Level Security]
+    NodeJS --> AWS[☁️ AWS Services]
+    
+    %% AWS Services Breakdown
+    AWS --> Transcribe[🎤 AWS Transcribe<br/>Real-time STT<br/>ca-central-1<br/>PCM Audio]
+    AWS --> S3[📦 S3 Bucket<br/>centomomd-input-2025<br/>1-day retention<br/>AES-256 encryption]
+    
+    %% Audio Pipeline Flow
+    subgraph "Audio Pipeline"
+        Browser --> |"getUserMedia()<br/>16kHz PCM"| AudioCapture[🎙️ Audio Capture<br/>Mono, 16kHz<br/>No echo cancellation]
+        AudioCapture --> |"WebSocket Binary"| NodeJS
+        NodeJS --> |"PCM Stream"| Transcribe
+        Transcribe --> |"Transcript JSON"| NodeJS
+        NodeJS --> |"Real-time Results"| Browser
+    end
+    
+    %% WebSocket Flow
+    subgraph "WebSocket Connection"
+        Browser --> |"wss://api.alie.app/ws"| Cloudflare
+        Cloudflare --> |"WebSocket Proxy"| Nginx
+        Nginx --> |"/ws → /ws/transcription"| NodeJS
+        NodeJS --> |"WebSocketServer<br/>Path: /ws/transcription"| WSHandler[🔌 WebSocket Handler<br/>Session Management<br/>Binary Audio Processing]
+    end
+    
+    %% REST API Flow
+    subgraph "REST API"
+        Browser --> |"https://api.alie.app/api/*"| Cloudflare
+        Cloudflare --> |"HTTPS Proxy"| Nginx
+        Nginx --> |"/api/* → /api/*"| NodeJS
+        NodeJS --> |"Express Routes"| APIHandler[🔗 API Handler<br/>Templates, Health, Auth]
+    end
+    
+    %% Authentication Flow
+    subgraph "Authentication"
+        Browser --> |"Supabase Auth"| Supabase
+        Supabase --> |"JWT Tokens"| Browser
+        Browser --> |"Auth Headers"| NodeJS
+        NodeJS --> |"Token Validation"| Supabase
+    end
+    
+    %% Configuration and Environment
+    subgraph "Configuration"
+        EnvVars[⚙️ Environment Variables<br/>Backend: .env<br/>Frontend: Vite env]
+        NginxConfig[📝 Nginx Config<br/>⚠️ NOT in repo<br/>/etc/nginx/sites-available/]
+        AmplifyConfig[🔧 Amplify Config<br/>Environment Variables<br/>Build Settings]
+    end
+    
+    %% Deployment and CI/CD
+    subgraph "Deployment"
+        GitHub[📚 GitHub<br/>azure-production branch]
+        GitHub --> |"Auto Deploy"| Amplify
+        GitHub --> |"Manual Deploy"| EC2[🖥️ AWS EC2<br/>ca-central-1<br/>Node.js Backend]
+        EC2 --> Nginx
+    end
+    
+    %% Monitoring and Logging
+    subgraph "Monitoring"
+        Logs[📊 Logs<br/>Nginx: /var/log/nginx/<br/>Node: journalctl<br/>CloudWatch: AWS]
+        Health[❤️ Health Checks<br/>/healthz endpoint<br/>WebSocket connectivity]
+    end
+    
+    %% Security and Compliance
+    subgraph "Security & Compliance"
+        SSL[🔒 SSL/TLS<br/>Cloudflare + Let's Encrypt<br/>Full Strict Mode]
+        CORS[🌐 CORS<br/>Production origin only<br/>Preflight handling]
+        Compliance[📋 Compliance<br/>HIPAA, PIPEDA, Law 25<br/>Canadian data residency]
+    end
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef aws fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef external fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef config fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    classDef security fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef warning fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    
+    class Browser,Amplify frontend
+    class Nginx,NodeJS,WSHandler,APIHandler backend
+    class Transcribe,S3,AWS,EC2 aws
+    class Supabase,Cloudflare external
+    class EnvVars,NginxConfig,AmplifyConfig config
+    class SSL,CORS,Compliance security
+    class NginxConfig warning
