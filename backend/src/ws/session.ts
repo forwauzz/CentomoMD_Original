@@ -36,7 +36,7 @@ export function updateSessionSampleRate(ws: WebSocket, sampleRate: number): bool
   }
   
   // Validate sample rate
-  if (sampleRate === 44100 || sampleRate === 48000) {
+  if (sampleRate === 44100 || sampleRate === 48000 || sampleRate === 16000) {
     sessionState.sampleRate = sampleRate;
     sessionState.isInitialized = true;
     return true;
@@ -67,4 +67,20 @@ export function getSessionState(ws: WebSocket): SessionState | undefined {
 // Get all active sessions
 export function getAllActiveSessions(): Map<WebSocket, SessionState> {
   return new Map(activeSessions);
+}
+
+// Get session sample rate by WebSocket
+export function getSessionSampleRate(socket: WebSocket): number | undefined {
+  const sessionState = activeSessions.get(socket);
+  return sessionState?.sampleRate;
+}
+
+// Get session by ID (for transcription service)
+export function getSessionById(sessionId: string): SessionState | undefined {
+  for (const [, sessionState] of activeSessions) {
+    if (sessionState.sessionId === sessionId) {
+      return sessionState;
+    }
+  }
+  return undefined;
 }

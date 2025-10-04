@@ -10,6 +10,8 @@ import {
 } from '@aws-sdk/client-transcribe-streaming';
 import { config, ENV as env } from '../config/env.js';
 import { TranscriptionConfig, TranscriptionResult } from '../types/index.js';
+import { getSessionById, getSessionSampleRate } from '../ws/session.js';
+import { logPcm16Stats } from '../utils/audioUtils.js';
 import { complianceLogger } from '../utils/logger.js';
 
 export class TranscriptionService {
@@ -56,9 +58,12 @@ export class TranscriptionService {
     })();
 
     // Phase 0: Prepare AWS Transcribe configuration with mode-specific parameters
+    const session = getSessionById(sessionId);
+    const sessionSampleRate = session?.ws ? getSessionSampleRate(session.ws) : undefined;
+    const sampleRate = sessionSampleRate ?? 48000; // fallback to 48k
+    
     const use48k = env.USE_48K_AUDIO;
     const enableLabels = env.ENABLE_SPEAKER_LABELS;
-    const sampleRate = config.media_sample_rate_hz ?? (use48k ? 48000 : 16000);
     
     const cmdInput: StartStreamTranscriptionCommandInput = {
       LanguageCode: (config.language_code || 'fr-CA') as any,   // single language per session
@@ -79,6 +84,7 @@ export class TranscriptionService {
     // Log startup configuration
     console.log(`[ASR] Flags → USE_48K_AUDIO=${use48k}, ENABLE_SPEAKER_LABELS=${enableLabels}, sr=${sampleRate}`);
     console.log(`[ASR] Start stream → ${cmdInput.MediaSampleRateHertz} Hz, encoding=pcm, lang=${cmdInput.LanguageCode}`);
+    console.log(`[ASR] Full AWS config:`, JSON.stringify(cmdInput, null, 2));
     
     // Initialize session metadata
     this.sessionMetadata.set(sessionId, { startTime: new Date() });
@@ -86,6 +92,11 @@ export class TranscriptionService {
     // Start AWS handshake in background (don't await)
     this.client.send(command).then(async (response) => {
       try {
+        console.log(`[ASR] AWS Transcribe response received for session ${sessionId}:`, {
+          hasTranscriptResultStream: !!response.TranscriptResultStream,
+          responseKeys: Object.keys(response)
+        });
+        
         if (!response.TranscriptResultStream) {
           throw new Error('Failed to create transcript result stream');
         }
@@ -114,7 +125,7 @@ export class TranscriptionService {
         // Handle transcript events
         this.handleTranscriptEvents(sessionId, response.TranscriptResultStream as any, onTranscript, onError);
 
-        console.log(`AWS Transcribe streaming started successfully for session: ${sessionId}`);
+        console.log(`[ASR] AWS Transcribe streaming started successfully for session: ${sessionId}`);
       } catch (error) {
         console.error(`Failed to start AWS Transcribe streaming for session ${sessionId}:`, error);
         this.handleTranscribeError(error, onError);
@@ -134,6 +145,8 @@ export class TranscriptionService {
     return {
       pushAudio: (audioData: Uint8Array) => {
         if (!done && audioData && audioData.length > 0) {
+          // Log PCM stats with the actual sample rate
+          logPcm16Stats('tx', audioData, sampleRate);
           queue.push(audioData);
           console.log(`🎵 Queued ${audioData.length} bytes for session: ${sessionId}`);
         }
@@ -163,6 +176,14 @@ export class TranscriptionService {
         return;
       }
 
+      // Get session sample rate for logging
+      const session = getSessionById(sessionId);
+      const sessionSampleRate = session?.ws ? getSessionSampleRate(session.ws) : undefined;
+      const effectiveSampleRate = sessionSampleRate ?? 48000;
+      
+      // Log PCM stats with the actual sample rate
+      logPcm16Stats('tx', audioData, effectiveSampleRate);
+
       // Add audio data to the queue
       audioQueue.push(audioData);
       
@@ -182,6 +203,7 @@ export class TranscriptionService {
     onTranscript: (result: TranscriptionResult) => void,
     onError: (error: Error) => void
   ): Promise<void> {
+    console.log(`[ASR] Starting transcript event handler for session: ${sessionId}`);
     // Store complete AWS result for Mode 3 pipeline
     const awsResult: any = {
       results: {
@@ -200,6 +222,12 @@ export class TranscriptionService {
 
     try {
       for await (const evt of stream as any) {
+        console.log(`[ASR] Received event for session ${sessionId}:`, {
+          eventType: evt.TranscriptEvent ? 'TranscriptEvent' : 'Other',
+          hasTranscript: !!evt.TranscriptEvent?.Transcript,
+          resultCount: evt.TranscriptEvent?.Transcript?.Results?.length || 0
+        });
+        
         if (!evt.TranscriptEvent) continue;
         const results = evt.TranscriptEvent.Transcript?.Results ?? [];
         

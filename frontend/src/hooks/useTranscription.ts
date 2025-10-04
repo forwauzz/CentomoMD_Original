@@ -1942,7 +1942,7 @@ export const useTranscription = (sessionId?: string, language?: string, mode?: T
         ws.send(JSON.stringify({ 
           type: 'start_transcription', 
           languageCode, 
-          sampleRate: 44100,
+          sampleRate: 16000,  // Match the actual audio capture sample rate (16kHz for AWS Transcribe)
           mode: state.mode,  // Add mode parameter for Phase 0
           sessionId 
         }));

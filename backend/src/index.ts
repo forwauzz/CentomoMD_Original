@@ -2341,11 +2341,28 @@ wss.on('connection', (ws, req) => {
           }
           started = true;
 
-          // Determine effective sample rate: negotiated > default
+          // Update session sample rate from client message if provided
+          console.log(`[WS] start_transcription message:`, {
+            sampleRate: msg.sampleRate,
+            languageCode: msg.languageCode,
+            mode: msg.mode
+          });
+          
+          if (msg.sampleRate && (msg.sampleRate === 44100 || msg.sampleRate === 48000 || msg.sampleRate === 16000)) {
+            sessionState.sampleRate = msg.sampleRate;
+            sessionState.isInitialized = true;
+            console.log(`[WS] start_transcription: sampleRate=${msg.sampleRate} from client message`);
+          } else {
+            console.log(`[WS] start_transcription: invalid or missing sampleRate=${msg.sampleRate}, using default`);
+          }
+
+          // Determine effective sample rate: client message > negotiated > default
           let effectiveSR = 48000; // default
-          if (FLAGS.AUDIO_SR_NEGOTIATE && sessionState.sampleRate && (sessionState.sampleRate === 44100 || sessionState.sampleRate === 48000)) {
+          if (sessionState.sampleRate && (sessionState.sampleRate === 44100 || sessionState.sampleRate === 48000 || sessionState.sampleRate === 16000)) {
             effectiveSR = sessionState.sampleRate;
           }
+          
+          console.log(`[WS] Final effective sample rate: ${effectiveSR} (sessionState.sampleRate=${sessionState.sampleRate})`);
 
           // Phase 0: Use mode-specific configuration
           const modeConfig = getModeSpecificConfig(msg.mode || 'smart_dictation', {
