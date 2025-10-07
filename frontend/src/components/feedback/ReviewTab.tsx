@@ -122,7 +122,7 @@ export const ReviewTab: React.FC = () => {
     }
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = (Array.isArray(items) ? items : []).filter(item => {
     if (filters.mode && item.meta.mode !== filters.mode) return false;
     if (filters.template && !item.meta.template_name?.includes(filters.template)) return false;
     if (filters.category && !item.ratings[filters.category as keyof typeof item.ratings]) return false;
@@ -136,7 +136,7 @@ export const ReviewTab: React.FC = () => {
         <div className="flex items-center space-x-2">
           <h3 className="text-lg font-semibold">Feedback Items ({filteredItems.length})</h3>
           <Badge variant="outline">
-            {items.filter(i => i.status === 'open').length} open
+            {(Array.isArray(items) ? items : []).filter(i => i.status === 'open').length} open
           </Badge>
         </div>
         
@@ -246,17 +246,28 @@ export const ReviewTab: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(item.ratings).map(([key, value]) => (
-                        value && (
+                      {Object.entries(item.ratings).map(([key, value]) => {
+                        if (!value) return null;
+
+                        const isString = typeof value === 'string';
+                        const label = isString
+                          ? `${key}: ${value}`
+                          : `${key}: ${typeof (value as any).score !== 'undefined' ? (value as any).score : ''}`.trim();
+
+                        const variant = isString
+                          ? (value === 'good' ? 'default' : value === 'meh' ? 'secondary' : 'destructive')
+                          : 'default';
+
+                        return (
                           <Badge
                             key={key}
-                            variant={value === 'good' ? 'default' : value === 'meh' ? 'secondary' : 'destructive'}
+                            variant={variant}
                             className="text-xs"
                           >
-                            {key}: {value}
+                            {label}
                           </Badge>
-                        )
-                      ))}
+                        );
+                      })}
                     </div>
                     
                     {item.comment && (

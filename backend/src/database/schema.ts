@@ -148,12 +148,30 @@ export const artifacts = pgTable('artifacts', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Feedback table for user feedback with server sync
+export const feedback = pgTable('feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: uuid('user_id'), // Nullable to allow anonymous feedback; FK handled in DB
+  session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  meta: jsonb('meta').notNull().default({}),
+  ratings: jsonb('ratings').notNull().default({}),
+  artifacts: jsonb('artifacts').default({}),
+  highlights: jsonb('highlights').default([]),
+  comment: text('comment'),
+  attachments: text('attachments').array().default([]),
+  status: text('status', { enum: ['open', 'triaged', 'resolved'] }).notNull().default('open'),
+  ttl_days: integer('ttl_days').notNull().default(30),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   audit_logs: many(audit_logs),
   export_history: many(export_history),
   memberships: many(memberships),
+  feedback: many(feedback),
 }));
 
 export const profilesRelations = relations(profiles, ({ one }) => ({
@@ -191,6 +209,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   audit_logs: many(audit_logs),
   export_history: many(export_history),
   artifacts: many(artifacts),
+  feedback: many(feedback),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -244,6 +263,13 @@ export const artifactsRelations = relations(artifacts, ({ one }) => ({
   }),
 }));
 
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  session: one(sessions, {
+    fields: [feedback.session_id],
+    references: [sessions.id],
+  }),
+}));
+
 // Database schema type
 export type DatabaseSchema = {
   users: typeof users;
@@ -257,6 +283,7 @@ export type DatabaseSchema = {
   voice_command_mappings: typeof voice_command_mappings;
   export_history: typeof export_history;
   artifacts: typeof artifacts;
+  feedback: typeof feedback;
 };
 
 // Row types
@@ -282,3 +309,5 @@ export type ExportHistory = typeof export_history.$inferSelect;
 export type NewExportHistory = typeof export_history.$inferInsert;
 export type Artifact = typeof artifacts.$inferSelect;
 export type NewArtifact = typeof artifacts.$inferInsert;
+export type Feedback = typeof feedback.$inferSelect;
+export type NewFeedback = typeof feedback.$inferInsert;

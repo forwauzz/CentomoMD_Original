@@ -14,15 +14,31 @@ import { FEEDBACK_STRINGS } from '@/types/feedback';
 import { QuickNoteForm } from './QuickNoteForm';
 import { FullCaseForm } from './FullCaseForm';
 import { ReviewTab } from './ReviewTab';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
+
+interface TranscriptionContext {
+  currentTranscript: string;
+  mode: string;
+  language: string;
+  templateName: string;
+  diarization: boolean;
+  customVocab: boolean;
+  sessionId?: string;
+  paragraphs: string[];
+  segments: any[];
+  orthopedicNarrative?: any;
+}
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
+  transcriptionContext?: TranscriptionContext;
 }
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  transcriptionContext
 }) => {
   const featureFlags = useFeatureFlags();
   const { init } = useFeedbackStore();
@@ -50,9 +66,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-xl font-semibold">
-            {strings.modalTitle}
-          </CardTitle>
+          <div className="flex items-center space-x-3">
+            <CardTitle className="text-xl font-semibold">
+              {strings.modalTitle}
+            </CardTitle>
+            <SyncStatusIndicator showDetails={true} />
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -80,11 +99,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             
             <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
               <TabsContent value="quick-note" className="mt-0">
-                <QuickNoteForm onClose={onClose} />
+                <QuickNoteForm onClose={onClose} transcriptionContext={transcriptionContext} />
               </TabsContent>
               
               <TabsContent value="full-case" className="mt-0">
-                <FullCaseForm onClose={onClose} />
+                <FullCaseForm onClose={onClose} transcriptionContext={transcriptionContext} />
               </TabsContent>
               
               <TabsContent value="review" className="mt-0">

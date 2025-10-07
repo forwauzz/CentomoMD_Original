@@ -14,31 +14,50 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { FEEDBACK_STRINGS } from '@/types/feedback';
 import { useFeedbackStore } from '@/stores/feedbackStore';
 
-interface FullCaseFormProps {
-  onClose: () => void;
+interface TranscriptionContext {
+  currentTranscript: string;
+  mode: string;
+  language: string;
+  templateName: string;
+  diarization: boolean;
+  customVocab: boolean;
+  sessionId?: string;
+  paragraphs: string[];
+  segments: any[];
+  orthopedicNarrative?: any;
 }
 
-export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose }) => {
+interface FullCaseFormProps {
+  onClose: () => void;
+  transcriptionContext?: TranscriptionContext;
+}
+
+export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose, transcriptionContext }) => {
   const { addItem } = useFeedbackStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [containsPhi, setContainsPhi] = useState(false);
   
-  // Run Context
+  // Run Context - Auto-populate from transcription context
   const [runContext, setRunContext] = useState({
-    mode: 'smart' as 'smart' | 'word-for-word' | 'ambient',
-    language: 'en-CA' as 'fr-CA' | 'en-CA',
-    templateName: '',
-    diarization: false,
-    customVocab: false,
+    mode: (transcriptionContext?.mode === 'smart_dictation' ? 'smart' : 
+           transcriptionContext?.mode === 'word_for_word' ? 'word-for-word' : 
+           transcriptionContext?.mode === 'ambient' ? 'ambient' : 'smart') as 'smart' | 'word-for-word' | 'ambient',
+    language: (transcriptionContext?.language === 'fr-CA' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
+    templateName: transcriptionContext?.templateName || '',
+    diarization: transcriptionContext?.diarization || false,
+    customVocab: transcriptionContext?.customVocab || false,
     timestamp: new Date().toISOString(),
   });
 
-  // Artifacts
+  // Artifacts - Auto-populate with current transcript
   const [artifacts, setArtifacts] = useState({
-    rawText: '',
-    templatedText: '',
-    finalText: '',
-    templateName: '',
+    rawText: transcriptionContext?.currentTranscript || '',
+    templatedText: transcriptionContext?.paragraphs?.join('\n\n') || '',
+    finalText: transcriptionContext?.orthopedicNarrative?.summary ? 
+      Object.entries(transcriptionContext.orthopedicNarrative.summary)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n\n') : '',
+    templateName: transcriptionContext?.templateName || '',
   });
 
   // Highlights

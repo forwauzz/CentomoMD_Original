@@ -27,6 +27,7 @@ import { Section11Validator } from './services/formatter/validators/section11.js
 import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
+import feedbackRouter from './routes/feedback.js';
 import { securityMiddleware } from './server/security.js';
 import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
@@ -115,7 +116,15 @@ try {
   app.use(profileRouter); 
   console.log('✅ /api/profile routes mounted'); 
 } catch(e) { 
-  console.error('❌ mount /api/profile:', e); 
+  console.error('❌ mount /api/profile:', e);
+}
+
+// Feedback routes
+try { 
+  app.use('/api/feedback', feedbackRouter); 
+  console.log('✅ /api/feedback routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/feedback:', e);
 }
 
 // Transcript Analysis endpoints
