@@ -18,8 +18,7 @@ import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
-import { FeedbackFab } from '@/components/feedback/FeedbackFab';
-import { FeedbackModal } from '@/components/feedback/FeedbackModal';
+import { useTranscriptionContext } from '@/contexts/TranscriptionContext';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -33,6 +32,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 }) => {
   const featureFlags = useFeatureFlags();
   const { language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
+  const { setTranscriptionData } = useTranscriptionContext();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
   // Convert UI store language (fr/en) to dictation format (fr-CA/en-US)
@@ -50,7 +50,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
   const [aiStepStatus, setAiStepStatus] = useState<'success' | 'skipped' | 'error' | null>(null);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   
   // Clinical entities state (S6.4 - Caching for Reuse)
   const [, setClinicalEntities] = useState<ClinicalEntities | null>(null);
@@ -175,6 +174,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     isRecording,
     currentTranscript,
     paragraphs,
+    segments,
     activeSection,
     startRecording,
     stopRecording,
@@ -185,6 +185,36 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     // cleanedConversation,
     orthopedicNarrative
   } = useTranscription(sessionId, selectedLanguage, mode);
+
+  // Update global transcription context when data changes
+  useEffect(() => {
+    const contextData = {
+      currentTranscript: editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript),
+      mode: mode,
+      language: selectedLanguage,
+      templateName: selectedTemplate?.title || '',
+      diarization: featureFlags.speakerLabeling,
+      customVocab: false, // TODO: Add custom vocab detection
+      sessionId: sessionId,
+      paragraphs: paragraphs,
+      segments: segments,
+      orthopedicNarrative: orthopedicNarrative,
+    };
+    
+    setTranscriptionData(contextData);
+  }, [
+    editedTranscript,
+    paragraphs,
+    currentTranscript,
+    mode,
+    selectedLanguage,
+    selectedTemplate,
+    featureFlags.speakerLabeling,
+    sessionId,
+    segments,
+    orthopedicNarrative,
+    setTranscriptionData
+  ]);
 
   // Case store for saving to sections
   const { updateSection } = useCaseStore();
@@ -1262,14 +1292,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         </div>
       )}
 
-      {/* Feedback FAB */}
-      <FeedbackFab onClick={() => setShowFeedbackModal(true)} />
-
-      {/* Feedback Modal */}
-      <FeedbackModal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-      />
+      {/* Note: Feedback button is now global and accessible from anywhere in the app */}
     </div>
   );
 };

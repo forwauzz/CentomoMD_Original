@@ -11,11 +11,25 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FEEDBACK_STRINGS } from '@/types/feedback';
 import { useFeedbackStore } from '@/stores/feedbackStore';
 
-interface QuickNoteFormProps {
-  onClose: () => void;
+interface TranscriptionContext {
+  currentTranscript: string;
+  mode: string;
+  language: string;
+  templateName: string;
+  diarization: boolean;
+  customVocab: boolean;
+  sessionId?: string;
+  paragraphs: string[];
+  segments: any[];
+  orthopedicNarrative?: any;
 }
 
-export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose }) => {
+interface QuickNoteFormProps {
+  onClose: () => void;
+  transcriptionContext?: TranscriptionContext;
+}
+
+export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose, transcriptionContext }) => {
   const { addItem } = useFeedbackStore();
   const [ratings, setRatings] = useState({
     dictation: undefined as 'good' | 'meh' | 'bad' | undefined,
@@ -45,11 +59,13 @@ export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose }) => {
       // Create feedback item
       const feedbackItem = {
         meta: {
-          language: 'en-CA' as const,
-          mode: 'smart' as const,
-          template_name: undefined,
-          diarization: false,
-          custom_vocab: false,
+          language: (transcriptionContext?.language === 'fr-CA' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
+          mode: (transcriptionContext?.mode === 'smart_dictation' ? 'smart' : 
+                 transcriptionContext?.mode === 'word_for_word' ? 'word-for-word' : 
+                 transcriptionContext?.mode === 'ambient' ? 'ambient' : 'smart') as 'smart' | 'word-for-word' | 'ambient',
+          template_name: transcriptionContext?.templateName || undefined,
+          diarization: transcriptionContext?.diarization || false,
+          custom_vocab: transcriptionContext?.customVocab || false,
           timestamp: new Date().toISOString(),
           browser: {
             raw: navigator.userAgent,

@@ -56,6 +56,11 @@ export interface FeedbackItem {
   attachments: string[]; // blob keys
   status: 'open' | 'triaged' | 'resolved';
   ttl_days?: number; // default 30
+  // Sync-related fields
+  syncStatus?: 'pending' | 'synced' | 'failed';
+  serverId?: string; // Server-assigned ID after sync
+  lastSyncAttempt?: string; // ISO string
+  syncError?: string;
 }
 
 export interface FeedbackFilters {
@@ -74,6 +79,15 @@ export interface FeedbackStoreState {
   flagEnabled: boolean;
   isLoading: boolean;
   error?: string;
+  // Sync-related state
+  syncStatus: {
+    isOnline: boolean;
+    isSyncing: boolean;
+    lastSyncTime: string | null;
+    pendingItems: number;
+    failedItems: number;
+    error: string | null;
+  };
 }
 
 export interface FeedbackStoreActions {
@@ -85,6 +99,10 @@ export interface FeedbackStoreActions {
   exportAll: () => Promise<{ json: Blob; files: Array<{ key: string; blob: Blob }> }>;
   nukeAll: () => Promise<void>;
   pruneExpiredNow: () => Promise<void>;
+  // Sync-related actions
+  syncPendingItems: () => Promise<void>;
+  syncItem: (id: string) => Promise<boolean>;
+  retryFailedSync: () => Promise<void>;
 }
 
 export type FeedbackStore = FeedbackStoreState & FeedbackStoreActions;

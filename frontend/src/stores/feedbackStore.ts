@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import { feedbackDB } from '../lib/idb';
 import { FeedbackItem, FeedbackFilters, FeedbackStore } from '../types/feedback';
+import { feedbackSyncService } from '../services/feedbackSyncService';
+import { useFeatureFlags } from '../lib/featureFlags';
 
 export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
   // Initial state
@@ -14,6 +16,14 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
   flagEnabled: false,
   isLoading: false,
   error: undefined,
+  syncStatus: {
+    isOnline: navigator.onLine,
+    isSyncing: false,
+    lastSyncTime: null,
+    pendingItems: 0,
+    failedItems: 0,
+    error: null,
+  },
 
   // Actions
   init: async (flagEnabled: boolean) => {
@@ -25,22 +35,27 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
     set({ isLoading: true, error: undefined });
 
     try {
-      await feedbackDB.init();
-      
-      // Load items from IDB
-      await feedbackDB.listItems();
-      
-      // Prune expired items
-      await feedbackDB.pruneExpired();
-      
-      // Reload items after pruning
-      const freshItems = await feedbackDB.listItems();
-      
-      set({ 
-        items: freshItems, 
-        flagEnabled: true, 
-        isLoading: false 
+      // Load items directly from API instead of IndexedDB
+      const { apiFetch } = await import('../lib/api');
+      const response = await apiFetch('/api/feedback', {
+        method: 'GET',
       });
+
+      if (response.success && response.data && response.data.items) {
+        set({ 
+          items: response.data.items, 
+          flagEnabled: true, 
+          isLoading: false 
+        });
+        console.log(`✅ Loaded ${response.data.items.length} feedback items from database`);
+      } else {
+        set({ 
+          items: [], 
+          flagEnabled: true, 
+          isLoading: false 
+        });
+        console.log('📭 No feedback items found in database');
+      }
 
       // Set up daily pruning timer
       const scheduleDailyPrune = () => {
@@ -78,34 +93,41 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
     set({ isLoading: true, error: undefined });
 
     try {
-      // Generate ID and timestamp
-      const id = `feedback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const created_at = new Date().toISOString();
-
-      // Store blobs and get their keys
+      // Store blobs and get their keys (if any)
       const blobKeys: string[] = [];
       for (const [key, blob] of Object.entries(blobs)) {
-        const blobKey = `blob_${id}_${key}`;
+        const blobKey = `blob_${Date.now()}_${key}`;
         await feedbackDB.putBlob(blobKey, blob);
         blobKeys.push(blobKey);
       }
 
-      // Create the item
-      const item: FeedbackItem = {
+      // Prepare data for API call
+      const apiData = {
         ...itemData,
-        id,
-        created_at,
         attachments: blobKeys,
       };
 
-      // Save to IDB
-      await feedbackDB.saveItem(item);
+      // Make direct API call to create feedback
+      const { apiFetch } = await import('../lib/api');
+      const response = await apiFetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiData),
+      });
 
-      // Update state
-      set((state) => ({
-        items: [...state.items, item],
-        isLoading: false,
-      }));
+      if (response.success && response.data) {
+        const newItem = response.data;
+        
+        // Update state with the server-created item
+        set((state) => ({
+          items: [...state.items, newItem],
+          isLoading: false,
+        }));
+
+        console.log('✅ Feedback saved directly to database:', newItem.id);
+      } else {
+        throw new Error(response.error || 'Failed to save feedback');
+      }
 
     } catch (error) {
       console.error('Failed to add feedback item:', error);
@@ -267,6 +289,79 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to prune expired items:', error);
+    }
+  },
+
+  // Sync-related actions
+  syncPendingItems: async () => {
+    const featureFlags = useFeatureFlags();
+    if (!featureFlags.feedbackServerSync) return;
+
+    try {
+      await feedbackSyncService.syncPendingItems();
+    } catch (error) {
+      console.error('Failed to sync pending items:', error);
+    }
+  },
+
+  syncItem: async (id: string) => {
+    const featureFlags = useFeatureFlags();
+    if (!featureFlags.feedbackServerSync) return false;
+
+    try {
+      const success = await feedbackSyncService.syncItem(id);
+      
+      if (success) {
+        // Update item sync status
+        set((state) => ({
+          items: state.items.map(item =>
+            item.id === id
+              ? { ...item, syncStatus: 'synced' as const, lastSyncAttempt: new Date().toISOString() }
+              : item
+          ),
+        }));
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('Failed to sync item:', error);
+      
+      // Update item sync status to failed
+      set((state) => ({
+        items: state.items.map(item =>
+          item.id === id
+            ? { 
+                ...item, 
+                syncStatus: 'failed' as const, 
+                lastSyncAttempt: new Date().toISOString(),
+                syncError: error instanceof Error ? error.message : 'Sync failed'
+              }
+            : item
+        ),
+      }));
+      
+      return false;
+    }
+  },
+
+  retryFailedSync: async () => {
+    const featureFlags = useFeatureFlags();
+    if (!featureFlags.feedbackServerSync) return;
+
+    try {
+      // Get all failed items
+      const { items } = get();
+      const failedItems = items.filter(item => item.syncStatus === 'failed');
+      
+      // Add them back to sync queue
+      for (const item of failedItems) {
+        feedbackSyncService.addToSyncQueue(item.id);
+      }
+      
+      // Trigger sync
+      await feedbackSyncService.syncPendingItems();
+    } catch (error) {
+      console.error('Failed to retry sync:', error);
     }
   },
 }));

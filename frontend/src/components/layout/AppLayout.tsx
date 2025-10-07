@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PrimarySidebar } from './PrimarySidebar';
 import { AppHeader } from './AppHeader';
+import { GlobalFeedbackButton } from '@/components/feedback/GlobalFeedbackButton';
 
 
 export const AppLayout: React.FC = () => {
@@ -38,6 +39,9 @@ export const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
+      
+      {/* Global Feedback Button */}
+      <GlobalFeedbackButton />
     </div>
   );
 };

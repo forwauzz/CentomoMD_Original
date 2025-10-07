@@ -23,13 +23,15 @@ import { useUIStore } from '@/stores/uiStore';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
+import { TranscriptionProvider } from '@/contexts/TranscriptionContext';
 
 function App() {
   const featureFlags = useFeatureFlags();
 
   return (
     <TemplateProvider>
-      <BrowserRouter>
+      <TranscriptionProvider>
+        <BrowserRouter>
       <Routes>
         {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -112,8 +114,9 @@ function App() {
           {/* Legacy route for backward compatibility */}
           <Route path="/legacy" element={<LegacyApp />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+        </BrowserRouter>
+      </TranscriptionProvider>
     </TemplateProvider>
   );
 }

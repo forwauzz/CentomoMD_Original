@@ -10,6 +10,7 @@ export interface FeatureFlags {
   transcriptAnalysisPipeline: boolean;
   speakerLabeling: boolean;
   feedbackModule: boolean;
+  feedbackServerSync: boolean;
 }
 
 // Default feature flags - all disabled by default for safety
@@ -20,6 +21,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   transcriptAnalysisPipeline: false,
   speakerLabeling: false,
   feedbackModule: false,
+  feedbackServerSync: false,
 };
 
 // Environment-based feature flags
@@ -33,6 +35,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     transcriptAnalysisPipeline: import.meta.env.VITE_FEATURE_TRANSCRIPT_ANALYSIS_PIPELINE === 'true',
     speakerLabeling: import.meta.env.VITE_FEATURE_SPEAKER_LABELING === 'true',
     feedbackModule: import.meta.env.VITE_FEATURE_FEEDBACK_MODULE === 'true',
+    feedbackServerSync: import.meta.env.VITE_FEATURE_FEEDBACK_SERVER_SYNC === 'true',
   };
 
   // For development, we can enable features for testing
@@ -43,6 +46,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     transcriptAnalysisPipeline: true, // Enable for development and testing
     speakerLabeling: true, // Enable for development - Transcribe mode fully functional
     feedbackModule: true, // Enable for development - feedback module
+    feedbackServerSync: true, // Enable for development - feedback server sync
   };
 
   // Use environment flags if available, otherwise use dev flags
@@ -53,6 +57,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     transcriptAnalysisPipeline: envFlags.transcriptAnalysisPipeline || devFlags.transcriptAnalysisPipeline,
     speakerLabeling: envFlags.speakerLabeling || devFlags.speakerLabeling,
     feedbackModule: envFlags.feedbackModule || devFlags.feedbackModule,
+    feedbackServerSync: envFlags.feedbackServerSync || devFlags.feedbackServerSync,
   };
 };
 

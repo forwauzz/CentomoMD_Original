@@ -17,6 +17,7 @@ export const FLAGS = {
   FEATURE_AI_FORMATTING: (process.env['FEATURE_AI_FORMATTING'] ?? 'true') !== 'false',
   FEATURE_EXPORT: (process.env['FEATURE_EXPORT'] ?? 'true') !== 'false',
   FEATURE_AUDIT_LOGGING: (process.env['FEATURE_AUDIT_LOGGING'] ?? 'true') !== 'false',
+  FEATURE_FEEDBACK_SERVER_SYNC: (process.env['FEATURE_FEEDBACK_SERVER_SYNC'] ?? 'false') === 'true',
   
   // Universal cleanup flags
   UNIVERSAL_CLEANUP_ENABLED: (process.env['UNIVERSAL_CLEANUP_ENABLED'] ?? 'false') === 'true',
