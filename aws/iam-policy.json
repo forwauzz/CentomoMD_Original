@@ -1,0 +1,83 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TranscribeStreamingAccess",
+      "Effect": "Allow",
+      "Action": [
+        "transcribe:StartStreamTranscription",
+        "transcribe:StartStreamTranscriptionAsync"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ca-central-1"
+        }
+      }
+    },
+    {
+      "Sid": "S3Access",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::centomomd-*",
+        "arn:aws:s3:::centomomd-*/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ca-central-1"
+        }
+      }
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:ca-central-1:*:log-group:/aws/centomomd/*",
+        "arn:aws:logs:ca-central-1:*:log-group:/aws/centomomd/*:log-stream:*"
+      ]
+    },
+    {
+      "Sid": "KMSAccess",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey"
+      ],
+      "Resource": "arn:aws:kms:ca-central-1:*:key/*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "transcribe.ca-central-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "CloudTrailAccess",
+      "Effect": "Allow",
+      "Action": [
+        "cloudtrail:LookupEvents",
+        "cloudtrail:GetTrail",
+        "cloudtrail:DescribeTrails"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ca-central-1"
+        }
+      }
+    }
+  ]
+}

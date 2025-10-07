@@ -1,0 +1,76 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EnforceSSLOnly",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::centomomd-*",
+        "arn:aws:s3:::centomomd-*/*"
+      ],
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
+        }
+      }
+    },
+    {
+      "Sid": "EnforceEncryption",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::centomomd-*/*",
+      "Condition": {
+        "StringNotEquals": {
+          "s3:x-amz-server-side-encryption": "AES256"
+        }
+      }
+    },
+    {
+      "Sid": "EnforceBucketEncryption",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::centomomd-*/*",
+      "Condition": {
+        "Null": {
+          "s3:x-amz-server-side-encryption": "true"
+        }
+      }
+    },
+    {
+      "Sid": "RestrictToCanadianRegion",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::centomomd-*",
+        "arn:aws:s3:::centomomd-*/*"
+      ],
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": "ca-central-1"
+        }
+      }
+    },
+    {
+      "Sid": "AllowServiceAccess",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "transcribe.ca-central-1.amazonaws.com"
+      },
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::centomomd-*/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "${AWS_ACCOUNT_ID}"
+        }
+      }
+    }
+  ]
+}

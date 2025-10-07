@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mode 1 Formatter Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-section, .output-section {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Mode 1 Formatter Test</h1>
+    
+    <div class="container">
+        <h2>📝 Raw Transcript Input</h2>
+        <div class="input-section">
+            <textarea id="rawTranscript" placeholder="Enter your raw transcript here...">Patient is a forty five year old male comma new consultation for right knee pain period
+He reports the pain started three weeks ago comma after a soccer match period
+Denies trauma comma swelling comma or redness period
+Past medical history colon hypertension comma controlled with medication period
+Current medications colon ramipril five milligrams daily period
+No known drug allergies period
+On exam comma knee inspection shows mild tenderness on palpation period
+Range of motion is full comma no instability noted period
+Vital signs stable period
+Plan colon order X ray of right knee comma refer to physiotherapy comma start acetaminophen one gram TID period
+Follow up in four weeks period new paragraph
+Patient understands and agrees with plan period</textarea>
+        </div>
+        
+        <button onclick="testMode1Formatting()">🔧 Test Mode 1 Formatting</button>
+        
+        <div class="output-section">
+            <h3>📋 Results</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        function testMode1Formatting() {
+            const rawTranscript = document.getElementById('rawTranscript').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = '<div class="info">🔄 Processing...</div>';
+            
+            // Simulate the Mode 1 formatting process
+            setTimeout(() => {
+                const result = processMode1Formatting(rawTranscript);
+                displayResults(result);
+            }, 100);
+        }
+        
+        function processMode1Formatting(transcript) {
+            let formatted = transcript;
+            
+            // Step 1: Replace speech-to-text punctuation markers
+            formatted = formatted.replace(/\bcomma\b/g, ',');
+            formatted = formatted.replace(/\bperiod\b/g, '.');
+            formatted = formatted.replace(/\bcolon\b/g, ':');
+            formatted = formatted.replace(/\bsemicolon\b/g, ';');
+            formatted = formatted.replace(/\bexclamation\b/g, '!');
+            formatted = formatted.replace(/\bquestion\b/g, '?');
+            
+            // Step 2: Handle voice commands
+            formatted = formatted.replace(/\bnew paragraph\b/g, '\n\n');
+            formatted = formatted.replace(/\bpause\b/g, '[PAUSE]');
+            formatted = formatted.replace(/\bresume\b/g, '[RESUME]');
+            formatted = formatted.replace(/\bsave\b/g, '[SAVE]');
+            
+            // Step 3: Handle verbatim commands
+            formatted = formatted.replace(/\bstart verbatim\b/g, '___VERBATIM_START___');
+            formatted = formatted.replace(/\bend verbatim\b/g, '___VERBATIM_END___');
+            
+            // Step 4: Fix spacing around punctuation
+            formatted = formatted.replace(/\s*([,.!?:;])\s*/g, '$1 ');
+            
+            // Step 5: Capitalize first letter of sentences
+            formatted = formatted.replace(/([.!?]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
+            
+            // Step 6: Clean up multiple spaces and newlines
+            formatted = formatted.replace(/\s+/g, ' ');
+            formatted = formatted.replace(/\n\s*\n\s*\n/g, '\n\n');
+            formatted = formatted.trim();
+            
+            // Step 7: Validation
+            const validation = validateContent(formatted);
+            
+            return {
+                formatted: formatted,
+                validation: validation,
+                issues: validation.issues,
+                verbatimBlocks: countVerbatimBlocks(formatted)
+            };
+        }
+        
+        function validateContent(content) {
+            const issues = [];
+            const warnings = [];
+            const criticalIssues = [];
+            
+            // Section 7 validation (Historical narrative)
+            const firstSentence = content.split(/[.!?]/)[0]?.trim();
+            const startsWithWorker = /^(the\s+)?worker/i.test(firstSentence);
+            if (!startsWithWorker) {
+                criticalIssues.push('Section 7: Should start with "The worker" or "The patient"');
+            }
+            
+            // Section 8 validation (Clinical examination)
+            const hasVAS = /vas\s*[:\-]?\s*(\d{1,2})\s*\/\s*10/gi.test(content);
+            const hasMRC = /mrc\s*[:\-]?\s*(\d{1,2})\s*\/\s*5/gi.test(content);
+            const hasROM = /rom\s*[:\-]?\s*(\d{1,3})\s*°/gi.test(content);
+            
+            if (!hasVAS && !hasMRC && !hasROM) {
+                warnings.push('Section 8: No standardized measurements found (VAS, MRC, ROM)');
+            }
+            
+            // Check for proper punctuation
+            if (content.includes('comma') || content.includes('period') || content.includes('colon')) {
+                warnings.push('Some speech-to-text markers may not have been converted');
+            }
+            
+            return {
+                isValid: criticalIssues.length === 0,
+                issues: [...criticalIssues, ...warnings],
+                warnings: warnings,
+                criticalIssues: criticalIssues
+            };
+        }
+        
+        function countVerbatimBlocks(content) {
+            const verbatimStart = (content.match(/___VERBATIM_START___/g) || []).length;
+            const verbatimEnd = (content.match(/___VERBATIM_END___/g) || []).length;
+            return Math.min(verbatimStart, verbatimEnd);
+        }
+        
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <div class="result">
+                    <h4 class="success">✅ Formatted Text:</h4>
+                    <textarea readonly style="height: 150px; background-color: #f8f9fa;">${result.formatted}</textarea>
+                </div>
+                
+                <div class="result">
+                    <h4 class="info">📊 Processing Summary:</h4>
+                    <ul>
+                        <li><strong>Verbatim Blocks:</strong> ${result.verbatimBlocks}</li>
+                        <li><strong>Validation Status:</strong> <span class="${result.validation.isValid ? 'success' : 'error'}">${result.validation.isValid ? '✅ Valid' : '❌ Invalid'}</span></li>
+                        <li><strong>Critical Issues:</strong> ${result.validation.criticalIssues.length}</li>
+                        <li><strong>Warnings:</strong> ${result.validation.warnings.length}</li>
+                    </ul>
+                </div>
+            `;
+            
+            if (result.validation.criticalIssues.length > 0) {
+                html += `
+                    <div class="result">
+                        <h4 class="error">❌ Critical Issues:</h4>
+                        <ul>
+                            ${result.validation.criticalIssues.map(issue => `<li class="error">${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (result.validation.warnings.length > 0) {
+                html += `
+                    <div class="result">
+                        <h4 class="warning">⚠️ Warnings:</h4>
+                        <ul>
+                            ${result.validation.warnings.map(warning => `<li class="warning">${warning}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="result">
+                    <h4 class="info">🎯 What the Mode 1 Formatter Does:</h4>
+                    <ul>
+                        <li>✅ Converts speech-to-text punctuation markers (comma → , period → .)</li>
+                        <li>✅ Processes voice commands (new paragraph, pause, resume, save)</li>
+                        <li>✅ Protects verbatim text blocks</li>
+                        <li>✅ Applies basic punctuation rules</li>
+                        <li>✅ Validates against CNESST section requirements</li>
+                        <li>✅ Handles both French and English</li>
+                    </ul>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Auto-run test on page load
+        window.onload = function() {
+            testMode1Formatting();
+        };
+    </script>
+</body>
+</html>
