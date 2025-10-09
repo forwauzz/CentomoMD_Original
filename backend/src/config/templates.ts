@@ -235,7 +235,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     type: 'formatting',
     compatibleSections: ['section_7'],
     compatibleModes: ['mode1', 'mode2'],
-    supportedLanguages: ['fr', 'en'],
+    supportedLanguages: ['fr'],
     content: {
       structure: 'ai-cnesst-formatting-enhanced',
       placeholders: ['chronological_order', 'worker_first', 'medical_terminology', 'comprehensive_prompts'],
@@ -274,7 +274,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     type: 'formatting',
     compatibleSections: ['section_8', 'section_7', 'section_11', 'section_custom'],
     compatibleModes: ['mode1', 'mode2', 'mode3'],
-    supportedLanguages: ['fr', 'en'],
+    supportedLanguages: ['fr'],
     content: {
       structure: 'ai-cnesst-section8-formatting-enhanced',
       placeholders: ['subjective_assessment', 'complaints_problems', 'functional_impact', 'neurological_observations'],
