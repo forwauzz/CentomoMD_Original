@@ -1,6 +1,6 @@
 export interface FormattingOptions {
   section: "7" | "8" | "11" | "history_evolution";
-  language: "fr" | "en";
+  inputLanguage: "fr" | "en";
   complexity?: "low" | "medium" | "high";
   formattingLevel?: "basic" | "standard" | "advanced";
   includeSuggestions?: boolean;
@@ -54,10 +54,8 @@ export class AIFormattingService {
           console.warn(`Unknown section: ${options.section}`);
       }
 
-      // Language-specific formatting
-      if (options.language === "fr") {
-        formattedContent = this.formatFrenchContent(formattedContent, changes, options);
-      }
+      // Language-specific formatting - always use French output
+      formattedContent = this.formatFrenchContent(formattedContent, changes, options);
 
       // Advanced formatting based on level
       if (options.formattingLevel === "advanced") {
@@ -69,8 +67,8 @@ export class AIFormattingService {
         suggestions.push(...this.generateSuggestions(formattedContent, options));
       }
 
-      // Calculate statistics
-      const statistics = this.calculateStatistics(formattedContent, options.language);
+      // Calculate statistics - always use French for output
+      const statistics = this.calculateStatistics(formattedContent, "fr");
 
       // Enhanced compliance validation
       const compliance = this.validateCompliance(formattedContent, options);
@@ -116,7 +114,7 @@ export class AIFormattingService {
     let formatted = content;
 
     // Language-specific section headers
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       if (!formatted.includes("7. Historique de faits et évolution")) {
         formatted = "7. Historique de faits et évolution\n\n" + formatted;
         changes.push("Added Section 7 header (French)");
@@ -129,7 +127,7 @@ export class AIFormattingService {
     }
 
     // Language-specific worker terminology standardization
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       const frenchWorkerTerminology = {
         'patient': 'travailleur',
         'patiente': 'travailleuse',
@@ -163,7 +161,7 @@ export class AIFormattingService {
     }
 
     // Language-specific date formatting
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       const frenchDatePatterns = [
         { pattern: /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, replacement: "le $1 $2 $3" },
         { pattern: /(\d{1,2})-(\d{1,2})-(\d{4})/g, replacement: "le $1 $2 $3" },
@@ -194,7 +192,7 @@ export class AIFormattingService {
 
     // Language-specific chronological indicators
     if (options.formattingLevel === "advanced") {
-      if (options.language === "fr") {
+      if (options.inputLanguage === "fr") {
         if (!formatted.includes("le ") && !formatted.includes("Le ")) {
           const sentences = formatted.split(/[.!?]+/);
           const enhancedSentences = sentences.map((sentence, index) => {
@@ -224,7 +222,7 @@ export class AIFormattingService {
 
     // Language-specific medical terminology
     if (options.formattingLevel === "advanced") {
-      if (options.language === "fr") {
+      if (options.inputLanguage === "fr") {
         const frenchMedicalTerms = {
           'blessure': 'lésion',
           'douleur': 'symptomatologie douloureuse',
@@ -410,7 +408,7 @@ export class AIFormattingService {
       const { enhancedFormatHistoryEvolutionText } = await import('./formatter/historyEvolution.js');
       
       console.log('🤖 Calling OpenAI API for History of Evolution formatting...');
-      const aiFormatted = await enhancedFormatHistoryEvolutionText(content, options.language as 'fr' | 'en');
+      const aiFormatted = await enhancedFormatHistoryEvolutionText(content, "fr"); // Always French output
       
       changes.push("Applied AI formatting with OpenAI GPT-4o");
       changes.push("Applied worker-first rule via AI");
@@ -425,7 +423,7 @@ export class AIFormattingService {
       let formatted = content;
 
       // Language-specific section headers
-      if (options.language === "fr") {
+      if (options.inputLanguage === "fr") {
         if (!formatted.includes("Historique d'évolution")) {
           formatted = "Historique d'évolution\n\n" + formatted;
           changes.push("Added History of Evolution header (French) - AI fallback");
@@ -438,7 +436,7 @@ export class AIFormattingService {
       }
 
     // Enforce worker-first rule (critical for CNESST compliance)
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       // Replace patient references with worker references
       const workerReplacements = {
         'le patient': 'le travailleur',
@@ -477,7 +475,7 @@ export class AIFormattingService {
     }
 
     // Enforce chronological structure (worker-first, then date)
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       // Fix date-first patterns to worker-first patterns
       const dateFirstPatterns = [
         // Pattern: "Le 15 octobre 2023, le travailleur" -> "Le travailleur, le 15 octobre 2023"
@@ -512,7 +510,7 @@ export class AIFormattingService {
     }
 
     // Preserve medical terminology and quotes
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       // Ensure proper French medical terminology
       const medicalTerms = {
         'docteur': 'docteur',
@@ -613,7 +611,7 @@ export class AIFormattingService {
     formatted = formatted.replace(/([.!?])\s*([A-Z])/g, '$1 $2'); // Ensure space after punctuation
 
     // Advanced medical terminology enhancement
-    if (options.language === "fr") {
+    if (options.inputLanguage === "fr") {
       const advancedTerms = {
         'douleur': 'symptomatologie douloureuse',
         'mobilité': 'amplitude articulaire',
@@ -654,7 +652,7 @@ export class AIFormattingService {
     }
 
     // Check for proper terminology
-    if (options.language === "fr" && content.includes("patient")) {
+    if (content.includes("patient")) {
       suggestions.push("Replace 'patient' with 'travailleur/travailleuse'");
     }
 
@@ -735,7 +733,7 @@ export class AIFormattingService {
     };
 
     const hasStructure = content.includes(sectionHeaders[options.section]);
-    const hasMedicalTerms = this.validateMedicalTerms(content, options.language);
+    const hasMedicalTerms = this.validateMedicalTerms(content, options.inputLanguage);
     const hasProperTerminology = !content.includes("patient") && !content.includes("patiente");
     const hasChronology = content.includes("le ") || content.includes("Le ");
 
@@ -789,7 +787,7 @@ export class AIFormattingService {
     }
 
     // Check for proper terminology
-    if (options.language === "fr" && content.includes("patient")) {
+    if (content.includes("patient")) {
       suggestions.push("Replace 'patient' with 'travailleur/travailleuse'");
     }
 

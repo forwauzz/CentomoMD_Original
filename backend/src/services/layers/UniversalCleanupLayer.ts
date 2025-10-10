@@ -1,11 +1,24 @@
 import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
-import { PROMPT_FR, PROMPT_EN } from "../../prompts/clinical.js";
+import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
 import { openai as defaultOpenAI } from "../../lib/openai.js";
 
-function pickPrompt(lang: 'fr' | 'en', t: string): string { 
-  return (lang === 'fr' ? PROMPT_FR : PROMPT_EN).replace('{{TRANSCRIPT}}', t);
+function pickPrompt(inputLang: 'fr' | 'en', t: string): string { 
+  // Always use French prompt for output, but add English input context when needed
+  const basePrompt = PROMPT_FR.replace('{{TRANSCRIPT}}', t);
+  
+  if (inputLang === 'en') {
+    // Add English input context to French prompt
+    const englishContext = `
+## CONTEXTE D'ENTRÉE: Anglais
+Le transcript ci-dessous est en anglais. Extrayez les entités cliniques et traduisez-les en terminologie médicale française.
+
+`;
+    return englishContext + basePrompt;
+  }
+  
+  return basePrompt;
 }
 
 // Simple in-memory LRU (replace with your LRU if you have one)
@@ -49,7 +62,7 @@ export class UniversalCleanupLayer implements LayerProcessor {
       const emptyResult: CleanedInput = {
         cleaned_text: '',
         clinical_entities: {
-          language: opts.language,
+          language: 'fr', // Always output French clinical entities
           issues: ['Empty transcript provided']
         },
         meta: {
@@ -72,7 +85,7 @@ export class UniversalCleanupLayer implements LayerProcessor {
       };
     }
 
-    const key = getKey(cleaned_text + '|' + opts.language);
+    const key = getKey(cleaned_text + '|' + opts.language + '|inputLang');
     const cached = CACHE.get(key);
     if (cached) {
       return {
@@ -115,7 +128,7 @@ export class UniversalCleanupLayer implements LayerProcessor {
 
       const clinical_entities = sanitize({
         ...parsed,
-        language: opts.language,
+        language: 'fr', // Always output French clinical entities
         confidence: typeof parsed.confidence === "number" ? parsed.confidence : undefined
       });
 
@@ -151,7 +164,7 @@ export class UniversalCleanupLayer implements LayerProcessor {
       const fallbackCleanedInput: CleanedInput = {
         cleaned_text,
         clinical_entities: {
-          language: opts.language,
+          language: 'fr', // Always output French clinical entities
           issues: [`Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
         },
         meta: { 

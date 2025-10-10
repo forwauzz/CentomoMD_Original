@@ -1,80 +1,84 @@
 {
-  "metadata": {
+  "métadonnées": {
     "section": "8",
-    "name": "Questionnaire subjectif et état actuel",
+    "nom": "Questionnaire subjectif et état actuel",
     "locale": "fr-CA",
     "version": "1.1.0",
-    "description": "Règles de formatage et QA pour Section 8."
+    "description": "Règles de mise en forme et de contrôle de qualité pour la section 8."
   },
   "structure": {
-    "required_headings": [
+    "titres_obligatoires": [
       "Appréciation subjective de l'évolution",
-      "Plaintes et problèmes", 
-      "Impact sur AVQ/AVD"
+      "Plaintes et problèmes",
+      "Impact fonctionnel",
+      "Observations neurologiques",
+      "Autres observations",
+      "Exclusions/mentions négatives",
+      "Références externes"
     ],
-    "order_fixed": true,
-    "section_title": ". Questionnaire subjectif et état actuel",
-    "format": "simple_headers_with_colons"
+    "ordre_fixe": true
   },
-  "style_rules": {
-    "clinical_tone": true,
-    "concise": true,
-    "preserve_negatives": true,
-    "forbid_diagnosis_creation": true,
-    "language": "fr-CA"
+  "règles_de_style": {
+    "ton_clinique": true,
+    "concis": true,
+    "préserver_négations": true,
+    "interdire_création_diagnostic": true,
+    "langue": "fr-CA"
   },
-  "terminology": {
-    "pain_descriptors": ["brûlure","élancement","raideur","spasmes","paresthésies","engourdissements"],
-    "neuro_terms": ["irradiation","dermatome","réflexe","dextérité","faiblesse"],
-    "negative_markers": ["nie","aucun","pas de"]
+  "terminologie": {
+    "descripteurs_douleur": ["brûlure", "élancement", "raideur", "spasmes", "paresthésie", "engourdissement"],
+    "termes_neurologiques": ["irradiation", "dermatome", "réflexe", "dextérité", "faiblesse"],
+    "marqueurs_négatifs": ["nie", "aucun", "aucune", "sans"]
   },
-  "patterns": {
-    "pain_vas_regex": "\\b(\\d|10)\\s*/\\s*10\\b",
-    "degree_regex": "\\b\\d{1,3}\\s*°\\b"
+  "motifs": {
+    "expression_intensité_douleur": "\\b(\\d|10)\\s*/\\s*10\\b",
+    "expression_degré": "\\b\\d{1,3}\\s*°\\b"
   },
-  "qa_checks": {
-    "require_all_headings": true,
-    "require_pain_if_complaint": true,
-    "preserve_negatives": true,
-    "forbid_invention": true,
-    "allow_annexe_references": true,
+  "contrôles_qualité": {
+    "exiger_tous_les_titres": true,
+    "exiger_douleur_si_plainte": true,
+    "préserver_négations": true,
+    "interdire_invention": true,
+    "autoriser_références_annexe": true,
     "anti_hallucination": true,
-    "context_anchoring": true,
-    "transcription_fidelity": true,
-    "diarization_handling": true
+    "ancrage_contextuel": true,
+    "fidélité_transcription": true,
+    "gestion_diarisation": true
   },
-  "anti_hallucination_rules": {
-    "forbid_anatomical_details": true,
-    "forbid_vague_to_precise_conversion": true,
-    "forbid_invented_scores": true,
-    "forbid_sentence_completion": true,
-    "use_undocumented_placeholder": "Non documenté dans la dictée",
-    "preserve_external_references": true
+  "règles_anti_hallucination": {
+    "interdire_détails_anatomiques": true,
+    "interdire_conversion_vague_précis": true,
+    "interdire_scores_inventés": true,
+    "interdire_complétion_phrase": true,
+    "texte_si_non_documenté": "Non documenté dans la dictée",
+    "préserver_références_externes": true
   },
-  "context_anchoring": {
-    "identify_accident_type": true,
-    "identify_affected_members": true,
-    "identify_treatments_received": true,
-    "identify_worker_profession": true,
-    "identify_time_since_accident": true,
-    "identify_medical_history": true,
-    "identify_current_medications": true
+  "ancrage_contextuel": {
+    "identifier_type_accident": true,
+    "identifier_membres_affectés": true,
+    "identifier_traitements_reçus": true,
+    "identifier_profession_travailleur": true,
+    "identifier_temps_depuis_accident": true,
+    "identifier_antécédents_médicaux": true,
+    "identifier_médication_actuelle": true
   },
-  "transcription_fidelity": {
-    "preserve_hesitations": true,
-    "preserve_uncertainty_expressions": true,
-    "preserve_temporal_references": true,
-    "preserve_direct_quotes": true,
-    "convert_patient_to_worker": true
+  "fidélité_transcription": {
+    "préserver_hésitations": true,
+    "préserver_expressions_incertitude": true,
+    "préserver_références_temporelles": true,
+    "préserver_citations_directes": true,
+    "convertir_patient_en_travailleur": true
   },
-  "diarization_handling": {
-    "identify_speaker": true,
-    "preserve_interruptions": true,
-    "mark_inaudible": "[inaudible]",
-    "preserve_reported_speech": true
+  "gestion_diarisation": {
+    "identifier_interlocuteur": true,
+    "préserver_interruptions": true,
+    "marquer_inaudible": "[inaudible]",
+    "préserver_discours_rapporté": true
   },
-  "few_shot": [
-    { "input": "Douleur 6/10, irradiation bras gauche, engourdissements doigts", 
-      "output_snippet": "### Plaintes et problèmes\nDouleur de type élancement à 6/10 irradiant au bras gauche, avec engourdissements aux doigts.\n\n### Observations neurologiques\nIrradiation vers bras gauche, engourdissements aux doigts." }
+  "exemples": [
+    {
+      "entrée": "Douleur 6/10, irradiation bras gauche, engourdissement doigts",
+      "extrait_sortie": "### Plaintes et problèmes\nDouleur élancement cotée 6/10 irradiant vers le bras gauche, avec engourdissement des doigts.\n\n### Observations neurologiques\nIrradiation vers le bras gauche, engourdissement des doigts."
+    }
   ]
 }

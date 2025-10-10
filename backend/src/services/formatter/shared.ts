@@ -41,11 +41,47 @@ export async function formatWithGuardrails(
     // 1. Pre-parse: Extract name whitelist from raw transcript
     const nameWhitelist = options?.nameWhitelist || extractNameWhitelist(input);
     
-    // Load prompt system files
-    const suffix = language === 'en' ? '_en' : '';
+    // Load prompt system files - Always use French files for Section 8
+    const suffix = (section === '8') ? '' : (language === 'en' ? '_en' : '');
     const systemPrompt = await loadPromptFile(`section${section}_master${suffix}.md`);
     const guardrails = await loadGuardrailsFile(`section${section}_master${suffix}.json`);
     const goldenExample = await loadGoldenExampleFile(`section${section}_golden_example${suffix}.md`);
+
+    // Add English input context for Section 8 if input language is English
+    let enhancedSystemPrompt = systemPrompt;
+    if (section === '8' && language === 'en') {
+      enhancedSystemPrompt = `
+## CONTEXTE D'ENTRÉE: Anglais
+Le contenu fourni est en anglais. Formatez et traduisez-le en français selon les standards médicaux CNESST du Québec.
+
+## INSTRUCTIONS DE TRADUCTION
+- Traduisez le contenu anglais en français médical
+- Maintenez la précision médicale pendant la traduction
+- Utilisez la terminologie médicale française appropriée
+- Préservez tous les détails cliniques et mesures
+- Assurez-vous de la conformité CNESST en français
+
+## TRADUCTION MÉDICALE (Anglais → Français)
+- "patient" → "travailleur/travailleuse"
+- "back pain" → "douleur dorsale"
+- "stabbing pain" → "douleur lancinante"
+- "burning pain" → "douleur brûlante"
+- "pressure pain" → "douleur de pression"
+- "night pain" → "douleur nocturne"
+- "morning stiffness" → "raideur matinale"
+- "lifting heavy objects" → "soulèvement d'objets lourds"
+- "going up and down hills" → "monter et descendre des collines"
+- "walking up and down steps" → "monter et descendre des marches"
+- "standing posture" → "posture debout"
+- "bending forward" → "se pencher en avant"
+- "painkillers" → "analgésiques"
+- "therapeutic plateau" → "plateau thérapeutique"
+- "functional impact" → "impact fonctionnel"
+- "neurological observations" → "observations neurologiques"
+
+---
+${systemPrompt}`;
+    }
 
     // Prepare user message with name whitelist constraint and clinical entities
     const nameConstraint = nameWhitelist.length > 0 
@@ -61,7 +97,7 @@ export async function formatWithGuardrails(
       : `${input}${nameConstraint}${clinicalEntitiesConstraint}`;
 
     // Call OpenAI with our prompt system
-    let formatted = await callOpenAI(systemPrompt, userMessage, goldenExample, guardrails, nameWhitelist);
+    let formatted = await callOpenAI(enhancedSystemPrompt, userMessage, goldenExample, guardrails, nameWhitelist);
 
     // 2. Post-format repair pipeline
     // Step 1: Keep only radiology impression/conclusion
@@ -277,7 +313,11 @@ async function validateOutput(
  * Load prompt file
  */
 async function loadPromptFile(filename: string): Promise<string> {
-  const filepath = path.join(process.cwd(), 'prompts', filename);
+  // Detect if we're running from root or backend directory
+  const isBackendDir = process.cwd().endsWith('backend');
+  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
+  const filepath = path.join(process.cwd(), promptsDir, filename);
+  
   try {
     return await fs.promises.readFile(filepath, 'utf-8');
   } catch (error) {
@@ -290,7 +330,11 @@ async function loadPromptFile(filename: string): Promise<string> {
  * Load guardrails configuration
  */
 async function loadGuardrailsFile(filename: string): Promise<any> {
-  const filepath = path.join(process.cwd(), 'prompts', filename);
+  // Detect if we're running from root or backend directory
+  const isBackendDir = process.cwd().endsWith('backend');
+  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
+  const filepath = path.join(process.cwd(), promptsDir, filename);
+  
   try {
     const content = await fs.promises.readFile(filepath, 'utf-8');
     return JSON.parse(content);
@@ -304,7 +348,11 @@ async function loadGuardrailsFile(filename: string): Promise<any> {
  * Load golden example file
  */
 async function loadGoldenExampleFile(filename: string): Promise<string> {
-  const filepath = path.join(process.cwd(), 'prompts', filename);
+  // Detect if we're running from root or backend directory
+  const isBackendDir = process.cwd().endsWith('backend');
+  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
+  const filepath = path.join(process.cwd(), promptsDir, filename);
+  
   try {
     return await fs.promises.readFile(filepath, 'utf-8');
   } catch (error) {

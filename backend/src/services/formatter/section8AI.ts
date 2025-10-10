@@ -39,34 +39,34 @@ export class Section8AIFormatter {
   static async formatSection8Content(
     content: string,
     clinicalEntities: ClinicalEntities,
-    language: 'fr' | 'en' = 'fr'
+    inputLanguage: 'fr' | 'en' = 'fr'
   ): Promise<Section8AIResult> {
     const startTime = Date.now();
     const correlationId = `s8-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     try {
       console.log(`[${correlationId}] 🎯 Starting Section 8 AI formatting (Flowchart Step 1-6)`, {
-        language,
+        inputLanguage,
         contentLength: content.length,
         hasClinicalEntities: !!clinicalEntities,
         timestamp: new Date().toISOString()
       });
 
-      // STEP 1: Load language-specific files (Flowchart Step 1)
-      console.log(`[${correlationId}] 📁 STEP 1: Loading language-specific files`);
-      const promptFiles = await this.loadLanguageSpecificFiles(language, correlationId);
+      // STEP 1: Load language-specific files (Flowchart Step 1) - Always use French prompts
+      console.log(`[${correlationId}] 📁 STEP 1: Loading French prompt files`);
+      const promptFiles = await this.loadLanguageSpecificFiles('fr', correlationId);
       
       // STEP 2: Construct comprehensive system prompt (Flowchart Step 2-4)
       console.log(`[${correlationId}] 🔧 STEP 2-4: Constructing comprehensive system prompt`);
-      const { systemPrompt, promptLength } = this.constructSystemPrompt(promptFiles, language, correlationId);
+      const { systemPrompt, promptLength } = this.constructSystemPrompt(promptFiles, inputLanguage, correlationId);
       
       // STEP 3: Call OpenAI with comprehensive prompt (Flowchart Step 5)
       console.log(`[${correlationId}] 🤖 STEP 5: Calling OpenAI API`);
-      const result = await this.callOpenAI(systemPrompt, content, language, correlationId);
+      const result = await this.callOpenAI(systemPrompt, content, inputLanguage, correlationId);
       
       // STEP 4: Post-processing and validation (Flowchart Step 6)
       console.log(`[${correlationId}] ✅ STEP 6: Post-processing and validation`);
-      const finalResult = this.postProcessResult(result, content, language, correlationId, startTime, promptFiles, promptLength);
+      const finalResult = this.postProcessResult(result, content, inputLanguage, correlationId, startTime, promptFiles, promptLength);
       
       console.log(`[${correlationId}] 🎉 Section 8 AI formatting completed successfully`, {
         inputLength: content.length,
@@ -81,7 +81,7 @@ export class Section8AIFormatter {
       console.error(`[${correlationId}] ❌ Section 8 AI formatting failed:`, error);
       
       // Fallback to basic formatting
-      return this.fallbackFormatting(content, language, correlationId, startTime);
+      return this.fallbackFormatting(content, inputLanguage, correlationId, startTime);
     }
   }
 
@@ -167,21 +167,54 @@ export class Section8AIFormatter {
       goldenExample: string;
       filesLoaded: string[];
     },
-    language: 'fr' | 'en',
+    inputLanguage: 'fr' | 'en',
     correlationId: string
   ): { systemPrompt: string; promptLength: number } {
     try {
-      console.log(`[${correlationId}] 🔧 Constructing comprehensive system prompt for ${language}`);
+      console.log(`[${correlationId}] 🔧 Constructing comprehensive system prompt for input language: ${inputLanguage}`);
       
       // Extract key sections from JSON config
       const { structure, style_rules, terminology, qa_checks } = promptFiles.jsonConfig;
       
-      // Build comprehensive system prompt
-      const systemPrompt = `${promptFiles.masterPrompt}
+      // Build comprehensive system prompt with input language context
+      let systemPrompt = '';
+      
+      // Add English input context if needed
+      if (inputLanguage === 'en') {
+        systemPrompt += `
+## CONTEXTE D'ENTRÉE: Anglais
+Le contenu fourni est en anglais. Formatez et traduisez-le en français selon les standards médicaux CNESST du Québec.
+
+## INSTRUCTIONS DE TRADUCTION
+- Traduisez le contenu anglais en français médical
+- Maintenez la précision médicale pendant la traduction
+- Utilisez la terminologie médicale française appropriée
+- Préservez tous les détails cliniques et mesures
+- Assurez-vous de la conformité CNESST en français
+
+## TRADUCTION MÉDICALE (Anglais → Français)
+- "patient" → "travailleur/travailleuse"
+- "back pain" → "douleur dorsale"
+- "knee injury" → "blessure au genou"
+- "shoulder pain" → "douleur à l'épaule"
+- "stiffness" → "raideur"
+- "numbness" → "engourdissement"
+- "swelling" → "enflure"
+- "examination" → "examen"
+- "assessment" → "évaluation"
+- "treatment" → "traitement"
+- "physiotherapy" → "physiothérapie"
+- "occupational therapy" → "ergothérapie"
+
+---
+`;
+      }
+      
+      systemPrompt += `${promptFiles.masterPrompt}
 
 ---
 
-## CONFIGURATION JSON (${language.toUpperCase()})
+## CONFIGURATION JSON (FRANÇAIS)
 
 ### Structure Requirements:
 ${JSON.stringify(structure, null, 2)}
@@ -197,7 +230,7 @@ ${JSON.stringify(qa_checks, null, 2)}
 
 ---
 
-## GOLDEN STANDARD EXAMPLE (${language.toUpperCase()})
+## GOLDEN STANDARD EXAMPLE (FRANÇAIS)
 
 ${promptFiles.goldenExample}
 
@@ -209,7 +242,7 @@ ${promptFiles.goldenExample}
 2. **TERMINOLOGIE MÉDICALE**: Utiliser exclusivement la terminologie médicale exacte
 3. **PRÉSERVATION**: Conserver toutes les informations positives ET négatives
 4. **QUALITÉ**: Respecter les standards CNESST professionnels
-5. **LANGUE**: Formater en ${language === 'fr' ? 'français québécois' : 'Canadian English'}
+5. **LANGUE**: Formater en français québécois (toujours)
 
 FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
 

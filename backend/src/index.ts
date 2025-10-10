@@ -428,7 +428,7 @@ app.post('/api/analyze/ab-test', async (req, res) => {
           const { AIFormattingService } = await import('./services/aiFormattingService.js');
           const aiResult = await AIFormattingService.formatTemplateContent(formattedA, {
             section: '7',
-            language: language as 'fr' | 'en'
+            inputLanguage: language as 'fr' | 'en'
           });
           formattedA = aiResult.formatted;
           console.log(`[A/B Test] AI formatting applied to Template A successfully`);
@@ -478,7 +478,7 @@ app.post('/api/analyze/ab-test', async (req, res) => {
           const { AIFormattingService } = await import('./services/aiFormattingService.js');
           const aiResult = await AIFormattingService.formatTemplateContent(formattedB, {
             section: '7',
-            language: language as 'fr' | 'en'
+            inputLanguage: language as 'fr' | 'en'
           });
           formattedB = aiResult.formatted;
           console.log(`[A/B Test] AI formatting applied to Template B successfully`);
@@ -657,17 +657,14 @@ app.get('/api/templates', (req, res) => {
     // const { section, language } = req.query; // Unused - template library archived
     let templates;
     
-    // Template library archived - using core template registry instead
+    // Template library archived - using core template registry instead (filtered by isActive)
     templates = {
-      message: "Template library archived. Using core template registry with 7 AI formatter templates.",
+      message: "Template library archived. Using core template registry with 3 active AI formatter templates.",
       coreTemplates: [
-        'word-for-word-formatter',
         'word-for-word-with-ai', 
         'section7-ai-formatter',
-        'section-7-only',
-        'section-7-verbatim',
-        'section-7-full',
-        'history-evolution-ai-formatter'
+        'section8-ai-formatter'
+        // Hidden templates: word-for-word-formatter, section-7-only, section-7-verbatim, section-7-full, history-evolution-ai-formatter, section7-clinical-extraction
       ]
     };
     
@@ -764,18 +761,18 @@ app.post('/api/templates/format',  (req, res) => {
       endpoint: req.path,
       method: req.method,
       section: req.body.section,
-      language: req.body.language,
+      inputLanguage: req.body.inputLanguage,
       complexity: req.body.complexity,
       ip: req.ip,
       userAgent: req.get('User-Agent')
     });
 
-    const { content, section, language, complexity, formattingLevel, includeSuggestions } = req.body;
+    const { content, section, inputLanguage, complexity, formattingLevel, includeSuggestions } = req.body;
     
-    if (!content || !section || !language) {
+    if (!content || !section || !inputLanguage) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing required fields: content, section, language' 
+        error: 'Missing required fields: content, section, inputLanguage' 
       });
     }
     
@@ -783,13 +780,13 @@ app.post('/api/templates/format',  (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid section' });
     }
     
-    if (!['fr', 'en'].includes(language)) {
-      return res.status(400).json({ success: false, error: 'Invalid language' });
+    if (!['fr', 'en'].includes(inputLanguage)) {
+      return res.status(400).json({ success: false, error: 'Invalid input language' });
     }
     
     const formattingOptions = {
       section: section as "7" | "8" | "11" | "history_evolution",
-      language: language as "fr" | "en",
+      inputLanguage: inputLanguage as "fr" | "en",
       complexity: complexity as "low" | "medium" | "high" || "medium",
       formattingLevel: formattingLevel as "basic" | "standard" | "advanced" || "standard",
       includeSuggestions: includeSuggestions || false
@@ -805,7 +802,7 @@ app.post('/api/templates/format',  (req, res) => {
       endpoint: req.path,
       method: req.method,
       section,
-      language,
+      inputLanguage,
       complexity,
       contentLength: content.length
     });
@@ -1246,18 +1243,24 @@ app.get('/api/templates/:section',  (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid section' });
     }
     
-    // Template library archived - return core templates for section
+    // Template library archived - return core templates for section (filtered by isActive)
     let templates: any[] = [];
     if (section === '7') {
       templates = [
-        { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
-        { id: 'section-7-only', title: 'Section 7 Template Only' },
-        { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
-        { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' }
+        { id: 'section7-ai-formatter', title: 'Section 7' }
+        // Hidden templates: section-7-only, section-7-verbatim, section-7-full
+      ];
+    } else if (section === '8') {
+      templates = [
+        { id: 'section8-ai-formatter', title: 'Section 8' }
+      ];
+    } else if (section === '11') {
+      templates = [
+        // No specific Section 11 templates currently active
       ];
     } else if (section === 'history_evolution') {
       templates = [
-        { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+        // Hidden template: history-evolution-ai-formatter
       ];
     }
     
@@ -1386,15 +1389,12 @@ app.post('/api/templates/search',  (req, res) => {
 
     // const { section, language, complexity, tags, query, status, is_default } = req.body; // Unused - template library archived
     
-    // Template library archived - return core templates
+    // Template library archived - return core templates (filtered by isActive)
     const templates = [
-      { id: 'word-for-word-formatter', title: 'Word-for-Word Formatter' },
       { id: 'word-for-word-with-ai', title: 'Word-for-Word (with AI)' },
-      { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
-      { id: 'section-7-only', title: 'Section 7 Template Only' },
-      { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
-      { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' },
-      { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+      { id: 'section7-ai-formatter', title: 'Section 7' },
+      { id: 'section8-ai-formatter', title: 'Section 8' }
+      // Hidden templates: word-for-word-formatter, section-7-only, section-7-verbatim, section-7-full, history-evolution-ai-formatter, section7-clinical-extraction
     ];
     
     // Audit logging for successful search
@@ -1446,15 +1446,12 @@ app.get('/api/templates/export',  (req, res) => {
     });
 
     // const { section } = req.query; // Unused - template library archived
-    // Template library archived - return core templates
+    // Template library archived - return core templates (filtered by isActive)
     const templates = [
-      { id: 'word-for-word-formatter', title: 'Word-for-Word Formatter' },
       { id: 'word-for-word-with-ai', title: 'Word-for-Word (with AI)' },
-      { id: 'section7-ai-formatter', title: 'Section 7 AI Formatter' },
-      { id: 'section-7-only', title: 'Section 7 Template Only' },
-      { id: 'section-7-verbatim', title: 'Section 7 Template + Verbatim' },
-      { id: 'section-7-full', title: 'Section 7 Template + Verbatim + Voice Commands' },
-      { id: 'history-evolution-ai-formatter', title: 'History of Evolution AI Formatter' }
+      { id: 'section7-ai-formatter', title: 'Section 7' },
+      { id: 'section8-ai-formatter', title: 'Section 8' }
+      // Hidden templates: word-for-word-formatter, section-7-only, section-7-verbatim, section-7-full, history-evolution-ai-formatter, section7-clinical-extraction
     ];
     
     // Audit logging for successful export
@@ -1971,11 +1968,11 @@ app.post('/api/format/mode2', async (req, res) => {
 // Mode 3 Transcribe Processing Endpoint
 app.post('/api/transcribe/process', async (req, res) => {
   try {
-    const { sessionId, modeId, language, section, rawAwsJson } = req.body;
+    const { sessionId, modeId, inputLanguage, section, rawAwsJson } = req.body;
     
-    if (!sessionId || !modeId || !language || !section || !rawAwsJson) {
+    if (!sessionId || !modeId || !inputLanguage || !section || !rawAwsJson) {
       return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, modeId, language, section, rawAwsJson' 
+        error: 'Missing required fields: sessionId, modeId, inputLanguage, section, rawAwsJson' 
       });
     }
 
@@ -1991,9 +1988,9 @@ app.post('/api/transcribe/process', async (req, res) => {
       });
     }
 
-    if (!['fr', 'en'].includes(language)) {
+    if (!['fr', 'en'].includes(inputLanguage)) {
       return res.status(400).json({ 
-        error: 'Language must be either "fr" or "en"' 
+        error: 'Input language must be either "fr" or "en"' 
       });
     }
 
