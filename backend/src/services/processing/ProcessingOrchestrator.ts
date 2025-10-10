@@ -618,7 +618,7 @@ export class ProcessingOrchestrator {
       
       const result = await AIFormattingService.formatTemplateContent(content, {
         section: 'history_evolution',
-        language: request.language as 'fr' | 'en',
+        inputLanguage: request.language as 'fr' | 'en',
         complexity: 'medium',
         formattingLevel: 'standard',
         includeSuggestions: true

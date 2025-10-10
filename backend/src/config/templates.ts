@@ -235,7 +235,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
     type: 'formatting',
     compatibleSections: ['section_7'],
     compatibleModes: ['mode1', 'mode2'],
-    supportedLanguages: ['fr', 'en'],
+    supportedLanguages: ['fr'],
     content: {
       structure: 'ai-cnesst-formatting-enhanced',
       placeholders: ['chronological_order', 'worker_first', 'medical_terminology', 'comprehensive_prompts'],
