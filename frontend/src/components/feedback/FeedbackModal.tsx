@@ -19,7 +19,7 @@ import { SyncStatusIndicator } from './SyncStatusIndicator';
 interface TranscriptionContext {
   currentTranscript: string;
   mode: string;
-  language: string;
+  inputLanguage: 'fr' | 'en';
   templateName: string;
   diarization: boolean;
   customVocab: boolean;

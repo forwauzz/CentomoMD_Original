@@ -14,7 +14,7 @@ import { useFeedbackStore } from '@/stores/feedbackStore';
 interface TranscriptionContext {
   currentTranscript: string;
   mode: string;
-  language: string;
+  inputLanguage: 'fr' | 'en';
   templateName: string;
   diarization: boolean;
   customVocab: boolean;
@@ -59,7 +59,7 @@ export const QuickNoteForm: React.FC<QuickNoteFormProps> = ({ onClose, transcrip
       // Create feedback item
       const feedbackItem = {
         meta: {
-          language: (transcriptionContext?.language === 'fr-CA' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
+          language: (transcriptionContext?.inputLanguage === 'fr' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
           mode: (transcriptionContext?.mode === 'smart_dictation' ? 'smart' : 
                  transcriptionContext?.mode === 'word_for_word' ? 'word-for-word' : 
                  transcriptionContext?.mode === 'ambient' ? 'ambient' : 'smart') as 'smart' | 'word-for-word' | 'ambient',

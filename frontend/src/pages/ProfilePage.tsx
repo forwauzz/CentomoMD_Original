@@ -59,7 +59,7 @@ const profileService = {
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
-  const { addToast, setLanguage } = useUIStore();
+  const { addToast, setInputLanguage } = useUIStore();
   const { setProfile: setUserProfile, refreshProfile } = useUserStore();
   const { t } = useI18n();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -112,7 +112,7 @@ export const ProfilePage: React.FC = () => {
         
         // Update platform language based on profile (DB is source of truth)
         const uiLanguage = dbLocaleToUi(data.locale);
-        setLanguage(uiLanguage);
+        setInputLanguage(uiLanguage);
         
         // Update user store with profile data
         setUserProfile(data);
@@ -228,7 +228,7 @@ export const ProfilePage: React.FC = () => {
       // Update platform language if locale changed (DB is source of truth)
       if (changes.locale) {
         const uiLanguage = dbLocaleToUi(updatedProfile.locale);
-        setLanguage(uiLanguage);
+        setInputLanguage(uiLanguage);
       }
       
       // Ensure store is in sync with server

@@ -1,19 +1,19 @@
 import React from 'react';
 import { Select } from '@/components/ui/select';
 
-interface LanguageSelectorProps {
+interface InputLanguageSelectorProps {
   language: string;
   onLanguageChange: (language: string) => void;
   disabled?: boolean;
 }
 
-export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
+export const InputLanguageSelector: React.FC<InputLanguageSelectorProps> = ({
   language,
   onLanguageChange,
   disabled = false
 }) => {
   const handleLanguageChange = (newLanguage: string) => {
-    console.log('LanguageSelector: language changed from', language, 'to', newLanguage);
+    console.log('InputLanguageSelector: input language changed from', language, 'to', newLanguage);
     onLanguageChange(newLanguage);
   };
 

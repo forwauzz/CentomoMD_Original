@@ -391,10 +391,10 @@ export const uiToDbLocale = (ui: 'fr' | 'en'): 'en-CA' | 'fr-CA' => {
 
 // i18n hook
 export const useI18n = () => {
-  const { language } = useUIStore();
+  const { inputLanguage } = useUIStore();
   
   const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
+    return translations[inputLanguage][key] || key;
   };
   
   const formatTimeAgo = (timestamp: string): string => {
@@ -418,6 +418,6 @@ export const useI18n = () => {
   return {
     t,
     formatTimeAgo,
-    language,
+    language: inputLanguage,
   };
 };

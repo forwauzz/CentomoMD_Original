@@ -22,7 +22,7 @@ import {
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
-  const { language, setLanguage } = useUIStore();
+  const { inputLanguage, setInputLanguage } = useUIStore();
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState({
     // General
@@ -35,7 +35,7 @@ export const SettingsPage: React.FC = () => {
     zeroRetention: false,
     
     // Dictation defaults - sync with UI store
-    defaultLanguage: language === 'fr' ? 'fr-CA' : 'en-US',
+    defaultLanguage: inputLanguage === 'fr' ? 'fr-CA' : 'en-US',
     autoSave: true,
     transcriptionMode: 'smart_dictation',
     
@@ -59,7 +59,7 @@ export const SettingsPage: React.FC = () => {
     // Update UI store language when defaultLanguage changes
     if (key === 'defaultLanguage') {
       const uiLanguageFormat = value === 'fr-CA' ? 'fr' : 'en';
-      setLanguage(uiLanguageFormat);
+      setInputLanguage(uiLanguageFormat);
       console.log('SettingsPage: UI language updated to:', uiLanguageFormat, 'from defaultLanguage:', value);
     }
   };
@@ -140,23 +140,26 @@ export const SettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="language">{t('language')}</Label>
+              <Label htmlFor="language">Input Language</Label>
               <div className="flex gap-2 mt-2">
                 <Button
-                  variant={language === 'fr' ? 'default' : 'outline'}
+                  variant={inputLanguage === 'fr' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setLanguage('fr')}
+                  onClick={() => setInputLanguage('fr')}
                 >
                   Français
                 </Button>
                 <Button
-                  variant={language === 'en' ? 'default' : 'outline'}
+                  variant={inputLanguage === 'en' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setLanguage('en')}
+                  onClick={() => setInputLanguage('en')}
                 >
                   English
                 </Button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Output will always be in French (CNESST compliant)
+              </p>
             </div>
 
             <div>

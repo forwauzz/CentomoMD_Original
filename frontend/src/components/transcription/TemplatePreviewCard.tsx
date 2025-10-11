@@ -16,6 +16,35 @@ import {
 import { TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 
+// Function to render formatted content with styled headers
+const renderFormattedContentWithStyledHeaders = (content: string) => {
+  // Split content into lines
+  const lines = content.split('\n');
+  
+  return (
+    <div className="text-xs text-gray-700 font-mono whitespace-pre-wrap">
+      {lines.map((line, index) => {
+        // Check if this line is a Section 8 header
+        const isHeader = line.match(/^(Appréciation subjective de l'évolution|Plaintes et problèmes|Impact fonctionnel|Observations neurologiques|Autres observations|Exclusions \/ mentions négatives|Références externes)\s*:/);
+        
+        if (isHeader) {
+          return (
+            <div key={index} className="text-sm font-semibold text-gray-900 mb-1 mt-2 first:mt-0">
+              {line}
+            </div>
+          );
+        }
+        
+        return (
+          <div key={index} className="mb-0.5">
+            {line}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 interface TemplatePreviewCardProps {
   template: TemplateJSON;
   onClose: () => void;
@@ -66,7 +95,7 @@ export const TemplatePreviewCard: React.FC<TemplatePreviewCardProps> = ({
       
       const formattingOptions: FormattingOptions = {
         section: formatSection,
-        language: convertLanguage(template.language || currentLanguage),
+        inputLanguage: convertLanguage(template.language || currentLanguage),
         complexity: template.complexity || 'medium'
       };
 
@@ -85,7 +114,7 @@ export const TemplatePreviewCard: React.FC<TemplatePreviewCardProps> = ({
         template.content,
         {
           section: template.section,
-          language: template.language || currentLanguage
+          inputLanguage: template.language || currentLanguage
         }
       );
       setFormattedContent(basicFormatted);
@@ -190,9 +219,15 @@ export const TemplatePreviewCard: React.FC<TemplatePreviewCardProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
-                {showFormatted ? formattedContent : template.content}
-              </pre>
+              {showFormatted ? (
+                <div className="bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
+                  {renderFormattedContentWithStyledHeaders(formattedContent)}
+                </div>
+              ) : (
+                <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
+                  {template.content}
+                </pre>
+              )}
 
               {/* Formatting Changes */}
               {showFormatted && formattingChanges.length > 0 && (
