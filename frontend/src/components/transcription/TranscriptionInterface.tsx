@@ -7,7 +7,7 @@ import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
-import { LanguageSelector } from './LanguageSelector';
+import { InputLanguageSelector } from './LanguageSelector';
 import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
@@ -31,12 +31,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const featureFlags = useFeatureFlags();
-  const { language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
+  const { inputLanguage, setInputLanguage } = useUIStore();
   const { setTranscriptionData } = useTranscriptionContext();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
-  // Convert UI store language (fr/en) to dictation format (fr-CA/en-US)
-  const selectedLanguage = uiLanguage === 'fr' ? 'fr-CA' : 'en-US';
+  // Convert UI store input language (fr/en) to dictation format (fr-CA/en-US)
+  const selectedLanguage = inputLanguage === 'fr' ? 'fr-CA' : 'en-US';
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -134,7 +134,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       body: JSON.stringify({
         transcript: rawTranscript,
         section: section,
-        language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+        language: inputLanguage,
         useUniversal: true,
         templateId: template.id
       })
@@ -158,17 +158,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   }, [selectedLanguage]);
 
   const handleLanguageChange = (newLanguage: string) => {
-    console.log('TranscriptionInterface: language changed from', selectedLanguage, 'to', newLanguage);
+    console.log('TranscriptionInterface: input language changed from', selectedLanguage, 'to', newLanguage);
     // Convert dictation format (fr-CA/en-US) to UI store format (fr/en)
     const uiLanguageFormat = newLanguage === 'fr-CA' ? 'fr' : 'en';
-    setUILanguage(uiLanguageFormat);
-    console.log('TranscriptionInterface: UI language updated to:', uiLanguageFormat);
+    setInputLanguage(uiLanguageFormat);
+    console.log('TranscriptionInterface: UI input language updated to:', uiLanguageFormat);
   };
 
   // Debug: Monitor selectedLanguage changes
   useEffect(() => {
-    console.log('TranscriptionInterface: selectedLanguage derived from UI store:', selectedLanguage, 'uiLanguage:', uiLanguage);
-  }, [selectedLanguage, uiLanguage]);
+    console.log('TranscriptionInterface: selectedLanguage derived from UI store:', selectedLanguage, 'inputLanguage:', inputLanguage);
+  }, [selectedLanguage, inputLanguage]);
 
   const {
     isRecording,
@@ -191,7 +191,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     const contextData = {
       currentTranscript: editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript),
       mode: mode,
-      language: selectedLanguage,
+      inputLanguage: inputLanguage, // Use input language for context
       templateName: selectedTemplate?.title || '',
       diarization: featureFlags.speakerLabeling,
       customVocab: false, // TODO: Add custom vocab detection
@@ -207,7 +207,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     paragraphs,
     currentTranscript,
     mode,
-    selectedLanguage,
+    inputLanguage,
     selectedTemplate,
     featureFlags.speakerLabeling,
     sessionId,
@@ -476,7 +476,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           const correlationId = `ww-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           console.log(`[${correlationId}] Starting AI formatting request`, {
             inputLength: formattedTranscript.length,
-            language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
+            language: inputLanguage
           });
           
           try {
@@ -495,7 +495,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               credentials: 'include',
               body: JSON.stringify({
                 transcript: formattedTranscript,
-                language: selectedLanguage === 'fr-CA' ? 'fr' : 'en'
+                language: inputLanguage
               })
             });
             
@@ -586,7 +586,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             body: JSON.stringify({
               transcript: rawTranscript,
               section: '7',
-              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+              language: inputLanguage,
               templateCombo: 'template-clinical-extraction',
               correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
             })
@@ -684,7 +684,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             body: JSON.stringify({
               transcript: rawTranscript,
               section: '7',
-              language: selectedLanguage === 'fr-CA' ? 'fr' : 'en',
+              language: inputLanguage,
               templateCombo,
               verbatimSupport,
               voiceCommandsSupport
@@ -753,17 +753,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         formatSection = (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11";
       }
       
-      // Convert language format (fr-CA -> fr, en-US -> en)
-      const convertLanguage = (lang: string): 'fr' | 'en' => {
-        if (lang?.startsWith('fr')) return 'fr';
-        if (lang?.startsWith('en')) return 'en';
-        return 'fr'; // default to French
-      };
       
       // Apply AI formatting to template content
       const formattingOptions: FormattingOptions = {
         section: formatSection,
-        language: convertLanguage(template.language || 'fr'),
+        inputLanguage: inputLanguage, // Use current input language
         complexity: template.complexity || 'medium',
         formattingLevel: 'advanced',
         includeSuggestions: true
@@ -818,7 +812,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         template.content,
         {
           section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
-          language: template.language || 'fr'
+          inputLanguage: inputLanguage // Use current input language
         }
       );
       
@@ -852,14 +846,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Language Selector */}
+              {/* Input Language Selector */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Language</label>
-                <LanguageSelector
+                <label className="text-sm font-medium text-gray-700">Input Language</label>
+                <InputLanguageSelector
                   language={selectedLanguage}
                   onLanguageChange={handleLanguageChange}
                   disabled={isRecording}
                 />
+                <p className="text-xs text-gray-500">
+                  Output will always be in French (CNESST compliant)
+                </p>
               </div>
 
               {/* Section Selector */}

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const DictationPage: React.FC = () => {
   const { t } = useI18n();
-  const { language } = useUIStore();
+  const { inputLanguage } = useUIStore();
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState<'live' | 'history'>('live');
 
@@ -53,7 +53,7 @@ export const DictationPage: React.FC = () => {
           <TranscriptionInterface
             sessionId={sessionId}
             onSessionUpdate={handleSessionUpdate}
-            language={language}
+            language={inputLanguage}
           />
         </div>
       ) : (

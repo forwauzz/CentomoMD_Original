@@ -8,7 +8,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 export interface TranscriptionContextData {
   currentTranscript: string;
   mode: string;
-  language: string;
+  inputLanguage: 'fr' | 'en';
   templateName: string;
   diarization: boolean;
   customVocab: boolean;

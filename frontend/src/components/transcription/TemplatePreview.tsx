@@ -24,6 +24,35 @@ interface TemplatePreviewProps {
   currentLanguage: "fr-CA" | "en-US";
 }
 
+// Function to render formatted content with styled headers
+const renderFormattedContentWithStyledHeaders = (content: string) => {
+  // Split content into lines
+  const lines = content.split('\n');
+  
+  return (
+    <div className="text-sm text-gray-700 font-mono whitespace-pre-wrap">
+      {lines.map((line, index) => {
+        // Check if this line is a Section 8 header
+        const isHeader = line.match(/^(Appréciation subjective de l'évolution|Plaintes et problèmes|Impact fonctionnel|Observations neurologiques|Autres observations|Exclusions \/ mentions négatives|Références externes)\s*:/);
+        
+        if (isHeader) {
+          return (
+            <div key={index} className="text-lg font-semibold text-gray-900 mb-2 mt-4 first:mt-0">
+              {line}
+            </div>
+          );
+        }
+        
+        return (
+          <div key={index} className="mb-1">
+            {line}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   template,
   isOpen,
@@ -78,7 +107,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
       
       const formattingOptions: FormattingOptions = {
         section: formatSection,
-        language: convertLanguage(template.language || currentLanguage),
+        inputLanguage: convertLanguage(template.language || currentLanguage),
         complexity: template.complexity || 'medium'
       };
 
@@ -99,7 +128,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         template.content,
         {
           section: template.section,
-          language: template.language || (currentLanguage === 'fr-CA' ? 'fr' : 'en')
+          inputLanguage: template.language || (currentLanguage === 'fr-CA' ? 'fr' : 'en')
         }
       );
              setFormattedContent(basicFormatted);
@@ -305,9 +334,15 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
             ) : (
               <div className="space-y-4">
                 <div className="prose prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono bg-gray-50 p-4 rounded border">
-                    {showFormatted ? formattedContent : template.content}
-                  </pre>
+                  {showFormatted ? (
+                    <div className="bg-gray-50 p-4 rounded border">
+                      {renderFormattedContentWithStyledHeaders(formattedContent)}
+                    </div>
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono bg-gray-50 p-4 rounded border">
+                      {template.content}
+                    </pre>
+                  )}
                 </div>
 
                 {/* Formatting Changes */}

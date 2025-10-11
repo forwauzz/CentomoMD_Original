@@ -55,7 +55,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'both',
     complexity: 'low',
     tags: ['word-for-word', 'formatter', 'post-processor'],
-    isActive: true,
+    isActive: false,
     isDefault: true,
     features: {
       verbatimSupport: false,
@@ -111,7 +111,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
   },
   {
     id: 'section7-ai-formatter',
-    name: 'Section 7 AI Formatter (Enhanced)',
+    name: 'Section 7',
     nameFr: 'Formateur IA Section 7 (Amélioré)',
     description: 'Enhanced AI-powered CNESST formatting with comprehensive prompt system. 6-step flowchart implementation with language-aware file injection.',
     descriptionFr: 'Formatage IA CNESST amélioré avec système de prompts complet. Implémentation flowchart 6 étapes avec injection de fichiers adaptée à la langue.',
@@ -147,7 +147,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
   },
   {
     id: 'section8-ai-formatter',
-    name: 'Section 8 AI Formatter (Enhanced)',
+    name: 'Section 8',
     nameFr: 'Formateur IA Section 8 (Amélioré)',
     description: 'Enhanced AI-powered CNESST Section 8 formatting with comprehensive prompt system. 6-step flowchart implementation for subjective questionnaire and current condition.',
     descriptionFr: 'Formatage IA CNESST Section 8 amélioré avec système de prompts complet. Implémentation flowchart 6 étapes pour questionnaire subjectif et état actuel.',
@@ -193,7 +193,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'both',
     complexity: 'medium',
     tags: ['section7', 'ai-formatter', 'template-only'],
-    isActive: true,
+    isActive: false,
     isDefault: false,
     features: {
       verbatimSupport: false,
@@ -230,7 +230,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'both',
     complexity: 'high',
     tags: ['section7', 'ai-formatter', 'verbatim'],
-    isActive: true,
+    isActive: false,
     isDefault: false,
     features: {
       verbatimSupport: true,
@@ -267,7 +267,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'both',
     complexity: 'high',
     tags: ['section7', 'ai-formatter', 'verbatim', 'voice-commands'],
-    isActive: true,
+    isActive: false,
     isDefault: false,
     features: {
       verbatimSupport: true,
@@ -304,7 +304,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'fr',
     complexity: 'high',
     tags: ['history-evolution', 'ai-formatter', 'cnesst', 'injury-tracking'],
-    isActive: true,
+    isActive: false,
     isDefault: false,
     features: {
       verbatimSupport: true,
@@ -342,7 +342,7 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     language: 'both',
     complexity: 'high',
     tags: ['clinical', 'extraction', 'ai', 'bilingual', 'template-combo'],
-    isActive: true,
+    isActive: false,
     isDefault: false,
     features: {
       verbatimSupport: true,

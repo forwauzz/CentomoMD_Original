@@ -39,7 +39,7 @@ interface TemplateCombinationManagementProps {
 
 export const TemplateCombinationManagement: React.FC<TemplateCombinationManagementProps> = () => {
   const { templates, updateTemplate, deleteTemplate, loading, error } = useTemplates();
-  const { language } = useUIStore();
+  const { inputLanguage } = useUIStore();
   const [filteredTemplates, setFilteredTemplates] = useState<TemplateConfig[]>(templates);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSection, setSelectedSection] = useState<'all' | '7' | '8' | '11'>('all');
@@ -261,7 +261,7 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg font-semibold text-gray-900">
-                    {language === 'fr' ? template.nameFr : template.name}
+                    {inputLanguage === 'fr' ? template.nameFr : template.name}
                   </CardTitle>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -279,7 +279,7 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
             <CardContent className="space-y-4">
               {/* Description */}
               <p className="text-sm text-gray-700 line-clamp-3">
-                {language === 'fr' ? template.descriptionFr : template.description}
+                {inputLanguage === 'fr' ? template.descriptionFr : template.description}
               </p>
 
               {/* Tags and Badges */}

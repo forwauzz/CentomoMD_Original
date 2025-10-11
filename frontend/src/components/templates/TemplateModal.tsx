@@ -17,6 +17,35 @@ import {
 import { TemplateJSON } from '@/components/transcription/TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
 
+// Function to render formatted content with styled headers
+const renderFormattedContentWithStyledHeaders = (content: string) => {
+  // Split content into lines
+  const lines = content.split('\n');
+  
+  return (
+    <div className="text-sm text-gray-700 font-mono whitespace-pre-wrap">
+      {lines.map((line, index) => {
+        // Check if this line is a Section 8 header
+        const isHeader = line.match(/^(Appréciation subjective de l'évolution|Plaintes et problèmes|Impact fonctionnel|Observations neurologiques|Autres observations|Exclusions \/ mentions négatives|Références externes)\s*:/);
+        
+        if (isHeader) {
+          return (
+            <div key={index} className="text-base font-semibold text-gray-900 mb-2 mt-3 first:mt-0">
+              {line}
+            </div>
+          );
+        }
+        
+        return (
+          <div key={index} className="mb-1">
+            {line}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 interface TemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -155,7 +184,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     try {
       const formattingOptions: FormattingOptions = {
         section: formData.section as "7" | "8" | "11" | "history_evolution",
-        language: formData.language as "fr" | "en",
+        inputLanguage: formData.language as "fr" | "en",
         complexity: formData.complexity as "low" | "medium" | "high",
         formattingLevel: 'advanced',
         includeSuggestions: true
@@ -405,9 +434,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 </Button>
               </div>
               <div className="bg-white p-3 rounded border max-h-40 overflow-y-auto">
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
-                  {formattedContent}
-                </pre>
+                {renderFormattedContentWithStyledHeaders(formattedContent)}
               </div>
               {formattingChanges.length > 0 && (
                 <div className="mt-3">

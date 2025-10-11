@@ -24,7 +24,7 @@ interface TemplateProviderProps {
 }
 
 export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) => {
-  const [templates, setTemplates] = useState<TemplateConfig[]>(TEMPLATE_CONFIGS);
+  const [templates, setTemplates] = useState<TemplateConfig[]>(TEMPLATE_CONFIGS.filter(template => template.isActive));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,14 +36,15 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) 
       setLoading(true);
       setError(null);
 
-      // Use the 5 template combinations from static config
+      // Use only active template combinations from static config
       // These are the template combinations, not the 66 content templates
-      console.log('Loading template combinations:', TEMPLATE_CONFIGS.length, 'templates');
-      return TEMPLATE_CONFIGS;
+      const activeTemplates = TEMPLATE_CONFIGS.filter(template => template.isActive);
+      console.log('Loading template combinations:', activeTemplates.length, 'active templates out of', TEMPLATE_CONFIGS.length, 'total');
+      return activeTemplates;
     } catch (error) {
       console.error('Error loading template combinations:', error);
       setError('Failed to load template combinations');
-      return TEMPLATE_CONFIGS;
+      return TEMPLATE_CONFIGS.filter(template => template.isActive);
     } finally {
       setLoading(false);
     }
@@ -167,9 +168,9 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) 
 
   // Get all active templates (truly modular)
   const getAllTemplates = (): TemplateConfig[] => {
-    const filtered = templates.filter(template => template.isActive);
-    console.log(`TemplateProvider: getAllTemplates() returned ${filtered.length} templates from ${templates.length} total templates`);
-    return filtered;
+    // Templates state already contains only active templates
+    console.log(`TemplateProvider: getAllTemplates() returned ${templates.length} active templates`);
+    return templates;
   };
 
   // Load templates on mount

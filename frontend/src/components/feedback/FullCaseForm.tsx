@@ -17,7 +17,7 @@ import { useFeedbackStore } from '@/stores/feedbackStore';
 interface TranscriptionContext {
   currentTranscript: string;
   mode: string;
-  language: string;
+  inputLanguage: 'fr' | 'en';
   templateName: string;
   diarization: boolean;
   customVocab: boolean;
@@ -42,7 +42,7 @@ export const FullCaseForm: React.FC<FullCaseFormProps> = ({ onClose, transcripti
     mode: (transcriptionContext?.mode === 'smart_dictation' ? 'smart' : 
            transcriptionContext?.mode === 'word_for_word' ? 'word-for-word' : 
            transcriptionContext?.mode === 'ambient' ? 'ambient' : 'smart') as 'smart' | 'word-for-word' | 'ambient',
-    language: (transcriptionContext?.language === 'fr-CA' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
+    language: (transcriptionContext?.inputLanguage === 'fr' ? 'fr-CA' : 'en-CA') as 'fr-CA' | 'en-CA',
     templateName: transcriptionContext?.templateName || '',
     diarization: transcriptionContext?.diarization || false,
     customVocab: transcriptionContext?.customVocab || false,

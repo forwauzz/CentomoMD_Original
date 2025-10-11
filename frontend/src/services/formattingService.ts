@@ -1,6 +1,6 @@
 export interface FormattingOptions {
   section: "7" | "8" | "11" | "history_evolution";
-  language: "fr" | "en";
+  inputLanguage: "fr" | "en";
   complexity?: "low" | "medium" | "high";
   formattingLevel?: "basic" | "standard" | "advanced";
   includeSuggestions?: boolean;
@@ -40,7 +40,7 @@ export class FormattingService {
       const requestBody = {
         content,
         section: options.section,
-        language: options.language,
+        inputLanguage: options.inputLanguage,
         complexity: options.complexity || 'medium',
         formattingLevel: options.formattingLevel || 'standard',
         includeSuggestions: options.includeSuggestions || false
@@ -113,8 +113,8 @@ export class FormattingService {
       suggestions.push(`Add section header: "${sectionHeaders[options.section]}"`);
     }
 
-    // Check for proper terminology
-    if (options.language === "fr" && content.includes("patient")) {
+    // Check for proper terminology (always check for patient terminology)
+    if (content.includes("patient")) {
       suggestions.push("Replace 'patient' with 'travailleur/travailleuse'");
     }
 
@@ -144,11 +144,9 @@ export class FormattingService {
       formatted = `${sectionHeaders[options.section]}\n\n${formatted}`;
     }
 
-    // Apply French terminology if needed
-    if (options.language === "fr") {
-      formatted = formatted.replace(/patient/g, "travailleur");
-      formatted = formatted.replace(/patiente/g, "travailleuse");
-    }
+    // Apply French terminology (always use French output)
+    formatted = formatted.replace(/patient/g, "travailleur");
+    formatted = formatted.replace(/patiente/g, "travailleuse");
 
     return formatted;
   }

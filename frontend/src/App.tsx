@@ -125,14 +125,14 @@ function App() {
 function LegacyApp() {
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [currentPage, setCurrentPage] = useState<'dictation' | 'templates'>('dictation');
-  const { language, setLanguage } = useUIStore();
+  const { inputLanguage, setInputLanguage } = useUIStore();
 
   const handleSessionUpdate = (newSessionId: string) => {
     setSessionId(newSessionId);
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'fr' ? 'en' : 'fr');
+    setInputLanguage(inputLanguage === 'fr' ? 'en' : 'fr');
   };
 
   return (
@@ -176,7 +176,7 @@ function LegacyApp() {
                 className="text-white hover:bg-blue-800 flex items-center space-x-1"
               >
                 <Globe className="h-4 w-4" />
-                <span>{language.toUpperCase()}</span>
+                <span>{inputLanguage.toUpperCase()}</span>
               </Button>
               
               <Button
@@ -199,7 +199,7 @@ function LegacyApp() {
             <TranscriptionInterface
               sessionId={sessionId}
               onSessionUpdate={handleSessionUpdate}
-              language={language}
+              language={inputLanguage}
             />
           ) : (
             <TemplateManagement />
@@ -211,7 +211,7 @@ function LegacyApp() {
       <div className="fixed bottom-0 left-0 right-0 bg-gray-200 border-t border-gray-300 px-4 py-2">
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center space-x-4">
-            <span>Language: {language === 'en' ? 'English' : 'Français'}</span>
+            <span>Input Language: {inputLanguage === 'en' ? 'English' : 'Français'}</span>
             <span>Section: Not selected</span>
             <span>Mode: Not selected</span>
           </div>

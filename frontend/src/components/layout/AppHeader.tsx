@@ -17,7 +17,7 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { language, setLanguage } = useUIStore();
+  const { inputLanguage, setInputLanguage } = useUIStore();
   const { t } = useI18n();
   const { user, signOut } = useAuth();
   const profile = useUserStore((s) => s.profile);
@@ -71,7 +71,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'fr' ? 'en' : 'fr');
+    setInputLanguage(inputLanguage === 'fr' ? 'en' : 'fr');
   };
 
   const handleBreadcrumbClick = (href: string) => {
@@ -158,7 +158,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
           >
             <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">{language.toUpperCase()}</span>
+            <span className="hidden sm:inline font-medium">{inputLanguage.toUpperCase()}</span>
           </Button>
 
           {/* Notifications */}
