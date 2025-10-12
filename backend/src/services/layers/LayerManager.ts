@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 
 export interface LayerOptions {
-  language: 'fr' | 'en';
+  language: 'fr' | 'en'; // Legacy parameter for backward compatibility
+  inputLanguage?: 'fr' | 'en';
+  outputLanguage?: 'fr' | 'en';
   correlationId?: string;
   [key: string]: any;
 }

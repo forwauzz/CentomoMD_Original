@@ -32,25 +32,30 @@ export interface ValidationResult {
  */
 export async function formatWithGuardrails(
   section: '7' | '8' | '11',
-  language: 'fr' | 'en',
+  language: 'fr' | 'en', // Legacy parameter for backward compatibility
   input: string,
   extra?: string,
-  options?: { nameWhitelist?: string[], clinicalEntities?: any }
+  options?: { nameWhitelist?: string[], clinicalEntities?: any, inputLanguage?: 'fr' | 'en', outputLanguage?: 'fr' | 'en' }
 ): Promise<FormattingResult> {
   try {
     // 1. Pre-parse: Extract name whitelist from raw transcript
     const nameWhitelist = options?.nameWhitelist || extractNameWhitelist(input);
     
-    // Load prompt system files - Always use French files for Section 8
-    const suffix = (section === '8') ? '' : (language === 'en' ? '_en' : '');
+    // Handle backward compatibility and new language parameters
+    const inputLanguage = options?.inputLanguage || language;
+    const outputLanguage = options?.outputLanguage || language;
+    
+    // Load prompt system files - Use output language for formatting
+    const suffix = (section === '8') ? '' : (outputLanguage === 'en' ? '_en' : '');
     const systemPrompt = await loadPromptFile(`section${section}_master${suffix}.md`);
     const guardrails = await loadGuardrailsFile(`section${section}_master${suffix}.json`);
     const goldenExample = await loadGoldenExampleFile(`section${section}_golden_example${suffix}.md`);
 
-    // Add English input context for Section 8 if input language is English
+    // Add language context if input ≠ output
     let enhancedSystemPrompt = systemPrompt;
-    if (section === '8' && language === 'en') {
-      enhancedSystemPrompt = `
+    if (inputLanguage !== outputLanguage) {
+      if (inputLanguage === 'en' && outputLanguage === 'fr') {
+        enhancedSystemPrompt = `
 ## CONTEXTE D'ENTRÉE: Anglais
 Le contenu fourni est en anglais. Formatez et traduisez-le en français selon les standards médicaux CNESST du Québec.
 
@@ -81,6 +86,39 @@ Le contenu fourni est en anglais. Formatez et traduisez-le en français selon le
 
 ---
 ${systemPrompt}`;
+      } else if (inputLanguage === 'fr' && outputLanguage === 'en') {
+        enhancedSystemPrompt = `
+## INPUT CONTEXT: French
+The content provided is in French. Format and translate it to English according to medical standards.
+
+## TRANSLATION INSTRUCTIONS
+- Translate French content to English medical terminology
+- Maintain medical accuracy during translation
+- Use appropriate English medical terminology
+- Preserve all clinical details and measurements
+- Ensure medical compliance in English
+
+## MEDICAL TRANSLATION (French → English)
+- "travailleur/travailleuse" → "patient"
+- "douleur dorsale" → "back pain"
+- "douleur lancinante" → "stabbing pain"
+- "douleur brûlante" → "burning pain"
+- "douleur de pression" → "pressure pain"
+- "douleur nocturne" → "night pain"
+- "raideur matinale" → "morning stiffness"
+- "soulèvement d'objets lourds" → "lifting heavy objects"
+- "monter et descendre des collines" → "going up and down hills"
+- "monter et descendre des marches" → "walking up and down steps"
+- "posture debout" → "standing posture"
+- "se pencher en avant" → "bending forward"
+- "analgésiques" → "painkillers"
+- "plateau thérapeutique" → "therapeutic plateau"
+- "impact fonctionnel" → "functional impact"
+- "observations neurologiques" → "neurological observations"
+
+---
+${systemPrompt}`;
+      }
     }
 
     // Prepare user message with name whitelist constraint and clinical entities

@@ -21,7 +21,17 @@ export const FLAGS = {
   
   // Universal cleanup flags
   UNIVERSAL_CLEANUP_ENABLED: (process.env['UNIVERSAL_CLEANUP_ENABLED'] ?? 'false') === 'true',
-  UNIVERSAL_CLEANUP_SHADOW: (process.env['UNIVERSAL_CLEANUP_SHADOW'] ?? 'true') !== 'false',
+  UNIVERSAL_CLEANUP_SHADOW: (process.env['UNIVERSAL_CLEANUP_SHADOW'] ?? 'false') === 'true',
+  
+  // Output language selection flags
+  ENABLE_OUTPUT_LANGUAGE_SELECTION: (process.env['ENABLE_OUTPUT_LANGUAGE_SELECTION'] ?? 'true') === 'true',
+  CNESST_SECTIONS_DEFAULT_OUTPUT: process.env['CNESST_SECTIONS_DEFAULT_OUTPUT'] ?? 'fr',
+  ALLOW_NON_FRENCH_OUTPUT: (process.env['ALLOW_NON_FRENCH_OUTPUT'] ?? 'true') === 'true',
+  
+  // Performance and caching configuration
+  SLO_P95_MS: parseInt(process.env['SLO_P95_MS'] ?? '5000', 10),
+  SLO_P99_MS: parseInt(process.env['SLO_P99_MS'] ?? '8000', 10),
+  CACHE_TTL_SECONDS: parseInt(process.env['CACHE_TTL_SECONDS'] ?? '604800', 10),
   
   // Debug flags
   DEBUG_MODE: (process.env['DEBUG_MODE'] ?? 'false') === 'true',

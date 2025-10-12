@@ -4,7 +4,7 @@
  */
 
 import { apiFetch } from '../lib/api';
-import { useFeatureFlags } from '../lib/featureFlags';
+import { getFeatureFlags } from '../lib/featureFlags';
 import type { FeedbackItem } from '../types/feedback';
 
 export interface SyncStatus {
@@ -87,7 +87,7 @@ class FeedbackSyncService {
    * Check if server sync is enabled
    */
   private isServerSyncEnabled(): boolean {
-    const featureFlags = useFeatureFlags();
+    const featureFlags = getFeatureFlags();
     return featureFlags.feedbackServerSync;
   }
 

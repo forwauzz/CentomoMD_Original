@@ -8,6 +8,7 @@ import { useTranscription } from '@/hooks/useTranscription';
 import { SectionSelector } from './SectionSelector';
 import { ModeToggle } from './ModeToggle';
 import { InputLanguageSelector } from './LanguageSelector';
+import { OutputLanguageSelector } from './OutputLanguageSelector';
 import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
@@ -17,8 +18,9 @@ import { api } from '@/lib/api';
 import { useCaseStore } from '@/stores/caseStore';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { useUIStore } from '@/stores/uiStore';
+import { useBackendConfig } from '@/hooks/useBackendConfig';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
-import { useTranscriptionContext } from '@/contexts/TranscriptionContext';
+import { useTranscriptionContext, TranscriptionContextData } from '@/contexts/TranscriptionContext';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -31,12 +33,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const featureFlags = useFeatureFlags();
-  const { inputLanguage, setInputLanguage } = useUIStore();
+  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage } = useUIStore();
+  const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
-  // Convert UI store input language (fr/en) to dictation format (fr-CA/en-US)
-  const selectedLanguage = inputLanguage === 'fr' ? 'fr-CA' : 'en-US';
+  // Derive dictation language from canonical state (no local state needed)
+  const dictationLanguage = inputLanguage === 'fr' ? 'fr-CA' : 'en-US';
   const [sessionDuration, setSessionDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -50,6 +53,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
   const [aiStepStatus, setAiStepStatus] = useState<'success' | 'skipped' | 'error' | null>(null);
+  
+  // Race condition guard - prevent stale responses
+  const latestOpRef = useRef<string | null>(null);
   
   // Clinical entities state (S6.4 - Caching for Reuse)
   const [, setClinicalEntities] = useState<ClinicalEntities | null>(null);
@@ -107,6 +113,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     rawTranscript: string,
     template: TemplateJSON
   ): Promise<UniversalCleanupResponse> => {
+    // Generate operation ID to prevent stale responses
+    const opId = crypto.randomUUID();
+    latestOpRef.current = opId;
+    console.log('[UNIVERSAL] Starting operation:', opId);
+    
     setFormattingProgress('Cleaning transcript...');
     
     // Step 1: Clean transcript and extract clinical entities
@@ -135,6 +146,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         transcript: rawTranscript,
         section: section,
         language: inputLanguage,
+        inputLanguage: inputLanguage,
+        outputLanguage: outputLanguage,
         useUniversal: true,
         templateId: template.id
       })
@@ -146,6 +159,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     
     const result: UniversalCleanupResponse = await response.json();
     
+    // Check for stale response
+    if (latestOpRef.current !== opId) {
+      console.log('[UNIVERSAL] Operation cancelled due to race condition:', opId);
+      throw new Error('Operation cancelled due to race condition');
+    }
+    
     setFormattingProgress('Formatting...');
     
     // Store clinical entities for reuse
@@ -155,20 +174,25 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
     
     return result;
-  }, [selectedLanguage]);
+  }, [dictationLanguage]);
 
-  const handleLanguageChange = (newLanguage: string) => {
-    console.log('TranscriptionInterface: input language changed from', selectedLanguage, 'to', newLanguage);
+  const handleInputLanguageChange = useCallback((newLanguage: string) => {
+    console.log('TranscriptionInterface: input language changed from', dictationLanguage, 'to', newLanguage);
     // Convert dictation format (fr-CA/en-US) to UI store format (fr/en)
-    const uiLanguageFormat = newLanguage === 'fr-CA' ? 'fr' : 'en';
-    setInputLanguage(uiLanguageFormat);
-    console.log('TranscriptionInterface: UI input language updated to:', uiLanguageFormat);
+    const canonicalLanguage = newLanguage === 'fr-CA' ? 'fr' : 'en';
+    setInputLanguage(canonicalLanguage);
+    console.log('TranscriptionInterface: UI input language updated to:', canonicalLanguage);
+  }, [dictationLanguage, setInputLanguage]);
+
+  const handleOutputLanguageChange = (newLanguage: 'fr' | 'en') => {
+    console.log('TranscriptionInterface: output language changed from', outputLanguage, 'to', newLanguage);
+    setOutputLanguage(newLanguage);
   };
 
-  // Debug: Monitor selectedLanguage changes
+  // Debug: Monitor language changes
   useEffect(() => {
-    console.log('TranscriptionInterface: selectedLanguage derived from UI store:', selectedLanguage, 'inputLanguage:', inputLanguage);
-  }, [selectedLanguage, inputLanguage]);
+    console.log('TranscriptionInterface: dictationLanguage derived from UI store:', dictationLanguage, 'inputLanguage:', inputLanguage, 'outputLanguage:', outputLanguage);
+  }, [dictationLanguage, inputLanguage, outputLanguage]);
 
   const {
     isRecording,
@@ -184,7 +208,10 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     mode3Progress,
     // cleanedConversation,
     orthopedicNarrative
-  } = useTranscription(sessionId, selectedLanguage, mode);
+  } = useTranscription(sessionId, dictationLanguage, mode);
+
+  // Track previous context data to prevent unnecessary updates
+  const prevContextDataRef = useRef<TranscriptionContextData | null>(null);
 
   // Update global transcription context when data changes
   useEffect(() => {
@@ -192,6 +219,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       currentTranscript: editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript),
       mode: mode,
       inputLanguage: inputLanguage, // Use input language for context
+      outputLanguage: outputLanguage, // Use output language for context
       templateName: selectedTemplate?.title || '',
       diarization: featureFlags.speakerLabeling,
       customVocab: false, // TODO: Add custom vocab detection
@@ -201,19 +229,22 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       orthopedicNarrative: orthopedicNarrative,
     };
     
-    setTranscriptionData(contextData);
+    // Only update if data actually changed to prevent loops
+    if (JSON.stringify(prevContextDataRef.current) !== JSON.stringify(contextData)) {
+      prevContextDataRef.current = contextData;
+      setTranscriptionData(contextData);
+    }
   }, [
     editedTranscript,
     paragraphs,
     currentTranscript,
     mode,
     inputLanguage,
+    outputLanguage,
     selectedTemplate,
-    featureFlags.speakerLabeling,
     sessionId,
     segments,
-    orthopedicNarrative,
-    setTranscriptionData
+    orthopedicNarrative
   ]);
 
   // Case store for saving to sections
@@ -363,7 +394,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       const sectionData: Record<string, any> = {
         savedAt: new Date().toISOString(),
         mode: mode,
-        language: selectedLanguage
+        language: dictationLanguage,
+        inputLanguage: inputLanguage,
+        outputLanguage: outputLanguage
       };
       
       // Set the specific text box field
@@ -388,7 +421,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [editedTranscript, paragraphs, mode, selectedLanguage, updateSection]);
+  }, [editedTranscript, paragraphs, mode, dictationLanguage, inputLanguage, outputLanguage, updateSection]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
@@ -404,15 +437,24 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     // Check if Universal Cleanup is enabled
     const universalCleanupEnabled = await checkUniversalCleanupEnabled();
     console.log('Universal Cleanup enabled:', universalCleanupEnabled);
+    console.log('Template ID:', template.id);
+    console.log('Template category:', template.category);
     
     // Get the current raw transcript (prioritize saved edited content, then current editing, then paragraphs)
     const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
     
     if (universalCleanupEnabled && rawTranscript && rawTranscript.trim()) {
       console.log('Using Universal Cleanup flow for template:', template.title);
+      console.log('[UNIVERSAL] Raw transcript length:', rawTranscript.length);
       
       try {
         const result = await handleUniversalCleanupFormatting(rawTranscript, template);
+        
+        console.log('[UNIVERSAL] Result received:', {
+          formatted: result.formatted?.substring(0, 100) + '...',
+          formattedLength: result.formatted?.length,
+          issues: result.issues
+        });
         
         // Update the transcript with formatted content
         if (isEditing) {
@@ -495,7 +537,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               credentials: 'include',
               body: JSON.stringify({
                 transcript: formattedTranscript,
-                language: inputLanguage
+                language: inputLanguage,
+                inputLanguage: inputLanguage,
+                outputLanguage: outputLanguage
               })
             });
             
@@ -587,6 +631,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               transcript: rawTranscript,
               section: '7',
               language: inputLanguage,
+              inputLanguage: inputLanguage,
+              outputLanguage: outputLanguage,
               templateCombo: 'template-clinical-extraction',
               correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
             })
@@ -622,18 +668,18 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       return;
     }
     
-    // Check if this is a Section 7 AI formatter template or template combination
-    if (template.id === 'section7-ai-formatter' || template.category === 'template-combo') {
-      console.log('Applying Section 7 AI formatting to current transcript');
-      console.log('Section 7 AI - Template ID:', template.id);
-      console.log('Section 7 AI - Template category:', template.category);
-      setFormattingProgress('Preparing Section 7 AI formatting...');
+    // Check if this is a Section 7 or Section 8 AI formatter template or template combination
+    if (template.id === 'section7-ai-formatter' || template.id === 'section8-ai-formatter' || template.category === 'template-combo') {
+      console.log('Applying AI formatting to current transcript');
+      console.log('Template ID:', template.id);
+      console.log('Template category:', template.category);
+      setFormattingProgress('Preparing AI formatting...');
       
       // Get the current raw transcript (prioritize saved edited content, then current editing, then paragraphs)
       const rawTranscript = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
       
-      console.log('Section 7 AI processing - rawTranscript length:', rawTranscript.length);
-      console.log('Section 7 AI processing - rawTranscript preview:', rawTranscript.substring(0, 200) + '...');
+      console.log('AI processing - rawTranscript length:', rawTranscript.length);
+      console.log('AI processing - rawTranscript preview:', rawTranscript.substring(0, 200) + '...');
       
       if (rawTranscript && rawTranscript.trim()) {
         try {
@@ -675,7 +721,22 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             templateConfig: templateConfig?.id
           });
           
-          // Call Mode2Formatter API for Section 7 using proper authentication
+          // Race condition guard
+          const opId = crypto.randomUUID();
+          latestOpRef.current = opId;
+          console.log('[FORMAT] Starting operation', opId);
+          
+          // Determine section based on template ID
+          let section = '7'; // Default to Section 7
+          if (template.id === 'section8-ai-formatter') {
+            section = '8';
+          } else if (template.id === 'section11-ai-formatter') {
+            section = '11';
+          }
+          
+          console.log('Using section:', section, 'for template:', template.id);
+          
+          // Call Mode2Formatter API using proper authentication
           const result = await apiFetch('/api/format/mode2', {
             method: 'POST',
             headers: {
@@ -683,34 +744,74 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             },
             body: JSON.stringify({
               transcript: rawTranscript,
-              section: '7',
+              section: section,
               language: inputLanguage,
+              inputLanguage: inputLanguage,
+              outputLanguage: outputLanguage,
               templateCombo,
               verbatimSupport,
               voiceCommandsSupport
             })
           });
           
-          console.log('Section 7 AI formatting successful');
+          console.log('AI formatting successful');
           console.log('Formatted result:', result.formatted);
           console.log('Issues found:', result.issues);
           console.log('Confidence score:', result.confidence_score);
           
+          // GPT Diagnostic Code - Check for common issues
+          try {
+            console.log('[FORMAT] raw result', result);
+
+            const formatted =
+              result?.formatted ??
+              result?.text ??
+              result?.data?.formatted ??
+              '';
+
+            console.log('[FORMAT] derived formatted length', formatted?.length);
+            console.log('[FORMAT] issues', result?.issues);
+            console.log('[FORMAT] path', result?.path || 'unknown');
+            console.log('[FORMAT] shadowComparison exists?', !!result?.shadowComparison);
+            
+            if (result?.shadowComparison) {
+              console.log('[FORMAT] shadow legacy formatted length', result.shadowComparison.legacyFormatted?.length);
+              console.log('[FORMAT] shadow universal formatted length', result.shadowComparison.universalFormatted?.length);
+              console.log('[FORMAT] shadow checksum match', result.shadowComparison.checksumMatch);
+            }
+          } catch (e) {
+            console.error('[FORMAT] diagnostic error', e);
+          }
+          
           setFormattingProgress('Processing AI response...');
           
+          // Check for race condition
+          if (latestOpRef.current !== opId) {
+            console.log('[FORMAT] Operation cancelled due to race condition', opId);
+            return;
+          }
+          
           // Update the transcript with AI-formatted content
+          const formatted = result?.formatted ?? result?.text ?? result?.data?.formatted ?? '';
+          console.log('[FORMAT] Setting edited transcript with length:', formatted.length);
+          
           if (isEditing) {
-            setEditedTranscript(result.formatted);
+            setEditedTranscript(formatted);
           } else {
-            setEditedTranscript(result.formatted);
+            setEditedTranscript(formatted);
             setIsEditing(true);
           }
+          
+          // Verify state after next tick
+          setTimeout(() => {
+            console.log('[FORMAT] UI state now - editedTranscript length:', editedTranscript?.length || 0);
+          }, 0);
           
           setFormattingProgress('Finalizing formatting...');
           
           // Show any issues to the user
           if (result.issues && result.issues.length > 0) {
-            console.warn('Section 7 formatting issues:', result.issues);
+            console.warn('AI formatting issues:', result.issues);
             // TODO: Show issues in UI (could be a toast notification)
           }
           
@@ -721,15 +822,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setFormattingProgress('');
           return;
         } catch (error) {
-          console.error('Error applying Section 7 AI formatting:', error);
+          console.error('Error applying AI formatting:', error);
           // Fallback: show error but don't break the flow
-          alert(`Section 7 AI formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          alert(`AI formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
           setIsFormatting(false);
           setFormattingProgress('');
           return;
         }
       } else {
-        console.warn('No transcript content to format with Section 7 AI');
+        console.warn('No transcript content to format with AI');
         setIsFormatting(false);
         setFormattingProgress('');
         return;
@@ -758,6 +859,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       const formattingOptions: FormattingOptions = {
         section: formatSection,
         inputLanguage: inputLanguage, // Use current input language
+        outputLanguage: outputLanguage, // Use current output language
         complexity: template.complexity || 'medium',
         formattingLevel: 'advanced',
         includeSuggestions: true
@@ -812,7 +914,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         template.content,
         {
           section: (activeSection?.replace('section_', '') || '7') as "7" | "8" | "11",
-          inputLanguage: inputLanguage // Use current input language
+          inputLanguage: inputLanguage, // Use current input language
+          outputLanguage: outputLanguage // Use current output language
         }
       );
       
@@ -828,10 +931,10 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       setIsFormatting(false);
       setFormattingProgress('');
     }
-  }, [isEditing, editedTranscript, currentTranscript]);
+  }, [isEditing, editedTranscript, currentTranscript, inputLanguage, outputLanguage]);
 
   // Debug: Check recording state
-  console.log('TranscriptionInterface: isRecording =', isRecording, 'selectedLanguage =', selectedLanguage);
+  console.log('TranscriptionInterface: isRecording =', isRecording, 'dictationLanguage =', dictationLanguage);
 
   return (
     <div className="space-y-6 pb-16">
@@ -850,14 +953,38 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Input Language</label>
                 <InputLanguageSelector
-                  language={selectedLanguage}
-                  onLanguageChange={handleLanguageChange}
+                  language={dictationLanguage}
+                  onLanguageChange={handleInputLanguageChange}
                   disabled={isRecording}
                 />
-                <p className="text-xs text-gray-500">
-                  Output will always be in French (CNESST compliant)
-                </p>
               </div>
+
+              {/* Output Language Selector - Only show if feature is enabled */}
+              {featureFlags.outputLanguageSelection && backendConfig?.enableOutputLanguageSelection && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Output Language</label>
+                  <OutputLanguageSelector
+                    language={outputLanguage}
+                    onLanguageChange={handleOutputLanguageChange}
+                    disabled={isRecording}
+                    showWarning={!backendConfig.allowNonFrenchOutput}
+                  />
+                  {!backendConfig.allowNonFrenchOutput && outputLanguage === 'en' && (
+                    <p className="text-xs text-yellow-600">
+                      ⚠️ English output may not be CNESST compliant
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Legacy message when output language selection is disabled */}
+              {(!featureFlags.outputLanguageSelection || !backendConfig?.enableOutputLanguageSelection) && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">
+                    Output will always be in French (CNESST compliant)
+                  </p>
+                </div>
+              )}
 
               {/* Section Selector */}
               <div className="space-y-2">
@@ -873,7 +1000,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 <label className="text-sm font-medium text-gray-700">Template</label>
                 <TemplateDropdown
                   currentSection={activeSection || 'section_7'}
-                  currentLanguage={selectedLanguage}
+                  currentLanguage={dictationLanguage}
                   selectedTemplate={selectedTemplate}
                   onTemplateSelect={(template) => {
                     console.log('Template selected:', template);
@@ -1229,7 +1356,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             setShowTemplateModal(false);
           }}
           currentSection={activeSection || 'section_7'}
-          currentLanguage={selectedLanguage}
+          currentLanguage={dictationLanguage}
           isFormatting={isFormatting}
         />
       )}

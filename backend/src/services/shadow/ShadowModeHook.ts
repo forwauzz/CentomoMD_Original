@@ -6,7 +6,9 @@ import { ClinicalEntities } from '../../shared/types/clinical.js';
 export interface ShadowModeOptions {
   transcript: string;
   section: string;
-  language: 'fr' | 'en';
+  language: 'fr' | 'en'; // Legacy parameter for backward compatibility
+  inputLanguage?: 'fr' | 'en';
+  outputLanguage?: 'fr' | 'en';
   templateId?: string;
 }
 

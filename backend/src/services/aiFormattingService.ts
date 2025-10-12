@@ -1,6 +1,7 @@
 export interface FormattingOptions {
   section: "7" | "8" | "11" | "history_evolution";
   inputLanguage: "fr" | "en";
+  outputLanguage?: "fr" | "en";
   complexity?: "low" | "medium" | "high";
   formattingLevel?: "basic" | "standard" | "advanced";
   includeSuggestions?: boolean;
