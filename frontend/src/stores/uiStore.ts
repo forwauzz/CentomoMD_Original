@@ -13,8 +13,9 @@ interface UIState {
   // Sidebar state
   sidebarCollapsed: boolean;
   
-  // Language state - input language only (output is always French)
+  // Language state - both input and output language selection
   inputLanguage: 'fr' | 'en';
+  outputLanguage: 'fr' | 'en';
   
   // Toast notifications
   toasts: Toast[];
@@ -22,6 +23,7 @@ interface UIState {
   // Actions
   setSidebarCollapsed: (collapsed: boolean) => void;
   setInputLanguage: (lang: 'fr' | 'en') => void;
+  setOutputLanguage: (lang: 'fr' | 'en') => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   clearToasts: () => void;
@@ -33,12 +35,15 @@ export const useUIStore = create<UIState>()(
       // Initial state
       sidebarCollapsed: false,
       inputLanguage: 'fr', // Default to French for Quebec clinics
+      outputLanguage: 'fr', // Default to French for CNESST compliance
       toasts: [],
       
       // Actions
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       
       setInputLanguage: (lang) => set({ inputLanguage: lang }),
+      
+      setOutputLanguage: (lang) => set({ outputLanguage: lang }),
       
       addToast: (toast) => {
         const id = Math.random().toString(36).substr(2, 9);
@@ -68,6 +73,7 @@ export const useUIStore = create<UIState>()(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         inputLanguage: state.inputLanguage,
+        outputLanguage: state.outputLanguage,
       }),
     }
   )

@@ -1,0 +1,62 @@
+{
+  "id": "section7_rd",
+  "name": "Section 7 - R&D Pipeline",
+  "nameEn": "Section 7 - R&D Pipeline",
+  "description": "Section 7 - Historique de faits et évolution (R&D Pipeline with CNESST compliance)",
+  "descriptionEn": "Section 7 - Fact History and Evolution (R&D Pipeline with CNESST compliance)",
+  "section": "7",
+  "type": "cnesst_rd",
+  "version": "1.1.0",
+  "locale": "fr-CA",
+  "category": "cnesst",
+  "audioRequired": true,
+  "outputLanguage": "fr",
+  "inputLanguage": "fr",
+  "features": {
+    "complianceChecking": true,
+    "qualityAssurance": true,
+    "managerReview": true,
+    "goldenStandards": true
+  },
+  "prompts": {
+    "system": "You are a medical documentation specialist for CNESST Section 7 - Historique de faits et évolution. Format the input according to CNESST standards with strict compliance checking.",
+    "user": "Format the following medical case for Section 7 - Historique de faits et évolution following CNESST standards:\n\n{input}",
+    "postProcessing": "Apply Section 7 R&D pipeline compliance rules and quality assurance."
+  },
+  "rules": {
+    "header": "Must start with '7. Historique de faits et évolution'",
+    "paragraphs": "Each paragraph must start with 'Le travailleur' or 'La travailleuse'",
+    "chronology": "Dates must be in ascending chronological order",
+    "citations": "Only worker's claim should be quoted, never radiology reports",
+    "terminology": "Use proper French-Canadian medical terminology",
+    "doctors": "Preserve doctor names with proper titles and diacritics",
+    "vertebrae": "Use proper format (L5-S1, not L5 S1)"
+  },
+  "validation": {
+    "enabled": true,
+    "rules": [
+      "header",
+      "parag_travailleur_premier", 
+      "interdire_date_en_premier",
+      "titre_medecin_present",
+      "une_seule_citation",
+      "radio_pas_de_citations",
+      "variation_verbes",
+      "chronologie_ascendante",
+      "vertebres_avec_tiret"
+    ],
+    "threshold": 0.8
+  },
+  "output": {
+    "format": "markdown",
+    "structure": "cnesst_section7",
+    "qualityCheck": true
+  },
+  "metadata": {
+    "created": "2025-10-12",
+    "author": "CentomoMD R&D Team",
+    "pipeline": "section7_rd",
+    "compliance": "CNESST",
+    "testing": "12 golden cases available"
+  }
+}

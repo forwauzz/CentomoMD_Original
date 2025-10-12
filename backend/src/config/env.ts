@@ -53,6 +53,16 @@ export const ENV = {
   // Audio and transcription flags
   USE_48K_AUDIO: (process.env['USE_48K_AUDIO'] ?? 'true') !== 'false',
   ENABLE_SPEAKER_LABELS: (process.env['ENABLE_SPEAKER_LABELS'] ?? 'false') === 'true',
+  
+  // Output language selection flags
+  ENABLE_OUTPUT_LANGUAGE_SELECTION: (process.env['ENABLE_OUTPUT_LANGUAGE_SELECTION'] ?? 'true') === 'true',
+  CNESST_SECTIONS_DEFAULT_OUTPUT: process.env['CNESST_SECTIONS_DEFAULT_OUTPUT'] ?? 'fr',
+  ALLOW_NON_FRENCH_OUTPUT: (process.env['ALLOW_NON_FRENCH_OUTPUT'] ?? 'true') === 'true',
+  
+  // Performance and caching configuration
+  SLO_P95_MS: parseInt(process.env['SLO_P95_MS'] ?? '5000', 10),
+  SLO_P99_MS: parseInt(process.env['SLO_P99_MS'] ?? '8000', 10),
+  CACHE_TTL_SECONDS: parseInt(process.env['CACHE_TTL_SECONDS'] ?? '604800', 10),
 } as const;
 
 // Safe, non-secret startup log
@@ -99,5 +109,13 @@ export const config = {
   features: {
     universalCleanupEnabled: true,
     universalCleanupShadow: true,
+    enableOutputLanguageSelection: ENV.ENABLE_OUTPUT_LANGUAGE_SELECTION,
+    cnesstSectionsDefaultOutput: ENV.CNESST_SECTIONS_DEFAULT_OUTPUT,
+    allowNonFrenchOutput: ENV.ALLOW_NON_FRENCH_OUTPUT,
+  },
+  performance: {
+    sloP95Ms: ENV.SLO_P95_MS,
+    sloP99Ms: ENV.SLO_P99_MS,
+    cacheTtlSeconds: ENV.CACHE_TTL_SECONDS,
   }
 };

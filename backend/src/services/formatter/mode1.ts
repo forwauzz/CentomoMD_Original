@@ -3,7 +3,9 @@ const VERBATIM_START = '___VERBATIM_START___';
 const VERBATIM_END = '___VERBATIM_END___';
 
 export interface Mode1FormattingOptions {
-  language: 'fr' | 'en';
+  language: 'fr' | 'en'; // Legacy parameter for backward compatibility
+  inputLanguage?: 'fr' | 'en';
+  outputLanguage?: 'fr' | 'en';
   quote_style: 'smart' | 'straight';
   radiology_mode: boolean;
   preserve_verbatim: boolean;

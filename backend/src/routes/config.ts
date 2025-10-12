@@ -12,5 +12,8 @@ export const getConfig = (_req: Request, res: Response) => {
     useWss: config.ws.useWss,
     universalCleanupEnabled: config.features.universalCleanupEnabled,
     universalCleanupShadow: config.features.universalCleanupShadow,
+    enableOutputLanguageSelection: config.features.enableOutputLanguageSelection,
+    cnesstSectionsDefaultOutput: config.features.cnesstSectionsDefaultOutput,
+    allowNonFrenchOutput: config.features.allowNonFrenchOutput,
   });
 };

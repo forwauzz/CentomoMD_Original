@@ -1,6 +1,7 @@
 export interface FormattingOptions {
   section: "7" | "8" | "11" | "history_evolution";
   inputLanguage: "fr" | "en";
+  outputLanguage?: "fr" | "en";
   complexity?: "low" | "medium" | "high";
   formattingLevel?: "basic" | "standard" | "advanced";
   includeSuggestions?: boolean;
@@ -41,6 +42,7 @@ export class FormattingService {
         content,
         section: options.section,
         inputLanguage: options.inputLanguage,
+        outputLanguage: options.outputLanguage || options.inputLanguage,
         complexity: options.complexity || 'medium',
         formattingLevel: options.formattingLevel || 'standard',
         includeSuggestions: options.includeSuggestions || false

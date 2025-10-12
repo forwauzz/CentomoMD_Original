@@ -1,0 +1,57 @@
+{
+  "id": "case_H",
+  "output_path": "outputs\\section7\\case_H.md",
+  "input_path": "data\\golden\\section7\\case_H_input.md",
+  "gold_path": "data\\golden\\section7\\case_H_gold.md",
+  "line_similarity": 0.0,
+  "rules_score": 0.6667,
+  "issues": [
+    {
+      "rule": "header",
+      "ok": false,
+      "msg": "L'en-tête exact est manquant ou mal orthographié."
+    },
+    {
+      "rule": "parag_travailleur_premier",
+      "ok": true,
+      "details": []
+    },
+    {
+      "rule": "interdire_date_en_premier",
+      "ok": true,
+      "details": []
+    },
+    {
+      "rule": "titre_medecin_present",
+      "ok": false
+    },
+    {
+      "rule": "une_seule_citation",
+      "ok": true,
+      "total_quotes": 0,
+      "non_radio_quotes": 0
+    },
+    {
+      "rule": "radio_verbatim_obligatoire",
+      "ok": true,
+      "total_radio": 0,
+      "with_quotes": 0,
+      "missing_quotes": []
+    },
+    {
+      "rule": "variation_verbes",
+      "ok": false,
+      "distincts": []
+    },
+    {
+      "rule": "chronologie_ascendante",
+      "ok": true,
+      "nb_dates": 0
+    },
+    {
+      "rule": "vertebres_avec_tiret",
+      "ok": true,
+      "exemples": []
+    }
+  ]
+}

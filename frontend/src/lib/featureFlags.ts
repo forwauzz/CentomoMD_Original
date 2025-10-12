@@ -3,6 +3,8 @@
  * Controls which features are enabled/disabled in the application
  */
 
+import { useState } from 'react';
+
 export interface FeatureFlags {
   voiceCommands: boolean;
   verbatim: boolean;
@@ -11,6 +13,7 @@ export interface FeatureFlags {
   speakerLabeling: boolean;
   feedbackModule: boolean;
   feedbackServerSync: boolean;
+  outputLanguageSelection: boolean;
 }
 
 // Default feature flags - all disabled by default for safety
@@ -22,6 +25,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   speakerLabeling: false,
   feedbackModule: false,
   feedbackServerSync: false,
+  outputLanguageSelection: false,
 };
 
 // Environment-based feature flags
@@ -36,6 +40,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     speakerLabeling: import.meta.env.VITE_FEATURE_SPEAKER_LABELING === 'true',
     feedbackModule: import.meta.env.VITE_FEATURE_FEEDBACK_MODULE === 'true',
     feedbackServerSync: import.meta.env.VITE_FEATURE_FEEDBACK_SERVER_SYNC === 'true',
+    outputLanguageSelection: import.meta.env.VITE_FEATURE_OUTPUT_LANGUAGE_SELECTION === 'true',
   };
 
   // For development, we can enable features for testing
@@ -47,6 +52,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     speakerLabeling: true, // Enable for development - Transcribe mode fully functional
     feedbackModule: true, // Enable for development - feedback module
     feedbackServerSync: true, // Enable for development - feedback server sync
+    outputLanguageSelection: true, // Enable for development - output language selection
   };
 
   // Use environment flags if available, otherwise use dev flags
@@ -58,10 +64,12 @@ export const getFeatureFlags = (): FeatureFlags => {
     speakerLabeling: envFlags.speakerLabeling || devFlags.speakerLabeling,
     feedbackModule: envFlags.feedbackModule || devFlags.feedbackModule,
     feedbackServerSync: envFlags.feedbackServerSync || devFlags.feedbackServerSync,
+    outputLanguageSelection: envFlags.outputLanguageSelection || devFlags.outputLanguageSelection,
   };
 };
 
 // Hook for using feature flags in components
 export const useFeatureFlags = (): FeatureFlags => {
-  return getFeatureFlags();
+  const [flags] = useState(() => getFeatureFlags());
+  return flags;
 };

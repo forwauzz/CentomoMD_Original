@@ -87,6 +87,20 @@ if (ENV.NODE_ENV !== 'production') {
   app.get('/api/_debug/cors', (_req, res) => {
     res.json({ allowed: ENV.CORS_ALLOWED_ORIGINS });
   });
+  
+  // Debug route for output language selection flags
+  app.get('/api/_debug/output-language', (_req, res) => {
+    res.json({
+      ENABLE_OUTPUT_LANGUAGE_SELECTION: ENV.ENABLE_OUTPUT_LANGUAGE_SELECTION,
+      CNESST_SECTIONS_DEFAULT_OUTPUT: ENV.CNESST_SECTIONS_DEFAULT_OUTPUT,
+      ALLOW_NON_FRENCH_OUTPUT: ENV.ALLOW_NON_FRENCH_OUTPUT,
+      UNIVERSAL_CLEANUP_ENABLED: FLAGS.UNIVERSAL_CLEANUP_ENABLED,
+      UNIVERSAL_CLEANUP_SHADOW: FLAGS.UNIVERSAL_CLEANUP_SHADOW,
+      SLO_P95_MS: ENV.SLO_P95_MS,
+      SLO_P99_MS: ENV.SLO_P99_MS,
+      CACHE_TTL_SECONDS: ENV.CACHE_TTL_SECONDS
+    });
+  });
 }
 
 const server = http.createServer(app);
@@ -767,7 +781,7 @@ app.post('/api/templates/format',  (req, res) => {
       userAgent: req.get('User-Agent')
     });
 
-    const { content, section, inputLanguage, complexity, formattingLevel, includeSuggestions } = req.body;
+    const { content, section, inputLanguage, outputLanguage, complexity, formattingLevel, includeSuggestions } = req.body;
     
     if (!content || !section || !inputLanguage) {
       return res.status(400).json({ 
@@ -783,10 +797,28 @@ app.post('/api/templates/format',  (req, res) => {
     if (!['fr', 'en'].includes(inputLanguage)) {
       return res.status(400).json({ success: false, error: 'Invalid input language' });
     }
+
+    // Handle output language with defaults
+    const finalOutputLanguage = outputLanguage || ENV.CNESST_SECTIONS_DEFAULT_OUTPUT;
+    
+    if (!['fr', 'en'].includes(finalOutputLanguage)) {
+      return res.status(400).json({ success: false, error: 'Invalid output language' });
+    }
+
+    // Policy gate for CNESST sections
+    if (['7','8','11'].includes(section) && 
+        finalOutputLanguage !== 'fr' && 
+        !ENV.ALLOW_NON_FRENCH_OUTPUT) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'CNESST sections must output French when ALLOW_NON_FRENCH_OUTPUT is false' 
+      });
+    }
     
     const formattingOptions = {
       section: section as "7" | "8" | "11" | "history_evolution",
       inputLanguage: inputLanguage as "fr" | "en",
+      outputLanguage: finalOutputLanguage as "fr" | "en",
       complexity: complexity as "low" | "medium" | "high" || "medium",
       formattingLevel: formattingLevel as "basic" | "standard" | "advanced" || "standard",
       includeSuggestions: includeSuggestions || false
@@ -1677,7 +1709,7 @@ app.post('/api/templates/bulk/delete',  async (req, res) => {
 // Mode 1 Formatting Endpoint
 app.post('/api/format/mode1', async (req, res) => {
   try {
-    const { transcript, language, quote_style, radiology_mode, section } = req.body;
+    const { transcript, language, inputLanguage, outputLanguage, quote_style, radiology_mode, section } = req.body;
     
     if (!transcript || typeof transcript !== 'string') {
       return res.status(400).json({ 
@@ -1685,9 +1717,19 @@ app.post('/api/format/mode1', async (req, res) => {
       });
     }
 
-    if (!language || !['fr', 'en'].includes(language)) {
+    // Handle backward compatibility and new language parameters
+    const finalInputLanguage = inputLanguage || language || 'fr';
+    const finalOutputLanguage = outputLanguage || ENV.CNESST_SECTIONS_DEFAULT_OUTPUT;
+
+    if (!['fr', 'en'].includes(finalInputLanguage)) {
       return res.status(400).json({ 
-        error: 'Language must be either "fr" or "en"' 
+        error: 'Input language must be either "fr" or "en"' 
+      });
+    }
+
+    if (!['fr', 'en'].includes(finalOutputLanguage)) {
+      return res.status(400).json({ 
+        error: 'Output language must be either "fr" or "en"' 
       });
     }
 
@@ -1698,7 +1740,9 @@ app.post('/api/format/mode1', async (req, res) => {
     
     // Format the transcript
     const result = formatter.format(transcript, {
-      language: language as 'fr' | 'en',
+      language: finalInputLanguage as 'fr' | 'en', // Keep for backward compatibility
+      inputLanguage: finalInputLanguage as 'fr' | 'en',
+      outputLanguage: finalOutputLanguage as 'fr' | 'en',
       quote_style: quote_style || 'smart',
       radiology_mode: radiology_mode || false,
       preserve_verbatim: true
@@ -1721,7 +1765,7 @@ app.post('/api/format/mode1', async (req, res) => {
       }
       
       if (validator) {
-        validationResult = validator.validate(result.formatted, language as 'fr' | 'en');
+        validationResult = validator.validate(result.formatted, finalOutputLanguage as 'fr' | 'en');
       }
     }
 
@@ -1890,15 +1934,27 @@ app.post('/api/format/mode2', async (req, res) => {
     const { 
       transcript, 
       section, 
-      language, 
+      language, // Legacy parameter for backward compatibility
+      inputLanguage, 
+      outputLanguage, 
       case_id, 
       selected_sections, 
       extra_dictation,
       // Template combination parameters
       templateCombo,
       verbatimSupport,
-      voiceCommandsSupport
+      voiceCommandsSupport,
+      templateId
     } = req.body;
+    
+    console.log('[API] Mode2 request body:', {
+      section,
+      language,
+      inputLanguage,
+      outputLanguage,
+      templateId,
+      transcriptLength: transcript?.length
+    });
     
     if (!transcript || typeof transcript !== 'string') {
       return res.status(400).json({ 
@@ -1912,9 +1968,28 @@ app.post('/api/format/mode2', async (req, res) => {
       });
     }
 
-    if (!language || !['fr', 'en'].includes(language)) {
+    // Handle backward compatibility and new language parameters
+    const finalInputLanguage = inputLanguage || language || 'fr';
+    const finalOutputLanguage = outputLanguage || ENV.CNESST_SECTIONS_DEFAULT_OUTPUT;
+
+    if (!['fr', 'en'].includes(finalInputLanguage)) {
       return res.status(400).json({ 
-        error: 'Language must be either "fr" or "en"' 
+        error: 'Input language must be either "fr" or "en"' 
+      });
+    }
+
+    if (!['fr', 'en'].includes(finalOutputLanguage)) {
+      return res.status(400).json({ 
+        error: 'Output language must be either "fr" or "en"' 
+      });
+    }
+
+    // Policy gate for CNESST sections
+    if (['7','8','11'].includes(section) && 
+        finalOutputLanguage !== 'fr' && 
+        !ENV.ALLOW_NON_FRENCH_OUTPUT) {
+      return res.status(400).json({ 
+        error: 'CNESST sections must output French when ALLOW_NON_FRENCH_OUTPUT is false' 
       });
     }
 
@@ -1925,7 +2000,9 @@ app.post('/api/format/mode2', async (req, res) => {
     
     // Format the transcript with AI
     const result = await formatter.format(transcript, {
-      language: language as 'fr' | 'en',
+      language: finalInputLanguage as 'fr' | 'en', // Keep for backward compatibility
+      inputLanguage: finalInputLanguage as 'fr' | 'en',
+      outputLanguage: finalOutputLanguage as 'fr' | 'en',
       section: section as '7' | '8' | '11',
       case_id,
       selected_sections,
@@ -1933,15 +2010,18 @@ app.post('/api/format/mode2', async (req, res) => {
       // Template combination parameters
       templateCombo,
       verbatimSupport,
-      voiceCommandsSupport
+      voiceCommandsSupport,
+      templateId
     });
 
     // Run shadow mode comparison if enabled
     const shadowResult = await ShadowModeHook.runShadowComparison({
       transcript,
       section: section as '7' | '8' | '11',
-      language: language as 'fr' | 'en',
-      templateId: case_id
+      language: finalInputLanguage as 'fr' | 'en',
+      inputLanguage: finalInputLanguage as 'fr' | 'en',
+      outputLanguage: finalOutputLanguage as 'fr' | 'en',
+      templateId: case_id || templateId
     });
 
     // Return the formatted result

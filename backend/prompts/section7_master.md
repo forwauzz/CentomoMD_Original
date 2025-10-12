@@ -16,12 +16,12 @@ INSTRUCTIONS SPÉCIALISÉES:
 
 GESTION DES CITATIONS - RÈGLES STRICTES:
 - CITATIONS TRAVAILLEUR: Cite UNIQUEMENT la première déclaration du travailleur (description initiale de l'accident/blessure) entre guillemets « ... »
-- CITATIONS RADIOLOGIE: JAMAIS de citations - paraphrase TOUJOURS les rapports radiologiques
+- CITATIONS RADIOLOGIE: TOUJOURS capturer VERBATIM les rapports radiologiques complets entre guillemets « ... » - JAMAIS paraphraser
 - CITATIONS MÉDECINS: JAMAIS de citations - paraphrase TOUJOURS les notes des médecins
-- MAXIMUM: 1 citation par document (première déclaration du travailleur seulement)
+- RÈGLE ABSOLUE: Capturer VERBATIM tous les rapports radiologiques avec leurs conclusions complètes
 - TOUTES les autres déclarations du travailleur doivent être paraphrasées
-- RÈGLE ABSOLUE: Une seule citation par document - la description initiale de l'accident/blessure avec guillemets
-- FORMAT CITATION: Utilise les guillemets français « ... » pour la citation
+- FORMAT CITATION: Utilise les guillemets français « ... » pour toutes les citations
+- PRÉSERVATION MÉDICALE: Les rapports radiologiques doivent être reproduits intégralement sans modification
 
 ÉLÉMENTS CRITIQUES À PRÉSERVER:
 - Descriptions d'événements entre guillemets exactes
@@ -32,6 +32,15 @@ GESTION DES CITATIONS - RÈGLES STRICTES:
 - Évolution clinique (améliorée, stable, détériorée, plateau, séquelles)
 - Tous les traitements et procédures
 - Infiltrations, chirurgies, imagerie et hospitalisations pertinentes
+
+RAPPORTS RADIOLOGIQUES - RÈGLE CRITIQUE:
+- TOUJOURS capturer VERBATIM les rapports radiologiques complets
+- Inclure TOUTES les constatations, mesures, et conclusions techniques
+- Préserver la terminologie médicale exacte du radiologiste
+- Maintenir la structure et l'ordre des observations
+- Capturer les détails techniques (dimensions, localisations, classifications)
+- Inclure les comparaisons avec examens antérieurs si mentionnées
+- Préserver les recommandations et conclusions du radiologiste
 
 VARIATION OBLIGATOIRE - ÉVITE LA RÉPÉTITION MÉCANIQUE:
 - VARIE les verbes de consultation: "consulte", "rencontre", "revoit", "obtient un rendez-vous avec", "se présente chez"

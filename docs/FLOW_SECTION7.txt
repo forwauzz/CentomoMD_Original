@@ -1,0 +1,117 @@
+Section 7 CNESST R&D Pipeline Flow Reference
+============================================
+
+Version: v1.1.0
+Date: October 2025
+
+PIPELINE OVERVIEW
+-----------------
+This is a sandboxed R&D pipeline for Section 7 - Historique de faits et évolution
+formatter. It operates independently from production CentomoMD systems.
+
+DIRECTORY STRUCTURE
+-------------------
+configs/                    # Global configuration
+prompts/                    # Processing and evaluation prompts
+system/                     # System conductor files
+training/                   # Golden cases and training data
+eval/                       # Evaluation scripts and reports
+outputs/                    # Generated outputs
+docs/                       # Documentation
+scripts/                    # Utility scripts
+data/golden/section7/       # Extracted golden cases
+
+CORE COMPONENTS
+---------------
+1. evaluator_section7.py    # Main evaluation engine
+2. run_manager_review.py    # Manager evaluation layer
+3. golden_cases_section7.jsonl # 12 anonymized CNESST cases
+4. validation_manifest.jsonl   # Case manifest for evaluation
+
+EVALUATION RULES (9 total)
+--------------------------
+Critical Rules (6):
+- header: Exact header "7. Historique de faits et évolution"
+- parag_travailleur_premier: Each paragraph starts with "Le/La travailleur"
+- interdire_date_en_premier: No paragraph starts with date or "En <mois>"
+- une_seule_citation: Maximum one citation (worker's claim)
+- radio_pas_de_citations: No citations in radiology paragraphs
+- chronologie_ascendante: Dates in ascending chronological order
+
+Non-Critical Rules (3):
+- titre_medecin_present: At least one doctor title present
+- variation_verbes: At least 2 distinct consultation verbs
+- vertebres_avec_tiret: Spinal levels with hyphens (L5-S1, not L5 S1)
+
+WORKFLOW STEPS
+--------------
+1. Input: Raw unformatted case
+2. Processing: Apply 8-phase formatting plan
+3. Output: Save to outputs/section7/case_X.md
+4. Evaluation: Run evaluator_section7.py
+5. Report: Generate eval/reports/case_X.json
+6. Manager Review: Run run_manager_review.py
+7. Decision: Accept/Reject with feedback
+
+COMMANDS
+--------
+# Run evaluation on all 12 cases
+python eval/evaluator_section7.py
+
+# Run manager review for case_A
+python scripts/run_manager_review.py
+
+# Test manager review (mock)
+python scripts/test_manager_review.py
+
+# Extract golden cases from JSONL
+python scripts/extract_golden_cases.py
+
+OUTPUT FORMATS
+--------------
+Evaluation Summary:
+case_A | sim=0.91 | règles=0.89 | fichier=oui
+
+Manager Review:
+<manager_verify>accept</manager_verify>
+OR
+<manager_verify>reject</manager_verify>
+<manager_feedback>...</manager_feedback>
+
+JSON Report Structure:
+{
+  "id": "case_A",
+  "line_similarity": 0.91,
+  "rules_score": 0.89,
+  "issues": [...]
+}
+
+EXTENSION TO OTHER SECTIONS
+---------------------------
+1. Duplicate directory structure
+2. Replace "Section 7" with target section
+3. Update filenames and references
+4. Add new golden cases
+5. Update validation manifest
+
+COMPLIANCE
+----------
+- Language: fr-CA (Québec French)
+- Framework: PIPEDA / Loi 25 compliant
+- Usage: R&D and evaluation only
+- Isolation: No production system interaction
+
+TECHNICAL STACK
+---------------
+- Python 3.11+
+- OpenAI GPT-4o (manager evaluation)
+- Difflib, Regex, JSONL
+- UTF-8 encoding throughout
+
+STATUS
+------
+✅ All 12 golden cases extracted
+✅ Evaluation pipeline functional
+✅ Manager review layer connected
+✅ Documentation complete
+✅ Ready for Section 8 expansion

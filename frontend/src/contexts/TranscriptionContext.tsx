@@ -3,12 +3,13 @@
  * Provides transcription data to components throughout the app
  */
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export interface TranscriptionContextData {
   currentTranscript: string;
   mode: string;
   inputLanguage: 'fr' | 'en';
+  outputLanguage: 'fr' | 'en';
   templateName: string;
   diarization: boolean;
   customVocab: boolean;
@@ -33,9 +34,9 @@ interface TranscriptionProviderProps {
 export const TranscriptionProvider: React.FC<TranscriptionProviderProps> = ({ children }) => {
   const [transcriptionData, setTranscriptionData] = useState<TranscriptionContextData | null>(null);
 
-  const clearTranscriptionData = () => {
+  const clearTranscriptionData = useCallback(() => {
     setTranscriptionData(null);
-  };
+  }, []);
 
   return (
     <TranscriptionContext.Provider

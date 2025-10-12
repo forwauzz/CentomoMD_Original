@@ -1,0 +1,81 @@
+{
+  "section": "7",
+  "title": "Historique de faits et évolution",
+  "locale": "fr-CA",
+  "version": "1.1.0",
+  "rules": [
+    {
+      "id": "header",
+      "name": "En-tête exact",
+      "description": "Le texte doit commencer exactement par '7. Historique de faits et évolution'",
+      "critical": true
+    },
+    {
+      "id": "parag_travailleur_premier",
+      "name": "Paragraphes commençant par travailleur/travailleuse",
+      "description": "Chaque paragraphe doit commencer par 'Le travailleur' ou 'La travailleuse'",
+      "critical": true
+    },
+    {
+      "id": "interdire_date_en_premier",
+      "name": "Interdiction de commencer par une date",
+      "description": "Aucun paragraphe ne doit commencer par une date ou 'En <mois>'",
+      "critical": true
+    },
+    {
+      "id": "titre_medecin_present",
+      "name": "Titre médecin présent",
+      "description": "Au moins un titre de médecin (docteur, docteure, Dr., Dre.) doit être présent",
+      "critical": false
+    },
+    {
+      "id": "une_seule_citation",
+      "name": "Une seule citation",
+      "description": "Maximum une citation (déclaration du travailleur) dans le texte",
+      "critical": true
+    },
+    {
+      "id": "radio_verbatim_obligatoire",
+      "name": "Rapports radiologiques verbatim",
+      "description": "Tous les rapports radiologiques doivent être capturés verbatim avec leurs conclusions complètes",
+      "critical": true
+    },
+    {
+      "id": "variation_verbes",
+      "name": "Variation des verbes",
+      "description": "Au moins 2 verbes distincts utilisés pour les consultations",
+      "critical": false
+    },
+    {
+      "id": "chronologie_ascendante",
+      "name": "Chronologie ascendante",
+      "description": "Toutes les dates extraites doivent être en ordre chronologique ascendant",
+      "critical": true
+    },
+    {
+      "id": "vertebres_avec_tiret",
+      "name": "Niveaux vertébraux avec tiret",
+      "description": "Les niveaux vertébraux doivent utiliser un tiret (ex: L5-S1, pas L5 S1)",
+      "critical": false
+    }
+  ],
+  "scoring": {
+    "critical_rules": ["header", "parag_travailleur_premier", "interdire_date_en_premier", "une_seule_citation", "radio_verbatim_obligatoire", "chronologie_ascendante"],
+    "non_critical_rules": ["titre_medecin_present", "variation_verbes", "vertebres_avec_tiret"],
+    "acceptance_threshold": 0.8
+  },
+  "examples": {
+    "accept": [
+      "Toutes les règles critiques respectées",
+      "Structure conforme au standard CNESST",
+      "Terminologie médicale appropriée",
+      "Rapports radiologiques capturés verbatim"
+    ],
+    "reject": [
+      "Rapports radiologiques paraphrasés ou incomplets",
+      "Paragraphe commençant par une date",
+      "Chronologie inversée",
+      "En-tête manquant"
+    ]
+  }
+}
