@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-01-12 11:05 — [rnd_section7_pipeline] feat(rd-pipeline): migrate Section 7 R&D pipeline to backend directory for EC2 deployment — commit:c69e877
+
 ## 2025-01-12 01:45 — [default-transcript-output-language-fr] feat(output-language): implement comprehensive output language selection feature — commit:35c25cf
 
 ## 2025-01-10 02:20 — [default-transcript-output-language-fr] feat(templates): implement English input to French output feature and template improvements — commit:f2d4273
