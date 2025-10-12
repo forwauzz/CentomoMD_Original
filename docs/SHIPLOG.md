@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-01-12 01:45 — [default-transcript-output-language-fr] feat(output-language): implement comprehensive output language selection feature — commit:35c25cf
+
 ## 2025-01-10 02:20 — [default-transcript-output-language-fr] feat(templates): implement English input to French output feature and template improvements — commit:f2d4273
 
 ## 2025-01-19 00:16 — [chore/supabase-audit] security: remove hardcoded credentials from documentation — commit:9c06bd6
