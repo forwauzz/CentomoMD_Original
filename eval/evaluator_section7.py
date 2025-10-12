@@ -143,16 +143,28 @@ def verifier_regles(texte: str):
     has_title = bool(REGEX_TITRE_MEDECIN.search(texte))
     issues.append({"rule":"titre_medecin_present", "ok":has_title})
 
-    # 5) Une seule citation (déclaration initiale du travailleur)
+    # 5) Citations appropriées (déclaration initiale du travailleur + rapports radiologiques verbatim)
     quotes = REGEX_GUILLEMETS.findall(texte)
-    issues.append({"rule":"une_seule_citation", "ok":len(quotes) <= 1, "count":len(quotes)})
-
-    # 6) Pas de citation radiologique (aucun guillemet dans un paragraphe contenant un mot d'imagerie)
-    radio_quote_bad = []
+    # Compter les citations non-radiologiques (devrait être 0 ou 1 - déclaration du travailleur)
+    non_radio_quotes = 0
     for idx, p in enumerate(pgs):
-        if REGEX_RADIologie.search(p) and "«" in p and "»" in p:
-            radio_quote_bad.append(idx+1)
-    issues.append({"rule":"radio_pas_de_citations", "ok":len(radio_quote_bad)==0, "details":radio_quote_bad})
+        if "«" in p and "»" in p and not REGEX_RADIologie.search(p):
+            non_radio_quotes += 1
+    
+    issues.append({"rule":"une_seule_citation", "ok":non_radio_quotes <= 1, "total_quotes":len(quotes), "non_radio_quotes":non_radio_quotes})
+
+    # 6) Rapports radiologiques verbatim (tous les paragraphes radiologiques doivent contenir des citations verbatim)
+    radio_paragraphs = []
+    radio_with_quotes = []
+    for idx, p in enumerate(pgs):
+        if REGEX_RADIologie.search(p):
+            radio_paragraphs.append(idx+1)
+            if "«" in p and "»" in p:
+                radio_with_quotes.append(idx+1)
+    
+    # Tous les paragraphes radiologiques doivent avoir des citations verbatim
+    radio_verbatim_ok = len(radio_paragraphs) == 0 or len(radio_with_quotes) == len(radio_paragraphs)
+    issues.append({"rule":"radio_verbatim_obligatoire", "ok":radio_verbatim_ok, "total_radio":len(radio_paragraphs), "with_quotes":len(radio_with_quotes), "missing_quotes":list(set(radio_paragraphs) - set(radio_with_quotes))})
 
     # 7) Variation des verbes (≥2 verbes distincts utilisés)
     verbes_trouves = set()

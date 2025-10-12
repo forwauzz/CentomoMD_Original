@@ -333,6 +333,12 @@ export class ProcessingOrchestrator {
       return await this.processSection7AIFormatter(content, template, request);
     }
     
+    // Handle Section 7 R&D Pipeline template
+    if (template.id === 'section7-rd') {
+      console.log(`[${correlationId}] Routing to processSection7Rd`);
+      return await this.processSection7Rd(content, template, request);
+    }
+    
     // Handle Section 8 AI Formatter template
     if (template.id === 'section8-ai-formatter') {
       console.log(`[${correlationId}] Routing to processSection8AIFormatter`);
@@ -564,6 +570,52 @@ export class ProcessingOrchestrator {
     } catch (error) {
       console.error(`[${correlationId}] Section 7 AI formatting error:`, error);
       // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 7 R&D Pipeline template
+   */
+  private async processSection7Rd(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 7 R&D Pipeline template: ${template.id}`);
+      
+      // Import the Section 7 R&D service
+      const { section7RdService } = await import('../../services/section7RdService.js');
+      
+      // Process through R&D pipeline
+      const result = await section7RdService.processInput(content);
+      
+      if (!result.success) {
+        console.warn(`[${correlationId}] Section 7 R&D pipeline failed, returning original content`);
+        return content;
+      }
+      
+      const processedContent = result.formattedText;
+      
+      // Log compliance results
+      console.log(`[${correlationId}] Section 7 R&D pipeline completed`, {
+        originalLength: content.length,
+        processedLength: processedContent.length,
+        templateId: template.id,
+        rulesScore: result.compliance.rulesScore,
+        passedRules: result.compliance.passedRules.length,
+        failedRules: result.compliance.failedRules.length,
+        processingTime: result.metadata.processingTime
+      });
+      
+      // Log any compliance issues
+      if (result.compliance.failedRules.length > 0) {
+        console.warn(`[${correlationId}] Section 7 R&D compliance issues:`, result.compliance.failedRules);
+      }
+      
+      return processedContent;
+    } catch (error) {
+      console.error(`[${correlationId}] Section 7 R&D pipeline error:`, error);
+      // Return original content if processing fails
       return content;
     }
   }

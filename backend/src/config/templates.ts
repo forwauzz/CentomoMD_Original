@@ -265,6 +265,46 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       implementation: '6-step-flowchart'
     }
   },
+  'section7-rd': {
+    id: 'section7-rd',
+    name: 'Section 7 - R&D Pipeline',
+    nameEn: 'Section 7 - R&D Pipeline',
+    description: 'Section 7 - Historique de faits et évolution (R&D Pipeline with CNESST compliance checking)',
+    descriptionEn: 'Section 7 - Fact History and Evolution (R&D Pipeline with CNESST compliance checking)',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr'],
+    content: {
+      structure: 'cnesst-section7-rd',
+      placeholders: ['compliance_checking', 'quality_assurance', 'manager_review', 'golden_standards'],
+      validationRules: ['cnesst_compliance', 'rd_pipeline_validation', 'quality_assurance', 'compliance_rules']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true,
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
+    },
+    configuration: {
+      priority: 4,
+      timeout: 60,
+      retryAttempts: 2,
+      fallbackTemplate: 'section7-ai-formatter',
+      promptFiles: ['rd_pipeline', 'compliance_rules', 'manager_review']
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'rd', 'pipeline', 'compliance', 'quality-assurance'],
+      version: '1.1.0',
+      author: 'CentomoMD R&D Team',
+      implementation: 'rd-pipeline'
+    }
+  },
   'section8-ai-formatter': {
     id: 'section8-ai-formatter',
     name: 'Section 8 AI Formatter',

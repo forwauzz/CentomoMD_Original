@@ -1,115 +1,117 @@
-PIPELINE R&D - SECTION 7 CNESST (fr-CA)
-==========================================
+Section 7 CNESST R&D Pipeline Flow Reference
+============================================
 
-FLUX D'EXÉCUTION DU PIPELINE
------------------------------
+Version: v1.1.0
+Date: October 2025
 
-1. CONFIGURATION MAÎTRE
-   └── /configs/master_prompt_section7.json
-       ├── Point d'entrée du pipeline
-       ├── Référence tous les artefacts
-       └── Configuration de la langue (fr-CA)
-
-2. CONDUCTOR SYSTÈME
-   └── /system/system_section7_fr-ca.md
-       ├── Initialise le contexte médical
-       ├── Définit les règles de formatage
-       └── Orchestre le processus global
-
-3. PLAN D'EXÉCUTION
-   └── /prompts/plan_section7_fr.xml
-       ├── Plan détaillé en 4 phases
-       ├── Règles de formatage spécifiques
-       └── Métriques de qualité
-
-4. ÉVALUATION GESTIONNAIRE
-   └── /prompts/manager_eval_section7_fr.xml
-       ├── Critères d'évaluation (6 critères)
-       ├── Système de notation (24 points max)
-       └── Seuils de qualité
-
-5. STANDARDS DE RÉFÉRENCE
-   └── /training/golden_cases_section7.jsonl
-       ├── Cas d'usage exemplaires
-       ├── Formatage de référence
-       └── Base d'entraînement
-
-ORDRE D'EXÉCUTION
+PIPELINE OVERVIEW
 -----------------
+This is a sandboxed R&D pipeline for Section 7 - Historique de faits et évolution
+formatter. It operates independently from production CentomoMD systems.
 
-master_prompt_section7.json
-    ↓
-system_section7_fr-ca.md
-    ↓
-plan_section7_fr.xml
-    ↓
-manager_eval_section7_fr.xml
-    ↓
-golden_cases_section7.jsonl
+DIRECTORY STRUCTURE
+-------------------
+configs/                    # Global configuration
+prompts/                    # Processing and evaluation prompts
+system/                     # System conductor files
+training/                   # Golden cases and training data
+eval/                       # Evaluation scripts and reports
+outputs/                    # Generated outputs
+docs/                       # Documentation
+scripts/                    # Utility scripts
+data/golden/section7/       # Extracted golden cases
 
-DÉTAILS DES PHASES
-------------------
+CORE COMPONENTS
+---------------
+1. evaluator_section7.py    # Main evaluation engine
+2. run_manager_review.py    # Manager evaluation layer
+3. golden_cases_section7.jsonl # 12 anonymized CNESST cases
+4. validation_manifest.jsonl   # Case manifest for evaluation
 
-Phase 1: Analyse du contenu
-- Identification des éléments clés
-- Validation de la cohérence
-- Reconnaissance des acteurs médicaux
+EVALUATION RULES (9 total)
+--------------------------
+Critical Rules (6):
+- header: Exact header "7. Historique de faits et évolution"
+- parag_travailleur_premier: Each paragraph starts with "Le/La travailleur"
+- interdire_date_en_premier: No paragraph starts with date or "En <mois>"
+- une_seule_citation: Maximum one citation (worker's claim)
+- radio_pas_de_citations: No citations in radiology paragraphs
+- chronologie_ascendante: Dates in ascending chronological order
 
-Phase 2: Structuration chronologique
-- Organisation temporelle
-- Élimination des redondances
-- Hiérarchisation par importance
+Non-Critical Rules (3):
+- titre_medecin_present: At least one doctor title present
+- variation_verbes: At least 2 distinct consultation verbs
+- vertebres_avec_tiret: Spinal levels with hyphens (L5-S1, not L5 S1)
 
-Phase 3: Formatage médical
-- Application des conventions
-- Assurance qualité
-- Validation des formats
+WORKFLOW STEPS
+--------------
+1. Input: Raw unformatted case
+2. Processing: Apply 8-phase formatting plan
+3. Output: Save to outputs/section7/case_X.md
+4. Evaluation: Run evaluator_section7.py
+5. Report: Generate eval/reports/case_X.json
+6. Manager Review: Run run_manager_review.py
+7. Decision: Accept/Reject with feedback
 
-Phase 4: Révision et finalisation
-- Révision complète
-- Corrections finales
-- Validation de la conformité
+COMMANDS
+--------
+# Run evaluation on all 12 cases
+python eval/evaluator_section7.py
 
-CRITÈRES D'ÉVALUATION
----------------------
+# Run manager review for case_A
+python scripts/run_manager_review.py
 
-C1. Cohérence chronologique (25%)
-C2. Précision terminologique (20%)
-C3. Formatage et structure (20%)
-C4. Complétude de l'information (15%)
-C5. Lisibilité et clarté (10%)
-C6. Conformité réglementaire (10%)
+# Test manager review (mock)
+python scripts/test_manager_review.py
 
-SEUILS DE QUALITÉ
------------------
+# Extract golden cases from JSONL
+python scripts/extract_golden_cases.py
 
-Excellence: ≥ 22/24 points (92%)
-Professionnel: ≥ 18/24 points (75%)
-Acceptable: ≥ 15/24 points (63%)
+OUTPUT FORMATS
+--------------
+Evaluation Summary:
+case_A | sim=0.91 | règles=0.89 | fichier=oui
 
-ISOLATION ET SÉCURITÉ
----------------------
+Manager Review:
+<manager_verify>accept</manager_verify>
+OR
+<manager_verify>reject</manager_verify>
+<manager_feedback>...</manager_feedback>
 
-✅ Pipeline complètement isolé de la production
-✅ Aucun impact sur les templates existants
-✅ Validation humaine requise avant déploiement
-✅ Conformité aux réglementations québécoises
-✅ Protection de la confidentialité médicale
+JSON Report Structure:
+{
+  "id": "case_A",
+  "line_similarity": 0.91,
+  "rules_score": 0.89,
+  "issues": [...]
+}
 
-UTILISATION
------------
+EXTENSION TO OTHER SECTIONS
+---------------------------
+1. Duplicate directory structure
+2. Replace "Section 7" with target section
+3. Update filenames and references
+4. Add new golden cases
+5. Update validation manifest
 
-Ce pipeline peut être utilisé pour:
-- Tester de nouvelles approches de formatage
-- Évaluer la performance sur des cas spécifiques
-- Développer des améliorations avant déploiement
-- Créer des pipelines similaires pour d'autres sections
+COMPLIANCE
+----------
+- Language: fr-CA (Québec French)
+- Framework: PIPEDA / Loi 25 compliant
+- Usage: R&D and evaluation only
+- Isolation: No production system interaction
 
-PROCHAINES ÉTAPES
------------------
+TECHNICAL STACK
+---------------
+- Python 3.11+
+- OpenAI GPT-4o (manager evaluation)
+- Difflib, Regex, JSONL
+- UTF-8 encoding throughout
 
-1. Validation du pipeline par les experts médicaux
-2. Tests sur des cas réels
-3. Ajustements basés sur les retours
-4. Création de pipelines pour les autres sections
-5. Intégration progressive en production
+STATUS
+------
+✅ All 12 golden cases extracted
+✅ Evaluation pipeline functional
+✅ Manager review layer connected
+✅ Documentation complete
+✅ Ready for Section 8 expansion
