@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SYSTÈME — CENTOMOMD
+  Section : 7 — Historique de faits et évolution
+  Langue  : fr-CA (Québec)
+  Objet   : Point d’orchestration entre plan_section7_fr.xml, manager_eval_section7_fr.xml
+            et le moteur principal de formatage (template Section 7 existant).
+-->
+
+<system>
+
+  <metadata>
+    <titre>Système de pilotage — Section 7</titre>
+    <version>1.0.0</version>
+    <auteur>CentomoMD – Québec</auteur>
+    <description>
+      Ce fichier établit le cadre d’intégration entre le plan de formatage, l’évaluateur et le gabarit
+      de Section 7 déjà présent dans CentomoMD. Il ne remplace pas le template actuel ; il agit comme
+      couche de coordination et de contrôle qualité.
+    </description>
+  </metadata>
+
+  <!-- =========================
+       COMPOSANTS ACTIFS
+       ========================= -->
+  <composants>
+    <plan chemin="./plan_section7_fr.xml" rôle="formateur"/>
+    <manager chemin="./manager_eval_section7_fr.xml" rôle="évaluateur"/>
+    <template chemin="./templates/section7_template_fr.json" rôle="gabarit_base"/>
+  </composants>
+
+  <!-- =========================
+       LOGIQUE D’INTÉGRATION
+       ========================= -->
+  <logique>
+    <etape id="1" nom="Préparation">
+      <description>Charger le transcript brut et les paramètres du cas dans la mémoire du système.</description>
+    </etape>
+
+    <etape id="2" nom="Formatage">
+      <description>
+        Transmettre le transcript au <plan rôle="formateur"/> pour transformation complète
+        selon les règles CNESST et la terminologie québécoise.
+      </description>
+    </etape>
+
+    <etape id="3" nom="Évaluation automatique">
+      <description>
+        Acheminer la sortie formatée au <manager rôle="évaluateur"/>.  
+        Celui-ci évalue ligne par ligne :
+        <liste>
+          <item>structure correcte ;</item>
+          <item>chronologie ascendante ;</item>
+          <item>cohérence des noms ;</item>
+          <item>qualité linguistique ;</item>
+          <item>intégrité médicale.</item>
+        </liste>
+        Si tout est conforme : <manager_verify>accept</manager_verify>.  
+        Sinon : <manager_verify>reject</manager_verify> + commentaire explicatif.
+      </description>
+    </etape>
+
+    <etape id="4" nom="Sortie validée">
+      <description>
+        Si <manager_verify>accept</manager_verify> :
+        - envoyer le texte au module PDF/Word du template Section 7 existant ;
+        - consigner un journal de conformité (QA_log).  
+        Si <manager_verify>reject</manager_verify> :
+        - retourner le feedback à l’interface médecin pour révision manuelle.
+      </description>
+    </etape>
+  </logique>
+
+  <!-- =========================
+       CONTRÔLE DE VERSION
+       ========================= -->
+  <release_notes>
+    <version_1_0_0>
+      Première version intégrée pour CentomoMD (fr-CA).  
+      Compatible avec le pipeline Section 7 existant ; aucun conflit attendu.  
+      Permettra d’ajouter facilement de nouvelles sections (8, 9, etc.) en
+      réutilisant la même architecture plan + manager + system.
+    </version_1_0_0>
+  </release_notes>
+
+</system>

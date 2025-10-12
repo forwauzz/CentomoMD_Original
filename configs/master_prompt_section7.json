@@ -1,0 +1,18 @@
+{
+    "id": "section7_pipeline_frCA",
+    "description": "Pipeline R&D — Section 7 (CNESST, fr-CA) : plan → exécution → évaluation gestionnaire.",
+    "language": "fr-CA",
+    "artifacts": {
+      "system": "./prompts/system_section7_fr.xml",
+      "plan": "./prompts/plan_section7_fr.xml",
+      "manager": "./prompts/manager_eval_section7_fr.xml",
+      "golden_standard": "./training/golden_cases_section7.jsonl"
+    },
+    "metadata": {
+      "section": 7,
+      "mode": "formatting",
+      "version": "1.0.0",
+      "region": "CA-QC"
+    }
+  }
+  

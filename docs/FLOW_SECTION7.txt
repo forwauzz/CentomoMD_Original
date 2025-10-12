@@ -1,0 +1,115 @@
+PIPELINE R&D - SECTION 7 CNESST (fr-CA)
+==========================================
+
+FLUX D'EXÉCUTION DU PIPELINE
+-----------------------------
+
+1. CONFIGURATION MAÎTRE
+   └── /configs/master_prompt_section7.json
+       ├── Point d'entrée du pipeline
+       ├── Référence tous les artefacts
+       └── Configuration de la langue (fr-CA)
+
+2. CONDUCTOR SYSTÈME
+   └── /system/system_section7_fr-ca.md
+       ├── Initialise le contexte médical
+       ├── Définit les règles de formatage
+       └── Orchestre le processus global
+
+3. PLAN D'EXÉCUTION
+   └── /prompts/plan_section7_fr.xml
+       ├── Plan détaillé en 4 phases
+       ├── Règles de formatage spécifiques
+       └── Métriques de qualité
+
+4. ÉVALUATION GESTIONNAIRE
+   └── /prompts/manager_eval_section7_fr.xml
+       ├── Critères d'évaluation (6 critères)
+       ├── Système de notation (24 points max)
+       └── Seuils de qualité
+
+5. STANDARDS DE RÉFÉRENCE
+   └── /training/golden_cases_section7.jsonl
+       ├── Cas d'usage exemplaires
+       ├── Formatage de référence
+       └── Base d'entraînement
+
+ORDRE D'EXÉCUTION
+-----------------
+
+master_prompt_section7.json
+    ↓
+system_section7_fr-ca.md
+    ↓
+plan_section7_fr.xml
+    ↓
+manager_eval_section7_fr.xml
+    ↓
+golden_cases_section7.jsonl
+
+DÉTAILS DES PHASES
+------------------
+
+Phase 1: Analyse du contenu
+- Identification des éléments clés
+- Validation de la cohérence
+- Reconnaissance des acteurs médicaux
+
+Phase 2: Structuration chronologique
+- Organisation temporelle
+- Élimination des redondances
+- Hiérarchisation par importance
+
+Phase 3: Formatage médical
+- Application des conventions
+- Assurance qualité
+- Validation des formats
+
+Phase 4: Révision et finalisation
+- Révision complète
+- Corrections finales
+- Validation de la conformité
+
+CRITÈRES D'ÉVALUATION
+---------------------
+
+C1. Cohérence chronologique (25%)
+C2. Précision terminologique (20%)
+C3. Formatage et structure (20%)
+C4. Complétude de l'information (15%)
+C5. Lisibilité et clarté (10%)
+C6. Conformité réglementaire (10%)
+
+SEUILS DE QUALITÉ
+-----------------
+
+Excellence: ≥ 22/24 points (92%)
+Professionnel: ≥ 18/24 points (75%)
+Acceptable: ≥ 15/24 points (63%)
+
+ISOLATION ET SÉCURITÉ
+---------------------
+
+✅ Pipeline complètement isolé de la production
+✅ Aucun impact sur les templates existants
+✅ Validation humaine requise avant déploiement
+✅ Conformité aux réglementations québécoises
+✅ Protection de la confidentialité médicale
+
+UTILISATION
+-----------
+
+Ce pipeline peut être utilisé pour:
+- Tester de nouvelles approches de formatage
+- Évaluer la performance sur des cas spécifiques
+- Développer des améliorations avant déploiement
+- Créer des pipelines similaires pour d'autres sections
+
+PROCHAINES ÉTAPES
+-----------------
+
+1. Validation du pipeline par les experts médicaux
+2. Tests sur des cas réels
+3. Ajustements basés sur les retours
+4. Création de pipelines pour les autres sections
+5. Intégration progressive en production
