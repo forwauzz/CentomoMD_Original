@@ -125,3 +125,20 @@ If the same task fails after **3 development attempts**:
 - Confirm route-by-route which endpoints require auth vs. are public for dev/test
 - Gate protected routes only after human confirms readiness for auth
 
+# Section 7 CNESST R&D Context
+context:
+  - name: "centomomd_section7_pipeline"
+    include:
+      - /configs/*
+      - /prompts/*
+      - /system/*
+      - /training/*
+      - /eval/*
+      - /docs/*
+    exclude:
+      - /frontend/*
+      - /backend/*
+      - /src/*
+description: |
+  This context isolates the CNESST R&D pipeline for Section 7.
+  It must never alter or overwrite the active production Section 7 template used by CentomoMD.

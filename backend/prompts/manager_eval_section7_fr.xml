@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MANAGER ÉVALUATEUR — CENTOMOMD
+  Section : 7 — « Historique de faits et évolution »
+  Langue  : fr-CA (Québec)
+  Objet   : Vérifier la qualité, la conformité et la cohérence du texte final produit par le plan de formatage.
+-->
+
+<manager_eval>
+
+  <metadata>
+    <titre>Évaluateur de conformité – Section 7</titre>
+    <version>1.0.0</version>
+    <auteur>CentomoMD – Québec</auteur>
+    <description>
+      Ce fichier décrit les vérifications automatiques à effectuer sur chaque texte généré pour la Section 7.
+      Le but est d’assurer que le texte final respecte les règles CNESST, la cohérence médicale et la terminologie
+      du français québécois. Le gestionnaire doit produire un verdict clair :
+      <manager_verify>accept</manager_verify> ou <manager_verify>reject</manager_verify> avec commentaires.
+    </description>
+  </metadata>
+
+  <!-- =========================
+       CRITÈRES D'ÉVALUATION
+       ========================= -->
+  <criteres>
+
+    <critere id="1" nom="Structure générale">
+      <regle>Le texte doit commencer par « 7. Historique de faits et évolution ».</regle>
+      <regle>Chaque paragraphe doit débuter par « Le travailleur » ou « La travailleuse ».</regle>
+      <regle>Il ne doit y avoir aucune date en début de paragraphe.</regle>
+    </critere>
+
+    <critere id="2" nom="Citations">
+      <regle>Une (1) seule citation entre guillemets français (« »), représentant la déclaration initiale du/de la travailleuse/travailleur.</regle>
+      <regle>Les citations de radiologistes doivent respecter la politique (verbatim ou paraphrase) selon le plan.</regle>
+      <regle>Ne pas introduire de citations supplémentaires non prévues.</regle>
+    </critere>
+
+    <critere id="3" nom="Chronologie">
+      <regle>Les événements doivent être présentés dans un ordre strictement chronologique (ascendant).</regle>
+      <regle>Les dates doivent être au format “le 1er août 2024” (style québécois).</regle>
+    </critere>
+
+    <critere id="4" nom="Cohérence des noms professionnels">
+      <regle>Les noms des médecins et radiologistes doivent être complets, littéraux et cohérents tout au long du document.</regle>
+      <regle>Si des variantes orthographiques sont détectées, elles doivent être signalées dans le rapport QA.</regle>
+    </critere>
+
+    <critere id="5" nom="Intégrité médicale et terminologique">
+      <regle>Les diagnostics, traitements et observations doivent être reproduits fidèlement sans invention ni omission importante.</regle>
+      <regle>Les termes cliniques doivent respecter la terminologie médicale québécoise.</regle>
+      <regle>Les niveaux rachidiens doivent être correctement hyphénés (ex. : L5-S1, C5-C6).</regle>
+    </critere>
+
+    <critere id="6" nom="Qualité linguistique">
+      <regle>Texte clair, fluide, professionnel et sans fautes manifestes.</regle>
+      <regle>Utiliser une ponctuation conforme aux règles typographiques du français québécois.</regle>
+    </critere>
+
+    <critere id="7" nom="Cohérence de l’évolution clinique">
+      <regle>Chaque suivi médical doit inclure une mention de l’évolution : “stable”, “améliorée”, “détériorée” ou équivalent.</regle>
+      <regle>La conclusion doit refléter la dernière mention clinique connue.</regle>
+    </critere>
+
+  </criteres>
+
+  <!-- =========================
+       SORTIE DU GESTIONNAIRE
+       ========================= -->
+  <evaluation_process>
+
+    <instruction>Analyser le texte ligne par ligne selon les critères ci-dessus.</instruction>
+    <instruction>Attribuer un verdict global :</instruction>
+
+    <verdicts>
+      <manager_verify>accept</manager_verify>
+      <manager_verify>reject</manager_verify>
+    </verdicts>
+
+    <format_rejet>
+      <feedback_comment>
+        Fournir un commentaire concis expliquant le motif du rejet (ex. : mauvais ordre chronologique, citation manquante,
+        orthographe du médecin incohérente, absence d’évolution clinique, etc.).
+      </feedback_comment>
+    </format_rejet>
+
+  </evaluation_process>
+
+</manager_eval>

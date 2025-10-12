@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PLAN PARAHELP — CENTOMOMD
+  Section : 7 — « Historique de faits et évolution »
+  Langue  : fr-CA (Québec)
+  Objet   : Transformer un transcript brut en une Section 7 conforme CNESST.
+  Portée  : Règles de nommage professionnelles, politique de citations, chronologie, format paragraphe, imagerie, QA.
+  Note    : Ce plan ne modifie JAMAIS le contenu à l’intérieur d’un bloc de citation « … ».
+-->
+
+<plan>
+
+  <!-- =========================
+       MÉTADONNÉES
+       ========================= -->
+  <metadata>
+    <titre>Plan de formatage — Section 7 : Historique de faits et évolution</titre>
+    <version>1.0.0</version>
+    <auteur>CentomoMD – Québec</auteur>
+    <description>
+      Ce plan décrit la séquence d’actions pour produire une Section 7 conforme aux standards CNESST :
+      en-tête exact, citation unique du travailleur/la travailleuse, paragraphes par événement,
+      noms professionnels complets et littéraux, imagerie selon politique (verbatim/paraphrase),
+      chronologie ascendante, et hyphénation des niveaux rachidiens hors guillemets.
+    </description>
+  </metadata>
+
+  <!-- =========================
+       ENTRÉES/CONTRÔLES
+       ========================= -->
+  <entrees>
+    <source_transcript>{RAW_TRANSCRIPT}</source_transcript>
+    <case_controls_json>{CASE_CONTROLS_JSON}</case_controls_json>
+    <guardrails_json>{SECTION7_JSON_GUARDRAILS}</guardrails_json>
+  </entrees>
+
+  <!-- =========================
+       RÈGLES GLOBALES
+       ========================= -->
+  <regles_globales>
+    <langue>Français (Québec), registre clinique neutre.</langue>
+    <travailleur_terme>Utiliser exclusivement « Le travailleur » ou « La travailleuse » (jamais « le patient »).</travailleur_terme>
+    <debut_paragraphe>Chaque paragraphe DOIT commencer par « Le travailleur » ou « La travailleuse » (jamais par une date).</debut_paragraphe>
+    <structure_entree>« Le/La travailleuse/travailleur [verbe] le/la docteur·e [Nom complet], le [date]. … »</structure_entree>
+    <verbes_consultation>consulte; rencontre; revoit; obtient un rendez-vous avec; se présente chez</verbes_consultation>
+    <chronologie>Ascendante stricte (plusieurs événements le même jour permis).</chronologie>
+    <citations>
+      <citation_travailleur>Une (1) seule — la première déclaration d’accident, entre « … », verbatim, sans corrections internes.</citation_travailleur>
+      <citation_radiologie>Selon politique de l’item : « preserve_verbatim » → verbatim; sinon → paraphrase sans guillemets.</citation_radiologie>
+    </citations>
+    <noms_professionnels>
+      <preservation>Littérale et complète (prénom+nom, traits d’union, casse). Interdiction de standardiser.</preservation>
+      <variantes>Détecter et lister toute variante orthographique du même clinicien pour QA.</variantes>
+    </noms_professionnels>
+    <niveaux_rachis>Hyphénation obligatoire hors guillemets : L5-S1, C5-C6, T12-L1 (jamais « L5 S1 », ni « L55 »).</niveaux_rachis>
+    <paragraphe_evenement>Un (1) paragraphe par consultation/procédure/examen/résultat important.</paragraphe_evenement>
+    <evolution>Conserver les mentions : améliorée; stable; détériorée; plateau; séquelles; consolidation; limitations IRSST.</evolution>
+  </regles_globales>
+
+  <!-- =========================
+       ÉTAPES DU PLAN
+       ========================= -->
+  <etapes>
+
+    <!-- 0) Charger les contrôles de cas -->
+    <step id="0">
+      <action_name>charger_controles_de_cas</action_name>
+      <description>
+        Charger {CASE_CONTROLS_JSON} : 
+        - locked_names (primary[], radiologists[]), 
+        - quote_policy global + par imagerie,
+        - worker_gender (F/M),
+        - name_variant_watch[].
+        Déterminer « Le travailleur » vs « La travailleuse » selon worker_gender si disponible, sinon déduire du transcript.
+      </description>
+    </step>
+
+    <!-- 1) En-tête -->
+    <step id="1">
+      <action_name>inserer_entete_section</action_name>
+      <description>Insérer exactement : 7. Historique de faits et évolution</description>
+    </step>
+
+    <!-- 2) Contexte d’emploi (si présent) -->
+    <step id="2">
+      <action_name>emettre_contexte_emploi</action_name>
+      <description>
+        Si le transcript mentionne le rôle/tâches :
+        Rédiger : « Le/La travailleuse/travailleur est [fonction]. Ses tâches consistent à [description brève]. »
+        Ne pas inventer. Omettre si non fourni.
+      </description>
+    </step>
+
+    <!-- 3) Déclaration initiale (unique) -->
+    <step id="3">
+      <action_name>extraire_declaration_initiale</action_name>
+      <description>
+        Extraire la première déclaration d’accident. L’introduire par :
+        « La fiche de réclamation du/de la travailleuse/travailleur décrit l’événement suivant survenu le [date] : »
+        Puis insérer la citation verbatim entre « … ». Aucune correction interne. Interdiction de citations additionnelles pour le travailleur.
+      </description>
+    </step>
+
+    <!-- 4) Normalisations HORS guillemets -->
+    <step id="4">
+      <action_name>normaliser_entites_et_notations</action_name>
+      <description>
+        Appliquer HORS guillemets uniquement :
+        - Noms professionnels : préserver littéralement ceux fournis (locked_names). Si variantes détectées, uniformiser à la première forme rencontrée et consigner la liste de variantes.
+        - Dates fr-CA : « le 1er août 2024 », « le 9 octobre 2023 ».
+        - Rachis : imposer « L5-S1 », « C5-C6 », etc. Corriger fautes usuelles (p. ex. « L55 » → « L5-S1 ») hors guillemets.
+        - Typos manifestes hors guillemets (p. ex. « amélioréee » → « améliorée », « inestable » → « instable »).
+      </description>
+    </step>
+
+    <!-- 5) Corps — consultations/procédures (chronologie ascendante) -->
+    <step id="5">
+      <action_name>formater_entrees_cliniques</action_name>
+      <description>
+        Itérer tous les événements cliniques (consultations, suivis, références, assignations, RTW, consolidations).
+        Pour chaque événement, produire exactement UN paragraphe commençant par « Le travailleur/La travailleuse » suivi d’un verbe varié (consulte/rencontre/revoit/obtient un rendez-vous avec/se présente chez), puis « le/la docteur·e [Nom complet], le [date]. ».
+        Inclure : diagnostics, traitements (physiothérapie, ergothérapie, acupuncture, infiltrations, médication), jugement d’évolution (stable/améliorée/détériorée), décisions (assignations temporaires, retour au travail, références spécialisées), consolidations/IRSST/limitations.
+        Interdiction de commencer par une date. Interdiction d’inventer.
+      </description>
+    </step>
+
+    <!-- 6) Imagerie — acheminement par politique -->
+    <step id="6">
+      <action_name>router_imagerie</action_name>
+      <description>
+        Pour chaque examen (radiographie, IRM, scan, écho, etc.) :
+        1) Introduire : « Le/La travailleuse/travailleur obtient [modalité + région] le [date]. [Elle/Il] est interprétée/é par le/la docteur·e [Nom], radiologiste. »
+        2) Appliquer la politique :
+           - Si policy = « preserve_verbatim » → émettre verbatim entre « … » (aucune altération interne).
+           - Sinon → paraphraser fidèlement SANS guillemets (conserver niveaux, sténoses, pincements, ostéophytes, fractures, etc.) avec hyphénation hors guillemets.
+      </description>
+    </step>
+
+    <!-- Branche verbatim (radiologie) -->
+    <if_block condition="imaging_item.quote_policy == 'preserve_verbatim'">
+      <step id="6a">
+        <action_name>emettre_verbatim_radiologie</action_name>
+        <description>
+          Après l’introduction, insérer la conclusion/opinion originale du radiologiste entre « … ». Ne jamais corriger ni ponctuer différemment l’intérieur du bloc cité.
+        </description>
+      </step>
+    </if_block>
+
+    <!-- Branche paraphrase (radiologie) -->
+    <if_block condition="imaging_item.quote_policy != 'preserve_verbatim'">
+      <step id="6b">
+        <action_name>emettre_paraphrase_radiologie</action_name>
+        <description>
+          Résumer fidèlement sans guillemets, en conservant :
+          - niveaux rachidiens (L5-S1, L2-L3, etc.),
+          - sévérités (léger/modéré/sévère),
+          - éléments structuraux (ostéophytes, pincements, anomalies, sténoses),
+          - messages « pas de fracture/luxation/sténose centrale significative » le cas échéant.
+        </description>
+      </step>
+    </if_block>
+
+    <!-- 7) Dé-doublonnage / réparations finales HORS guillemets -->
+    <step id="7">
+      <action_name>dedoublonner_et_corriger_niveaux</action_name>
+      <description>
+        - Retirer les répétitions manifestes (ordonnances identiques, phrases dupliquées).
+        - Vérifier et corriger les niveaux rachidiens hors guillemets (ex. « L55 » → « L5-S1 », « L5 S1 » → « L5-S1 »).
+      </description>
+    </step>
+
+    <!-- 8) Contrôle de conformité (pré-QA gestionnaire) -->
+    <step id="8">
+      <action_name>passage_conformite_finale</action_name>
+      <description>
+        Vérifier :
+        - En-tête exact « 7. Historique de faits et évolution ».
+        - Une (1) seule citation du/de la travailleuse/travailleur (déclaration initiale).
+        - Imagerie conforme à la policy (verbatim vs paraphrase) + phrase d’intro (modalité/date/radiologiste).
+        - Aucun paragraphe commençant par une date; tous débutent par « Le travailleur/La travailleuse ».
+        - Structure « … [verbe] le/la docteur·e [Nom complet], le [date]. … » respectée à chaque entrée.
+        - Noms professionnels complets, littéraux, cohérents (variantes détectées consignées).
+        - Chronologie ascendante.
+        - Au moins deux verbes distincts utilisés sur l’ensemble du document.
+        - Présence d’au moins une mention d’évolution clinique quelque part.
+        - Niveaux rachidiens hyphénés hors guillemets.
+        - Dé-doublonnage effectué.
+      </description>
+    </step>
+
+  </etapes>
+
+  <!-- =========================
+       CONTRAT DE SORTIE
+       ========================= -->
+  <contrat_sortie>
+    <format>Texte brut (UTF-8), sans balisage Markdown ni titres supplémentaires.</format>
+    <entete_obligatoire>7. Historique de faits et évolution</entete_obligatoire>
+    <paragraphe_par_evenement>true</paragraphe_par_evenement>
+    <citation_unique_travailleur>true</citation_unique_travailleur>
+    <politique_radiologie>verbatim ou paraphrase selon {CASE_CONTROLS_JSON.imaging[].quote_policy}</politique_radiologie>
+    <niveaux_rachis_hyphene>true</niveaux_rachis_hyphene>
+    <coherence_noms_professionnels>préservation littérale + cohérence documentaire</coherence_noms_professionnels>
+    <chronologie>ascendante_stricte</chronologie>
+    <variation_verbes>au_moins_2_verbes_distincts</variation_verbes>
+  </contrat_sortie>
+
+  <!-- =========================
+       DIAGNOSTIC/TRACE QA (optionnel)
+       ========================= -->
+  <trace>
+    <collecter>
+      <item>name_variant_list[] (variantes détectées pour un même clinicien)</item>
+      <item>violations[] (toute infraction aux règles ci-dessus)</item>
+      <item>imaging_policy_appliquee (par item)</item>
+    </collecter>
+  </trace>
+
+</plan>
