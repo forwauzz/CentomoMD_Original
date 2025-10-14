@@ -44,9 +44,57 @@
     <structure_entree>« Le/La travailleuse/travailleur [verbe] le/la docteur·e [Nom complet], le [date]. … »</structure_entree>
     <verbes_consultation>consulte; rencontre; revoit; obtient un rendez-vous avec; se présente chez</verbes_consultation>
     <chronologie>Ascendante stricte (plusieurs événements le même jour permis).</chronologie>
+    
+    <!-- AMÉLIORATIONS QUALITÉ OBLIGATOIRES -->
+    <nettoyage_transcription>
+      <artefacts_a_supprimer>virgule, euh, point, incroyable, etc.</artefacts_a_supprimer>
+      <corrections_grammaticales>Corriger les erreurs de transcription et améliorer la fluidité</corrections_grammaticales>
+      <ponctuation_propre>Ajouter une ponctuation appropriée et des majuscules</ponctuation_propre>
+      <refinement_contenu>Améliorer la concision et la clarté des descriptions de travail sans perdre l'information essentielle</refinement_contenu>
+    </nettoyage_transcription>
+    
+    <standardisation_medecins>
+      <format_nom>docteur/docteure [Prénom] [Nom de famille complet]</format_nom>
+      <corrections_noms>Corriger les noms de médecins mal transcrits (ex: Leclerc → Leclair)</corrections_noms>
+      <titre_standard>Utiliser "docteur" pour les hommes, "docteure" pour les femmes</titre_standard>
+    </standardisation_medecins>
+    
+    <terminologie_medicale>
+      <corrections_obligatoires>
+        <item>trauma → traumatisme</item>
+        <item>construction → contusion</item>
+        <item>dorceaux → dorso-lombaire</item>
+        <item>syndrome douloureux chroniques → syndrome douloureux chronique</item>
+        <item>TCC → TCCL (traumatisme crânio-cérébral léger)</item>
+        <item>inestable → instable</item>
+        <item>précrit → prescrit</item>
+        <item>amélioréee → améliorée</item>
+      </corrections_obligatoires>
+      <standardisation>Utiliser la terminologie médicale québécoise standard</standardisation>
+    </terminologie_medicale>
+    
+    <organisation_chronologique>
+      <ordre_strict>Organiser tous les événements par ordre chronologique strict</ordre_strict>
+      <format_dates>Utiliser le format "le [jour] [mois] [année]"</format_dates>
+      <groupement_jour>Grouper les événements du même jour ensemble</groupement_jour>
+    </organisation_chronologique>
+    
+    <structuration_radiologie>
+      <format_rapport>Structurer les rapports radiologiques avec introduction, constatations et conclusion</format_rapport>
+      <guillemets_constatations>Mettre les constatations entre guillemets français « »</guillemets_constatations>
+      <nom_radiologiste>Inclure le nom complet du radiologiste avec accents corrects (ex: Michaël, pas Michael)</nom_radiologiste>
+      <format_opinion>Pour les rapports avec "Opinion", structurer comme : « … Opinion : [contenu]. »</format_opinion>
+      <preservation_structure>Préserver la structure originale des rapports radiologiques complexes</preservation_structure>
+      <gender_agreement>Utiliser le bon genre : "Il est interprété" (scan masculin), pas "Elle est interprétée"</gender_agreement>
+      <verbatim_radiology>PRÉSERVER INTÉGRALEMENT le verbatim des radiologistes, y compris "…" et structure "Opinion :"</verbatim_radiology>
+    </structuration_radiologie>
     <citations>
-      <citation_travailleur>Une (1) seule — la première déclaration d’accident, entre « … », verbatim, sans corrections internes.</citation_travailleur>
-      <citation_radiologie>Selon politique de l’item : « preserve_verbatim » → verbatim; sinon → paraphrase sans guillemets.</citation_radiologie>
+      <citation_travailleur>Une (1) seule — la première déclaration d'accident, entre « … », verbatim, sans corrections internes.</citation_travailleur>
+      <citation_radiologie>Selon politique de l'item : « preserve_verbatim » → verbatim; sinon → paraphrase sans guillemets.</citation_radiologie>
+      <preservation_verbatim_complete>PRÉSERVER INTÉGRALEMENT tous les verbatim du patient et des radiologistes, même si la transcription est imparfaite</preservation_verbatim_complete>
+      <structure_radiologie_verbatim>Maintenir la structure originale des rapports radiologiques avec "Opinion :" et points de suspension si présents</structure_radiologie_verbatim>
+      <extraction_verbatim_patient>EXTRAIRE UNIQUEMENT les mots directs du patient, JAMAIS les descriptions médicales ou narratives</extraction_verbatim_patient>
+      <exclusion_verbatim>NE PAS inclure dans les guillemets : descriptions de consultations, diagnostics, prescriptions, ou toute narration médicale</exclusion_verbatim>
     </citations>
     <noms_professionnels>
       <preservation>Littérale et complète (prénom+nom, traits d’union, casse). Interdiction de standardiser.</preservation>
@@ -95,9 +143,18 @@
     <step id="3">
       <action_name>extraire_declaration_initiale</action_name>
       <description>
-        Extraire la première déclaration d’accident. L’introduire par :
-        « La fiche de réclamation du/de la travailleuse/travailleur décrit l’événement suivant survenu le [date] : »
+        Extraire la première déclaration d'accident. L'introduire par :
+        « La fiche de réclamation du/de la travailleuse/travailleur décrit l'événement suivant survenu le [date] : »
         Puis insérer la citation verbatim entre « … ». Aucune correction interne. Interdiction de citations additionnelles pour le travailleur.
+        
+        RÈGLE CRITIQUE : La citation verbatim doit contenir UNIQUEMENT les mots directs du patient, JAMAIS :
+        - Descriptions de consultations médicales
+        - Diagnostics ou prescriptions
+        - Narrations médicales
+        - Phrases commençant par "La travailleuse consulte", "Elle diagnostique", etc.
+        
+        Exemple CORRECT : « J'ai mal au dos en soulevant une boîte lourde. »
+        Exemple INCORRECT : « La travailleuse consulte le docteur... »
       </description>
     </step>
 
@@ -109,7 +166,8 @@
         - Noms professionnels : préserver littéralement ceux fournis (locked_names). Si variantes détectées, uniformiser à la première forme rencontrée et consigner la liste de variantes.
         - Dates fr-CA : « le 1er août 2024 », « le 9 octobre 2023 ».
         - Rachis : imposer « L5-S1 », « C5-C6 », etc. Corriger fautes usuelles (p. ex. « L55 » → « L5-S1 ») hors guillemets.
-        - Typos manifestes hors guillemets (p. ex. « amélioréee » → « améliorée », « inestable » → « instable »).
+        - Typos manifestes hors guillemets (p. ex. « amélioréee » → « améliorée », « inestable » → « instable », « précrit » → « prescrit »).
+        - Terminologie médicale : « TCC » → « TCCL (traumatisme crânio-cérébral léger) », « trauma » → « traumatisme ».
       </description>
     </step>
 
