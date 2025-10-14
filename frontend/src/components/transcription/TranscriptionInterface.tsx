@@ -33,7 +33,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const featureFlags = useFeatureFlags();
-  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage } = useUIStore();
+  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage, addToast } = useUIStore();
   const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
@@ -341,14 +341,34 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   // Copy functionality
   const handleCopy = useCallback(async () => {
-    const transcriptText = paragraphs.join('\n\n');
+    // Get the current transcript content using the same logic as display
+    const transcriptText = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+    
+    if (!transcriptText || !transcriptText.trim()) {
+      addToast({
+        type: 'warning',
+        title: 'Nothing to copy',
+        message: 'No transcript content available to copy'
+      });
+      return;
+    }
+    
     try {
       await navigator.clipboard.writeText(transcriptText);
-      console.log('Transcript copied to clipboard');
+      addToast({
+        type: 'success',
+        title: 'Copied to clipboard',
+        message: 'Transcript has been copied to your clipboard'
+      });
     } catch (error) {
       console.error('Failed to copy transcript:', error);
+      addToast({
+        type: 'error',
+        title: 'Copy failed',
+        message: 'Failed to copy transcript to clipboard'
+      });
     }
-  }, [paragraphs]);
+  }, [editedTranscript, paragraphs, currentTranscript, addToast]);
 
   // Edit functionality
   const handleEdit = useCallback(() => {
@@ -375,8 +395,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     if (window.confirm('Are you sure you want to delete this transcript?')) {
       // Here you would typically clear the transcript from your state/backend
       console.log('Transcript deleted');
+      addToast({
+        type: 'success',
+        title: 'Transcript deleted',
+        message: 'The transcript has been successfully deleted'
+      });
     }
-  }, []);
+  }, [addToast]);
 
   // Save to section functionality with dropdown
   const handleSaveToSection = useCallback(async (option: SaveToSectionOption) => {
