@@ -70,10 +70,26 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
     console.log(`TemplateDropdown: Converting ${config.id}, currentLanguage: ${currentLanguage}, isFrench: ${isFrench}`);
     console.log(`TemplateDropdown: English name: ${config.name}, French name: ${config.nameFr}`);
     
+    // Create cleaner template names by removing extra details
+    const cleanName = (name: string) => {
+      // Remove common suffixes and extra details
+      return name
+        .replace(/\s*\([^)]*\)/g, '') // Remove text in parentheses
+        .replace(/\s*-\s*[^-]*$/g, '') // Remove text after last dash
+        .replace(/\s*:\s*.*$/g, '') // Remove text after colon
+        .replace(/\s*\(Amélioré\)/gi, '') // Remove "(Amélioré)" suffix
+        .replace(/\s*\(Enhanced\)/gi, '') // Remove "(Enhanced)" suffix
+        .replace(/\s*\(avec IA\)/gi, '') // Remove "(avec IA)" suffix
+        .replace(/\s*\(with AI\)/gi, '') // Remove "(with AI)" suffix
+        .replace(/\s*Pipeline R&D/gi, '') // Remove "Pipeline R&D" suffix
+        .replace(/\s*R&D Pipeline/gi, '') // Remove "R&D Pipeline" suffix
+        .trim();
+    };
+    
     const converted = {
       id: config.id,
       section: currentSection as "7" | "8" | "11",
-      title: isFrench ? config.nameFr : config.name,
+      title: cleanName(isFrench ? config.nameFr : config.name),
       content: isFrench ? config.descriptionFr : config.description,
       tags: config.tags,
       source_file: `${config.id}.config.json`,
@@ -213,12 +229,12 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full justify-between"
+        className="w-full justify-between h-9 text-sm"
         disabled={loading}
       >
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          <span>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <FileText className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">
             {loading 
               ? 'Chargement...'
               : selectedTemplate 
@@ -227,13 +243,19 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
             }
           </span>
         </div>
-        <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
       </Button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-1 z-50 max-h-96 overflow-hidden">
-          <CardContent className="p-0">
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setIsOpen(false)}
+          />
+          <Card className="absolute top-full left-0 right-0 mt-1 z-50 max-h-96 overflow-hidden shadow-lg border border-gray-200">
+            <CardContent className="p-0">
             {/* Search and Filters */}
             <div className="p-3 border-b">
               <div className="relative mb-3">
@@ -242,18 +264,18 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                   placeholder="Rechercher des templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-8 text-sm"
                 />
               </div>
 
               {/* Tags Filter */}
               <div className="flex flex-wrap gap-1">
-                {getAvailableTags().map(tag => (
+                {getAvailableTags().slice(0, 6).map(tag => (
                   <Badge
                     key={tag}
                     variant={selectedTags.includes(tag) ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer text-xs",
+                      "cursor-pointer text-xs px-2 py-1",
                       selectedTags.includes(tag) && "bg-blue-500 text-white"
                     )}
                     onClick={() => toggleTag(tag)}
@@ -262,6 +284,11 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                     {tag}
                   </Badge>
                 ))}
+                {getAvailableTags().length > 6 && (
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    +{getAvailableTags().length - 6}
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -279,17 +306,18 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                 filteredTemplates.map((template, index) => (
                   <div
                     key={index}
-                    className="p-3 border-b last:border-b-0 hover:bg-gray-50"
+                    className="p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleTemplateSelect(template)}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm cursor-pointer" onClick={() => handleTemplateSelect(template)}>
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-medium text-sm truncate flex-1 min-w-0">
                         {template.title}
                       </h4>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1 flex-shrink-0">
                         {template.complexity && (
                           <Badge 
                             variant="outline" 
-                            className={cn("text-xs", getComplexityColor(template.complexity))}
+                            className={cn("text-xs px-1 py-0", getComplexityColor(template.complexity))}
                           >
                             {template.complexity}
                           </Badge>
@@ -309,19 +337,19 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
                       </div>
                     </div>
                     
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2 cursor-pointer" onClick={() => handleTemplateSelect(template)}>
-                      {template.content.substring(0, 100)}...
+                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                      {template.content.substring(0, 80)}...
                     </p>
                     
                     <div className="flex flex-wrap gap-1">
-                      {template.tags.slice(0, 3).map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs">
+                      {template.tags.slice(0, 2).map(tag => (
+                        <Badge key={tag} variant="outline" className="text-xs px-1 py-0">
                           {tag}
                         </Badge>
                       ))}
-                      {template.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{template.tags.length - 3}
+                      {template.tags.length > 2 && (
+                        <Badge variant="outline" className="text-xs px-1 py-0">
+                          +{template.tags.length - 2}
                         </Badge>
                       )}
                     </div>
@@ -339,6 +367,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
             </div>
           </CardContent>
         </Card>
+        </>
       )}
 
       {/* Template Preview Modal */}
