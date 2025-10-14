@@ -1217,6 +1217,28 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Action Buttons - Moved to top for better accessibility */}
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowTemplateModal(true)}
+                  disabled={isFormatting}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Voice Command</span>
+                </Button>
+                <SaveToSectionDropdown
+                  onSave={handleSaveToSection}
+                  isSaving={isSaving}
+                  disabled={!editedTranscript && paragraphs.length === 0}
+                />
+              </div>
               {/* Template Content Display */}
               {selectedTemplate && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -1330,28 +1352,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => setShowTemplateModal(true)}
-                  disabled={isFormatting}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Voice Command</span>
-                </Button>
-                <SaveToSectionDropdown
-                  onSave={handleSaveToSection}
-                  isSaving={isSaving}
-                  disabled={!editedTranscript && paragraphs.length === 0}
-                />
-              </div>
             </CardContent>
           </Card>
         </div>
