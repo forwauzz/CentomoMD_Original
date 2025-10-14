@@ -44,6 +44,41 @@
     <structure_entree>« Le/La travailleuse/travailleur [verbe] le/la docteur·e [Nom complet], le [date]. … »</structure_entree>
     <verbes_consultation>consulte; rencontre; revoit; obtient un rendez-vous avec; se présente chez</verbes_consultation>
     <chronologie>Ascendante stricte (plusieurs événements le même jour permis).</chronologie>
+    
+    <!-- AMÉLIORATIONS QUALITÉ OBLIGATOIRES -->
+    <nettoyage_transcription>
+      <artefacts_a_supprimer>virgule, euh, point, incroyable, etc.</artefacts_a_supprimer>
+      <corrections_grammaticales>Corriger les erreurs de transcription et améliorer la fluidité</corrections_grammaticales>
+      <ponctuation_propre>Ajouter une ponctuation appropriée et des majuscules</ponctuation_propre>
+    </nettoyage_transcription>
+    
+    <standardisation_medecins>
+      <format_nom>docteur/docteure [Prénom] [Nom de famille complet]</format_nom>
+      <corrections_noms>Corriger les noms de médecins mal transcrits (ex: Leclerc → Leclair)</corrections_noms>
+      <titre_standard>Utiliser "docteur" pour les hommes, "docteure" pour les femmes</titre_standard>
+    </standardisation_medecins>
+    
+    <terminologie_medicale>
+      <corrections_obligatoires>
+        <item>trauma → traumatisme</item>
+        <item>construction → contusion</item>
+        <item>dorceaux → dorso-lombaire</item>
+        <item>syndrome douloureux chroniques → syndrome douloureux chronique</item>
+      </corrections_obligatoires>
+      <standardisation>Utiliser la terminologie médicale québécoise standard</standardisation>
+    </terminologie_medicale>
+    
+    <organisation_chronologique>
+      <ordre_strict>Organiser tous les événements par ordre chronologique strict</ordre_strict>
+      <format_dates>Utiliser le format "le [jour] [mois] [année]"</format_dates>
+      <groupement_jour>Grouper les événements du même jour ensemble</groupement_jour>
+    </organisation_chronologique>
+    
+    <structuration_radiologie>
+      <format_rapport>Structurer les rapports radiologiques avec introduction, constatations et conclusion</format_rapport>
+      <guillemets_constatations>Mettre les constatations entre guillemets français « »</guillemets_constatations>
+      <nom_radiologiste>Inclure le nom complet du radiologiste</nom_radiologiste>
+    </structuration_radiologie>
     <citations>
       <citation_travailleur>Une (1) seule — la première déclaration d’accident, entre « … », verbatim, sans corrections internes.</citation_travailleur>
       <citation_radiologie>Selon politique de l’item : « preserve_verbatim » → verbatim; sinon → paraphrase sans guillemets.</citation_radiologie>

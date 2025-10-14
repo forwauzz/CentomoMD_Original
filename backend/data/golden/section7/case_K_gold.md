@@ -1,0 +1,16 @@
+7. Historique de faits et évolution
+
+La fiche de réclamation du travailleur décrit l’événement suivant survenu le 3 août 2022 :
+
+« Travail fréquent dans l’usine de congélation pour réparer les fils électriques dans le sol en ciment et diverses autres tâches dans un congélateur à air pulsé (VersaCold). Mon épaule droite souffre d’une perte de mobilité qui a été diagnostiquée par le médecin comme une capsulite (épaule gelée). Je suis allé faire une arthrographie par injection chez Radimed et on me dit maintenant que j’ai besoin de physio. »
+
+Le travailleur obtient une arthrographie distensives de l’épaule droite, le 21 septembre 2022. Procédure bien tolérée et réalisée par le docteur Lawrence Stein, radiologiste.
+
+Le travailleur rencontre le docteur Bonhaim, le 23 janvier 2023. Il diagnostique une capsulite de l’épaule droite. Il prescrit de la physiothérapie et juge la condition clinique détériorée. Il réfère le travailleur pour une seconde arthrographie distensives à l’épaule droite.
+
+La réclamation du travailleur est acceptée à la direction générale de la révision administrative (DRA), le 25 mai 2023.
+
+Le docteur Yi Bin Dang, médecin de famille du travailleur, produit une lettre en date du 12 décembre 2023 : « This letter is regarding Mr. James Allen Murray who I am caring for as a family doctor. He has a complete rotator cuff tear on the right shoulder on ultrasound and clinically the same on the left. He has done physiotherapy on both shoulders for a period of 1 year which has not improved his function. He has also had two corticosteroid injections on the right with minimal benefit. Therefore, it is unlikely that he will benefit from further physiotherapy at this time and this can be stopped. Please contact my office if you have further questions regarding this patient. »
+
+Le travailleur revoit le docteur Dang, le 11 janvier 2024. Il maintient le diagnostic de capsulite de l’épaule droite. Il juge la condition clinique stable. Il prescrit de l’ergothérapie.
+

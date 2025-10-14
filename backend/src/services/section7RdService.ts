@@ -337,7 +337,7 @@ export class Section7RdService {
       const masterConfig = JSON.parse(await fs.readFile(masterConfigPath, 'utf-8'));
       
       // Step 2: Load system conductor
-      const systemConductorPath = path.join(process.cwd(), 'system', 'system_section7_fr-ca.md');
+      const systemConductorPath = path.join(process.cwd(), 'prompts', 'system_section7_fr.xml');
       const systemConductor = await fs.readFile(systemConductorPath, 'utf-8');
       
       // Step 3: Load formatting plan

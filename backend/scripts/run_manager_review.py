@@ -63,7 +63,7 @@ def main():
     """
     Main function - run manager review for case_A
     """
-    print("🧠 Section 7 CNESST Manager Review")
+    print("Section 7 CNESST Manager Review")
     print("=" * 50)
     
     # Check if OpenAI API key is set
@@ -76,9 +76,9 @@ def main():
     result = run_review("case_A")
     
     if result:
-        print("✅ Manager review completed successfully")
+        print("SUCCESS: Manager review completed successfully")
     else:
-        print("❌ Manager review failed")
+        print("ERROR: Manager review failed")
 
 if __name__ == "__main__":
     main()
