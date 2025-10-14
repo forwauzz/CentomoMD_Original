@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { PrimarySidebar } from './PrimarySidebar';
 import { AppHeader } from './AppHeader';
 import { GlobalFeedbackButton } from '@/components/feedback/GlobalFeedbackButton';
+import { ToastContainer } from '@/components/ui/toast';
 
 
 export const AppLayout: React.FC = () => {
@@ -42,6 +43,9 @@ export const AppLayout: React.FC = () => {
       
       {/* Global Feedback Button */}
       <GlobalFeedbackButton />
+      
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 };

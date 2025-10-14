@@ -33,7 +33,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   language = 'en'
 }) => {
   const featureFlags = useFeatureFlags();
-  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage } = useUIStore();
+  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage, addToast } = useUIStore();
   const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
@@ -341,14 +341,34 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   // Copy functionality
   const handleCopy = useCallback(async () => {
-    const transcriptText = paragraphs.join('\n\n');
+    // Get the current transcript content using the same logic as display
+    const transcriptText = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+    
+    if (!transcriptText || !transcriptText.trim()) {
+      addToast({
+        type: 'warning',
+        title: 'Nothing to copy',
+        message: 'No transcript content available to copy'
+      });
+      return;
+    }
+    
     try {
       await navigator.clipboard.writeText(transcriptText);
-      console.log('Transcript copied to clipboard');
+      addToast({
+        type: 'success',
+        title: 'Copied to clipboard',
+        message: 'Transcript has been copied to your clipboard'
+      });
     } catch (error) {
       console.error('Failed to copy transcript:', error);
+      addToast({
+        type: 'error',
+        title: 'Copy failed',
+        message: 'Failed to copy transcript to clipboard'
+      });
     }
-  }, [paragraphs]);
+  }, [editedTranscript, paragraphs, currentTranscript, addToast]);
 
   // Edit functionality
   const handleEdit = useCallback(() => {
@@ -375,8 +395,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     if (window.confirm('Are you sure you want to delete this transcript?')) {
       // Here you would typically clear the transcript from your state/backend
       console.log('Transcript deleted');
+      addToast({
+        type: 'success',
+        title: 'Transcript deleted',
+        message: 'The transcript has been successfully deleted'
+      });
     }
-  }, []);
+  }, [addToast]);
 
   // Save to section functionality with dropdown
   const handleSaveToSection = useCallback(async (option: SaveToSectionOption) => {
@@ -1192,6 +1217,28 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Action Buttons - Moved to top for better accessibility */}
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowTemplateModal(true)}
+                  disabled={isFormatting}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Voice Command</span>
+                </Button>
+                <SaveToSectionDropdown
+                  onSave={handleSaveToSection}
+                  isSaving={isSaving}
+                  disabled={!editedTranscript && paragraphs.length === 0}
+                />
+              </div>
               {/* Template Content Display */}
               {selectedTemplate && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -1305,28 +1352,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => setShowTemplateModal(true)}
-                  disabled={isFormatting}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Voice Command</span>
-                </Button>
-                <SaveToSectionDropdown
-                  onSave={handleSaveToSection}
-                  isSaving={isSaving}
-                  disabled={!editedTranscript && paragraphs.length === 0}
-                />
-              </div>
             </CardContent>
           </Card>
         </div>
