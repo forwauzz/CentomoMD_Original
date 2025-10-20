@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Feature Flag Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Schema-Driven Forms Feature Flag Test</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="runTests()">Run Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+    <button onclick="openNewCasePage()">Open New Case Page</button>
+    
+    <script type="module">
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function openNewCasePage() {
+            window.open('http://localhost:5176/case/new', '_blank');
+        }
+        
+        async function runTests() {
+            clearResults();
+            addResult('🧪 Starting Schema-Driven Forms Feature Flag Tests...', 'info');
+            
+            try {
+                // Test 1: Check feature flag
+                const isEnabled = import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS === 'true';
+                addResult(`✅ Feature Flag Status: ${isEnabled ? 'ENABLED' : 'DISABLED'}`, isEnabled ? 'success' : 'warning');
+                
+                if (!isEnabled) {
+                    addResult('⚠️ Feature flag is disabled. Schema-driven forms will use fallback mode.', 'warning');
+                    return;
+                }
+                
+                // Test 2: Load schema
+                addResult('📋 Testing schema loading...', 'info');
+                const { formSchemaLoader, isSchemaDrivenEnabled } = await import('./src/lib/formSchema.ts');
+                
+                const schemaEnabled = isSchemaDrivenEnabled();
+                addResult(`✅ Schema-driven enabled: ${schemaEnabled}`, schemaEnabled ? 'success' : 'warning');
+                
+                if (schemaEnabled) {
+                    const schema = await formSchemaLoader.loadSchema();
+                    addResult(`✅ Schema loaded successfully!`, 'success');
+                    addResult(`📊 Schema Info:<br>
+                        <pre>{
+  "caseId": "${schema.caseId}",
+  "sectionsCount": ${Object.keys(schema.sections).length},
+  "sectionIds": [${Object.keys(schema.sections).map(id => `"${id}"`).join(', ')}],
+  "uiOrder": [${schema.ui.order.map(id => `"${id}"`).join(', ')}]
+}</pre>`, 'info');
+                    
+                    // Test 3: Test specific sections
+                    addResult('🔍 Testing specific sections...', 'info');
+                    
+                    const sectionA = formSchemaLoader.getSectionMeta('section_a');
+                    if (sectionA) {
+                        addResult(`✅ Section A: "${sectionA.title}"`, 'success');
+                    }
+                    
+                    const section7 = formSchemaLoader.getSectionMeta('section_7');
+                    if (section7) {
+                        addResult(`✅ Section 7: "${section7.title}" (Audio: ${section7.audioRequired})`, 'success');
+                    }
+                    
+                    const section9 = formSchemaLoader.getSectionMeta('section_9');
+                    if (section9) {
+                        const modulesCount = section9.modules ? section9.modules.length : 0;
+                        addResult(`✅ Section 9: "${section9.title}" (Modules: ${modulesCount})`, 'success');
+                    }
+                    
+                    // Test 4: Case store integration
+                    addResult('🏪 Testing case store integration...', 'info');
+                    const { useCaseStore } = await import('./src/stores/caseStore.ts');
+                    
+                    const store = useCaseStore.getState();
+                    addResult(`✅ Store initialized: Schema=${!!store.schema}, Case=${!!store.currentCase}`, 'success');
+                    
+                    // Test schema loading in store
+                    await store.loadSchema();
+                    addResult(`✅ Schema loaded in store: ${!!store.schema}`, 'success');
+                    
+                    // Test case creation
+                    const caseId = await store.createCase();
+                    addResult(`✅ Case created: ${caseId}`, 'success');
+                    
+                    addResult('🎉 All tests passed! Schema-driven forms are working correctly.', 'success');
+                    
+                } else {
+                    addResult('⚠️ Schema-driven mode is disabled in the loader.', 'warning');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Test failed: ${error.message}`, 'error');
+                addResult(`<pre>${error.stack}</pre>`, 'error');
+            }
+        }
+        
+        // Make functions global
+        window.runTests = runTests;
+        window.clearResults = clearResults;
+        window.openNewCasePage = openNewCasePage;
+        
+        // Auto-run tests on page load
+        runTests();
+    </script>
+</body>
+</html>

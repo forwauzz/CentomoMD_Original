@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Console Output</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .console { background: #000; color: #0f0; padding: 20px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 80vh; overflow-y: auto; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Schema Loading Debug Console</h1>
+    
+    <div class="controls">
+        <button onclick="runDebugTest()">Run Debug Test</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        <button onclick="testSchemaLoading()">Test Schema Loading</button>
+    </div>
+    
+    <div id="console" class="console">Console output will appear here...\n</div>
+    
+    <script type="module">
+        // Capture console.log output
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function addToConsole(message, type = 'log') {
+            const consoleDiv = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '🔍';
+            consoleDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        function clearConsole() {
+            document.getElementById('console').textContent = 'Console cleared...\n';
+        }
+        
+        async function testSchemaLoading() {
+            console.log('🧪 Starting schema loading test...');
+            
+            try {
+                // Test feature flag
+                const isEnabled = import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS === 'true';
+                console.log('Feature flag enabled:', isEnabled);
+                
+                if (isEnabled) {
+                    // Test schema loading
+                    const { formSchemaLoader } = await import('./src/lib/formSchema.ts');
+                    console.log('FormSchema loader imported successfully');
+                    
+                    const schema = await formSchemaLoader.loadSchema();
+                    console.log('Schema loaded:', !!schema);
+                    console.log('Schema sections count:', Object.keys(schema.sections || {}).length);
+                    
+                    // Test case store
+                    const { useCaseStore } = await import('./src/stores/caseStore.ts');
+                    console.log('Case store imported successfully');
+                    
+                    await useCaseStore.getState().loadSchema();
+                    console.log('Schema loaded in store');
+                    
+                } else {
+                    console.warn('Feature flag is disabled');
+                }
+                
+            } catch (error) {
+                console.error('Test failed:', error.message);
+            }
+        }
+        
+        async function runDebugTest() {
+            console.log('🚀 Running comprehensive debug test...');
+            
+            // Test 1: Environment variables
+            console.log('Environment check:');
+            console.log('VITE_ENABLE_SCHEMA_DRIVEN_FORMS:', import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS);
+            console.log('VITE_SITE_URL:', import.meta.env.VITE_SITE_URL);
+            
+            // Test 2: Schema file accessibility
+            console.log('Testing schema file accessibility...');
+            try {
+                const response = await fetch('/configs/forms/cnesst_204.schema.json');
+                console.log('Schema file response status:', response.status);
+                console.log('Schema file response ok:', response.ok);
+                
+                if (response.ok) {
+                    const schema = await response.json();
+                    console.log('Schema file loaded successfully');
+                    console.log('Schema keys:', Object.keys(schema));
+                    console.log('Sections count:', Object.keys(schema.sections || {}).length);
+                }
+            } catch (error) {
+                console.error('Schema file test failed:', error.message);
+            }
+            
+            // Test 3: Component imports
+            console.log('Testing component imports...');
+            try {
+                const { getSectionMeta, isSchemaDrivenEnabled } = await import('./src/lib/formSchema.ts');
+                console.log('FormSchema imports successful');
+                console.log('isSchemaDrivenEnabled():', isSchemaDrivenEnabled());
+                
+                const sectionA = getSectionMeta('section_a');
+                console.log('Section A meta:', !!sectionA);
+                
+            } catch (error) {
+                console.error('Component import test failed:', error.message);
+            }
+            
+            console.log('✅ Debug test completed');
+        }
+        
+        // Make functions global
+        window.runDebugTest = runDebugTest;
+        window.clearConsole = clearConsole;
+        window.testSchemaLoading = testSchemaLoading;
+        
+        // Auto-run test on page load
+        setTimeout(() => {
+            console.log('🔍 Debug console ready. Click "Run Debug Test" to start...');
+        }, 1000);
+    </script>
+</body>
+</html>

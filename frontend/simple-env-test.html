@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Env Test</title>
+</head>
+<body>
+    <h1>Environment Variable Test</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        // Test the specific variable
+        const envVar = import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS;
+        const isEnabled = envVar === 'true';
+        
+        output.innerHTML = `
+            <p><strong>VITE_ENABLE_SCHEMA_DRIVEN_FORMS:</strong> "${envVar}"</p>
+            <p><strong>Type:</strong> ${typeof envVar}</p>
+            <p><strong>Is 'true':</strong> ${isEnabled}</p>
+            <p><strong>All env vars:</strong></p>
+            <pre>${JSON.stringify(import.meta.env, null, 2)}</pre>
+        `;
+        
+        console.log('🔍 [SimpleTest] VITE_ENABLE_SCHEMA_DRIVEN_FORMS:', envVar);
+        console.log('🔍 [SimpleTest] Type:', typeof envVar);
+        console.log('🔍 [SimpleTest] Is enabled:', isEnabled);
+    </script>
+</body>
+</html>
