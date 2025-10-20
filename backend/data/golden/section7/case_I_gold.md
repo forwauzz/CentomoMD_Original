@@ -1,0 +1,152 @@
+7. Historique de faits et évolution
+
+La fiche de réclamation du travailleur décrit l’événement suivant survenu le 22 octobre 2022.
+
+« Chez les clients avec mon collègue au moment de descendre du camion avec le comptoir de quartz d’environ 350 lbs, le comptoir a basculer vers la gauche, j’ai senti un coup étirer mon bras vers l’arrière, j’ai senti un grand étirement avec une grosse douleur. »
+
+Le travailleur consulte le docteur Nicolas Bussières, le 23 octobre 2020. Il diagnostique une élongation musculaire thorax gauche, pectoraux et tendinite épaule gauche traumatique. Il prescrit un arrêt de travail, de la physiothérapie et des anti-inflammatoires.
+
+Le travailleur rencontre le docteur Marc Boudreau, le 5 novembre 2020. Il diagnostique une tendinite versus déchirure musculaire au niveau des trapèzes, grand dorsal et grand pectoral gauche. Il prescrit de la physiothérapie, un arrêt de travail et des anti-inflammatoires.
+
+Le travailleur rencontre le docteur Ali Lalavi, le 19 novembre 2020. Il diagnostique une tendinite versus déchirure musculaire au niveau du trapèze, du grand dorsal et du grand pectoral gauche. Il ajoute le diagnostic d’entorse cervicale avec radiculopathie bras gauche. Il note une condition améliorée. Il maintient les traitements en physiothérapie et l’arrêt de travail. Il prescrit une résonance magnétique de l’épaule, du trapèze, du grand pectoral gauche et du rachis cervical.
+
+Le travailleur rencontre le docteur Marie-Claude Brodeur, le 9 décembre 2020. Elle diagnostique une élongation musculaire du grand pectoral gauche, une tendinite à l’épaule gauche et une possible atteinte du plexus brachial. Elle juge la condition clinique stable. Elle maintient les traitements en physiothérapie, ergothérapie ainsi que l’arrêt de travail.
+
+Le travailleur obtient des résonances magnétiques du rachis cervical, de l’épaule gauche et du trapèze et du grand pectoral gauche, le 29 décembre 2020. Elles sont interprétées par le docteur Lionel Buré, radiologiste. Ce dernier constate :
+
+« IRM cervicale
+…
+Conclusion :
+Changement dégénératif multi-étagés tel que décrit ci-haut avec une sténose foraminale sévère à gauche qui pourrait irriter la racine de C7 à corréler avec la clinique. »
+
+IRM épaule gauche
+…
+Conclusion :
+Déchirure partielle supra-substance du supra-épineux tel que décrit ci-haut.
+Anomalie du labrum antérieur qui pourrait représenter une variante anatomique versus une trouvaille post-traumatique. S’il y avait des signes d’instabilité gléno-humérale, une arthro-IRM de l’épaule serait recommandé.
+
+IRM du trapèze et du pectoral gauche
+…
+Conclusion :
+IRM du trapèze du grand pectoral et des muscles de la grille costale gauche dans les limites de la normale. »
+
+Le travailleur rencontre le docteur François Bonneau, le 8 janvier 2021. Il juge la condition améliorée. Elle rapporte les résultats de l’IRM, qu’il considère normaux. Il maintient les traitements en physiothérapie, ergothérapie et ajoute des traitements en acupuncture. Il maintient l’arrêt de travail.
+
+Le travailleur revoit le docteur Lalavi, le 26 janvier 2021. Il rapporte les résultats des résonances magnétiques. Il note une condition clinique stable. Il maintient les traitements en physiothérapie, ergothérapie et acupuncture. Il prescrit une infiltration cortisonée de l’épaule gauche, une consultation en physiatres et en chirurgie orthopédique. Il maintient l’arrêt de travail.
+
+Le travailleur obtient une échographie de l’épaule gauche, le 1er février 2021. Elle est réalisée et interprétée par le docteur Lionel Buré, radiologiste. Ce dernier constate :
+
+« …
+Conclusion :
+Bursopathie sous-acromio-deltoïdienne avec accrochage qui a fait l’objet d’une infiltration cortisonée à des fins thérapeutiques et diagnostiques. Petite déchirure de bas grade partielle du supra-épineux, difficile à bien caractériser à l’échographie. S’il avait aucune amélioration post-infiltration une évaluation de l’anomalie gléno-humérale précédemment mentionnée à la résonance magnétique pourrait être utile avec une arthro-IRM. À suivre. »
+
+Le travailleur rencontre le docteur Ghislain Rivet, physiatre, le 9 février 2021. Il diagnostique une entorse cervicale et brachialgie gauche. Il maintient les traitements en physiothérapie, ergothérapie et acupuncture. Il recommande un EMG afin d’investiguer davantage la radiculopathie et considérer une infiltration au niveau du rachis cervical. Il juge la condition clinique stable.
+
+Le travailleur revoit le docteur Lalavi, le 23 février 2021. Il juge la condition clinique améliorée. Il maintient les traitements en physiothérapie, ergothérapie et acupuncture. Il ajoute une référence en neurologie. Il maintient l’arrêt de travail.
+
+Le travailleur rencontre le docteur Dominik Cyr, le 22 mars 2021. Il diagnostique une déchirure partielle du supra-épineux gauche, une cervicalgie avec irradiation au membre supérieur gauche. Il juge la condition clinique stable. Il maintient les traitements en physiothérapie, ergothérapie ainsi que l’arrêt de travail.
+
+Le travailleur rencontre le docteur Romulus Cata, le 21 avril 2021. Il juge la condition clinique stable. Il maintient les traitements en physiothérapie, ergothérapie et l’arrêt de travail.
+
+Le travailleur revoit le docteur Cata, le 5 mai 2021. Il juge la condition clinique stable. Il maintient les traitements en physiothérapie, ergothérapie et acupuncture. Il réfère le travailleur en chirurgie orthopédique pour la lésion à l’épaule gauche.
+
+Le travailleur obtient une 2e infiltration cortisonée à l’épaule gauche, le 10 mai 2021. Elle est réalisée par le docteur Thierry Sabourin, radiologiste. Procédure réalisée au niveau de la bourse sous-acromio-deltoïdienne gauche. Infiltration bien tolérer sans complication immédiate.
+Le travailleur rencontre le docteur François Grand’Maison, neurologue, le 12 mai 2021. Il procède à un EMG du membre supérieur gauche. Il note que l’EMG est normale sans radiculopathie. Au rapport nous constatons : « Pas d’évidence de radiculopathie cervicale ou de plexopathie brachiale gauche. Syndrome du canal carpien bilatéral, modéré à gauche et léger à droite, ce qui dans le contexte clinique confirme le diagnostic de syndrome du canal carpien. Nous avons pris la liberté de lui prescrire une orthèse d’extension du poignet gauche qu’il portera la nuit. Éventuellement, une décompression chirurgicale pourrait s’avérer nécessaire. »
+
+Le travailleur rencontre le docteur Laurent Vanier, le 26 mai 2021. Il diagnostique une tendinite sévère de l’épaule gauche. Il maintient les traitements en physiothérapie et ergothérapie. Il juge la condition clinique légèrement améliorée. Il ajuste l’analgésie et prolonge l’arrêt de travail.
+
+Le travailleur rencontre le docteur Andréanne Marmen, chirurgienne orthopédiste, le 9 juin 2021. Elle diagnostique une déchirure partielle du supra-épineux, une bursite sous-acromio-deltoïdienne de l’épaule gauche ainsi qu’une symptomatologie cervicale prédominante. Elle maintient les traitements en physiothérapie et ergothérapie. Elle ne suggère pas de chirurgie et ne compte pas revoir le travailleur.
+
+Le travailleur revoit le docteur Cata, le 25 juin 2021. Il juge la condition clinique stable. Il maintient les traitements en physiothérapie et ergothérapie. Il suggère une tentative de retour au travail en assignation temporaire. Il note : « possiblement que le patient ne sera plus en mesure d’accomplir le travail dans la construction comme avant. »
+
+Le travailleur rencontre le docteur Brunet, le 16 juillet 2021. Il juge la condition clinique stable. Il prescrit une arthro-IRM de l’épaule gauche, maintient les traitements en physiothérapie, ergothérapie ainsi que l’arrêt de travail. Il demande de revoir les consultants en chirurgie orthopédique et physiatrie.
+
+Le travailleur obtient une résonance magnétique de contrôle de l’épaule gauche, le 26 juillet 2021. Elle est interprétée par le docteur Neda Tehranipour, radiologiste. Cette dernière constate :
+
+«…
+Conclusion :
+Très légers changements dégénératifs débutant acromioclaviculaires. Le reste est sans particularité. »
+
+Le travailleur revoit le docteur Marmen, le 3 août 2021. Elle juge la condition clinique stable. Elle maintient les traitements en physiothérapie et réfère le travailleur à son collègue, le docteur Nguyen, chirurgien orthopédiste surspécialisé en membres supérieurs.
+
+Le travailleur revoit le docteur Brodeur, le 16 août 2021. Elle juge la condition clinique stable. Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail.
+
+Le travailleur obtient une résonance magnétique de contrôle de la colonne cervicale, le 2 septembre 2021. Elle est interprétée par le docteur Lionel Buré, radiologiste. Ce dernier constate :
+
+« …
+Conclusion :
+Aspect très similaire de changements dégénératifs ci-haut avec petite herniation nouvellement apparue à C5-C6 à droite. Le reste de l’étude est superposable. »
+
+Le travailleur obtient une 3e infiltration sous-acromio-deltoïdienne de l’épaule gauche, le 2 septembre 2021. Elle est réalisée par le docteur Thierry Sabourin, radiologiste. Procédure bien tolérée sans complication immédiate.
+
+Le travailleur revoit le docteur Brodeur, le 16 septembre 2021. Aucun changement sur la prise en charge et la conduite à tenir.
+
+Le travailleur revoit le docteur Brodeur, le 11 octobre 2021. Elle note une progression de l’atteinte clinique de C7 gauche avec paresthésies légères et parésies associées. Elle réfère le travailleur en neurochirurgie. Elle maintient les traitements en physiothérapie, ergothérapie et acupuncture. Elle juge l’état clinique détérioré et maintient l’arrêt de travail.
+
+Le travailleur rencontre le docteur Jimmy Hai Triêu Nguyen, chirurgien orthopédiste surspécialisé en membre supérieur, le 29 novembre 2021. Il note de multiples sources de douleurs, une plexopathie brachiale gauche probable, une cervicobrachialgie gauche sur sténose sévère C7 gauche, une tendinopathie du supra-épineux gauche et une tendinite du long chef du biceps. Il ne suggère pas de chirurgie à l’épaule gauche. Il suggère plutôt une référence en clinique de la douleur ainsi que des médicaments à action neurologique tels que Lyrica et Neurontin.
+
+Le travailleur revoit le docteur Brodeur, le 7 décembre 2021. Elle maintient les traitements en physiothérapie, ergothérapie et acupuncture. Elle juge la condition clinique stable. Elle maintient l’arrêt de travail.
+
+Le travailleur revoit le docteur Brodeur, le 5 janvier 2022. Elle juge la condition clinique améliorée. Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail. Elle réfère le travailleur en clinique de la douleur.
+
+Le travailleur revoit le docteur brodeur, le 1er février et 8 mars 2022. Aucun changement sur la prise en charge et la conduite à tenir.
+
+Le travailleur obtient une 4e infiltration cortisonée au niveau de la bourse sous-acromio-deltoïdienne de l’épaule gauche et une première infiltration cortisonée au niveau de la gouttière bicipitale au pourtour de la longue portion du biceps, le 14 mars 2022. Procédure réalisée par le docteur Buré, radiologiste.
+
+Le travailleur revoit le docteur Brodeur, le 3 mai 2022. Elle note que celui-ci est en attente d’une prise en charge en clinique de la douleur. Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail.
+
+Le travailleur obtient une 5e infiltration échoguidée au niveau de la bourse sous-acromio-deltoïdienne gauche et une 2e au niveau du tendon de la longue portion du biceps gauche, le 10 juin 2022. À l’échographie on note une condition radiologique inchangée. Procédures sont réalisées par le docteur Thierry Sabourin, radiologiste.
+
+Le travailleur revoit le docteur Brodeur, le 28 juin, 27 juillet, 6 septembre, 4 octobre, 8 novembre et 27 novembre 2022. Aucun changement sur la prise en charge et de la conduite à tenir.
+
+Le travailleur obtient une infiltration au niveau du rachis cervical, celle-ci consiste à un bloc de la branche médiale gauche de C5-C7. Procédure réalisée par le docteur Jonathan Yen. Procédure bien tolérée.
+
+Le travailleur revoit le docteur Brodeur, le 17 janvier 2023. Elle note que le travailleur a obtenu une infiltration cervicale qui l’a aidée à 50%. Elle maintient les traitements en physiothérapie, ergothérapie et acupuncture. Elle juge la condition clinique stable. Elle prescrit une résonance magnétique de contrôle de la colonne cervicale.
+
+Le travailleur obtient une radiographie de la colonne cervicale, le 26 janvier 2023. Elle est interprétée par le docteur Nicolas Zara, radiologiste. Ce dernier constate :
+
+« Alignement préservée. Pas de fracture ou lésion osseuse suspecte. Pas d’épaississement des tissus mous prévertébraux.
+
+Légère uncodiscarthrose et arthrose facettaire étagée.
+
+Je vous réfère par ailleurs au rapport à l’étude IRM du même jour. »
+
+Le travailleur obtient une résonance magnétique de la colonne cervicale, le 26 janvier 2023. Elle est interprétée par le docteur Nicolas Zara, radiologiste. Ce dernier constate :
+
+«… 
+C5-C6 :
+Discarthrose légère à modérée avec complexe disco-ostéophytique circonférentiel débordant en biforaminale à prédominance droite. Petite hernie discale à base large surajoutée postérolatérale droite venant discrètement au contact du cordon médullaire et le déformant. Sténose spinale légère avec sac dural mesurant 9 mm. Arthrose facettaire surajoutée le tout entraînant des sténoses foraminales bilatérales, modérées à droite et légère à gauche.
+
+C6-C7 :
+Discarthrose légère à modérée avec complexe disco-ostéophytique circonférentiel auquel se greffe une hernie discale à base large postérolatérale gauche/foraminale gauche. Arthrose facettaire hypertrophique ligamentaire surajoutée, le tout entraînant une sténose foraminale gauche modérée à sévère. Pas de sténose spinale.
+… »
+
+Le travailleur revoit le docteur Brodeur, le 14 mars 2023. Elle note : « pas de chirurgie spinale recommandée ». Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail. Elle juge la condition clinique stable.
+
+Le travailleur obtient une résonance magnétique de la région pectorale, plexus brachiale et trapèze supérieur gauche, le 27 mars 2023. Le radiologiste constate :
+
+«…
+Opinion :
+Il s’agit d’un examen dans les limites de la normale. »
+
+Le travailleur revoit le docteur Brodeur, le 25 avril 2023. Elle juge la condition clinique détériorée. Elle demande de revoir le consultant en neurochirurgie. Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail.
+
+Le travailleur revoit le docteur Brodeur, le 10 juin 2023. Aucun changement sur la prise en charge et de la conduite à tenir.
+
+Le travailleur est convoqué en expertise médicale, le 7 juillet 2023. Celle-ci est réalisée par le docteur Serge Tohmé, chirurgien orthopédiste. Sur la lésion à l’épaule gauche, le docteur Tohmé suggère que le travailleur pourrait bénéficier d’une référence en orthopédie surspécialisée de l’épaule afin d’évaluer l’indication chirurgicale. Pour la lésion au niveau du rachis cervical, le docteur Tohmé suggère une consultation et évaluation en physiatre afin d’évaluer l’indication d’une infiltration cortisonée.
+
+Le travailleur revoit le docteur Brodeur, le 29 juillet 2023. Elle juge la condition clinique stable. Elle maintient les traitements en physiothérapie, ergothérapie, acupuncture ainsi que l’arrêt de travail. Le docteur Brodeur produit un rapport complémentaire écrit où elle est en accord avec les recommandations du docteur Tohmé. Elle demande une consultation en orthopédie surspécialisée en épaule et rapporte que le patient est déjà suivi en clinique de la douleur concernant la lésion à la colonne cervicale.
+
+Le travailleur revoit le docteur Brodeur, le 23 septembre 2023. Elle note que le travailleur est en attente pour une 3e opinion en orthopédie surspécialisée. Elle note un plateau thérapeutique atteint en ergothérapie et cesse ces traitements. Elle maintient les traitements en physiothérapie, acupuncture ainsi que l’arrêt de travail.
+
+Le travailleur revoit le docteur Brodeur, le 19 novembre 2023. Elle suggère un suivi en psychologie avec des symptômes de dépression associés à la douleur chronique. Elle note une condition clinique stable. Elle maintient les traitements en physiothérapie, acupuncture ainsi que l’arrêt de travail.
+
+Le travailleur revoit le docteur Brodeur le 21 janvier 2024. Elle suggère fortement une réorientation de carrière. Elle maintient les traitements en physiothérapie, acupuncture, psychologie ainsi que l’arrêt de travail.
+
+Le docteur Brodeur produit un formulaire sur l’évolution des lésions, le 12 mars 2024. Elle juge que la lésion est toujours active qu’il y a une infiltration prévue en fin mars 2024 à la clinique de la douleur. Si cette infiltration est non efficace, elle suggère de consolider le travailleur avec séquelles. Elle note : « cas complexes qui devrait être évaluée au BEM. » Elle ne produira pas le rapport d’évaluation médicale (REM).
+
+Le travailleur revoit le docteur Brodeur, le 18 mars 2024. Aucun changement sur la prise en charge et la conduite à tenir.
+
+Le travailleur revoit le docteur Brodeur, le 24 mai 2024. Elle suggère une réorientation de carrière ainsi qu’un avis au BEM.
+
+Le travailleur revoit le docteur Brodeur, le 14 juin 2024. Elle note : « Réorientation de carrière fortement suggéré, avis au BEM, long plateau thérapeutique avec échec aux multiples traitements tentés à mon avis, il est temps de consolidé avec séquelles. » Elle maintient les traitements en physiothérapie, acupuncture, psychologie ainsi que l’arrêt de travail.

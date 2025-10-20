@@ -182,7 +182,8 @@ export class Section7RdService {
         
         const { stdout } = await execAsync(command, { 
           cwd: process.cwd(), // Run from backend directory
-          timeout: 30000 // 30 second timeout
+          timeout: 30000, // 30 second timeout
+          env: { ...process.env, OPENAI_API_KEY: process.env['OPENAI_API_KEY'] }
         });
         
         // Parse the evaluation results
@@ -337,7 +338,7 @@ export class Section7RdService {
       const masterConfig = JSON.parse(await fs.readFile(masterConfigPath, 'utf-8'));
       
       // Step 2: Load system conductor
-      const systemConductorPath = path.join(process.cwd(), 'system', 'system_section7_fr-ca.md');
+      const systemConductorPath = path.join(process.cwd(), 'prompts', 'system_section7_fr.xml');
       const systemConductor = await fs.readFile(systemConductorPath, 'utf-8');
       
       // Step 3: Load formatting plan
@@ -405,39 +406,48 @@ export class Section7RdService {
    */
   private constructRdPrompt(
     inputText: string,
-    masterConfig: any,
-    systemConductor: string,
-    formattingPlan: string,
-    goldenCases: string
+    _masterConfig: any,
+    _systemConductor: string,
+    _formattingPlan: string,
+    _goldenCases: string
   ): string {
-    return `
-# Section 7 CNESST R&D Pipeline - Complete Processing
+    return `Tu es un expert en formatage de rapports CNESST Section 7. Transforme ce transcript médical en Section 7 conforme aux standards CNESST.
 
-## Master Configuration
-${JSON.stringify(masterConfig, null, 2)}
+RÈGLES CRITIQUES OBLIGATOIRES:
+1. L'en-tête DOIT être exactement: "7. Historique de faits et évolution"
+2. CHAQUE paragraphe DOIT commencer par "Le travailleur" ou "La travailleuse" - AUCUNE EXCEPTION
+3. UNE SEULE citation du travailleur (non-radiologique) autorisée
+4. Tous les rapports radiologiques DOIVENT être capturés verbatim avec guillemets
+5. Format: "Le travailleur consulte le docteur [Nom complet], le [date]. [Diagnostic et traitement]."
 
-## System Conductor Instructions
-${systemConductor}
+INTERDICTIONS ABSOLUES:
+- JAMAIS commencer un paragraphe par "Une radiographie" ou "La radiographie"
+- JAMAIS commencer un paragraphe par une date
+- JAMAIS commencer un paragraphe par autre chose que "Le travailleur" ou "La travailleuse"
 
-## Formatting Plan (8 Phases)
-${formattingPlan}
+EXEMPLE DE STRUCTURE CORRECTE:
+7. Historique de faits et évolution
 
-## Golden Cases Reference
-${goldenCases.split('\n').slice(0, 3).join('\n')} // First 3 cases for reference
+Le travailleur décrit l'événement suivant survenu le 19 avril 2024 : « [citation unique du travailleur] »
 
-## Input Text to Process
+Le travailleur consulte le docteur Sonia Silvano, le 19 avril 2024. Elle diagnostique un traumatisme dorso-lombaire et prescrit des radiographies.
+
+Le travailleur consulte le docteur Michel Leclair, le 3 juin 2024. Il maintient le diagnostic et prescrit de la physiothérapie.
+
+[Pour chaque consultation, commencer par "Le travailleur consulte/rencontre/revoit le docteur...]
+
+[Pour chaque radiologie, TOUJOURS commencer par "Le travailleur": "Le travailleur obtient une radiographie... Elle est interprétée par le docteur [Nom], radiologiste. Elle constate : « [rapport complet verbatim] »"]
+
+TRANSCRIPT À FORMATER:
 ${inputText}
 
-## Instructions
-Process the input text using the complete R&D pipeline:
-1. Follow the system conductor instructions
-2. Apply the 8-phase formatting plan
-3. Use golden cases as reference for quality
-4. Ensure verbatim capture of all radiologist reports
-5. Maintain CNESST compliance standards
-
-Output the formatted Section 7 content.
-`;
+IMPORTANT: 
+- Ne pas utiliser de markdown ou de code blocks
+- Commencer directement par "7. Historique de faits et évolution"
+- Respecter strictement les règles CNESST
+- Une seule citation du travailleur autorisée
+- Tous les rapports radiologiques en verbatim
+- TOUS les paragraphes doivent commencer par "Le travailleur" - même pour les radiographies`;
   }
 
   /**
@@ -465,7 +475,8 @@ Output the formatted Section 7 content.
         
         const { stdout } = await execAsync(`python "${managerReviewPath}"`, {
           cwd: process.cwd(),
-          timeout: 30000
+          timeout: 30000,
+          env: { ...process.env, OPENAI_API_KEY: process.env['OPENAI_API_KEY'] }
         });
         
         // Parse manager review results

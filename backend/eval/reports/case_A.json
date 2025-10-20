@@ -3,7 +3,7 @@
   "output_path": "outputs\\section7\\case_A.md",
   "input_path": "data\\golden\\section7\\case_A_input.md",
   "gold_path": "data\\golden\\section7\\case_A_gold.md",
-  "line_similarity": 0.035,
+  "line_similarity": 0.1539,
   "rules_score": 0.7778,
   "issues": [
     {

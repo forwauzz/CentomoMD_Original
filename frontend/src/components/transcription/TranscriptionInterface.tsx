@@ -37,7 +37,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   sectionId
 }) => {
   const featureFlags = useFeatureFlags();
-  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage } = useUIStore();
+  const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage, addToast } = useUIStore();
   const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
   const { createSession, commitSectionFromSession, linkDictationSession } = useCaseStore();
@@ -366,23 +366,34 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   // Copy functionality
   const handleCopy = useCallback(async () => {
-    const transcriptText = editedTranscript || paragraphs.join('\n\n');
+    // Get the current transcript content using the same logic as display
+    const transcriptText = editedTranscript || (paragraphs.length > 0 ? paragraphs.join('\n\n') : currentTranscript);
+    
+    if (!transcriptText || !transcriptText.trim()) {
+      addToast({
+        type: 'warning',
+        title: 'Nothing to copy',
+        message: 'No transcript content available to copy'
+      });
+      return;
+    }
+    
     try {
       await navigator.clipboard.writeText(transcriptText);
-      setCopySuccess(true);
-      console.log('Transcript copied to clipboard');
+      addToast({
+        type: 'success',
+        title: 'Copied to clipboard',
+        message: 'Transcript has been copied to your clipboard'
+      });
     } catch (error) {
       console.error('Failed to copy transcript:', error);
+      addToast({
+        type: 'error',
+        title: 'Copy failed',
+        message: 'Failed to copy transcript to clipboard'
+      });
     }
-  }, [editedTranscript, paragraphs]);
-
-  // Auto-clear copy success message
-  useEffect(() => {
-    if (copySuccess) {
-      const timeoutId = setTimeout(() => setCopySuccess(false), 3000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [copySuccess]);
+  }, [editedTranscript, paragraphs, currentTranscript, addToast]);
 
   // Edit functionality
   const handleEdit = useCallback(() => {
@@ -413,8 +424,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       setSelectedTemplate(null);
       setTemplateContent('');
       console.log('Transcript deleted');
+      addToast({
+        type: 'success',
+        title: 'Transcript deleted',
+        message: 'The transcript has been successfully deleted'
+      });
     }
-  }, []);
+  }, [addToast]);
 
   // Enhanced save to section functionality with dropdown
   const handleSaveToSection = useCallback(async (option: SaveToSectionOption | SaveToSectionOption[]) => {
@@ -1312,7 +1328,29 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 />
               </div>
             </CardHeader>
-            <CardContent className={`space-y-4 ${hasFinalOutput ? 'p-6' : ''}`}>
+            <CardContent className="space-y-4">
+              {/* Action Buttons - Moved to top for better accessibility */}
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowTemplateModal(true)}
+                  disabled={isFormatting}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Voice Command</span>
+                </Button>
+                <SaveToSectionDropdown
+                  onSave={handleSaveToSection}
+                  isSaving={isSaving}
+                  disabled={!editedTranscript && paragraphs.length === 0}
+                />
+              </div>
               {/* Template Content Display */}
               {selectedTemplate && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">

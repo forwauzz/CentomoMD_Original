@@ -1,0 +1,28 @@
+7. Historique de faits et évolution
+
+La fiche de réclamation du travailleur décrit l’événement suivant survenu le 31 mai 2022 :
+
+« Le 31 mai en PM je suis allé à la marina pour réparer les escaliers. Je suis rentré à quattre pattes sous l’escalier pour là soulever une roche qui as planté dans le genou gauche je l’ai retiré rapidement et j’ai continué mon travail. Le soir même j’ai ressenti une légère douleur au genou gauche commu un bleu. Le 1er juin suite à l’enflure j’ai consulté à l’hôpital. »
+
+Le travailleur consulte le docteur Roch Matte, le 2 juin 2022. Il diagnostique une cellulite à la jambe gauche. Il prescrit des antibiotiques et maintient les travaux réguliers.
+
+Le travailleur rencontre le docteur Touzin, le 5 juin 2022. Il diagnostique une bursite rotulienne surinfectée. Il prescrit des antibiotiques par voie intraveineuse. Il juge l’état clinique détérioré.
+
+Le travailleur rencontre le docteur Dominique Garant, le 7 juin 2022. Elle diagnostique une bursite rotulienne surinfectée. Elle juge la condition clinique détérioré. Elle prescrit des restrictions de ne pas s’agenouillée sur sa jambe gauche. Elle prescrit des visites quotidiennes au centre hospitalier, car le travailleur est sous antibiotiques intraveineux.
+
+Le travailleur revoit le docteur Garant, le 8 juin 2022. Elle juge la condition clinique détérioré avec une collection purulente au scan. Elle prescrit un arrêt de travail est réfère le travailleur en chirurgie orthopédique.
+
+Le travailleur revoit le docteur Garant, le 10 juin 2022. Elle juge la condition clinique améliorée. Elle maintient l’arrêt de travail.
+
+Le travailleur revoit le docteur Garant, le 13 juin 2022. Elle juge la condition clinique améliorée. Elle note que l’infection est résolue et qu’il reste une bursite réactive. Elle prescrit un retour au travail à partir du 15 juin 2022 mais avec restriction d’éviter de s’agenouillée sur le genou gauche.
+
+Le travailleur rencontre le docteur Micheline Letendre, le 22 juin 2022. Elle diagnostique une bursite au genou gauche avec douleurs résiduelles post-infection. Elle note une condition clinique améliorée. Elle rapporte qu’il persiste une guérison sous optimale car le travailleur doit s’agenouillée fréquemment.
+
+Le travailleur revoit le docteur Letendre, le 21 septembre 2022. Elle juge la condition clinique améliorée mais que la guérison n’est pas encore optimale.
+
+Le travailleur revoit le docteur Letendre, le 23 novembre 2022. Elle juge la condition clinique améliorée mais que la guérison n’est pas optimale.
+
+Le docteur Letendre produit un rapport final, le 21 février 2023 sur le diagnostic de bursite genou gauche infectée. Elle consolide le travailleur avec atteinte permanente à l’intégrité physique ou psychique et limitations fonctionnelles. Elle ne produira pas le rapport d’évaluation médicale.
+
+Le docteur Letendre produit un 2e rapport final, le 17 mai 2023 sur le diagnostic de bursite genou gauche infectée. Elle consolide le travailleur avec atteinte permanente à l’intégrité physique ou psychique et limitations fonctionnelles. Elle note qu’il reste un léger gonflement et une intolérance à la position agenouillée de plus de 10 minutes. Elle ne produira pas le rapport d’évaluation médicale.
+
