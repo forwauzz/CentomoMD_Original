@@ -1,43 +1,102 @@
-import type { Request, Response, NextFunction } from 'express';
-import { ENV } from '../config/env.js';
-import * as jose from 'jose';
+import { Request, Response, NextFunction } from 'express';
+import { createClient } from '@supabase/supabase-js';
+import { isDevelopmentMode, getDevelopmentUser } from '../config/development.js';
 
-function bearer(req: Request) {
-  const h = req.headers.authorization || '';
-  const m = /^Bearer\s+(.+)$/.exec(h);
-  return m ? m[1] : null;
-}
-
-async function verifySupabaseHS256(token: string, secret: string) {
-  const key = new TextEncoder().encode(secret);
-  const { payload } = await jose.jwtVerify(token, key, { algorithms: ['HS256'] });
-  return payload;
-}
-
-async function verifyJWKS(token: string, jwksUrl: string) {
-  const JWKS = jose.createRemoteJWKSet(new URL(jwksUrl));
-  const { payload } = await jose.jwtVerify(token, JWKS);
-  return payload;
-}
-
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!ENV.AUTH_REQUIRED) return next();
-
-  const token = bearer(req);
-  if (!token) return res.status(401).json({ error: 'Missing bearer token' });
-
-  try {
-    let payload: any;
-    if (ENV.AUTH_VERIFY_STRATEGY === 'jwks' && ENV.JWKS_URL) {
-      payload = await verifyJWKS(token, ENV.JWKS_URL);
-    } else if (ENV.SUPABASE_JWT_SECRET) {
-      payload = await verifySupabaseHS256(token, ENV.SUPABASE_JWT_SECRET);
-    } else {
-      return res.status(500).json({ error: 'No verifier configured' });
+// Extend Request type to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        user_metadata?: any;
+        user_id?: string;
+        name?: string;
+        role?: string;
+        [key: string]: any; // Allow additional properties
+      };
     }
-    (req as any).user = payload;
-    return next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
   }
 }
+
+const supabase = createClient(
+  process.env['SUPABASE_URL']!,
+  process.env['SUPABASE_ANON_KEY']!
+);
+
+export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
+  // 🚀 DEVELOPMENT MODE: Auto-bypass auth
+  if (isDevelopmentMode()) {
+    req.user = getDevelopmentUser();
+    console.log('🔧 [DEV] Auth bypassed - using mock user:', req.user.id);
+    return next();
+  }
+
+  // 🔐 PRODUCTION MODE: Real authentication
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No authentication token provided' 
+      });
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid or expired token' 
+      });
+    }
+
+    // Map Supabase user to our expected format
+    req.user = {
+      id: user.id,
+      email: user.email || '',
+      user_metadata: user.user_metadata,
+      user_id: user.id,
+      name: user.user_metadata?.['full_name'] || user.email || '',
+      role: user.user_metadata?.['role'] || 'user'
+    };
+    console.log('🔐 [AUTH] Authenticated user:', user.id);
+    next();
+    
+  } catch (error) {
+    console.error('❌ [AUTH] Authentication error:', error);
+    res.status(401).json({ 
+      success: false, 
+      error: 'Authentication failed' 
+    });
+  }
+};
+
+// Optional: Middleware for routes that can work with or without auth
+export const optionalAuth = async (req: Request, _res: Response, next: NextFunction) => {
+  if (isDevelopmentMode()) {
+    req.user = getDevelopmentUser();
+  } else {
+    // Try to authenticate, but don't fail if no token
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) {
+          req.user = {
+            id: user.id,
+            email: user.email || '',
+            user_metadata: user.user_metadata,
+            user_id: user.id,
+            name: user.user_metadata?.['full_name'] || user.email || '',
+            role: user.user_metadata?.['role'] || 'user'
+          };
+        }
+      } catch (error) {
+        // Silently fail for optional auth
+      }
+    }
+  }
+  next();
+};

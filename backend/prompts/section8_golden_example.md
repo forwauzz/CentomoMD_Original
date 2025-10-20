@@ -10,9 +10,9 @@ Impact fonctionnel : Elle rapporte une diminution de la force ainsi que de l'end
 
 Impact sur AVQ/AVD : cf feuille en annexe.
 
-Observations neurologiques : Elle ne rapporte aucun engourdissement ou paresthésie spécifique. Aucune irradiation douloureuse n'est mentionnée. Les réflexes n'ont pas été évalués lors de cette consultation.
+Plaintes neurologiques : Elle ne rapporte aucun engourdissement ou paresthésie spécifique. Aucune irradiation douloureuse n'est mentionnée. Les réflexes n'ont pas été évalués lors de cette consultation.
 
-Autres observations : Elle exprime de la frustration face à son plateau thérapeutique et des doutes quant à sa capacité de reprendre son travail. Elle tolère bien la physiothérapie et l'ergothérapie mais ne voit plus d'amélioration significative.
+Autres Plaintes : Elle exprime de la frustration face à son plateau thérapeutique et des doutes quant à sa capacité de reprendre son travail. Elle tolère bien la physiothérapie et l'ergothérapie mais ne voit plus d'amélioration significative.
 
 Exclusions/mentions négatives : Elle ne rapporte pas de douleur nocturne. Elle ne rapporte aucun symptôme spécifique au niveau de son genou droit.
 

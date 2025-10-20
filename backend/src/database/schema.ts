@@ -1,16 +1,7 @@
 import { pgTable, text, timestamp, boolean, integer, json, jsonb, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Users table
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  name: varchar('name', { length: 255 }).notNull(),
-  role: text('role', { enum: ['doctor', 'admin', 'assistant'] }).notNull().default('doctor'),
-  clinic_id: uuid('clinic_id'),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull(),
-});
+// Users table - REMOVED: Now using auth.users + public.profiles
 
 // Profiles table (extends Supabase auth.users)
 export const profiles = pgTable('profiles', {
@@ -40,7 +31,7 @@ export const memberships = pgTable('memberships', {
 // Sessions table
 export const sessions = pgTable('sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) - FK handled at DB level
   clinic_id: uuid('clinic_id').references(() => clinics.id, { onDelete: 'cascade' }),
   patient_id: varchar('patient_id', { length: 255 }).notNull(), // External patient identifier
   consent_verified: boolean('consent_verified').notNull().default(false),
@@ -89,7 +80,7 @@ export const templates = pgTable('templates', {
 // Audit logs table
 export const audit_logs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) - FK handled at DB level
   session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'cascade' }),
   clinic_id: uuid('clinic_id').references(() => clinics.id, { onDelete: 'cascade' }),
   action: varchar('action', { length: 255 }).notNull(),
@@ -112,6 +103,27 @@ export const clinics = pgTable('clinics', {
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Cases table (for CNESST form cases)
+export const cases = pgTable('cases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: uuid('user_id').notNull(),
+  clinic_id: uuid('clinic_id'),
+  draft: jsonb('draft').notNull().default({}),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Case sessions table (links dictation sessions to case sections)
+export const case_sessions = pgTable('case_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  case_id: uuid('case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  section_id: varchar('section_id', { length: 50 }).notNull(),
+  session_id: uuid('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  content: text('content'),
+  formatted_content: text('formatted_content'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Voice command mappings table
 export const voice_command_mappings = pgTable('voice_command_mappings', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -128,7 +140,7 @@ export const voice_command_mappings = pgTable('voice_command_mappings', {
 export const export_history = pgTable('export_history', {
   id: uuid('id').primaryKey().defaultRandom(),
   session_id: uuid('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
-  user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) - FK handled at DB level
   format: text('format', { enum: ['docx', 'pdf'] }).notNull(),
   fidelity: text('fidelity', { enum: ['low', 'medium', 'high'] }).notNull(),
   sections: json('sections').$type<string[]>().notNull(),
@@ -165,27 +177,14 @@ export const feedback = pgTable('feedback', {
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  sessions: many(sessions),
-  audit_logs: many(audit_logs),
-  export_history: many(export_history),
-  memberships: many(memberships),
-  feedback: many(feedback),
-}));
+// Relations - usersRelations removed (using auth.users + profiles)
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
-  user: one(users, {
-    fields: [profiles.user_id],
-    references: [users.id],
-  }),
+export const profilesRelations = relations(profiles, () => ({
+  // user relation removed - profiles.user_id references auth.users.id directly
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
-  user: one(users, {
-    fields: [memberships.user_id],
-    references: [users.id],
-  }),
+  // user relation removed - memberships.user_id references auth.users.id directly
   clinic: one(clinics, {
     fields: [memberships.clinic_id],
     references: [clinics.id],
@@ -194,13 +193,34 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
 
 export const clinicsRelations = relations(clinics, ({ many }) => ({
   memberships: many(memberships),
+  cases: many(cases),
+}));
+
+export const casesRelations = relations(cases, ({ one, many }) => ({
+  user: one(profiles, {
+    fields: [cases.user_id],
+    references: [profiles.user_id],
+  }),
+  clinic: one(clinics, {
+    fields: [cases.clinic_id],
+    references: [clinics.id],
+  }),
+  case_sessions: many(case_sessions),
+}));
+
+export const caseSessionsRelations = relations(case_sessions, ({ one }) => ({
+  case: one(cases, {
+    fields: [case_sessions.case_id],
+    references: [cases.id],
+  }),
+  session: one(sessions, {
+    fields: [case_sessions.session_id],
+    references: [sessions.id],
+  }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
-  user: one(users, {
-    fields: [sessions.user_id],
-    references: [users.id],
-  }),
+  // user relation removed - sessions.user_id references auth.users.id directly
   clinic: one(clinics, {
     fields: [sessions.clinic_id],
     references: [clinics.id],
@@ -210,6 +230,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   export_history: many(export_history),
   artifacts: many(artifacts),
   feedback: many(feedback),
+  case_sessions: many(case_sessions),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -231,10 +252,7 @@ export const voiceCommandMappingsRelations = relations(voice_command_mappings, (
 }));
 
 export const auditLogsRelations = relations(audit_logs, ({ one }) => ({
-  user: one(users, {
-    fields: [audit_logs.user_id],
-    references: [users.id],
-  }),
+  // user relation removed - audit_logs.user_id references auth.users.id directly
   session: one(sessions, {
     fields: [audit_logs.session_id],
     references: [sessions.id],
@@ -250,10 +268,7 @@ export const exportHistoryRelations = relations(export_history, ({ one }) => ({
     fields: [export_history.session_id],
     references: [sessions.id],
   }),
-  user: one(users, {
-    fields: [export_history.user_id],
-    references: [users.id],
-  }),
+  // user relation removed - export_history.user_id references auth.users.id directly
 }));
 
 export const artifactsRelations = relations(artifacts, ({ one }) => ({
@@ -272,7 +287,7 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
 
 // Database schema type
 export type DatabaseSchema = {
-  users: typeof users;
+  // users: removed - using auth.users + public.profiles
   profiles: typeof profiles;
   memberships: typeof memberships;
   sessions: typeof sessions;
@@ -280,15 +295,15 @@ export type DatabaseSchema = {
   templates: typeof templates;
   audit_logs: typeof audit_logs;
   clinics: typeof clinics;
+  cases: typeof cases;
+  case_sessions: typeof case_sessions;
   voice_command_mappings: typeof voice_command_mappings;
   export_history: typeof export_history;
   artifacts: typeof artifacts;
   feedback: typeof feedback;
 };
 
-// Row types
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+// Row types - User/NewUser types removed (using auth.users + profiles)
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Membership = typeof memberships.$inferSelect;
@@ -303,6 +318,10 @@ export type AuditLog = typeof audit_logs.$inferSelect;
 export type NewAuditLog = typeof audit_logs.$inferInsert;
 export type Clinic = typeof clinics.$inferSelect;
 export type NewClinic = typeof clinics.$inferInsert;
+export type Case = typeof cases.$inferSelect;
+export type NewCase = typeof cases.$inferInsert;
+export type CaseSession = typeof case_sessions.$inferSelect;
+export type NewCaseSession = typeof case_sessions.$inferInsert;
 export type VoiceCommandMapping = typeof voice_command_mappings.$inferSelect;
 export type NewVoiceCommandMapping = typeof voice_command_mappings.$inferInsert;
 export type ExportHistory = typeof export_history.$inferSelect;

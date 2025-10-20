@@ -26,16 +26,40 @@ interface TranscriptionInterfaceProps {
   sessionId?: string;
   onSessionUpdate?: (sessionId: string) => void;
   language?: 'fr' | 'en';
+  caseId?: string;
+  sectionId?: string;
 }
 
 export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   sessionId,
-  language = 'en'
+  language = 'en',
+  caseId,
+  sectionId
 }) => {
   const featureFlags = useFeatureFlags();
   const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage } = useUIStore();
   const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
+  const { createSession, commitSectionFromSession, linkDictationSession } = useCaseStore();
+  
+  // Parse URL parameters for case context
+  const [urlCaseId, setUrlCaseId] = useState<string | undefined>(caseId);
+  const [urlSectionId, setUrlSectionId] = useState<string | undefined>(sectionId);
+  
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCase = urlParams.get('caseId');
+    const urlSection = urlParams.get('sectionId');
+    
+    if (urlCase) setUrlCaseId(urlCase);
+    if (urlSection) setUrlSectionId(urlSection);
+    
+    console.log('🔍 Case context from URL:', { caseId: urlCase, sectionId: urlSection });
+  }, []);
+  
+  // Use URL parameters if available, otherwise use props
+  const effectiveCaseId = urlCaseId || caseId;
+  const effectiveSectionId = urlSectionId || sectionId;
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
   // Derive dictation language from canonical state (no local state needed)
@@ -392,8 +416,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
   }, []);
 
-  // Save to section functionality with dropdown
-  const handleSaveToSection = useCallback(async (option: SaveToSectionOption) => {
+  // Enhanced save to section functionality with dropdown
+  const handleSaveToSection = useCallback(async (option: SaveToSectionOption | SaveToSectionOption[]) => {
     const transcriptToSave = editedTranscript || paragraphs.join('\n\n');
     if (!transcriptToSave.trim()) {
       console.error('No transcript content to save');
@@ -404,29 +428,71 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     setSaveSuccess(false);
 
     try {
-      // Save transcript to the selected section and text box
-      const sectionData: Record<string, any> = {
-        savedAt: new Date().toISOString(),
-        mode: mode,
-        language: dictationLanguage,
-        inputLanguage: inputLanguage,
-        outputLanguage: outputLanguage
-      };
+      const options = Array.isArray(option) ? option : [option];
       
-      // Set the specific text box field
-      sectionData[option.textBoxId] = transcriptToSave;
+      // Ensure we have a case created first
+      const { currentCase, createCase } = useCaseStore.getState();
+      if (!currentCase) {
+        console.log('🆕 Creating new case for save operation');
+        await createCase();
+      }
+      
+      const savePromises = options.map(async (opt) => {
+        // Create session first
+        const session = await createSession(opt.sectionId, transcriptToSave, {
+          mode: mode,
+          template: selectedTemplate?.id,
+          language: dictationLanguage,
+          inputLanguage: inputLanguage,
+          outputLanguage: outputLanguage,
+          savedAt: new Date().toISOString()
+        });
 
-      console.log('Saving to section:', {
-        sectionId: option.sectionId,
-        textBoxId: option.textBoxId,
-        transcriptLength: transcriptToSave.length,
-        sectionData
+        // Link to case if case context is available
+        if (effectiveCaseId && effectiveSectionId && featureFlags.caseManagement) {
+          try {
+            await linkDictationSession(effectiveCaseId, session.id, effectiveSectionId, transcriptToSave);
+            console.log('✅ Session linked to case:', { caseId: effectiveCaseId, sessionId: session.id, sectionId: effectiveSectionId });
+          } catch (error) {
+            console.error('❌ Failed to link session to case:', error);
+          }
+        }
+
+        // Commit to section
+        await commitSectionFromSession(opt.sectionId, session.id, transcriptToSave);
+
+        // Also update local store for immediate UI feedback
+        const sectionData: Record<string, any> = {
+          savedAt: new Date().toISOString(),
+          mode: mode,
+          language: dictationLanguage,
+          inputLanguage: inputLanguage,
+          outputLanguage: outputLanguage,
+          template: selectedTemplate?.id
+        };
+        
+        // Set the specific text box field
+        sectionData[opt.textBoxId] = transcriptToSave;
+        updateSection(opt.sectionId, sectionData);
+
+        return opt;
       });
 
-      updateSection(option.sectionId, sectionData);
+      await Promise.all(savePromises);
 
       setSaveSuccess(true);
-      console.log(`✅ Transcript saved to ${option.sectionId}.${option.textBoxId}`);
+      const sectionNames = options.map(opt => opt.sectionId.replace('section_', 'Section ')).join(', ');
+      console.log(`✅ Transcript saved to ${sectionNames}`);
+
+      // Navigate to the form with the first saved section active
+      const firstSection = options[0];
+      if (firstSection) {
+        console.log('🧭 Navigating to form with section:', firstSection.sectionId);
+        // Use a small delay to ensure the save operation completes
+        setTimeout(() => {
+          window.location.href = `/case/new?section=${firstSection.sectionId}`;
+        }, 500);
+      }
 
       // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -435,7 +501,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [editedTranscript, paragraphs, mode, dictationLanguage, inputLanguage, outputLanguage, updateSection]);
+  }, [editedTranscript, paragraphs, mode, dictationLanguage, inputLanguage, outputLanguage, selectedTemplate, updateSection, createSession, commitSectionFromSession]);
 
   // Template content injection with AI formatting
   const injectTemplateContent = useCallback(async (template: TemplateJSON) => {
@@ -1240,6 +1306,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   onSave={handleSaveToSection}
                   isSaving={isSaving}
                   disabled={!editedTranscript && paragraphs.length === 0}
+                  appliedTemplate={selectedTemplate?.id || null}
+                  mode={mode}
+                  enableMultiSection={mode === 'ambient' || selectedTemplate?.id?.includes('section')}
                 />
               </div>
             </CardHeader>

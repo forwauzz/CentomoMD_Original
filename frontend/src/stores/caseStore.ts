@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { formSchemaLoader, FormSchema, Section, SectionData } from '@/lib/formSchema';
+import { Case as NewCase, CaseContext } from '@/types/case';
 
-export interface Section {
+// Legacy types for backward compatibility
+interface LegacySection {
   id: string;
   title: string;
   status: 'not_started' | 'in_progress' | 'completed';
@@ -10,120 +13,831 @@ export interface Section {
   audioRequired: boolean;
 }
 
+interface LegacyCase {
+  id: string;
+  sections: LegacySection[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Case {
+  id: string;
+  user_id: string;
+  clinic_id: string;
+  draft: FormSchema;
+  created_at: string;
+  updated_at: string;
+}
+
 interface CaseState {
-  // Active case state
+  currentCase: Case | null;
+  schema: FormSchema | null;
   activeSectionId: string;
-  sections: Section[];
+  isDirty: boolean;
+  lastSaved: string;
   autosaveTimestamps: Record<string, string>;
-  
-  // Actions
+  isLoading: boolean;
+  isSaving: boolean;
+  loadSchema: () => Promise<void>;
+  loadCase: (caseId: string) => Promise<void>;
+  createCase: () => Promise<string>;
+  updateCaseDraft: (draft: FormSchema) => void;
+  updateSectionData: (sectionId: string, data: SectionData) => void;
+  commitSection: (sectionId: string, data: SectionData) => Promise<void>;
+  saveCase: () => Promise<void>;
   setActiveSection: (sectionId: string) => void;
+  getSectionStatus: (sectionId: string) => string;
+  getAutosaveTimestamp: (sectionId: string) => string | null;
+  resetCase: () => void;
+  createSession: (sectionId: string, transcript: string, metadata?: any) => Promise<any>;
+  commitSectionFromSession: (sectionId: string, sessionId: string, finalText: string) => Promise<any>;
+  generateSection11FromSections: () => Promise<any>;
   updateSection: (sectionId: string, data: Record<string, any>) => void;
   saveSection: (sectionId: string) => void;
-  initializeCase: (sections: Section[]) => void;
-  resetCase: () => void;
+  initializeCase: (sections: LegacySection[]) => void;
   updateSectionTitles: (sectionTitles: Record<string, string>) => void;
-  getSectionStatus: (sectionId: string) => Section['status'];
-  getAutosaveTimestamp: (sectionId: string) => string | null;
+  sections: LegacySection[];
+  createNewCase: (patientInfo?: any) => Promise<string>;
+  loadNewCase: (caseId: string) => Promise<NewCase | null>;
+  updateNewCaseSection: (caseId: string, sectionId: string, data: any, status?: string) => Promise<any>;
+  linkDictationSession: (caseId: string, sessionId: string, sectionId: string, content?: string, formattedContent?: string) => Promise<any>;
+  getCaseContext: (caseId: string, sectionId: string) => CaseContext | null;
+  getRecentCases: (limit?: number) => Promise<any[]>;
+  deleteCase: (caseId: string) => Promise<boolean>;
 }
+
+// Legacy helper functions
+const isLegacyFormat = (data: any): boolean => {
+  return data && typeof data === 'object' && !data.draft && Array.isArray(data.sections);
+};
+
+const migrateLegacyCaseData = (legacyData: LegacyCase, schema: FormSchema): FormSchema => {
+  // Convert legacy case data to new format
+  const sectionsMap: Record<string, Section> = {};
+  legacyData.sections.forEach(section => {
+    sectionsMap[section.id] = {
+      id: section.id,
+      title: section.title,
+      status: section.status,
+      audioRequired: section.audioRequired,
+      data: section.data,
+      lastModified: section.lastModified
+    };
+  });
+  
+  return {
+    ...schema,
+    sections: sectionsMap
+  };
+};
 
 export const useCaseStore = create<CaseState>()(
   persist(
     (set, get) => ({
       // Initial state
+      currentCase: null,
+      schema: null,
       activeSectionId: '',
-      sections: [],
+      isDirty: false,
+      lastSaved: '',
       autosaveTimestamps: {},
+      isLoading: false,
+      isSaving: false,
       
       // Actions
-      setActiveSection: (sectionId) => {
-        set({ activeSectionId: sectionId });
+      loadSchema: async () => {
+        set({ isLoading: true });
+        try {
+          const schema = await formSchemaLoader.loadSchema();
+          set({ schema });
+        } catch (error) {
+          console.error('Failed to load schema:', error);
+        } finally {
+          set({ isLoading: false });
+        }
       },
       
-      updateSection: (sectionId, data) => {
-        set((state) => {
-          const updatedSections = state.sections.map((section) =>
-            section.id === sectionId
-              ? {
-                  ...section,
-                  data: { ...section.data, ...data },
-                  lastModified: new Date().toISOString(),
-                  status: 'in_progress' as const,
-                }
-              : section
-          );
+      loadCase: async (caseId: string) => {
+        set({ isLoading: true });
+        try {
+          // TODO: Implement API call to load case from backend
+          // For now, create a new case with schema
+          const schema = get().schema;
+          if (!schema) {
+            await get().loadSchema();
+            const updatedSchema = get().schema;
+            if (!updatedSchema) throw new Error('Failed to load schema');
+          }
           
-          const updatedTimestamps = {
-            ...state.autosaveTimestamps,
-            [sectionId]: new Date().toISOString(),
+          const currentSchema = get().schema!;
+          const newCase: Case = {
+            id: caseId,
+            user_id: 'current-user', // TODO: Get from auth
+            clinic_id: 'current-clinic', // TODO: Get from auth
+            draft: currentSchema,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
           
-          return {
-            sections: updatedSections,
-            autosaveTimestamps: updatedTimestamps,
-          };
-        });
-      },
-      
-      saveSection: (sectionId) => {
-        set((state) => {
-          const updatedSections = state.sections.map((section) =>
-            section.id === sectionId
-              ? {
-                  ...section,
-                  status: 'completed' as const,
-                  lastModified: new Date().toISOString(),
-                }
-              : section
-          );
+          set({ 
+            currentCase: newCase,
+            activeSectionId: currentSchema.ui.activeSectionId,
+            isDirty: false
+          });
           
-          return { sections: updatedSections };
-        });
+          console.log('✅ Case loaded successfully');
+        } catch (error) {
+          console.error('❌ Failed to load case:', error);
+        } finally {
+          set({ isLoading: false });
+        }
       },
       
-      initializeCase: (sections) => {
+      createCase: async (): Promise<string> => {
+        set({ isLoading: true });
+        try {
+          // Load schema if not already loaded
+          if (!get().schema) {
+            await get().loadSchema();
+          }
+          
+          const schema = get().schema;
+          if (!schema) throw new Error('Schema not loaded');
+          
+          const caseId = crypto.randomUUID();
+          const newCase: Case = {
+            id: caseId,
+            user_id: 'current-user', // TODO: Get from auth
+            clinic_id: 'current-clinic', // TODO: Get from auth
+            draft: schema,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          set({ 
+            currentCase: newCase,
+            activeSectionId: schema.ui.activeSectionId,
+            isDirty: false
+          });
+          
+          console.log('✅ Case created successfully:', caseId);
+          return caseId;
+        } catch (error) {
+          console.error('❌ Failed to create case:', error);
+          throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      
+      updateCaseDraft: (draft: FormSchema) => {
+        const currentCase = get().currentCase;
+        if (currentCase) {
+          set({
+            currentCase: {
+              ...currentCase,
+              draft,
+              updated_at: new Date().toISOString()
+            },
+            isDirty: true
+          });
+        }
+      },
+      
+      updateSectionData: (sectionId: string, data: SectionData) => {
+        const currentCase = get().currentCase;
+        if (!currentCase) return;
+        
+        const updatedDraft = {
+          ...currentCase.draft,
+          sections: {
+            ...currentCase.draft.sections,
+            [sectionId]: {
+              ...currentCase.draft.sections[sectionId],
+              data: {
+                ...currentCase.draft.sections[sectionId].data,
+                ...data
+              },
+              status: 'in_progress' as const,
+              lastModified: new Date().toISOString()
+            }
+          }
+        };
+        
+        // Update autosave timestamp
+        const updatedTimestamps = {
+          ...get().autosaveTimestamps,
+          [sectionId]: new Date().toISOString()
+        };
+        
         set({
-          sections,
-          activeSectionId: sections[0]?.id || '',
-          autosaveTimestamps: {},
+          currentCase: {
+            ...currentCase,
+            draft: updatedDraft,
+            updated_at: new Date().toISOString()
+          },
+          autosaveTimestamps: updatedTimestamps,
+          isDirty: true
         });
+
+        // Auto-save to backend if case management is enabled
+        if (currentCase.id && currentCase.id.startsWith('case_')) {
+          // Debounce backend updates to avoid too many API calls
+          const debounceKey = `update_${currentCase.id}_${sectionId}`;
+          const existingTimeout = (window as any)[debounceKey];
+          if (existingTimeout) {
+            clearTimeout(existingTimeout);
+          }
+          
+          (window as any)[debounceKey] = setTimeout(async () => {
+            try {
+              await get().updateNewCaseSection(currentCase.id, sectionId, data, 'in_progress');
+              console.log('✅ Auto-saved section to backend:', sectionId);
+            } catch (error) {
+              console.error('❌ Failed to auto-save section to backend:', error);
+            }
+          }, 1000); // 1 second debounce
+        }
+      },
+      
+      commitSection: async (sectionId: string, data: SectionData) => {
+        set({ isSaving: true });
+        try {
+          const currentCase = get().currentCase;
+          
+          // Update local state
+          get().updateSectionData(sectionId, data);
+          
+          // Mark section as completed in local state
+          if (currentCase) {
+            const updatedDraft = {
+              ...currentCase.draft,
+              sections: {
+                ...currentCase.draft.sections,
+                [sectionId]: {
+                  ...currentCase.draft.sections[sectionId],
+                  status: 'completed' as const,
+                  lastModified: new Date().toISOString()
+                }
+              }
+            };
+            
+            set({
+              currentCase: {
+                ...currentCase,
+                draft: updatedDraft,
+                updated_at: new Date().toISOString()
+              }
+            });
+          }
+          
+          // Save to backend if case management is enabled
+          if (currentCase?.id && currentCase.id.startsWith('case_')) {
+            try {
+              await get().updateNewCaseSection(currentCase.id, sectionId, data, 'completed');
+              console.log('✅ Section committed to backend:', sectionId);
+            } catch (error) {
+              console.error('❌ Failed to commit section to backend:', error);
+            }
+          }
+          
+          console.log('✅ Section committed successfully:', sectionId);
+        } catch (error) {
+          console.error('❌ Failed to commit section:', error);
+          throw error;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+      
+      saveCase: async () => {
+        set({ isSaving: true });
+        try {
+          const currentCase = get().currentCase;
+          if (!currentCase) throw new Error('No case to save');
+          
+          // TODO: Implement API call to save case to backend
+          // await api.saveCase(currentCase);
+          
+          set({ 
+            isDirty: false,
+            lastSaved: new Date().toLocaleTimeString()
+          });
+          
+          console.log('✅ Case saved successfully');
+        } catch (error) {
+          console.error('❌ Failed to save case:', error);
+          throw error;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+      
+      setActiveSection: (sectionId: string) => {
+        set({ activeSectionId: sectionId });
+        
+        // Update schema UI state
+        const currentCase = get().currentCase;
+        if (currentCase) {
+          const updatedDraft = {
+            ...currentCase.draft,
+            ui: {
+              ...currentCase.draft.ui,
+              activeSectionId: sectionId
+            }
+          };
+          
+        set({
+            currentCase: {
+              ...currentCase,
+              draft: updatedDraft
+            }
+          });
+        }
+      },
+      
+      getSectionStatus: (sectionId: string) => {
+        const currentCase = get().currentCase;
+        if (currentCase && currentCase.draft.sections[sectionId]) {
+          return currentCase.draft.sections[sectionId].status;
+        }
+        return 'not_started';
+      },
+      
+      getAutosaveTimestamp: (sectionId: string) => {
+        return get().autosaveTimestamps[sectionId] || null;
       },
       
       resetCase: () => {
         set({
+          currentCase: null,
           activeSectionId: '',
-          sections: [],
+          isDirty: false,
+          lastSaved: '',
           autosaveTimestamps: {},
+          isSaving: false
         });
       },
-      
-      updateSectionTitles: (sectionTitles) => {
-        set((state) => {
-          const updatedSections = state.sections.map((section) => ({
-            ...section,
-            title: sectionTitles[section.id] || section.title,
-          }));
+
+      // Session management actions
+      createSession: async (sectionId: string, transcript: string, metadata?: any) => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/sessions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sectionId,
+              transcript,
+              metadata: metadata || {},
+            }),
+          });
           
-          return { sections: updatedSections };
+          if (!response.ok) throw new Error('Failed to create session');
+          return await response.json();
+        } catch (error) {
+          console.error('Failed to create session:', error);
+          throw error;
+        }
+      },
+
+      commitSectionFromSession: async (sectionId: string, sessionId: string, finalText: string) => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases/${get().currentCase?.id}/sections/${sectionId}/commit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              finalText,
+            }),
+          });
+          
+          if (!response.ok) throw new Error('Failed to commit section');
+          
+          // Update local state
+          const currentCase = get().currentCase;
+          if (currentCase) {
+            const updatedCase = {
+              ...currentCase,
+              draft: {
+                ...currentCase.draft,
+                sections: {
+                  ...currentCase.draft.sections,
+                  [sectionId]: {
+                    ...currentCase.draft.sections[sectionId],
+                    data: {
+                      ...currentCase.draft.sections[sectionId].data,
+                      finalText,
+                    },
+                    lastModified: new Date().toISOString(),
+                  },
+                },
+              },
+            };
+            set({ currentCase: updatedCase, isDirty: true });
+          }
+          
+          return await response.json();
+        } catch (error) {
+          console.error('Failed to commit section:', error);
+          throw error;
+        }
+      },
+
+      generateSection11FromSections: async () => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/format/merge/section11`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              caseId: get().currentCase?.id,
+              sourceSections: ['section_7', 'section_8', 'section_9'],
+            }),
+          });
+          
+          if (!response.ok) throw new Error('Failed to generate section 11');
+          const result = await response.json();
+          
+          // Update section 11 with generated content
+          const currentCase = get().currentCase;
+          if (currentCase && result.autoSummary) {
+            const updatedCase = {
+              ...currentCase,
+              draft: {
+                ...currentCase.draft,
+                sections: {
+                  ...currentCase.draft.sections,
+                  section_11: {
+                    ...currentCase.draft.sections.section_11,
+                    data: {
+                      ...currentCase.draft.sections.section_11.data,
+                      autoSummary: result.autoSummary,
+                      finalText: result.autoSummary,
+                    },
+                    lastModified: new Date().toISOString(),
+                  },
+                },
+              },
+            };
+            set({ currentCase: updatedCase, isDirty: true });
+          }
+          
+          return result;
+        } catch (error) {
+          console.error('Failed to generate section 11:', error);
+          throw error;
+        }
+      },
+
+      // Backward compatibility methods
+      updateSection: (sectionId: string, data: Record<string, any>) => {
+        get().updateSectionData(sectionId, data);
+      },
+      
+      saveSection: (sectionId: string) => {
+        const currentCase = get().currentCase;
+        if (currentCase && currentCase.draft.sections[sectionId]) {
+          const updatedDraft = {
+            ...currentCase.draft,
+            sections: {
+              ...currentCase.draft.sections,
+              [sectionId]: {
+                ...currentCase.draft.sections[sectionId],
+                status: 'completed' as const,
+                lastModified: new Date().toISOString()
+              }
+            }
+          };
+          
+          set({
+            currentCase: {
+              ...currentCase,
+              draft: updatedDraft,
+              updated_at: new Date().toISOString()
+            }
+          });
+        }
+      },
+      
+      initializeCase: (sections: LegacySection[]) => {
+        // Convert legacy sections to new format
+        const sectionsMap: Record<string, Section> = {};
+        sections.forEach(section => {
+          sectionsMap[section.id] = {
+            id: section.id,
+            title: section.title,
+            status: section.status,
+            audioRequired: section.audioRequired,
+            data: section.data,
+            lastModified: section.lastModified
+          };
+        });
+        
+        const schema: FormSchema = {
+          caseId: `case_${Date.now()}`,
+          patientInfo: { name: '', dob: '', healthCard: '', phone: '', address: '' },
+          physicianInfo: { lastName: '', firstName: '', license: '', address: '', phone: '', email: '' },
+          meta: { language: 'fr', createdAt: null, updatedAt: null, export: { status: 'not_exported', lastExportAt: null, lastExportFormat: null } },
+          ui: { activeSectionId: sections[0]?.id || '', order: sections.map(s => s.id), autosave: {} },
+          sections: sectionsMap,
+          sessions: []
+        };
+        
+        const newCase: Case = {
+          id: `case_${Date.now()}`,
+          user_id: 'current-user',
+          clinic_id: 'current-clinic',
+          draft: schema,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        set({
+          currentCase: newCase,
+          activeSectionId: sections[0]?.id || '',
+          autosaveTimestamps: {},
+          isDirty: false
         });
       },
       
-      getSectionStatus: (sectionId) => {
-        const section = get().sections.find((s) => s.id === sectionId);
-        return section?.status || 'not_started';
+      updateSectionTitles: (sectionTitles: Record<string, string>) => {
+        const currentCase = get().currentCase;
+        if (currentCase) {
+          const updatedSections: Record<string, Section> = {};
+          Object.keys(currentCase.draft.sections).forEach(sectionId => {
+            updatedSections[sectionId] = {
+              ...currentCase.draft.sections[sectionId],
+              title: sectionTitles[sectionId] || currentCase.draft.sections[sectionId].title
+            };
+          });
+          
+          const updatedDraft = {
+            ...currentCase.draft,
+            sections: updatedSections
+          };
+          
+          set({
+            currentCase: {
+              ...currentCase,
+              draft: updatedDraft
+            }
+          });
+        }
       },
       
-      getAutosaveTimestamp: (sectionId) => {
-        return get().autosaveTimestamps[sectionId] || null;
+      // Computed property for backward compatibility
+      get sections() {
+        const currentCase = get().currentCase;
+        if (!currentCase) return [];
+        
+        return Object.values(currentCase.draft.sections).map(section => ({
+          id: section.id,
+          title: section.title,
+          status: section.status,
+          data: section.data,
+          lastModified: section.lastModified || new Date().toISOString(),
+          audioRequired: section.audioRequired
+        }));
       },
+
+      // New Case Management API (Feature Flagged)
+      createNewCase: async (patientInfo?: any): Promise<string> => {
+        set({ isLoading: true });
+        try {
+          // Create case with auto-save enabled
+          const caseData = {
+            patientInfo: patientInfo || {},
+            sections: {},
+            metadata: {
+              language: 'fr',
+              createdAt: new Date().toISOString(),
+              autoSave: true,
+              status: 'draft'
+            }
+          };
+
+          console.log('📝 Creating new case with data:', caseData);
+
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(caseData)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Failed to create case:', response.status, errorText);
+            throw new Error(`Failed to create case: ${response.status} ${errorText}`);
+          }
+          
+          const result = await response.json();
+          const caseId = result.data.id;
+          
+          console.log('✅ Case created successfully:', caseId, result.data);
+          
+          // Auto-save the case locally for immediate access
+          const localCase: Case = {
+            id: caseId,
+            user_id: 'current-user', // TODO: Get from auth
+            clinic_id: 'current-clinic', // TODO: Get from auth
+            draft: {
+              caseId,
+              patientInfo: caseData.patientInfo,
+              physicianInfo: { lastName: '', firstName: '', license: '', address: '', phone: '', email: '' },
+              meta: { 
+                language: 'fr', 
+                createdAt: new Date().toISOString(), 
+                updatedAt: new Date().toISOString(), 
+                export: { status: 'not_exported', lastExportAt: null, lastExportFormat: null } 
+              },
+              ui: { activeSectionId: '', order: [], autosave: {} },
+              sections: {},
+              sessions: []
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          // Update local state with the new case
+          set({ 
+            currentCase: localCase,
+            isDirty: false,
+            lastSaved: new Date().toLocaleTimeString()
+          });
+          
+          console.log('✅ New case created with auto-save:', caseId);
+          return caseId;
+        } catch (error) {
+          console.error('❌ Failed to create new case:', error);
+          throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      loadNewCase: async (caseId: string): Promise<NewCase | null> => {
+        set({ isLoading: true });
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases/${caseId}`);
+          
+          if (!response.ok) throw new Error('Failed to load case');
+          
+          const result = await response.json();
+          const caseData = result.data;
+          
+          // Set the current case in the store to prevent reloading
+          set({ 
+            currentCase: caseData,
+            isLoading: false 
+          });
+          
+          console.log('✅ New case loaded and set in store:', caseData.id);
+          return caseData;
+        } catch (error) {
+          console.error('❌ Failed to load new case:', error);
+          set({ isLoading: false });
+          return null;
+        }
+      },
+
+      updateNewCaseSection: async (caseId: string, sectionId: string, data: any, status?: string) => {
+        try {
+          console.log('📝 Updating section:', { caseId, sectionId, data, status });
+          
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases/${caseId}/sections/${sectionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data, status })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Failed to update section:', response.status, errorText);
+            throw new Error(`Failed to update section: ${response.status} ${errorText}`);
+          }
+          
+          const result = await response.json();
+          console.log('✅ Section updated successfully:', sectionId);
+          return result.data;
+        } catch (error) {
+          console.error('❌ Failed to update section:', error);
+          throw error;
+        }
+      },
+
+      linkDictationSession: async (caseId: string, sessionId: string, sectionId: string, content?: string, formattedContent?: string) => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases/${caseId}/sessions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              sectionId,
+              content,
+              formattedContent
+            })
+          });
+
+          if (!response.ok) throw new Error('Failed to link session');
+          
+          const result = await response.json();
+          console.log('✅ Session linked to case:', sessionId);
+          return result.data;
+        } catch (error) {
+          console.error('❌ Failed to link session:', error);
+          throw error;
+        }
+      },
+
+      getCaseContext: (caseId: string, sectionId: string): CaseContext | null => {
+        // This would typically come from the loaded case data
+        // For now, return a basic context
+        return {
+          caseId,
+          sectionId,
+          sectionTitle: `Section ${sectionId}`,
+          audioRequired: ['section_7', 'section_8', 'section_11'].includes(sectionId)
+        };
+      },
+
+      getRecentCases: async (limit: number = 10, days: number = 30): Promise<any[]> => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases?limit=${limit}&days=${days}&sort=updated_at&order=desc`);
+
+          if (!response.ok) throw new Error('Failed to fetch recent cases');
+
+          const result = await response.json();
+          return result.data || [];
+        } catch (error) {
+          console.error('❌ Failed to fetch recent cases:', error);
+          return [];
+        }
+      },
+
+      deleteCase: async (caseId: string): Promise<boolean> => {
+        try {
+          // Use proper API base URL
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiBase}/api/cases/${caseId}`, {
+            method: 'DELETE'
+          });
+          
+          if (!response.ok) throw new Error('Failed to delete case');
+          
+          console.log('✅ Case deleted:', caseId);
+          return true;
+        } catch (error) {
+          console.error('❌ Failed to delete case:', error);
+          return false;
+        }
+      }
     }),
     {
       name: 'case-storage',
       partialize: (state) => ({
+        // Persist essential state including current case
+        currentCase: state.currentCase,
         activeSectionId: state.activeSectionId,
-        sections: state.sections,
         autosaveTimestamps: state.autosaveTimestamps,
+        lastSaved: state.lastSaved
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Check if we have legacy data and migrate it
+          const persistedData = localStorage.getItem('case-storage');
+          if (persistedData) {
+            try {
+              const parsed = JSON.parse(persistedData);
+              if (parsed.state && isLegacyFormat(parsed.state)) {
+                console.log('🔄 Migrating legacy case data...');
+                // Migration will happen when schema is loaded
+              }
+            } catch (error) {
+              console.warn('⚠️ Failed to parse persisted data:', error);
+            }
+          }
+        }
+      }
     }
   )
 );
+
+// Migration helper for existing data
+export const migrateExistingData = (legacyData: LegacyCase, schema: FormSchema): FormSchema => {
+  return migrateLegacyCaseData(legacyData, schema);
+};
