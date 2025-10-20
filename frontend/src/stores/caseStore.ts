@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { formSchemaLoader, FormSchema, Section, SectionData } from '@/lib/formSchema';
 import { Case as NewCase, CaseContext } from '@/types/case';
+import { apiFetch } from '@/lib/api';
 
 // Legacy types for backward compatibility
 interface LegacySection {
@@ -382,9 +383,7 @@ export const useCaseStore = create<CaseState>()(
       // Session management actions
       createSession: async (sectionId: string, transcript: string, metadata?: any) => {
         try {
-          // Use proper API base URL
-          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiBase}/api/sessions`, {
+          const response = await apiFetch('/api/sessions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -394,8 +393,7 @@ export const useCaseStore = create<CaseState>()(
             }),
           });
           
-          if (!response.ok) throw new Error('Failed to create session');
-          return await response.json();
+          return response;
         } catch (error) {
           console.error('Failed to create session:', error);
           throw error;
@@ -404,9 +402,7 @@ export const useCaseStore = create<CaseState>()(
 
       commitSectionFromSession: async (sectionId: string, sessionId: string, finalText: string) => {
         try {
-          // Use proper API base URL
-          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiBase}/api/cases/${get().currentCase?.id}/sections/${sectionId}/commit`, {
+          const response = await apiFetch(`/api/cases/${get().currentCase?.id}/sections/${sectionId}/commit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -414,8 +410,6 @@ export const useCaseStore = create<CaseState>()(
               finalText,
             }),
           });
-          
-          if (!response.ok) throw new Error('Failed to commit section');
           
           // Update local state
           const currentCase = get().currentCase;
@@ -623,21 +617,11 @@ export const useCaseStore = create<CaseState>()(
 
           console.log('📝 Creating new case with data:', caseData);
 
-          // Use proper API base URL
-          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiBase}/api/cases`, {
+          const result = await apiFetch('/api/cases', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(caseData)
           });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Failed to create case:', response.status, errorText);
-            throw new Error(`Failed to create case: ${response.status} ${errorText}`);
-          }
-          
-          const result = await response.json();
           const caseId = result.data.id;
           
           console.log('✅ Case created successfully:', caseId, result.data);

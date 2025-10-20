@@ -2,8 +2,12 @@ import { Router } from 'express';
 import { getDb } from '../database/connection';
 import { cases } from '../database/schema';
 import { eq } from 'drizzle-orm';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = Router();
+
+// Enable authentication middleware
+router.use(authenticateUser);
 
 // POST /api/cases/:id/sections/:sectionId/commit - Commit session data to section
 router.post('/:id/sections/:sectionId/commit', async (req, res) => {
@@ -31,10 +35,19 @@ router.post('/:id/sections/:sectionId/commit', async (req, res) => {
         .limit(1);
 
       if (existingCase.length === 0) {
+        // Get the authenticated user
+        const user = (req as any).user;
+        if (!user?.user_id) {
+          return res.status(401).json({ 
+            error: 'Authentication required',
+            message: 'No authenticated user found'
+          });
+        }
+
         // Case doesn't exist, create a new one
         const newCase = await db.insert(cases).values({
           id: caseId,
-          user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6', // Use an existing user from profiles table
+          user_id: user.user_id, // Use the authenticated user
           clinic_id: '00000000-0000-0000-0000-000000000000', // Temporary clinic ID for testing
           draft: {
             sections: {

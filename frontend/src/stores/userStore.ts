@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 
 export interface UserProfile {
+  user_id: string;
+  email?: string;
   display_name: string;
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;

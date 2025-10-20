@@ -2,8 +2,12 @@ import { Router } from 'express';
 import { getDb } from '../database/connection';
 import { sessions, transcripts } from '../database/schema';
 import { eq } from 'drizzle-orm';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = Router();
+
+// Enable authentication middleware
+router.use(authenticateUser);
 
 // POST /api/sessions - Create a new session
 router.post('/', async (req, res) => {
@@ -22,9 +26,18 @@ router.post('/', async (req, res) => {
     let sessionId = null;
     
     try {
+      // Get the authenticated user
+      const user = (req as any).user;
+      if (!user?.user_id) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'No authenticated user found'
+        });
+      }
+
       // Create a new session in the database
       const newSession = await db.insert(sessions).values({
-        user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6', // Use an existing user from profiles table
+        user_id: user.user_id, // Use the authenticated user
         clinic_id: null, // Will be set when clinic management is implemented
         patient_id: 'temp-patient', // Temporary patient ID
         consent_verified: true, // Assume consent is verified for now

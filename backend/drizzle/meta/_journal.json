@@ -29,6 +29,13 @@
       "when": 1760562320058,
       "tag": "0003_boring_wonder_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1756675714076,
+      "tag": "0005_add_email_to_profiles",
+      "breakpoints": true
     }
   ]
 }

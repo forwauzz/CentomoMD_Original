@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiFetch } from '@/lib/api';
 import { 
   LayoutDashboard, 
   Mic, 
@@ -202,9 +203,7 @@ export const PrimarySidebar: React.FC = () => {
       const clientToken = crypto.randomUUID();
       
       // Create new case with selected clinic
-      // Use proper API base URL
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiBase}/api/cases`, {
+      const response = await apiFetch('/api/cases', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,17 +217,15 @@ export const PrimarySidebar: React.FC = () => {
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        const caseId = data.data.id;
+      if (response.success) {
+        const caseId = response.data.id;
         console.info("[NewCase] created", { caseId, clientToken });
         
         // Close modal first, then navigate exactly once
         setIsClinicModalOpen(false);
         navigate(`/case/new?caseId=${caseId}`);
       } else {
-        console.error('Failed to create case:', data.error);
+        console.error('Failed to create case:', response.error);
         alert('Erreur lors de la création du cas. Veuillez réessayer.');
       }
     } catch (error) {

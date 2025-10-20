@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Building2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { apiFetch } from '@/lib/api';
 
 interface Clinic {
   id: string;
@@ -46,10 +47,7 @@ export const ClinicSelectionModal: React.FC<ClinicSelectionModalProps> = ({
     setError('');
     
     try {
-      // Use proper API base URL
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiBase}/api/clinics`);
-      const data = await response.json();
+      const data = await apiFetch('/api/clinics');
       
       if (data.success) {
         setClinics(data.data);

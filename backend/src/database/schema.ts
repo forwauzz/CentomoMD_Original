@@ -6,6 +6,7 @@ import { relations } from 'drizzle-orm';
 // Profiles table (extends Supabase auth.users)
 export const profiles = pgTable('profiles', {
   user_id: uuid('user_id').primaryKey(), // References auth.users(id) in Supabase
+  email: varchar('email', { length: 255 }), // User's email address for easier identification
   display_name: varchar('display_name', { length: 255 }),
   locale: text('locale', { enum: ['en-CA', 'fr-CA'] }).notNull().default('fr-CA'),
   consent_pipeda: boolean('consent_pipeda').notNull().default(false),

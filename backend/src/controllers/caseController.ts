@@ -152,13 +152,12 @@ router.post('/', authenticateUser, async (req, res) => {
     // Create case with proper database persistence using existing schema
     const sql = getSql();
     
-    // For development, ensure profile exists (references auth.users)
-    // Note: auth.users should already exist from Supabase auth
-    await sql`
-      INSERT INTO profiles (user_id, display_name, locale, consent_pipeda, consent_marketing, created_at, updated_at)
-      VALUES (${user.user_id}, 'Dev User', 'fr-CA', true, false, NOW(), NOW())
-      ON CONFLICT (user_id) DO NOTHING
-    `;
+    // Ensure profile exists and is synced with auth data
+    const { ensureProfileSynced } = await import('../utils/profileSync.js');
+    await ensureProfileSynced(user.user_id, {
+      email: user.email,
+      user_metadata: user.user_metadata || {}
+    });
     
     // Create the case with structured draft data
     const structuredDraft = {
@@ -291,7 +290,7 @@ router.put('/:id', async (req, res) => {
   try {
     // TODO: Implement proper authentication middleware
     // For development, use a mock user
-    const user = (req as any).user || { user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6' };
+    const user = (req as any).user;
     if (!user?.user_id) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -361,7 +360,7 @@ router.delete('/:id', async (req, res) => {
   try {
     // TODO: Implement proper authentication middleware
     // For development, use a mock user
-    const user = (req as any).user || { user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6' };
+    const user = (req as any).user;
     if (!user?.user_id) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -406,7 +405,7 @@ router.post('/:id/sections/:sectionId', async (req, res) => {
   try {
     // TODO: Implement proper authentication middleware
     // For development, use a mock user
-    const user = (req as any).user || { user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6' };
+    const user = (req as any).user;
     if (!user?.user_id) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -494,7 +493,7 @@ router.post('/:id/sessions', async (req, res) => {
   try {
     // TODO: Implement proper authentication middleware
     // For development, use a mock user
-    const user = (req as any).user || { user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6' };
+    const user = (req as any).user;
     if (!user?.user_id) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -562,9 +561,8 @@ router.post('/:id/sessions', async (req, res) => {
 // POST /api/cases/cleanup - Clean up expired cases (admin endpoint)
 router.post('/cleanup', async (req, res) => {
   try {
-    // TODO: Implement proper authentication middleware
-    // For development, use a mock user
-    const user = (req as any).user || { user_id: 'f139a26d-2467-40b3-ac0b-6206f4ff95c6' };
+    // Get the authenticated user
+    const user = (req as any).user;
     if (!user?.user_id) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
