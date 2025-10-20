@@ -65,7 +65,7 @@ router.post('/:id/sections/:sectionId/commit', async (req, res) => {
         console.log('✅ [Cases] Created new case:', newCase[0]?.id);
       } else {
         // Case exists, update the draft with new section data
-        const currentDraft = existingCase[0].draft as any || {};
+        const currentDraft = existingCase[0]?.draft as any || {};
         const updatedDraft = {
           ...currentDraft,
           sections: {
@@ -135,6 +135,13 @@ router.get('/:id', async (req, res) => {
       }
 
       const caseData = result[0];
+      if (!caseData) {
+        return res.status(404).json({
+          success: false,
+          error: 'Case not found'
+        });
+      }
+      
       console.log('✅ [Cases] Successfully fetched case:', id);
 
       return res.json({

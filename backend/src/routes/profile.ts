@@ -15,25 +15,10 @@ router.use(authenticateUser);
 // Ensure profile sync on all profile routes
 router.use(ensureProfileSync);
 
-// Mock user for development when AUTH_REQUIRED=false
-// This should match the actual authenticated user, not a hardcoded one
-const getMockUser = () => {
-  // In development, we should use the actual authenticated user
-  // This will be overridden by the real auth middleware in production
-  return {
-    user_id: '63fbb0d3-97c3-4065-a915-6676050c7b33', // thetugian's ID (current user)
-    email: 'thetugian@example.com', // This should match the actual logged-in user
-    user_metadata: {
-      full_name: 'Thetugian',
-      name: 'Thetugian'
-    },
-    role: 'physician'
-  };
-};
+// Mock user function removed - using real authenticated user
 
 // GET profile - improved to handle empty profiles gracefully
 router.get('/api/profile', async (req, res) => {
-  const db = getDb();
   const sql = getSql();
   
   // Use real authenticated user (remove mock fallback)

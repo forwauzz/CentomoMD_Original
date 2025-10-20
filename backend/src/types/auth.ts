@@ -14,4 +14,5 @@ export interface ReqUser {
   role: string;
   clinic_id?: string | undefined;
   profile?: ReqUserProfile;
+  user_metadata?: any;    // Supabase user metadata
 }

@@ -6,7 +6,7 @@ import { logger } from '../utils/logger.js';
  * Middleware to ensure profile is synced with auth data
  * This should be used on routes that require profile data
  */
-export const ensureProfileSync = async (req: Request, res: Response, next: NextFunction) => {
+export const ensureProfileSync = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
     
@@ -40,7 +40,7 @@ export const ensureProfileSync = async (req: Request, res: Response, next: NextF
 /**
  * Optional profile sync middleware for routes that can work without profile
  */
-export const optionalProfileSync = async (req: Request, res: Response, next: NextFunction) => {
+export const optionalProfileSync = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
     

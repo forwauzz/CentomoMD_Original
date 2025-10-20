@@ -7,7 +7,7 @@ import { logger } from '../utils/logger.js';
 const router = Router();
 
 // GET /api/clinics - Get all available clinics
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const db = getDb();
     
@@ -50,9 +50,9 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    logger.info(`Retrieved clinic: ${clinic[0].name}`);
+    logger.info(`Retrieved clinic: ${clinic[0]?.name || 'Unknown'}`);
 
-    res.json({
+    return res.json({
       success: true,
       data: clinic[0],
       message: 'Clinic retrieved successfully'
@@ -60,7 +60,7 @@ router.get('/:id', async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching clinic:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'

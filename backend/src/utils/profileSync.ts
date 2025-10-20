@@ -41,7 +41,7 @@ export async function syncProfileWithAuth(
         .insert(profiles)
         .values({
           user_id: userId,
-          email: authUser.email,
+          email: authUser.email || null,
           display_name: authDisplayName,
           locale: 'fr-CA', // Default locale
           consent_pipeda: false,
@@ -60,6 +60,10 @@ export async function syncProfileWithAuth(
 
     // Profile exists - check if display name or email needs updating
     const currentProfile = existingProfile[0];
+    if (!currentProfile) {
+      throw new Error('Profile not found after query');
+    }
+    
     const needsDisplayNameUpdate = currentProfile.display_name !== authDisplayName;
     const needsEmailUpdate = currentProfile.email !== authUser.email;
 
@@ -67,7 +71,7 @@ export async function syncProfileWithAuth(
       const updatedProfile = await db
         .update(profiles)
         .set({
-          email: authUser.email,
+          email: authUser.email || null,
           display_name: authDisplayName,
           updated_at: new Date()
         })
