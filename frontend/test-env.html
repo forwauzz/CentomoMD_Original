@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Variable Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        pre { background: #000; color: #0f0; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Environment Variable Test</h1>
+    
+    <div id="results"></div>
+    
+    <script type="module">
+        function addResult(message) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'result';
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        // Test environment variables
+        addResult('<h3>Environment Variables Test:</h3>');
+        addResult(`<strong>VITE_ENABLE_SCHEMA_DRIVEN_FORMS:</strong> ${import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS}`);
+        addResult(`<strong>VITE_SITE_URL:</strong> ${import.meta.env.VITE_SITE_URL}`);
+        addResult(`<strong>VITE_SUPABASE_URL:</strong> ${import.meta.env.VITE_SUPABASE_URL}`);
+        
+        addResult('<h3>All Environment Variables:</h3>');
+        addResult(`<pre>${JSON.stringify(import.meta.env, null, 2)}</pre>`);
+        
+        // Test the feature flag logic
+        const isEnabled = import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS === 'true';
+        addResult(`<h3>Feature Flag Result:</h3>`);
+        addResult(`<strong>isEnabled:</strong> ${isEnabled}`);
+        addResult(`<strong>Type:</strong> ${typeof import.meta.env.VITE_ENABLE_SCHEMA_DRIVEN_FORMS}`);
+    </script>
+</body>
+</html>

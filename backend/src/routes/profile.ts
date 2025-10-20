@@ -2,29 +2,34 @@ import { Router } from 'express';
 import { getDb, getSql } from '../database/connection.js';
 import { profiles } from '../database/schema.js';
 import { eq } from 'drizzle-orm';
-// import { authMiddleware } from '../auth.js'; // Removed for development
 import { logger } from '../utils/logger.js';
+import { ensureProfileSynced } from '../utils/profileSync.js';
+import { ensureProfileSync } from '../middleware/profileSync.js';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = Router();
 
-// Development mode: no auth middleware
-// router.use(authMiddleware);
+// Enable authentication middleware
+router.use(authenticateUser);
 
-// Mock user for development when AUTH_REQUIRED=false
-// Using real user ID to match existing profile in database
-const getMockUser = () => ({
-  user_id: '9dc87840-75b8-4bd0-8ec1-85d2a2c2e804', // Real user ID from database
-  email: 'tamonuzziel@gmail.com',
-  role: 'physician'
-});
+// Ensure profile sync on all profile routes
+router.use(ensureProfileSync);
+
+// Mock user function removed - using real authenticated user
 
 // GET profile - improved to handle empty profiles gracefully
 router.get('/api/profile', async (req, res) => {
-  const db = getDb();
   const sql = getSql();
   
-  // Mock user for development when AUTH_REQUIRED=false
-  const user = (req as any).user || getMockUser();
+  // Use real authenticated user (remove mock fallback)
+  const user = (req as any).user;
+  
+  if (!user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'No authenticated user found'
+    });
+  }
 
   try {
     // Audit logging for secure event tracking
@@ -58,30 +63,11 @@ router.get('/api/profile', async (req, res) => {
       return res.status(500).json({ error: 'profiles table missing — run migrations' });
     }
 
-    // Get profile data
-    const profileRows = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.user_id, userId))
-      .limit(1);
-
-    // If no profile exists, return basic user info with profile creation flag
-    if (profileRows.length === 0) {
-      return res.json({
-        ok: true,
-        profileExists: false,
-        needsProfileCreation: true,
-        user: {
-          id: user?.user_id,
-          email: user?.email,
-          role: user?.role || 'physician'
-        },
-        message: 'Profile not found. Use POST /api/profile to create one.'
-      });
-    }
-
-    // Profile exists, return full data
-    const profile = profileRows[0];
+    // Ensure profile exists and is synced with auth data
+    const profile = await ensureProfileSynced(userId, {
+      email: user?.email,
+      user_metadata: user?.user_metadata || {}
+    });
     
     // Audit logging for successful access
     logger.info('Profile access successful', {
@@ -90,7 +76,7 @@ router.get('/api/profile', async (req, res) => {
       userRole: user?.role,
       endpoint: req.path,
       method: req.method,
-      profilesFound: profileRows.length
+      displayName: profile.display_name
     });
 
     return res.json({
@@ -137,8 +123,15 @@ router.get('/api/profile', async (req, res) => {
 router.post('/api/profile', async (req, res) => {
   const db = getDb();
   
-  // Mock user for development when AUTH_REQUIRED=false
-  const user = (req as any).user || getMockUser();
+  // Use real authenticated user
+  const user = (req as any).user;
+  
+  if (!user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'No authenticated user found'
+    });
+  }
 
   try {
     const userId = user?.user_id;
@@ -164,28 +157,23 @@ router.post('/api/profile', async (req, res) => {
       });
     }
 
-    // Create new profile with default values
-    const newProfile = await db
-      .insert(profiles)
-      .values({
-        user_id: userId,
-        display_name: user?.email?.split('@')[0] || 'User', // Use email prefix as display name
-        locale: 'fr-CA', // Default to French Canadian
-        consent_pipeda: false,
-        consent_marketing: false
-      })
-      .returning();
+    // Create new profile synced with auth data
+    const profile = await ensureProfileSynced(userId, {
+      email: user?.email,
+      user_metadata: user?.user_metadata || {}
+    });
 
     logger.info('Profile created successfully', {
       userId: userId,
       userEmail: user?.email,
-      profileId: newProfile[0]?.user_id
+      profileId: profile.user_id,
+      displayName: profile.display_name
     });
 
     return res.status(201).json({
       ok: true,
       message: 'Profile created successfully',
-      profile: newProfile[0]
+      profile: profile
     });
 
   } catch (err: any) {
@@ -220,8 +208,15 @@ router.post('/api/profile', async (req, res) => {
 router.patch('/api/profile', async (req, res) => {
   const db = getDb();
   
-  // Mock user for development when AUTH_REQUIRED=false
-  const user = (req as any).user || getMockUser();
+  // Use real authenticated user
+  const user = (req as any).user;
+  
+  if (!user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'No authenticated user found'
+    });
+  }
 
   try {
     const userId = user?.user_id;

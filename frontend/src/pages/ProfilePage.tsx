@@ -17,6 +17,8 @@ import { getAuthRedirectUrl } from '@/lib/redirect';
 
 // Profile types - matches backend API response
 interface ProfileData {
+  user_id: string;
+  email?: string;
   display_name: string;
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;
@@ -71,6 +73,8 @@ export const ProfilePage: React.FC = () => {
 
   // TODO: Form state for editing
   const [formData, setFormData] = useState<ProfileData>({
+    user_id: '',
+    email: '',
     display_name: '',
     locale: 'en-CA',
     consent_pipeda: false,
@@ -121,6 +125,8 @@ export const ProfilePage: React.FC = () => {
         console.warn('⚠️ ProfilePage: Invalid profile data received:', data);
         // Set default data if profile is invalid
         const defaultProfile: ProfileData = {
+          user_id: user?.id || '',
+          email: user?.email || '',
           display_name: user?.email?.split('@')[0] || 'User',
           locale: 'fr-CA',
           consent_pipeda: false,
@@ -140,6 +146,8 @@ export const ProfilePage: React.FC = () => {
       
       // Show fallback data for development
       const fallbackData: ProfileData = {
+        user_id: user?.id || '',
+        email: user?.email || '',
         display_name: user?.email?.split('@')[0] || 'Unknown User',
         locale: 'en-CA',
         consent_pipeda: false,
@@ -360,6 +368,25 @@ export const ProfilePage: React.FC = () => {
               <p className="text-sm text-red-500">{errors.display_name}</p>
             )}
           </div>
+
+          {/* Email Field - Read Only */}
+          {formData.email && (
+            <div className="space-y-2">
+              <Label htmlFor="email" className="flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>Email</span>
+              </Label>
+              <Input
+                id="email"
+                value={formData.email}
+                disabled
+                className="bg-gray-50 text-gray-600"
+              />
+              <p className="text-sm text-gray-500">
+                Email address is managed by your authentication provider and cannot be changed here.
+              </p>
+            </div>
+          )}
 
           {/* TODO: Language/Locale Field */}
           <div className="space-y-2">

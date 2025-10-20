@@ -1,0 +1,408 @@
+{
+  "caseId": "case_0001",
+  "patientInfo": {
+    "name": "",
+    "dob": "",
+    "healthCard": "",
+    "phone": "",
+    "address": ""
+  },
+  "physicianInfo": {
+    "lastName": "",
+    "firstName": "",
+    "license": "",
+    "address": "",
+    "phone": "",
+    "email": ""
+  },
+  "meta": {
+    "language": "fr",
+    "createdAt": null,
+    "updatedAt": null,
+    "export": {
+      "status": "not_exported",
+      "lastExportAt": null,
+      "lastExportFormat": null
+    }
+  },
+  "ui": {
+    "activeSectionId": "section_a",
+    "order": [
+      "section_a",
+      "section_b",
+      "section_c_mandat",
+      "section_c_diagnostics",
+      "section_c_modalite",
+      "section_4_identification",
+      "section_5_antecedents",
+      "section_6_medication",
+      "section_7",
+      "section_8",
+      "section_9",
+      "section_10",
+      "section_11",
+      "section_12",
+      "section_15"
+    ],
+    "autosave": {}
+  },
+  "sections": {
+    "section_a": {
+      "title": "A. Renseignements sur le travailleur",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_a_v1",
+      "data": {
+        "workerFileNo": "",
+        "initialIncidentDate": "",
+        "recurrenceDate": ""
+      },
+      "lastModified": null
+    },
+    "section_b": {
+      "title": "B. Renseignements sur le médecin",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_b_v1",
+      "data": {},
+      "lastModified": null
+    },
+    "section_c_mandat": {
+      "title": "C1. Mandat de l'évaluation",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_c_mandat_v1",
+      "data": {
+        "pointsLATMP": [
+          "Diagnostic",
+          "Date de consolidation",
+          "Soins/traitements (nature, nécessité, suffisance, durée)",
+          "Atteinte permanente à l'intégrité (existence, %)",
+          "Limitations fonctionnelles (existence, évaluation)"
+        ],
+        "notes": ""
+      },
+      "lastModified": null
+    },
+    "section_c_diagnostics": {
+      "title": "C2. Diagnostics acceptés par la CNESST",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_c_diag_v1",
+      "data": {
+        "diagnostics": []
+      },
+      "lastModified": null
+    },
+    "section_c_modalite": {
+      "title": "C3. Modalité de l'entrevue",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_c_modalite_v1",
+      "data": {
+        "lieu": "",
+        "contexte": "",
+        "duree": "",
+        "commentaires": ""
+      },
+      "lastModified": null
+    },
+    "section_4_identification": {
+      "title": "4. Identification",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_4_identification_v1",
+      "data": {
+        "age": "",
+        "dominance": "",
+        "emploi": "",
+        "horaire": "",
+        "statutTravail": ""
+      },
+      "lastModified": null
+    },
+    "section_5_antecedents": {
+      "title": "5. Antécédents",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_5_antecedents_v1",
+      "data": {
+        "medicaux": "",
+        "chirurgicaux": "",
+        "auSiteEtPourtour": "",
+        "accidentels": {
+          "CNESST": "",
+          "SAAQ": "",
+          "autres": ""
+        },
+        "allergies": "",
+        "tabac": "",
+        "cannabis": "",
+        "alcool": ""
+      },
+      "lastModified": null
+    },
+    "section_6_medication": {
+      "title": "6. Médication actuelle et mesures thérapeutiques en cours",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_6_medication_v1",
+      "data": {
+        "medication": "",
+        "mesuresTherapeutiques": "",
+        "commentaires": ""
+      },
+      "lastModified": null
+    },
+    "section_7": {
+      "title": "7. Historique de faits et évolution",
+      "status": "not_started",
+      "audioRequired": true,
+      "templateId": "section_7_fr_v1",
+      "formattingPipeline": {
+        "inputType": "transcript",
+        "outputLanguage": "fr",
+        "templateId": "section_7_fr_v1"
+      },
+      "data": {
+        "rawTranscript": "",
+        "aiFormattedText": "",
+        "finalText": ""
+      },
+      "dictationSessions": [],
+      "lastModified": null
+    },
+    "section_8": {
+      "title": "8. Questionnaire subjectif et état actuel",
+      "status": "not_started",
+      "audioRequired": true,
+      "templateId": "section_8_fr_v1",
+      "formattingPipeline": {
+        "inputType": "transcript",
+        "outputLanguage": "fr",
+        "templateId": "section_8_fr_v1"
+      },
+      "data": {
+        "rawTranscript": "",
+        "aiFormattedText": "",
+        "finalText": ""
+      },
+      "dictationSessions": [],
+      "lastModified": null
+    },
+    "section_9": {
+      "title": "9. Examen physique",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_9_v1",
+      "modules": [
+        {
+          "id": "rachis_lombaire",
+          "title": "Rachis lombaire",
+          "fields": {
+            "palpation": "",
+            "inspection": "",
+            "amplitudes_deg": {
+              "flexion": null,
+              "extension": null,
+              "flexion_lat_g": null,
+              "flexion_lat_d": null,
+              "rotation_g": null,
+              "rotation_d": null
+            },
+            "manoeuvres_radiculaires": {
+              "SLR": { "D": "", "G": "" },
+              "Tripode": { "D": "", "G": "" },
+              "Lasegue": { "D": "", "G": "" },
+              "Lasegue_inverse_Ely": { "D": "", "G": "" }
+            }
+          }
+        },
+        {
+          "id": "hanches",
+          "title": "Hanches",
+          "fields": {
+            "palpation": "",
+            "inspection": "",
+            "amplitudes_deg": {
+              "flexion": { "D": null, "G": null },
+              "extension": { "D": null, "G": null },
+              "rotation_interne": { "D": null, "G": null },
+              "rotation_externe": { "D": null, "G": null },
+              "abduction": { "D": null, "G": null },
+              "adduction": { "D": null, "G": null }
+            },
+            "manoeuvres_speciales": {
+              "Trendelenburg": { "D": "", "G": "" },
+              "FADIR": { "D": "", "G": "" },
+              "FABER": { "D": "", "G": "" }
+            }
+          }
+        },
+        {
+          "id": "genoux",
+          "title": "Genoux",
+          "fields": {
+            "palpation": "",
+            "inspection": "",
+            "amplitudes_deg": {
+              "flexion": { "D": null, "G": null },
+              "extension": { "D": null, "G": null }
+            },
+            "manoeuvres_ligamentaires": {
+              "LCI_0": { "D": "", "G": "" },
+              "LCI_20": { "D": "", "G": "" },
+              "LCE_0": { "D": "", "G": "" },
+              "LCE_20": { "D": "", "G": "" },
+              "Lachman": { "D": "", "G": "" },
+              "Pivot": { "D": "", "G": "" },
+              "Tiroir_anterieur": { "D": "", "G": "" },
+              "Tiroir_posterieur": { "D": "", "G": "" },
+              "Sag_posterieur": { "D": "", "G": "" },
+              "Dial_30": { "D": "", "G": "" },
+              "Dial_90": { "D": "", "G": "" }
+            },
+            "manoeuvres_meniscales": {
+              "Apley": { "D": "", "G": "" },
+              "McMurray": { "D": "", "G": "" },
+              "Thessaly": { "D": "", "G": "" }
+            },
+            "atrophie_musculaire_cm": {
+              "cuisse": { "D": null, "G": null },
+              "mollet": { "D": null, "G": null }
+            }
+          }
+        },
+        {
+          "id": "chevilles_pieds",
+          "title": "Pieds / Chevilles",
+          "fields": {
+            "palpation": "",
+            "inspection": "",
+            "amplitudes_deg": {
+              "dorsiflexion": { "D": null, "G": null },
+              "plantiflexion": { "D": null, "G": null }
+            },
+            "manoeuvres_ligamentaires": {
+              "Tiroir_0": { "D": "", "G": "" },
+              "Tiroir_20": { "D": "", "G": "" },
+              "Varus_stress": { "D": "", "G": "" },
+              "Laxite_calcanéo_perone": { "D": "", "G": "" }
+            },
+            "manoeuvres_specifiques_tendons": {
+              "Single_heel_raise": { "D": "", "G": "" },
+              "Thompson": { "D": "", "G": "" },
+              "Apprehension_fibulaires": { "D": "", "G": "" }
+            }
+          }
+        },
+        {
+          "id": "neuro_vasculaire",
+          "title": "Neuro-vasculaire",
+          "fields": {
+            "forces_ASIA": {
+              "L2_flexion_hanche": { "D": "", "G": "" },
+              "L3_extension_genou": { "D": "", "G": "" },
+              "L4_dorsiflexion_cheville": { "D": "", "G": "" },
+              "L5_extension_D1_pied": { "D": "", "G": "" },
+              "S1_flexion_plantaire": { "D": "", "G": "" }
+            },
+            "sensibilites": {
+              "L2": { "D": "", "G": "" },
+              "L3": { "D": "", "G": "" },
+              "L4": { "D": "", "G": "" },
+              "L5": { "D": "", "G": "" },
+              "S1": { "D": "", "G": "" }
+            },
+            "reflexes": {
+              "Rotulien": { "D": "", "G": "" },
+              "Achilleen": { "D": "", "G": "" },
+              "Babinski": { "D": "", "G": "" }
+            },
+            "pouls": {
+              "Tibial_posterieur": { "D": "", "G": "" },
+              "Pedieux": { "D": "", "G": "" }
+            }
+          }
+        }
+      ],
+      "lastModified": null
+    },
+    "section_10": {
+      "title": "10. Examens paracliniques",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_10_v1",
+      "data": {
+        "contenu": "",
+        "references": []
+      },
+      "lastModified": null
+    },
+    "section_11": {
+      "title": "11. Conclusion",
+      "status": "not_started",
+      "audioRequired": true,
+      "templateId": "section_11_fr_v1",
+      "formattingPipeline": {
+        "inputType": "structured",
+        "outputLanguage": "fr",
+        "templateId": "section_11_fr_v1",
+        "sourceSections": ["section_7", "section_8", "section_9"]
+      },
+      "data": {
+        "resume": "",
+        "consolidation": {
+          "date": "",
+          "rationale": ""
+        },
+        "soins_traitements": {
+          "appreciation": "",
+          "rationale": ""
+        },
+        "atteinte_permanente": {
+          "existence": "",
+          "pourcentage": null,
+          "rationale": ""
+        },
+        "limitations_fonctionnelles": {
+          "existence": "",
+          "evaluation": ""
+        },
+        "autoSummary": "",
+        "finalText": "",
+        "manualNotes": ""
+      },
+      "lastModified": null
+    },
+    "section_12": {
+      "title": "12. Pourcentage d'atteinte permanente à l'intégrité physique ou psychique (APIPP)",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_12_apipp_v1",
+      "data": {
+        "sequelles_actuelles": [
+          { "code": "", "description": "", "percent": null }
+        ],
+        "sequelles_anterieures": [],
+        "autres_deficits_bilateralite": "",
+        "notes": "NB: Ajuster les règles (p.ex. mesure 15cm sous pôle inférieur rotule) selon le guide."
+      },
+      "lastModified": null
+    },
+    "section_15": {
+      "title": "15. Signature et identification du médecin",
+      "status": "not_started",
+      "audioRequired": false,
+      "templateId": "section_15_v1",
+      "data": {
+        "nom": "",
+        "titre": "",
+        "date": "",
+        "signature": ""
+      },
+      "lastModified": null
+    }
+  },
+  "sessions": []
+}

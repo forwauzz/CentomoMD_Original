@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { ENV, logNonSecretEnv } from './config/env.js';
-import { requireAuth } from './middleware/auth.js';
+// import { authenticateUser } from './middleware/auth.js'; // Unused for now
 import { wsAuthCheck } from './ws/auth.js';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
@@ -28,6 +28,8 @@ import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import feedbackRouter from './routes/feedback.js';
+import { caseController } from './controllers/caseController.js';
+import clinicsRouter from './routes/clinics.js';
 import { securityMiddleware } from './server/security.js';
 import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
@@ -68,8 +70,8 @@ if (ENV.RATE_LIMIT_ENABLED) {
   app.use('/api/', limiter);
 }
 
-// REST auth (flag controlled)
-app.use('/api/', requireAuth);
+// REST auth (flag controlled) - disabled for development
+// app.use('/api/', authenticateUser);
 
 // Health & readiness (simple versions)
 app.get('/healthz', (_req, res) => res.status(200).json({
@@ -139,6 +141,22 @@ try {
   console.log('✅ /api/feedback routes mounted'); 
 } catch(e) { 
   console.error('❌ mount /api/feedback:', e);
+}
+
+// Case management routes
+try { 
+  app.use('/api/cases', caseController); 
+  console.log('✅ /api/cases routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/cases:', e);
+}
+
+// Clinics routes
+try { 
+  app.use('/api/clinics', clinicsRouter); 
+  console.log('✅ /api/clinics routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/clinics:', e);
 }
 
 // Transcript Analysis endpoints
@@ -621,6 +639,42 @@ try {
   console.log('✅ /api/db routes mounted');
 } catch(e) {
   console.error('❌ mount /api/db:', e);
+}
+
+// Sessions routes
+try {
+  const sessionsRouter = await import('./routes/sessions.js');
+  app.use('/api/sessions', sessionsRouter.default);
+  console.log('✅ /api/sessions routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/sessions:', e);
+}
+
+// Cases routes - Commented out to avoid conflict with caseController
+// try {
+//   const casesRouter = await import('./routes/cases.js');
+//   app.use('/api/cases', casesRouter.default);
+//   console.log('✅ /api/cases routes mounted');
+// } catch(e) {
+//   console.error('❌ mount /api/cases:', e);
+// }
+
+// Format routes
+try {
+  const formatRouter = await import('./routes/format.js');
+  app.use('/api/format', formatRouter.default);
+  console.log('✅ /api/format routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/format:', e);
+}
+
+// Debug routes
+try {
+  const debugRouter = await import('./routes/debug.js');
+  app.use('/api/debug', debugRouter.default);
+  console.log('✅ /api/debug routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/debug:', e);
 }
 
 // Boot-time database probe

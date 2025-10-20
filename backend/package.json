@@ -12,9 +12,12 @@
     "start:prod": "NODE_ENV=production node dist/src/boot.js",
     "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest --config vitest.config.ts --coverage",
+    "test:dictation-api": "node test-dictation-api.js",
+    "test:deployment": "node test-dictation-deployment.js",
     "db:setup": "node scripts/create-tables.js",
     "db:migrate": "node scripts/create-tables.js",
     "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push:pg",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix"

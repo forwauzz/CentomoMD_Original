@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
 import { useCaseStore } from '@/stores/caseStore';
+import { getSectionIds, getSectionMeta, isSchemaDrivenEnabled } from '@/lib/formSchema';
 
 interface SecondarySectionNavProps {
   onExport: () => void;
@@ -13,6 +14,9 @@ interface SecondarySectionNavProps {
 export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExport }) => {
   const { t, language } = useI18n();
   const { activeSectionId, getSectionStatus, setActiveSection } = useCaseStore();
+
+  // Get sections based on feature flag
+  const sections = isSchemaDrivenEnabled() ? getSectionIds() : CNESST_SECTIONS.map(s => s.id);
 
   const getStatusIcon = (sectionId: string) => {
     const status = getSectionStatus(sectionId);
@@ -50,38 +54,47 @@ export const SecondarySectionNav: React.FC<SecondarySectionNavProps> = ({ onExpo
         </p>
       </div>
 
+
       {/* Sections List */}
       <div className="flex-1 overflow-y-auto">
         <nav className="p-2 space-y-1">
-          {CNESST_SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={cn(
-                'w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-sm cursor-pointer',
-                activeSectionId === section.id
-                  ? 'bg-blue-50 border-blue-300 text-blue-700'
-                  : getStatusColor(section.id)
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {getStatusIcon(section.id)}
-                                 <div className="flex-1 min-w-0">
-                   <div className="text-sm font-medium truncate">
-                     {getSectionTitle(section, language)}
-                   </div>
-                  {section.audioRequired && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <FileText className="h-3 w-3 text-orange-500" />
-                      <span className="text-xs text-orange-600">
-                        {t('audioRequired')}
-                      </span>
+          {sections.map((sectionId) => {
+            const sectionMeta = isSchemaDrivenEnabled() ? getSectionMeta(sectionId) : null;
+            const legacySection = CNESST_SECTIONS.find(s => s.id === sectionId);
+            
+            const title = sectionMeta?.title || (legacySection ? getSectionTitle(legacySection, language) : sectionId);
+            const audioRequired = sectionMeta?.audioRequired || legacySection?.audioRequired || false;
+            
+            return (
+              <button
+                key={sectionId}
+                onClick={() => setActiveSection(sectionId)}
+                className={cn(
+                  'w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-sm cursor-pointer',
+                  activeSectionId === sectionId
+                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                    : getStatusColor(sectionId)
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(sectionId)}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {title}
                     </div>
-                  )}
+                    {audioRequired && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <FileText className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs text-orange-600">
+                          {t('audioRequired')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
