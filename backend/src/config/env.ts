@@ -25,7 +25,7 @@ export const ENV = {
   CORS_ALLOWED_ORIGINS: parseList(
     process.env['CORS_ALLOWED_ORIGINS']
       ?? (isProd
-          ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com'
+          ? 'https://azure-production.d1deo9tihdnt50.amplifyapp.com,https://www.centomomd.com'
           : 'http://localhost:5173')
   ),
 
