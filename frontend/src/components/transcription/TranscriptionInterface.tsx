@@ -380,11 +380,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     
     try {
       await navigator.clipboard.writeText(transcriptText);
+      setCopySuccess(true);
       addToast({
         type: 'success',
         title: 'Copied to clipboard',
         message: 'Transcript has been copied to your clipboard'
       });
+      // Hide success message after 3 seconds
+      setTimeout(() => setCopySuccess(false), 3000);
     } catch (error) {
       console.error('Failed to copy transcript:', error);
       addToast({
@@ -393,7 +396,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         message: 'Failed to copy transcript to clipboard'
       });
     }
-  }, [editedTranscript, paragraphs, currentTranscript, addToast]);
+  }, [editedTranscript, paragraphs, currentTranscript, addToast, setCopySuccess]);
 
   // Edit functionality
   const handleEdit = useCallback(() => {
