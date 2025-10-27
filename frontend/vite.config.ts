@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
 
   // Ensure .env files are read from the frontend folder regardless of CWD
   envDir: path.resolve(__dirname),
