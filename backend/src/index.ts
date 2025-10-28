@@ -650,14 +650,14 @@ try {
   console.error('❌ mount /api/sessions:', e);
 }
 
-// Cases routes - Commented out to avoid conflict with caseController
-// try {
-//   const casesRouter = await import('./routes/cases.js');
-//   app.use('/api/cases', casesRouter.default);
-//   console.log('✅ /api/cases routes mounted');
-// } catch(e) {
-//   console.error('❌ mount /api/cases:', e);
-// }
+// Cases routes
+try {
+  const casesRouter = await import('./routes/cases.js');
+  app.use('/api/cases', casesRouter.default);
+  console.log('✅ /api/cases routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/cases:', e);
+}
 
 // Format routes
 try {
