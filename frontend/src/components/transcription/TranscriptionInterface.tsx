@@ -1305,31 +1305,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 </div>
               </CardTitle>
               
-              {/* Action Buttons - Moved to Header */}
-              <div className="flex items-center space-x-3 mt-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => setShowTemplateModal(true)}
-                  disabled={isFormatting}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Voice Command</span>
-                </Button>
-                <SaveToSectionDropdown
-                  onSave={handleSaveToSection}
-                  isSaving={isSaving}
-                  disabled={!editedTranscript && paragraphs.length === 0}
-                  appliedTemplate={selectedTemplate?.id || null}
-                  mode={mode}
-                  enableMultiSection={mode === 'ambient' || selectedTemplate?.id?.includes('section')}
-                />
-              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Action Buttons - Moved to top for better accessibility */}
