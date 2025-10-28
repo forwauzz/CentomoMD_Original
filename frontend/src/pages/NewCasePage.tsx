@@ -32,7 +32,26 @@ export const NewCasePage: React.FC = () => {
       loadNewCase(caseIdParam).then((loadedCase) => {
         if (loadedCase) {
           console.log('✅ [NewCasePage] Case loaded successfully:', loadedCase.id);
-          // Active section is managed by the caseStore, no need to set it here
+          
+          // Ensure schema is loaded for proper section initialization
+          if (!schema) {
+            console.log('🔍 [NewCasePage] Loading schema for loaded case...');
+            loadSchema().then(() => {
+              // The schema will be available in the next render cycle
+              console.log('🔍 [NewCasePage] Schema loaded, will set active section in next render');
+            }).catch((error) => {
+              console.error('❌ [NewCasePage] Failed to load schema:', error);
+            });
+          } else {
+            // Schema already loaded, set active section
+            if (schema && schema.ui.order.length > 0) {
+              const firstSectionId = schema.ui.order[0];
+              console.log('🔍 [NewCasePage] Setting active section to:', firstSectionId);
+              setActiveSection(firstSectionId);
+            } else {
+              console.warn('⚠️ [NewCasePage] Schema exists but no sections found');
+            }
+          }
         } else {
           console.error('❌ [NewCasePage] Failed to load case:', caseIdParam);
           lastIdRef.current = null; // Reset on failure
@@ -40,6 +59,15 @@ export const NewCasePage: React.FC = () => {
       });
     }
   }, [currentCase, activeSectionId, loadNewCase, setActiveSection, lastIdRef.current]);
+
+  // Set active section when schema becomes available after loading a case
+  useEffect(() => {
+    if (currentCase && schema && !activeSectionId && schema.ui.order.length > 0) {
+      const firstSectionId = schema.ui.order[0];
+      console.log('🔍 [NewCasePage] Setting active section after schema loaded:', firstSectionId);
+      setActiveSection(firstSectionId);
+    }
+  }, [currentCase, schema, activeSectionId, setActiveSection]);
 
   // Initialize case with all sections when component mounts
   useEffect(() => {

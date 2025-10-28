@@ -57,12 +57,30 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     }
   }, [sections, sectionId, formData]);
 
-  // Auto-save effect
+  // Auto-save effect with database persistence
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (Object.keys(formData).length > 0) {
-        updateSection(sectionId, formData);
-        setLastSaved(new Date().toLocaleTimeString());
+        try {
+          // Update local state first
+          updateSection(sectionId, formData);
+          
+          // Get current case context for database save
+          const { currentCase, updateNewCaseSection } = useCaseStore.getState();
+          
+          // If we have a case with proper ID, save to database
+          if (currentCase?.id && currentCase.id.startsWith('case_')) {
+            await updateNewCaseSection(currentCase.id, sectionId, formData, 'in_progress');
+            console.log('✅ Auto-saved section to database:', sectionId);
+          }
+          
+          setLastSaved(new Date().toLocaleTimeString());
+        } catch (error) {
+          console.error('❌ Failed to auto-save section:', error);
+          // Still update local state even if database save fails
+          updateSection(sectionId, formData);
+          setLastSaved(new Date().toLocaleTimeString());
+        }
       }
     }, 2000); // Auto-save after 2 seconds of inactivity
 
@@ -76,9 +94,28 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     }));
   };
 
-  const handleSave = () => {
-    updateSection(sectionId, formData);
-    setLastSaved(new Date().toLocaleTimeString());
+  const handleSave = async () => {
+    try {
+      // Update local state first
+      updateSection(sectionId, formData);
+      
+      // Get current case context for database save
+      const { currentCase } = useCaseStore.getState();
+      
+      // If we have a case with proper ID, save to database
+      if (currentCase?.id && currentCase.id.startsWith('case_')) {
+        const { updateNewCaseSection } = useCaseStore.getState();
+        await updateNewCaseSection(currentCase.id, sectionId, formData, 'in_progress');
+        console.log('✅ Section saved to database:', sectionId);
+      }
+      
+      setLastSaved(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('❌ Failed to save section:', error);
+      // Still update local state even if database save fails
+      updateSection(sectionId, formData);
+      setLastSaved(new Date().toLocaleTimeString());
+    }
   };
 
   const handleMergeSections = async () => {

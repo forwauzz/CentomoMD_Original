@@ -678,6 +678,12 @@ export const useCaseStore = create<CaseState>()(
           const result = await response.json();
           const caseData = result.data;
           
+          // Ensure schema is loaded if not already
+          if (!get().schema) {
+            console.log('🔍 [loadNewCase] Loading schema for case:', caseId);
+            await get().loadSchema();
+          }
+          
           // Set the current case in the store to prevent reloading
           set({ 
             currentCase: caseData,
@@ -759,13 +765,7 @@ export const useCaseStore = create<CaseState>()(
 
       getRecentCases: async (limit: number = 10, days: number = 30): Promise<any[]> => {
         try {
-          // Use proper API base URL
-          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiBase}/api/cases?limit=${limit}&days=${days}&sort=updated_at&order=desc`);
-
-          if (!response.ok) throw new Error('Failed to fetch recent cases');
-
-          const result = await response.json();
+          const result = await apiFetch(`/api/cases?limit=${limit}&days=${days}&sort=updated_at&order=desc`);
           return result.data || [];
         } catch (error) {
           console.error('❌ Failed to fetch recent cases:', error);
@@ -775,13 +775,9 @@ export const useCaseStore = create<CaseState>()(
 
       deleteCase: async (caseId: string): Promise<boolean> => {
         try {
-          // Use proper API base URL
-          const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiBase}/api/cases/${caseId}`, {
+          await apiFetch(`/api/cases/${caseId}`, {
             method: 'DELETE'
           });
-          
-          if (!response.ok) throw new Error('Failed to delete case');
           
           console.log('✅ Case deleted:', caseId);
           return true;

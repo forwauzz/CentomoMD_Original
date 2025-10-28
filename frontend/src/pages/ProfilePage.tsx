@@ -81,11 +81,14 @@ export const ProfilePage: React.FC = () => {
     consent_marketing: false,
   });
 
-  // Load profile data on component mount
+  // Load profile data on component mount and when user changes
   useEffect(() => {
-    loadProfile();
-    checkPasswordAuth();
-  }, []);
+    if (user?.id) {
+      console.log('🔍 ProfilePage: User ID changed, loading profile for:', user.id);
+      loadProfile();
+      checkPasswordAuth();
+    }
+  }, [user?.id]);
 
   const checkPasswordAuth = async () => {
     try {
@@ -105,11 +108,30 @@ export const ProfilePage: React.FC = () => {
     try {
       console.log('🔍 ProfilePage: Starting profile load...');
       setLoading(true);
+      
+      // Clear any persisted profile data to ensure fresh data
+      const { clearProfile } = useUserStore.getState();
+      clearProfile();
+      
+      // Also clear localStorage directly to ensure no stale data
+      try {
+        localStorage.removeItem('user-storage');
+        console.log('🔍 ProfilePage: Cleared localStorage for user-storage');
+      } catch (error) {
+        console.warn('⚠️ ProfilePage: Failed to clear localStorage:', error);
+      }
+      
       const data = await profileService.getProfile();
       console.log('🔍 ProfilePage: Profile data received:', data);
       
       // Ensure we have valid profile data
       if (data && typeof data === 'object') {
+        console.log('🔍 ProfilePage: Setting profile data:', {
+          display_name: data.display_name,
+          email: data.email,
+          user_id: data.user_id
+        });
+        
         setProfile(data);
         setFormData(data);
         setErrors({});
