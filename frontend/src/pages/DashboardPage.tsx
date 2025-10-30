@@ -1,18 +1,24 @@
 import React from 'react';
-import { useI18n } from '@/lib/i18n';
+ 
 import { DashboardCards } from '@/components/dashboard/DashboardCards';
+import { useAuth } from '@/lib/authClient';
 
 export const DashboardPage: React.FC = () => {
-  const { t } = useI18n();
+  const { user } = useAuth();
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-700">
-          {t('dashboard')}
-        </h1>
+      {/* Hero banner */}
+      <div className="-mx-4 lg:-mx-6">
+        <div className="w-full bg-[#0b2a4f] text-white">
+          <div className="px-4 lg:px-6 py-10 md:py-14">
+            <h1 className="font-semibold tracking-tight text-center text-3xl md:text-5xl lg:text-6xl">
+              {`Welcome Back${user ? `, ${user.name || user.email}` : ''}`}
+            </h1>
+          </div>
+        </div>
       </div>
-      
+
       <DashboardCards />
     </div>
   );

@@ -53,8 +53,8 @@ module.exports = {
         },
         // Medical theme colors
         medical: {
-          primary: "#2563eb", // Blue for medical
-          secondary: "#059669", // Green for health
+          primary: "#0b2a4f", // Navy primary
+          secondary: "#123c6b", // Darker navy accent
           warning: "#d97706", // Orange for alerts
           danger: "#dc2626", // Red for critical
           success: "#16a34a", // Green for success

@@ -138,6 +138,10 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     rawTranscript: string,
     template: TemplateJSON
   ): Promise<UniversalCleanupResponse> => {
+    // Guard: avoid calling API with empty transcript
+    if (!rawTranscript || !rawTranscript.trim()) {
+      throw new Error('No transcript content available');
+    }
     // Generate operation ID to prevent stale responses
     const opId = crypto.randomUUID();
     latestOpRef.current = opId;
@@ -162,6 +166,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     
     const result: UniversalCleanupResponse = await apiFetch('/api/format/mode2', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         transcript: rawTranscript,
         section: section,
@@ -716,6 +721,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           // Call Mode 2 formatter with clinical extraction template combination (auth-aware)
           const result = await apiFetch('/api/format/mode2', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               transcript: rawTranscript,
               section: '7',
@@ -821,6 +827,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           // Call Mode2Formatter API (auth-aware)
           const result = await apiFetch('/api/format/mode2', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               transcript: rawTranscript,
               section: section,
@@ -1021,7 +1028,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   return (
     <div className="space-y-6 pb-16">
       {/* Dynamic Layout based on output state */}
-      <div className={`grid grid-cols-1 gap-6 ${hasFinalOutput ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      <div className={`grid grid-cols-1 gap-6 ${hasFinalOutput ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
         {/* Left Column - Dictation Controls Card */}
         <div className="lg:col-span-1">
           <Card className="bg-white border border-gray-200 shadow-sm">
@@ -1159,7 +1166,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         {/* Right Column - Live and Final Transcript Cards */}
         <div className={hasFinalOutput ? 'lg:col-span-3 space-y-6' : 'lg:col-span-2 space-y-6'}>
           {/* Live Transcription Card - Minimized when final output exists */}
-          <Card className={`bg-white border border-gray-200 shadow-sm transition-all duration-300 ${hasFinalOutput ? 'max-h-32 overflow-hidden' : ''}`}>
+          <Card className={`bg-white border border-gray-200 shadow-sm transition-all duration-300 ${hasFinalOutput ? 'max-h-32 overflow-hidden' : 'max-h-[50vh]'} `}>
             <CardHeader className={hasFinalOutput ? 'pb-2' : ''}>
               <CardTitle className={`text-gray-800 flex items-center space-x-2 ${hasFinalOutput ? 'text-sm' : 'text-lg font-semibold'}`}>
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -1201,7 +1208,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               )}
 
               {/* Live Transcript Content */}
-              <div className={`bg-gray-50 rounded-md p-4 ${hasFinalOutput ? 'min-h-[60px] max-h-[60px] overflow-hidden' : 'min-h-[150px]'}`}>
+              <div className={`bg-gray-50 rounded-md p-4 ${hasFinalOutput ? 'min-h-[60px] max-h-[60px] overflow-hidden' : 'min-h-[150px] md:min-h-[200px] max-h-[40vh] overflow-auto'}`}>
                 {currentTranscript ? (
                   <p className={`text-gray-700 leading-relaxed ${hasFinalOutput ? 'text-xs' : 'text-sm'}`}>
                     {hasFinalOutput ? (
@@ -1348,13 +1355,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               )}
 
               {/* Final Transcript Text Area - Enhanced when output exists */}
-              <div className={`bg-gray-50 rounded-md p-4 transition-all duration-300 ${hasFinalOutput ? 'min-h-[400px]' : 'min-h-[200px]'}`}>
+              <div className={`bg-gray-50 rounded-md p-4 transition-all duration-300 ${hasFinalOutput ? 'min-h-[300px] md:min-h-[400px]' : 'min-h-[200px]'}`}>
                 {isEditing ? (
                   <div className="space-y-3">
                     <textarea
                       value={editedTranscript}
                       onChange={(e) => setEditedTranscript(e.target.value)}
-                      className={`w-full p-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasFinalOutput ? 'h-80' : 'h-32'}`}
+                      className={`w-full p-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasFinalOutput ? 'h-64 md:h-80' : 'h-40 md:h-48'}`}
                       placeholder="Edit your transcript here..."
                     />
                     <div className="flex space-x-2">

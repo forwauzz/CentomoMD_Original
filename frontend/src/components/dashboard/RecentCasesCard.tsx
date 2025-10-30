@@ -41,6 +41,7 @@ export const RecentCasesCard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'in_progress' | 'completed'>('all');
   const [recentCases, setRecentCases] = useState<RecentCase[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [caseCount, setCaseCount] = useState<number>(0);
 
   // Mock data for demonstration - in real implementation, this would come from the API
   const mockCases: RecentCase[] = [
@@ -82,6 +83,23 @@ export const RecentCasesCard: React.FC = () => {
     }
   }, [isExpanded, featureFlags.caseManagement]);
 
+  // Load a lightweight count on mount so the header can show total
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!featureFlags.caseManagement) return;
+      try {
+        const cases = await getRecentCases(10);
+        if (!mounted) return;
+        setCaseCount(Array.isArray(cases) ? cases.length : 0);
+      } catch {
+        if (!mounted) return;
+        setCaseCount(mockCases.length);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [featureFlags.caseManagement, getRecentCases]);
+
   const loadRecentCases = async () => {
     setIsLoading(true);
     try {
@@ -100,10 +118,12 @@ export const RecentCasesCard: React.FC = () => {
       }));
       
       setRecentCases(transformedCases);
+      setCaseCount(transformedCases.length);
     } catch (error) {
       console.error('Failed to load recent cases:', error);
       // Fallback to mock data for demonstration
       setRecentCases(mockCases);
+      setCaseCount(mockCases.length);
     } finally {
       setIsLoading(false);
     }
@@ -206,8 +226,9 @@ export const RecentCasesCard: React.FC = () => {
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-slate-700">
-            Recent Cases
+          <CardTitle className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+            <span>Recent Cases</span>
+            <Badge variant="secondary" className="text-xs">{caseCount}</Badge>
           </CardTitle>
           <Button
             variant="ghost"
@@ -254,7 +275,7 @@ export const RecentCasesCard: React.FC = () => {
           </div>
 
           {/* Cases List */}
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-2 max-h-[28rem] overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -270,22 +291,22 @@ export const RecentCasesCard: React.FC = () => {
                   key={caseItem.id}
                   className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                    <div className="flex items-start gap-2">
                       {getStatusIcon(caseItem.status)}
-                      <div>
-                        <p className="font-medium text-sm">{caseItem.patientName}</p>
-                        <p className="text-xs text-gray-500">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{caseItem.patientName}</p>
+                        <p className="text-xs text-gray-500 whitespace-nowrap">
                           {formatDate(caseItem.lastModified)}
                         </p>
                       </div>
                     </div>
-                    {getStatusBadge(caseItem.status)}
+                    <div className="sm:self-start">{getStatusBadge(caseItem.status)}</div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="mb-3">
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-gray-600 mb-1">
                       <span>Progress</span>
                       <span>{caseItem.sectionsCompleted}/{caseItem.totalSections} sections</span>
                     </div>
@@ -298,12 +319,12 @@ export const RecentCasesCard: React.FC = () => {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex gap-1">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleResumeCase(caseItem.id)}
-                      className="flex-1 text-xs"
+                      className="w-full sm:flex-1 text-xs"
                     >
                       <Play className="h-3 w-3 mr-1" />
                       Resume
