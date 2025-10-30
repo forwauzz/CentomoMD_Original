@@ -414,9 +414,20 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
       <CardHeader>
         <CardTitle className="text-lg">C2. Diagnostics acceptés par la CNESST</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="text-gray-500 text-center py-8">
-          Interface pour ajouter des diagnostics sera implémentée.
+      <CardContent className="space-y-2">
+        <div>
+          <Label htmlFor="diagnosticsText">Diagnostics acceptés (texte libre)</Label>
+          <Textarea
+            id="diagnosticsText"
+            value={(formData as any).diagnosticsText || ''}
+            onChange={(e) => handleInputChange('diagnosticsText', e.target.value)}
+            placeholder="Saisir le texte des diagnostics acceptés par la CNESST..."
+            rows={8}
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Ce contenu sera enregistré dans le brouillon et inclus lors de la finalisation.
+          </p>
         </div>
       </CardContent>
     </Card>
