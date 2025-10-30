@@ -238,9 +238,6 @@ export const TranscriptAnalysisPage: React.FC = () => {
     // Call the same backend endpoint as dictation page
     const response = await apiFetch('/api/format/mode2', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         transcript: content,
         section: section,
@@ -250,7 +247,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
         voiceCommandsSupport: false
       })
     });
-
+    
     if (!response.success) {
       throw new Error(response.error || 'Template processing failed');
     }

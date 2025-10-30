@@ -3,6 +3,10 @@ import { SecondarySectionNav } from '@/components/case/SecondarySectionNav';
 import { SectionForm } from '@/components/case/SectionForm';
 import { DictationPanel } from '@/components/case/DictationPanel';
 import { ExportModal } from '@/components/case/ExportModal';
+import { NavigationGuard } from '@/components/case/NavigationGuard';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Edit2, Check, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCaseStore } from '@/stores/caseStore';
 import { CNESST_SECTIONS, getSectionTitle } from '@/lib/constants';
@@ -10,8 +14,11 @@ import { isSchemaDrivenEnabled } from '@/lib/formSchema';
 
 export const NewCasePage: React.FC = () => {
   const { language } = useI18n();
-  const { activeSectionId, initializeCase, setActiveSection, updateSectionTitles, schema, loadSchema, currentCase, loadNewCase } = useCaseStore();
+  const { activeSectionId, initializeCase, setActiveSection, updateSectionTitles, schema, loadSchema, currentCase, loadNewCase, updateCaseName } = useCaseStore();
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [caseName, setCaseName] = useState('');
+  const [tempCaseName, setTempCaseName] = useState('');
   const lastIdRef = useRef<string | null>(null);
 
   // Handle URL parameters for section navigation and case loading
@@ -147,6 +154,16 @@ export const NewCasePage: React.FC = () => {
     updateSectionTitles(sectionTitles);
   }, [language, updateSectionTitles]);
 
+  // Sync case name with current case
+  useEffect(() => {
+    if (currentCase?.name) {
+      setCaseName(currentCase.name);
+    } else {
+      // Reset to default when no case or new case
+      setCaseName('Nouveau cas');
+    }
+  }, [currentCase?.id, currentCase?.name]);
+
   // Resolve section existence, audio flag and title safely for both schema and legacy
   const schemaSection = (isSchemaDrivenEnabled() && schema) ? schema.sections[activeSectionId] : undefined;
   const legacySection = CNESST_SECTIONS.find(s => s.id === activeSectionId);
@@ -161,6 +178,31 @@ export const NewCasePage: React.FC = () => {
     console.log('Exporting:', { format, bilingual });
   };
 
+  // Case name editing functions
+  const handleEditName = () => {
+    setTempCaseName(caseName);
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    if (currentCase && tempCaseName.trim()) {
+      try {
+        await updateCaseName(currentCase.id, tempCaseName.trim());
+        setCaseName(tempCaseName.trim());
+        setIsEditingName(false);
+      } catch (error) {
+        console.error('Failed to update case name:', error);
+        // Reset to original name on error
+        setTempCaseName(caseName);
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setTempCaseName(caseName);
+    setIsEditingName(false);
+  };
+
   if (!activeSectionId || !hasSection) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -173,24 +215,78 @@ export const NewCasePage: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex">
-      {/* Secondary Navigation */}
-      <SecondarySectionNav onExport={() => setShowExportModal(true)} />
+    <NavigationGuard>
+      <div className="h-full flex flex-col">
+      {/* Case Name Editor */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-700">Nom du cas:</span>
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={tempCaseName}
+                onChange={(e) => setTempCaseName(e.target.value)}
+                className="h-8 w-64"
+                placeholder="Nom du cas"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={handleSaveName}
+                className="h-8 w-8 p-0"
+                disabled={!tempCaseName.trim()}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelEdit}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-900">{caseName || 'Nouveau cas'}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleEditName}
+                className="h-6 w-6 p-0"
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
       
-      {/* Main Form Area */}
+      {/* Main Content Area - Left to Right Layout */}
       <div className="flex-1 flex">
+        {/* Left Side - Section Navigation */}
+        <div className="w-80 border-r border-gray-200 bg-gray-50">
+          <SecondarySectionNav onExport={() => setShowExportModal(true)} />
+        </div>
+        
+        {/* Center - Section Form */}
         <div className="flex-1">
           <SectionForm sectionId={activeSectionId} />
         </div>
         
-              {/* Dictation Panel - Only show for audio-required sections */}
-              {audioRequired && (
-                <DictationPanel 
-                  sectionTitle={sectionTitle}
-                  caseId={currentCase?.id} // Pass current case ID
-                  sectionId={activeSectionId}
-                />
-              )}
+        {/* Right Side - Dictation Panel (only when needed) */}
+        {audioRequired && (
+          <DictationPanel 
+            sectionTitle={sectionTitle}
+            caseId={currentCase?.id} // Pass current case ID
+            sectionId={activeSectionId}
+          />
+        )}
       </div>
 
       {/* Export Modal */}
@@ -199,6 +295,7 @@ export const NewCasePage: React.FC = () => {
         onClose={() => setShowExportModal(false)}
         onExport={handleExport}
       />
-    </div>
+      </div>
+    </NavigationGuard>
   );
 };
