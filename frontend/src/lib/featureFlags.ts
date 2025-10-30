@@ -15,6 +15,7 @@ export interface FeatureFlags {
   feedbackServerSync: boolean;
   outputLanguageSelection: boolean;
   caseManagement: boolean;
+  landingPage: boolean;
 }
 
 // Default feature flags - all disabled by default for safety
@@ -28,6 +29,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   feedbackServerSync: false,
   outputLanguageSelection: false,
   caseManagement: false,
+  landingPage: false,
 };
 
 // Environment-based feature flags
@@ -44,6 +46,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: import.meta.env.VITE_FEATURE_FEEDBACK_SERVER_SYNC === 'true',
     outputLanguageSelection: import.meta.env.VITE_FEATURE_OUTPUT_LANGUAGE_SELECTION === 'true',
     caseManagement: import.meta.env.VITE_FEATURE_CASE_MANAGEMENT === 'true',
+    landingPage: import.meta.env.VITE_FEATURE_LANDING_PAGE === 'true',
   };
 
   // For development, we can enable features for testing
@@ -57,6 +60,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: true, // Enable for development - feedback server sync
     outputLanguageSelection: true, // Enable for development - output language selection
     caseManagement: true, // Enable for development - case management integration
+    landingPage: false, // Keep OFF by default; enable via env var only
   };
 
   // Use environment flags if available, otherwise use dev flags
@@ -70,6 +74,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: envFlags.feedbackServerSync || devFlags.feedbackServerSync,
     outputLanguageSelection: envFlags.outputLanguageSelection || devFlags.outputLanguageSelection,
     caseManagement: envFlags.caseManagement || devFlags.caseManagement,
+    landingPage: envFlags.landingPage || devFlags.landingPage,
   };
 };
 
