@@ -38,12 +38,8 @@ export const AuthCallback: React.FC = () => {
     const handleAuthCallback = async () => {
       try {
         console.log('🔍 Auth callback triggered, processing...');
-        
-        // Get the hash fragment from the URL (Supabase puts tokens here)
-        const hash = location.hash;
-        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
-        
-        // Extract intended path in priority order
+
+        // Helper: extract intended destination (must be defined before use)
         const getIntendedDestination = () => {
           // 1. Check URL state parameter (from OAuth)
           const urlParams = new URLSearchParams(location.search);
@@ -59,25 +55,68 @@ export const AuthCallback: React.FC = () => {
               console.warn('⚠️ Failed to decode OAuth state:', error);
             }
           }
-          
+
           // 2. Check localStorage fallback
           const storedPath = getIntendedPath();
           if (storedPath) {
             console.log('🔍 Found intended path in localStorage:', storedPath);
             return storedPath;
           }
-          
+
           // 3. Check ?redirect param
           const redirectParam = urlParams.get('redirect');
           if (redirectParam) {
             console.log('🔍 Found intended path in redirect param:', redirectParam);
             return redirectParam;
           }
-          
+
           // 4. Default to root
           console.log('🔍 No intended path found, defaulting to /');
           return '/';
         };
+
+        // First, handle PKCE/code flow (?code= in search params)
+        const search = new URLSearchParams(location.search);
+        const codeParam = search.get('code');
+        const oauthError = search.get('error');
+        const oauthErrorDesc = search.get('error_description');
+
+        if (oauthError) {
+          throw new Error(oauthErrorDesc || oauthError);
+        }
+
+        if (codeParam) {
+          console.log('🔍 OAuth code detected, exchanging for session...');
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(codeParam);
+          if (exchangeError) throw exchangeError;
+
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('Session not established after code exchange');
+
+          // Try to create profile automatically
+          if (session.access_token) {
+            await createUserProfile(session.access_token);
+          }
+
+          setStatus('success');
+          setMessage('Authentication successful! Redirecting...');
+
+          const intendedDestination = getIntendedDestination();
+          clearIntendedPath();
+
+          // Clean up the URL (remove code/state params)
+          try { window.history.replaceState({}, document.title, '/auth/callback'); } catch {}
+
+          setTimeout(() => {
+            navigate(intendedDestination, { replace: true });
+          }, 500);
+          return; // Done handling code flow
+        }
+
+        // Get the hash fragment from the URL (implicit flow tokens live in hash)
+        const hash = location.hash;
+        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
+
         
         if (hash) {
           // Parse the hash to extract access_token and refresh_token
