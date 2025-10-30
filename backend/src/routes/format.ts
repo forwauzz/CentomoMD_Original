@@ -109,34 +109,33 @@ router.post('/mode2', async (req, res) => {
 
     // Development mode: no auth required
 
-    // Initialize Mode 2 formatter (stub to avoid missing module issues in some environments)
-    const formatter: any = {
-      async format(text: string) {
-        return {
-          formatted: text,
-          issues: [],
-          sources_used: [],
-          confidence_score: 0.5,
-          clinical_entities: []
-        };
-      }
-    };
-    
-    // Format the transcript with AI
-    const result = await formatter.format(transcript, {
-      language: finalInputLanguage as 'fr' | 'en', // Keep for backward compatibility
-      inputLanguage: finalInputLanguage as 'fr' | 'en',
-      outputLanguage: finalOutputLanguage as 'fr' | 'en',
-      section: section as '7' | '8' | '11',
-      case_id,
-      selected_sections,
-      extra_dictation,
-      // Template combination parameters
-      templateCombo,
-      verbatimSupport,
-      voiceCommandsSupport,
-      templateId
+    // Route to the decoupled ProcessingOrchestrator (minimal change, keeps existing contracts)
+    const { processingOrchestrator } = await import('../services/processing/ProcessingOrchestrator.js');
+
+    // Select template id: honor explicit templateId, else map by section (7/8). Section 11 is not supported by orchestrator handlers.
+    const mappedTemplateId = templateId || (section === '7' ? 'section7-ai-formatter' : section === '8' ? 'section8-ai-formatter' : undefined);
+    if (!mappedTemplateId) {
+      return res.status(400).json({ error: 'No formatter available for the requested section' });
+    }
+
+    const correlationId = `mode2-${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
+
+    const orchestrated = await processingOrchestrator.processContent({
+      sectionId: `section_${section}`,
+      modeId: 'mode2',
+      templateId: mappedTemplateId,
+      language: finalInputLanguage,
+      content: transcript,
+      correlationId
     });
+    
+    const result = {
+      formatted: orchestrated.processedContent,
+      issues: [],
+      sources_used: [],
+      confidence_score: 0.8,
+      clinical_entities: []
+    };
 
     // Run shadow mode comparison if enabled
     const shadowResult = await ShadowModeHook.runShadowComparison({
@@ -156,7 +155,6 @@ router.post('/mode2', async (req, res) => {
       confidence_score: result.confidence_score,
       clinical_entities: result.clinical_entities,
       success: true,
-      // Include shadow comparison result in development
       ...(shadowResult && { shadowComparison: shadowResult })
     });
 

@@ -51,7 +51,7 @@ export const StartDictationCard: React.FC = () => {
           className="w-full bg-red-600 hover:bg-red-700 text-white"
         >
           <Mic className="h-4 w-4 mr-2" />
-          {t('startDictation')}
+          Begin Recording
         </Button>
       </CardContent>
     </Card>
