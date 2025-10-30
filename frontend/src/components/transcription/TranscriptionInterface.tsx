@@ -163,10 +163,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     const response = await api('/api/format/mode2', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Content-Type': 'application/json'
       },
-      credentials: 'include',
       body: JSON.stringify({
         transcript: rawTranscript,
         section: section,
@@ -784,8 +782,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         try {
           setFormattingProgress('Checking authentication...');
           
-          // Import apiFetch and auth utilities
-          const { apiFetch } = await import('../../lib/api');
+          // Import auth utilities
           const { supabase } = await import('../../lib/authClient');
           
           // Check if user is authenticated
@@ -835,8 +832,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           
           console.log('Using section:', section, 'for template:', template.id);
           
-          // Call Mode2Formatter API using proper authentication
-          const result = await apiFetch('/api/format/mode2', {
+          // Call Mode2Formatter API
+          const response = await api('/api/format/mode2', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -852,6 +849,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               voiceCommandsSupport
             })
           });
+          
+          const result = await response.json();
           
           console.log('AI formatting successful');
           console.log('Formatted result:', result.formatted);

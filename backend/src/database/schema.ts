@@ -109,6 +109,8 @@ export const cases = pgTable('cases', {
   id: uuid('id').primaryKey().defaultRandom(),
   user_id: uuid('user_id').notNull(),
   clinic_id: uuid('clinic_id'),
+  name: varchar('name', { length: 255 }).default('Nouveau cas'),
+  status: text('status', { enum: ['draft', 'in_progress', 'completed'] }).notNull().default('draft'),
   draft: jsonb('draft').notNull().default({}),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),

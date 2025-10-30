@@ -645,20 +645,22 @@ router.post('/:id/sections/:sectionId/commit', authenticateUser, async (req, res
     
     try {
       // First, check if the case exists
+      const caseIdStr = String(caseId);
+      const sectionIdStr = String(sectionId);
+
       const existingCase = await db.select()
         .from(cases)
-        .where(eq(cases.id, caseId))
+        .where(eq(cases.id, caseIdStr))
         .limit(1);
 
       if (existingCase.length === 0) {
         // Case doesn't exist, create a new one
         const newCase = await db.insert(cases).values({
-          id: caseId,
           user_id: user.user_id, // Use the authenticated user
           clinic_id: '00000000-0000-0000-0000-000000000000', // Temporary clinic ID for testing
           draft: {
             sections: {
-              [sectionId]: {
+              [sectionIdStr]: {
                 data: {
                   finalText: finalText,
                   savedAt: new Date().toISOString(),
@@ -672,12 +674,12 @@ router.post('/:id/sections/:sectionId/commit', authenticateUser, async (req, res
         console.log('✅ [Cases] Created new case:', newCase[0]?.id);
       } else {
         // Case exists, update the draft with new section data
-        const currentDraft = existingCase[0]?.draft as any || {};
+        const currentDraft = (existingCase[0]?.draft as any) || {};
         const updatedDraft = {
           ...currentDraft,
           sections: {
             ...currentDraft.sections,
-            [sectionId]: {
+            [sectionIdStr]: {
               data: {
                 finalText: finalText,
                 savedAt: new Date().toISOString(),
@@ -692,7 +694,7 @@ router.post('/:id/sections/:sectionId/commit', authenticateUser, async (req, res
             draft: updatedDraft,
             updated_at: new Date()
           })
-          .where(eq(cases.id, caseId));
+          .where(eq(cases.id, caseIdStr));
         
         console.log('✅ [Cases] Updated existing case:', caseId);
       }

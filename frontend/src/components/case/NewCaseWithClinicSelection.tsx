@@ -4,6 +4,7 @@ import { Plus, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClinicSelectionModal } from './ClinicSelectionModal';
+import { apiFetch } from '@/lib/api';
 
 interface Clinic {
   id: string;
@@ -37,13 +38,11 @@ export const NewCaseWithClinicSelection: React.FC<NewCaseWithClinicSelectionProp
     
     try {
       // Create new case with selected clinic
-        // Use proper API base URL
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-        const response = await fetch(`${apiBase}/api/cases`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      const response = await apiFetch('/api/cases', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           clinic_id: clinic.id,
           metadata: {
@@ -52,10 +51,8 @@ export const NewCaseWithClinicSelection: React.FC<NewCaseWithClinicSelectionProp
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        const caseId = data.data.id;
+      if (response.success) {
+        const caseId = response.data.id;
         
         // Notify parent component if callback provided
         if (onCaseCreated) {
@@ -65,7 +62,7 @@ export const NewCaseWithClinicSelection: React.FC<NewCaseWithClinicSelectionProp
         // Navigate to the new case
         navigate(`/case/new?caseId=${caseId}`);
       } else {
-        console.error('Failed to create case:', data.error);
+        console.error('Failed to create case:', response.error);
         alert('Erreur lors de la création du cas. Veuillez réessayer.');
       }
     } catch (error) {
