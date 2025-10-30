@@ -51,13 +51,7 @@ router.post('/mode2', async (req, res) => {
       language, // Legacy parameter for backward compatibility
       inputLanguage, 
       outputLanguage, 
-      case_id, 
-      selected_sections, 
-      extra_dictation,
-      // Template combination parameters
-      templateCombo,
-      verbatimSupport,
-      voiceCommandsSupport,
+      case_id,
       templateId
     } = req.body;
     

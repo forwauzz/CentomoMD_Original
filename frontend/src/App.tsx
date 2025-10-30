@@ -24,6 +24,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
 import { TranscriptionProvider } from '@/contexts/TranscriptionContext';
+import { LandingPage } from '@/pages/LandingPage';
 
 function App() {
   const featureFlags = useFeatureFlags();
@@ -33,6 +34,10 @@ function App() {
       <TranscriptionProvider>
         <BrowserRouter>
       <Routes>
+        {/* Optional public landing page (feature-flagged) */}
+        {featureFlags.landingPage && (
+          <Route path="/" element={<LandingPage />} />
+        )}
         {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
