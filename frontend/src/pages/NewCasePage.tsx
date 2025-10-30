@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SecondarySectionNav } from '@/components/case/SecondarySectionNav';
 import { SectionForm } from '@/components/case/SectionForm';
 import { DictationPanel } from '@/components/case/DictationPanel';
@@ -15,6 +16,7 @@ import { isSchemaDrivenEnabled } from '@/lib/formSchema';
 export const NewCasePage: React.FC = () => {
   const { language } = useI18n();
   const { activeSectionId, initializeCase, setActiveSection, updateSectionTitles, schema, loadSchema, currentCase, loadNewCase, updateCaseName } = useCaseStore();
+  const location = useLocation();
   const [showExportModal, setShowExportModal] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [caseName, setCaseName] = useState('');
@@ -39,6 +41,8 @@ export const NewCasePage: React.FC = () => {
       loadNewCase(caseIdParam).then((loadedCase) => {
         if (loadedCase) {
           console.log('✅ [NewCasePage] Case loaded successfully:', loadedCase.id);
+          // Ensure name updates immediately in header
+          setCaseName((loadedCase as any).name || 'Nouveau cas');
           
           // Ensure schema is loaded for proper section initialization
           if (!schema) {
@@ -65,7 +69,7 @@ export const NewCasePage: React.FC = () => {
         }
       });
     }
-  }, [currentCase, activeSectionId, loadNewCase, setActiveSection, lastIdRef.current]);
+  }, [location.search, activeSectionId, loadNewCase, setActiveSection, schema, loadSchema]);
 
   // Set active section when schema becomes available after loading a case
   useEffect(() => {

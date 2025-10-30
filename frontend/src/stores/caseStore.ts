@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { formSchemaLoader, FormSchema, Section, SectionData } from '@/lib/formSchema';
 import { Case as NewCase, CaseContext } from '@/types/case';
 import { apiFetch } from '@/lib/api';
+import { useUserStore } from '@/stores/userStore';
 import { getSectionTitle, CNESST_SECTIONS } from '@/lib/constants';
 
 // Legacy types for backward compatibility
@@ -135,36 +136,24 @@ export const useCaseStore = create<CaseState>()(
       loadCase: async (caseId: string) => {
         set({ isLoading: true });
         try {
-          // TODO: Implement API call to load case from backend
-          // For now, create a new case with schema
-          const schema = get().schema;
-          if (!schema) {
+          const result = await apiFetch(`/api/cases/${caseId}`);
+          const caseData = result.data as Case;
+
+          // Ensure schema loaded for UI fallbacks
+          if (!get().schema) {
             await get().loadSchema();
-            const updatedSchema = get().schema;
-            if (!updatedSchema) throw new Error('Failed to load schema');
           }
-          
-          const currentSchema = get().schema!;
-          const newCase: Case = {
-            id: caseId,
-            user_id: 'current-user', // TODO: Get from auth
-            clinic_id: 'current-clinic', // TODO: Get from auth
-            name: 'Nouveau cas',
-            status: 'draft',
-            draft: currentSchema,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-          
-          set({ 
-            currentCase: newCase,
-            activeSectionId: currentSchema.ui.activeSectionId,
-            isDirty: false
-          });
-          
-          console.log('✅ Case loaded successfully');
+          const schema = get().schema;
+          const activeFromDraft = (caseData.draft as any)?.ui?.activeSectionId as string | undefined;
+          const firstFromSchema = schema?.ui?.order?.[0];
+          const firstLegacy = CNESST_SECTIONS[0]?.id;
+          const nextActive = activeFromDraft || firstFromSchema || firstLegacy || '';
+
+          set({ currentCase: caseData, activeSectionId: nextActive, isDirty: false });
+          console.log('✅ Case loaded from backend:', caseData.id);
         } catch (error) {
           console.error('❌ Failed to load case:', error);
+          throw error;
         } finally {
           set({ isLoading: false });
         }
@@ -624,10 +613,11 @@ export const useCaseStore = create<CaseState>()(
           sessions: []
         };
         
+        const profile = useUserStore.getState().profile;
         const newCase: Case = {
           id: `case_${Date.now()}`,
-          user_id: 'current-user',
-          clinic_id: 'current-clinic',
+          user_id: profile?.user_id || 'unknown-user',
+          clinic_id: profile?.default_clinic_id || 'unknown-clinic',
           name: 'Nouveau cas',
           status: 'draft',
           draft: schema,
@@ -717,10 +707,11 @@ export const useCaseStore = create<CaseState>()(
           console.log('✅ Case created successfully:', caseId, result.data);
           
           // Auto-save the case locally for immediate access
+          const profile = useUserStore.getState().profile;
           const localCase: Case = {
             id: caseId,
-            user_id: 'current-user', // TODO: Get from auth
-            clinic_id: 'current-clinic', // TODO: Get from auth
+            user_id: profile?.user_id || 'unknown-user',
+            clinic_id: profile?.default_clinic_id || 'unknown-clinic',
             name: 'Nouveau cas',
             status: result.data.status || 'draft',
             draft: {
