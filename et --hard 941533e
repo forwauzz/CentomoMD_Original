@@ -1,5 +1,0 @@
-[33m8f57e16[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mimproving-UI-/-ai-formatter[m[33m)[m feat(transcription): implement Phase 0 - mode-specific AWS Transcribe configuration
-[33m941533e[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/feature/transcription-pipeline[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmaster[m[33m, [m[1;32mfeature/transcription-pipeline[m[33m, [m[1;32mdevelop[m[33m)[m feat: Complete Phase 2 AI formatting system with golden standard quality
-[33m4922a50[m feat: Implement Phase 1 - Mode 1 (Word-for-Word) Formatter
-[33m3fd3e7f[m[33m ([m[1;31morigin/fix/frontend-env-variables[m[33m, [m[1;32mfix/frontend-env-variables[m[33m)[m feat(auth): Fix JWKS 401 error and implement verification strategy toggle
-[33m2ad72c3[m[33m ([m[1;31morigin/fix/backend-server-startup[m[33m, [m[1;32mfix/backend-server-startup[m[33m)[m fix: resolve profile page flickering and JWT verification issues
