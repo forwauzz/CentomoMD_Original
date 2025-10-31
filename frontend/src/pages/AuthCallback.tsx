@@ -113,6 +113,39 @@ export const AuthCallback: React.FC = () => {
           return; // Done handling code flow
         }
 
+        // Next, handle magic link/recovery flows that return token_hash & type in the query
+        const tokenHash = search.get('token_hash');
+        const tokenType = search.get('type'); // e.g., 'magiclink', 'recovery', 'invite', 'email_change'
+
+        if (tokenHash && tokenType) {
+          console.log('🔍 Magic link detected, verifying token...');
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: tokenType as any,
+          } as any);
+          if (verifyError) throw verifyError;
+
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('Session not established after magic link verification');
+
+          if (session.access_token) {
+            await createUserProfile(session.access_token);
+          }
+
+          setStatus('success');
+          setMessage('Authentication successful! Redirecting...');
+
+          const intendedDestination = getIntendedDestination();
+          clearIntendedPath();
+
+          try { window.history.replaceState({}, document.title, '/auth/callback'); } catch {}
+
+          setTimeout(() => {
+            navigate(intendedDestination, { replace: true });
+          }, 500);
+          return; // Done handling magic link flow
+        }
+
         // Get the hash fragment from the URL (implicit flow tokens live in hash)
         const hash = location.hash;
         console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
