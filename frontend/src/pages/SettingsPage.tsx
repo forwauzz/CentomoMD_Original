@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useUIStore } from '@/stores/uiStore';
+import { useUserStore, useEnsureProfileLoaded } from '@/stores/userStore';
+import { apiJSON } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +24,10 @@ import {
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
-  const { inputLanguage, setInputLanguage } = useUIStore();
+  const { inputLanguage, setInputLanguage, addToast } = useUIStore();
+  const profile = useUserStore((s) => s.profile);
+  const refreshProfile = useUserStore((s) => s.refreshProfile);
+  useEnsureProfileLoaded();
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState({
     // General
@@ -32,6 +37,7 @@ export const SettingsPage: React.FC = () => {
     // Compliance
     quebecLaw25: true,
     pipeda: true,
+    consentAnalytics: true, // Default to true (checked ON)
     zeroRetention: false,
     
     // Dictation defaults - sync with UI store
@@ -50,6 +56,17 @@ export const SettingsPage: React.FC = () => {
     clearCacheOnExit: false,
   });
 
+  // Load profile data and sync with settings
+  useEffect(() => {
+    if (profile) {
+      setSettings(prev => ({
+        ...prev,
+        pipeda: profile.consent_pipeda ?? prev.pipeda,
+        consentAnalytics: profile.consent_analytics ?? true, // Default to true if not set
+      }));
+    }
+  }, [profile]);
+
   const handleSettingChange = (key: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -64,22 +81,38 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleSaveSettings = () => {
-    // TODO: Implement settings save to backend
-    console.log('Saving settings:', settings);
-    
+  const handleSaveSettings = async () => {
     setIsSaving(true);
     
-    // Simulate save operation
-    setTimeout(() => {
-      // Show success feedback
-      alert('Paramètres sauvegardés avec succès!');
+    try {
+      // Save compliance settings to profile
+      await apiJSON('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          consent_pipeda: settings.pipeda,
+          consent_analytics: settings.consentAnalytics,
+        }),
+      });
+
+      // Refresh profile to get updated values
+      await refreshProfile();
+
+      addToast({
+        type: 'success',
+        title: 'Settings Saved',
+        message: 'Your settings have been saved successfully.',
+      });
+
       setIsSaving(false);
-      // In a real app, you would:
-      // 1. Call API to save settings
-      // 2. Update global state if needed
-      // 3. Show toast notification
-    }, 500);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      addToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: 'Failed to save settings. Please try again.',
+      });
+      setIsSaving(false);
+    }
   };
 
   const handleClearCache = () => {
@@ -220,6 +253,18 @@ export const SettingsPage: React.FC = () => {
                 onCheckedChange={(checked) => handleSettingChange('pipeda', checked)}
               />
               <Label htmlFor="pipeda">{t('pipeda')}</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="consentAnalytics"
+                checked={settings.consentAnalytics}
+                onCheckedChange={(checked) => handleSettingChange('consentAnalytics', checked)}
+              />
+              <Label htmlFor="consentAnalytics">
+                Analytics Consent
+                <span className="text-xs text-gray-500 ml-1">(Help improve templates)</span>
+              </Label>
             </div>
 
             <div className="flex items-center space-x-2">
