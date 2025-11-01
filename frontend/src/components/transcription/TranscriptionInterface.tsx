@@ -21,6 +21,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useBackendConfig } from '@/hooks/useBackendConfig';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { useTranscriptionContext, TranscriptionContextData } from '@/contexts/TranscriptionContext';
+import { supabase } from '@/lib/authClient';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -621,13 +622,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
             const endpoint = `${apiBase}/format/word-for-word-ai`;
             
+            // Get access token from Supabase session
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token || null;
+            
             // Call the backend Word-for-Word (with AI) formatting endpoint
             const response = await fetch(endpoint, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'x-correlation-id': correlationId,
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
               },
               credentials: 'include',
               body: JSON.stringify({

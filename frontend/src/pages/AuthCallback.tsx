@@ -38,6 +38,11 @@ export const AuthCallback: React.FC = () => {
     const handleAuthCallback = async () => {
       try {
         console.log('🔍 Auth callback triggered, processing...');
+        console.log('🔍 Full URL:', window.location.href);
+        console.log('🔍 Pathname:', location.pathname);
+        console.log('🔍 Search params:', location.search);
+        console.log('🔍 Hash:', location.hash);
+        console.log('🔍 VITE_SITE_URL:', import.meta.env.VITE_SITE_URL);
 
         // Helper: extract intended destination (must be defined before use)
         const getIntendedDestination = () => {
@@ -231,6 +236,14 @@ export const AuthCallback: React.FC = () => {
         
       } catch (error) {
         console.error('❌ Auth callback error:', error);
+        console.error('❌ Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined,
+          url: window.location.href,
+          hash: location.hash,
+          search: location.search
+        });
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Authentication failed');
         
