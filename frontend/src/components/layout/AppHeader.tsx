@@ -175,7 +175,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
+              onClick={() => navigate(ROUTES.PROFILE)}
+              className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50 cursor-pointer"
+              title="Open Profile"
             >
               <User className="h-4 w-4" />
               <span className="hidden lg:inline">{name}</span>
