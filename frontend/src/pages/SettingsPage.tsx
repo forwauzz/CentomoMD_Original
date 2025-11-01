@@ -19,8 +19,10 @@ import {
   Database, 
   Save,
   Upload,
-  Trash2
+  Trash2,
+  BarChart3
 } from 'lucide-react';
+import { TemplateUsageStats } from '@/components/stats/TemplateUsageStats';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
@@ -420,6 +422,11 @@ export const SettingsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Template Usage Statistics */}
+        <div className="lg:col-span-2">
+          <TemplateUsageStats />
+        </div>
       </div>
     </div>
   );
