@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, boolean, integer, json, jsonb, uuid, varchar, decimal, unique } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // Users table - REMOVED: Now using auth.users + public.profiles
 
@@ -11,6 +11,7 @@ export const profiles = pgTable('profiles', {
   locale: text('locale', { enum: ['en-CA', 'fr-CA'] }).notNull().default('fr-CA'),
   consent_pipeda: boolean('consent_pipeda').notNull().default(false),
   consent_marketing: boolean('consent_marketing').notNull().default(false),
+  consent_analytics: boolean('consent_analytics').notNull().default(true),
   default_clinic_id: uuid('default_clinic_id').references(() => clinics.id, { onDelete: 'set null' }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
@@ -76,6 +77,91 @@ export const templates = pgTable('templates', {
   }>>(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Template Combinations table (new - for frontend template combinations)
+export const templateCombinations = pgTable('template_combinations', {
+  id: varchar('id', { length: 255 }).primaryKey(), // Use template ID from config (e.g., 'word-for-word-with-ai')
+  name: varchar('name', { length: 255 }).notNull(),
+  name_fr: varchar('name_fr', { length: 255 }).notNull(),
+  name_en: varchar('name_en', { length: 255 }).notNull(),
+  description: text('description'),
+  description_fr: text('description_fr'),
+  description_en: text('description_en'),
+  type: text('type', { enum: ['formatter', 'ai-formatter', 'template-combo'] }).notNull(),
+  compatible_sections: jsonb('compatible_sections').$type<string[]>().notNull().default([]),
+  compatible_modes: jsonb('compatible_modes').$type<string[]>().notNull().default([]),
+  language: text('language', { enum: ['fr', 'en', 'both'] }).notNull().default('both'),
+  complexity: text('complexity', { enum: ['low', 'medium', 'high'] }).notNull().default('medium'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  is_active: boolean('is_active').notNull().default(true),
+  is_default: boolean('is_default').notNull().default(false),
+  features: jsonb('features').$type<{
+    verbatimSupport: boolean;
+    voiceCommandsSupport: boolean;
+    aiFormatting: boolean;
+    postProcessing: boolean;
+  }>().default({
+    verbatimSupport: false,
+    voiceCommandsSupport: false,
+    aiFormatting: false,
+    postProcessing: false,
+  }),
+  prompt: text('prompt'),
+  prompt_fr: text('prompt_fr'),
+  content: text('content'),
+  config: jsonb('config').$type<Record<string, any>>().default({}),
+  usage_stats: jsonb('usage_stats').$type<{
+    count: number;
+    lastUsed?: string;
+    successRate: number;
+  }>().default({ count: 0, successRate: 0 }),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Template Usage Events table (tracks every template application)
+export const templateUsageEvents = pgTable('template_usage_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  template_id: varchar('template_id', { length: 255 }).notNull().references(() => templateCombinations.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) in Supabase
+  case_id: uuid('case_id').references(() => cases.id, { onDelete: 'set null' }),
+  session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  section_id: text('section_id'),
+  mode_id: text('mode_id'),
+  applied_at: timestamp('applied_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Template Feedback table (one feedback per template/session/user)
+export const templateFeedback = pgTable('template_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  template_id: varchar('template_id', { length: 255 }).notNull().references(() => templateCombinations.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) in Supabase
+  session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  case_id: uuid('case_id').references(() => cases.id, { onDelete: 'set null' }),
+  section_id: text('section_id'),
+  mode_id: text('mode_id'),
+  transcript_id: uuid('transcript_id').references(() => transcripts.id, { onDelete: 'set null' }),
+  rating: integer('rating'), // CHECK (rating BETWEEN 1 AND 5) - added in SQL migration
+  comment: text('comment'),
+  tags: text('tags').array().default(sql`'{}'::text[]`),
+  applied_at: timestamp('applied_at', { withTimezone: true }).notNull(),
+  rated_at: timestamp('rated_at', { withTimezone: true }).defaultNow().notNull(),
+  time_to_rate: integer('time_to_rate'), // Computed: EXTRACT(EPOCH FROM (rated_at - applied_at))
+  was_dismissed: boolean('was_dismissed').notNull().default(false),
+  interaction_time: integer('interaction_time'),
+}, (t) => ({
+  uniq_feedback_once: unique().on(t.template_id, t.session_id, t.user_id),
+}));
+
+// Feedback Prompts Queue table (schedules feedback prompts)
+export const feedbackPromptsQueue = pgTable('feedback_prompts_queue', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  template_id: varchar('template_id', { length: 255 }).notNull(),
+  user_id: uuid('user_id').notNull(), // References auth.users(id) in Supabase
+  session_id: uuid('session_id').references(() => sessions.id, { onDelete: 'cascade' }),
+  scheduled_at: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Audit logs table
@@ -296,6 +382,10 @@ export type DatabaseSchema = {
   sessions: typeof sessions;
   transcripts: typeof transcripts;
   templates: typeof templates;
+  template_combinations: typeof templateCombinations;
+  template_usage_events: typeof templateUsageEvents;
+  template_feedback: typeof templateFeedback;
+  feedback_prompts_queue: typeof feedbackPromptsQueue;
   audit_logs: typeof audit_logs;
   clinics: typeof clinics;
   cases: typeof cases;
@@ -317,6 +407,14 @@ export type Transcript = typeof transcripts.$inferSelect;
 export type NewTranscript = typeof transcripts.$inferInsert;
 export type Template = typeof templates.$inferSelect;
 export type NewTemplate = typeof templates.$inferInsert;
+export type TemplateCombination = typeof templateCombinations.$inferSelect;
+export type NewTemplateCombination = typeof templateCombinations.$inferInsert;
+export type TemplateUsageEvent = typeof templateUsageEvents.$inferSelect;
+export type NewTemplateUsageEvent = typeof templateUsageEvents.$inferInsert;
+export type TemplateFeedbackRow = typeof templateFeedback.$inferSelect;
+export type NewTemplateFeedbackRow = typeof templateFeedback.$inferInsert;
+export type FeedbackPromptQueue = typeof feedbackPromptsQueue.$inferSelect;
+export type NewFeedbackPromptQueue = typeof feedbackPromptsQueue.$inferInsert;
 export type AuditLog = typeof audit_logs.$inferSelect;
 export type NewAuditLog = typeof audit_logs.$inferInsert;
 export type Clinic = typeof clinics.$inferSelect;
