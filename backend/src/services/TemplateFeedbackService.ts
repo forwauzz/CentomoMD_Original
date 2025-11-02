@@ -47,12 +47,14 @@ export class TemplateFeedbackService {
         };
       }
 
-      // Validate rating
-      if (rating < 1 || rating > 5) {
-        return {
-          success: false,
-          error: 'Rating must be between 1 and 5',
-        };
+      // Validate rating (required unless wasDismissed is true)
+      if (!options.wasDismissed) {
+        if (!rating || rating < 1 || rating > 5) {
+          return {
+            success: false,
+            error: 'Rating must be between 1 and 5',
+          };
+        }
       }
 
       // Calculate time to rate (in seconds)
@@ -68,7 +70,7 @@ export class TemplateFeedbackService {
         section_id: options.sectionId || null,
         mode_id: options.modeId || null,
         transcript_id: options.transcriptId || null,
-        rating,
+        rating: options.wasDismissed ? null : rating, // Null rating for dismissals
         comment: options.comment || null,
         tags: options.tags || [],
         applied_at: options.appliedAt,

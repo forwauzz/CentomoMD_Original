@@ -118,12 +118,14 @@ router.post('/:id/feedback', async (req, res) => {
     const { id: templateId } = req.params;
     const { sessionId, rating, comment, tags, wasDismissed, transcriptId, appliedAt } = req.body;
 
-    // Validate required fields
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({
-        success: false,
-        error: 'Rating must be between 1 and 5',
-      });
+    // Validate rating (required unless wasDismissed is true)
+    if (!wasDismissed) {
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          error: 'Rating must be between 1 and 5',
+        });
+      }
     }
 
     if (!appliedAt) {
@@ -197,6 +199,60 @@ router.post('/:id/feedback', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to submit feedback',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/templates/prompts/due
+ * Get due feedback prompts for current user
+ * Returns prompts where scheduled_at <= now()
+ */
+router.get('/prompts/due', async (req, res) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.user_id) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+      });
+    }
+
+    logger.info('Due feedback prompts requested', {
+      userId: user.user_id,
+    });
+
+    // Get all due prompts
+    const allDuePrompts = await FeedbackQueueService.getDueFeedbackPrompts();
+
+    // Filter for current user only
+    const userDuePrompts = allDuePrompts
+      .filter((prompt) => prompt.userId === user.user_id)
+      .map((prompt) => ({
+        id: prompt.id,
+        templateId: prompt.templateId,
+        sessionId: prompt.sessionId,
+        scheduledAt: prompt.scheduledAt.toISOString(),
+      }));
+
+    logger.info('Due feedback prompts fetched', {
+      userId: user.user_id,
+      count: userDuePrompts.length,
+    });
+
+    return res.json({
+      success: true,
+      data: userDuePrompts,
+      count: userDuePrompts.length,
+    });
+  } catch (error) {
+    logger.error('Failed to get due feedback prompts', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get due feedback prompts',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }

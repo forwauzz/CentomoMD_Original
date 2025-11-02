@@ -72,7 +72,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     dismissFeedback,
     pendingFeedback,
     showFeedbackBanner,
-    setShowFeedbackBanner,
   } = useTemplateTracking(sessionId, effectiveCaseId);
   
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
@@ -587,10 +586,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         captureTranscriptsForAnalysis(rawTranscript, result.formatted, template.title);
         
         // Track template application
-        await trackTemplateApplication(template.id, {
-          sectionId: effectiveSectionId || activeSection,
-          modeId: mode,
-        });
+        if (template.id) {
+          await trackTemplateApplication(template.id, {
+            sectionId: effectiveSectionId || activeSection,
+            modeId: mode,
+          });
+        }
         
         setIsFormatting(false);
         setFormattingProgress('');
@@ -727,10 +728,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         captureTranscriptsForAnalysis(rawTranscript, formattedTranscript, template.title);
         
         // Track template application
-        await trackTemplateApplication(template.id, {
-          sectionId: effectiveSectionId || activeSection,
-          modeId: mode,
-        });
+        if (template.id) {
+          await trackTemplateApplication(template.id, {
+            sectionId: effectiveSectionId || activeSection,
+            modeId: mode,
+          });
+        }
         
         setIsFormatting(false);
         setFormattingProgress('');
@@ -783,10 +786,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setAiStepStatus('success');
           
           // Track template application
-          await trackTemplateApplication(template.id, {
-            sectionId: effectiveSectionId || activeSection,
-            modeId: mode,
-          });
+          if (template.id) {
+            await trackTemplateApplication(template.id, {
+              sectionId: effectiveSectionId || activeSection,
+              modeId: mode,
+            });
+          }
           
         } catch (error) {
           console.error('Clinical extraction error:', error);
@@ -974,10 +979,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           captureTranscriptsForAnalysis(rawTranscript, result.formatted, template.title);
           
           // Track template application
-          await trackTemplateApplication(template.id, {
-            sectionId: effectiveSectionId || activeSection,
-            modeId: mode,
-          });
+          if (template.id) {
+            await trackTemplateApplication(template.id, {
+              sectionId: effectiveSectionId || activeSection,
+              modeId: mode,
+            });
+          }
           
           setIsFormatting(false);
           setFormattingProgress('');

@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { Star, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface TemplateFeedbackBannerProps {
   templateId: string;
@@ -15,7 +14,6 @@ interface TemplateFeedbackBannerProps {
 }
 
 export const TemplateFeedbackBanner: React.FC<TemplateFeedbackBannerProps> = ({
-  templateId,
   templateName,
   onRating,
   onDismiss,

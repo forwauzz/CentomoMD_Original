@@ -6,15 +6,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiJSON } from '@/lib/api';
 
-interface TemplateApplication {
-  templateId: string;
-  sessionId?: string;
-  caseId?: string;
-  sectionId?: string;
-  modeId?: string;
-  appliedAt: Date;
-}
-
 interface FeedbackPrompt {
   templateId: string;
   sessionId?: string;
@@ -25,6 +16,7 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
   const [pendingFeedback, setPendingFeedback] = useState<FeedbackPrompt | null>(null);
   const [showFeedbackBanner, setShowFeedbackBanner] = useState(false);
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Track template application
@@ -39,8 +31,6 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
       } = {}
     ) => {
       try {
-        const appliedAt = new Date();
-
         // Track usage via API
         const response = await apiJSON<{
           success: boolean;
@@ -59,29 +49,8 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
         });
 
         if (response.success && response.tracked !== false) {
-          // Schedule client-side feedback prompt (2 minutes)
-          const scheduledAt = new Date(appliedAt.getTime() + 2 * 60 * 1000);
-
-          // Clear any existing timer for this template/session
-          const timerKey = `${templateId}-${sessionId || 'no-session'}`;
-          const existingTimer = timersRef.current.get(timerKey);
-          if (existingTimer) {
-            clearTimeout(existingTimer);
-          }
-
-          // Set new timer
-          const timer = setTimeout(() => {
-            setPendingFeedback({
-              templateId,
-              sessionId,
-              scheduledAt,
-            });
-            setShowFeedbackBanner(true);
-            timersRef.current.delete(timerKey);
-          }, 2 * 60 * 1000); // 2 minutes
-
-          timersRef.current.set(timerKey, timer);
-
+          // Prompt is enqueued on server - polling will pick it up
+          // No need for client-side timer anymore
           console.log('✅ Template application tracked:', templateId);
         } else {
           console.log('ℹ️ Template application not tracked (user opted out):', templateId);
@@ -157,26 +126,102 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
   const dismissFeedback = useCallback(
     async (templateId: string, appliedAt: Date) => {
       try {
-        await submitFeedback(templateId, 0, {
-          wasDismissed: true,
-          appliedAt,
+        // Submit dismissal with no rating (wasDismissed = true)
+        await apiJSON<{
+          success: boolean;
+          feedbackId?: string;
+          stats?: any;
+        }>('/api/templates/' + templateId + '/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            wasDismissed: true,
+            appliedAt: appliedAt.toISOString(),
+          }),
         });
+
+        // Clear pending feedback
+        setPendingFeedback(null);
+        setShowFeedbackBanner(false);
+
+        // Clear any timers
+        const timerKey = `${templateId}-${sessionId || 'no-session'}`;
+        const existingTimer = timersRef.current.get(timerKey);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          timersRef.current.delete(timerKey);
+        }
+
+        console.log('✅ Feedback dismissed:', templateId);
       } catch (error) {
         // Even if submission fails, hide the banner
+        console.warn('Failed to dismiss feedback:', error);
         setPendingFeedback(null);
         setShowFeedbackBanner(false);
       }
     },
-    [submitFeedback]
+    [sessionId]
   );
 
-  // Cleanup timers on unmount
+  /**
+   * Poll for due feedback prompts from the queue
+   * This ensures prompts work even after navigation
+   */
   useEffect(() => {
+    const pollForDuePrompts = async () => {
+      try {
+        const response = await apiJSON<{
+          success: boolean;
+          data: Array<{
+            id: string;
+            templateId: string;
+            sessionId?: string;
+            scheduledAt: string;
+          }>;
+          count: number;
+        }>('/api/templates/prompts/due');
+
+        if (response.success && response.data && response.data.length > 0) {
+          // Get the first due prompt (most recent)
+          const duePrompt = response.data[0];
+
+          // Only show if we don't already have pending feedback for this template
+          if (!pendingFeedback || pendingFeedback.templateId !== duePrompt.templateId) {
+            setPendingFeedback({
+              templateId: duePrompt.templateId,
+              sessionId: duePrompt.sessionId,
+              scheduledAt: new Date(duePrompt.scheduledAt),
+            });
+            setShowFeedbackBanner(true);
+            
+            console.log('✅ Due feedback prompt found:', duePrompt.templateId);
+            // Don't remove prompt from queue yet - wait for user to provide feedback or dismiss
+            // The prompt will be removed when submitFeedback or dismissFeedback is called
+          }
+        }
+      } catch (error) {
+        // Silently fail - polling errors shouldn't break UX
+        console.warn('Failed to poll for due prompts:', error);
+      }
+    };
+
+    // Poll every 30 seconds for due prompts
+    pollingIntervalRef.current = setInterval(pollForDuePrompts, 30000);
+
+    // Initial poll
+    pollForDuePrompts();
+
     return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      // Cleanup timers on unmount
       timersRef.current.forEach((timer) => clearTimeout(timer));
       timersRef.current.clear();
     };
-  }, []);
+  }, [pendingFeedback]);
 
   return {
     trackTemplateApplication,

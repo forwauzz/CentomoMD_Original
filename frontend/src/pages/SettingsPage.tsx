@@ -19,8 +19,7 @@ import {
   Database, 
   Save,
   Upload,
-  Trash2,
-  BarChart3
+  Trash2
 } from 'lucide-react';
 import { TemplateUsageStats } from '@/components/stats/TemplateUsageStats';
 
