@@ -659,6 +659,24 @@ try {
   console.error('❌ mount /api/format:', e);
 }
 
+// Models routes
+try {
+  const modelsRouter = await import('./routes/models.js');
+  app.use('/api/models', modelsRouter.default);
+  console.log('✅ /api/models routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/models:', e);
+}
+
+// Benchmark routes
+try {
+  const benchmarkRouter = await import('./routes/benchmark.js');
+  app.use('/api/benchmark', benchmarkRouter.default);
+  console.log('✅ /api/benchmark routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/benchmark:', e);
+}
+
 // Debug routes
 try {
   const debugRouter = await import('./routes/debug.js');

@@ -288,6 +288,56 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   }),
 }));
 
+// Eval runs table - tracks each model/template execution
+export const eval_runs = pgTable('eval_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  template_ref: varchar('template_ref', { length: 255 }).notNull(),
+  model: varchar('model', { length: 100 }).notNull(),
+  seed: integer('seed'),
+  temperature: decimal('temperature', { precision: 3, scale: 2 }),
+  prompt_hash: varchar('prompt_hash', { length: 64 }), // SHA-256 hash
+  section: text('section', { enum: ['section_7', 'section_8', 'section_11'] }).notNull(),
+  lang: varchar('lang', { length: 10 }).notNull(), // 'fr' | 'en'
+  layer_stack: jsonb('layer_stack').$type<string[]>().default([]),
+  stack_fingerprint: varchar('stack_fingerprint', { length: 64 }),
+  template_base: varchar('template_base', { length: 255 }),
+  template_version: varchar('template_version', { length: 50 }),
+  latency_ms: integer('latency_ms'),
+  tokens_in: integer('tokens_in'),
+  tokens_out: integer('tokens_out'),
+  cost_usd: decimal('cost_usd', { precision: 10, scale: 6 }),
+  success: boolean('success').notNull().default(true),
+  error: text('error'),
+  deterministic: boolean('deterministic').notNull().default(false), // False if seed ignored
+  p_value: decimal('p_value', { precision: 8, scale: 6 }), // For A/B testing statistics
+  ci_low: decimal('ci_low', { precision: 8, scale: 6 }), // 95% CI lower bound
+  ci_high: decimal('ci_high', { precision: 8, scale: 6 }), // 95% CI upper bound
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Eval results table - stores metrics, diffs, compliance checks
+export const eval_results = pgTable('eval_results', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  run_id: uuid('run_id').notNull().references(() => eval_runs.id, { onDelete: 'cascade' }),
+  metrics_json: jsonb('metrics_json').$type<Record<string, number>>(),
+  diffs_json: jsonb('diffs_json').$type<Record<string, any>>(), // Diff comparison results
+  compliance_json: jsonb('compliance_json').$type<Record<string, boolean>>(), // Law 25, HIPAA checks
+  overall_score: decimal('overall_score', { precision: 5, scale: 2 }), // 0-100 score
+  layer_metrics: jsonb('layer_metrics').$type<Record<string, any>>(), // Per-layer performance
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const evalRunsRelations = relations(eval_runs, ({ many }) => ({
+  results: many(eval_results),
+}));
+
+export const evalResultsRelations = relations(eval_results, ({ one }) => ({
+  run: one(eval_runs, {
+    fields: [eval_results.run_id],
+    references: [eval_runs.id],
+  }),
+}));
+
 // Database schema type
 export type DatabaseSchema = {
   // users: removed - using auth.users + public.profiles
@@ -304,6 +354,8 @@ export type DatabaseSchema = {
   export_history: typeof export_history;
   artifacts: typeof artifacts;
   feedback: typeof feedback;
+  eval_runs: typeof eval_runs;
+  eval_results: typeof eval_results;
 };
 
 // Row types - User/NewUser types removed (using auth.users + profiles)
@@ -333,3 +385,7 @@ export type Artifact = typeof artifacts.$inferSelect;
 export type NewArtifact = typeof artifacts.$inferInsert;
 export type Feedback = typeof feedback.$inferSelect;
 export type NewFeedback = typeof feedback.$inferInsert;
+export type EvalRun = typeof eval_runs.$inferSelect;
+export type NewEvalRun = typeof eval_runs.$inferInsert;
+export type EvalResult = typeof eval_results.$inferSelect;
+export type NewEvalResult = typeof eval_results.$inferInsert;

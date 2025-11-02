@@ -107,6 +107,11 @@ export const apiFetch = async <T = any>(
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
   
+  // Ensure Content-Type header is set for JSON bodies
+  if (init.body && typeof init.body === 'string' && !headers.get('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   // Make request using the new api function
   const response = await api(path, {
     ...init,

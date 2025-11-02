@@ -44,4 +44,43 @@ export const FLAGS = {
   COMPLIANCE_LAW25_ENABLED: (process.env['COMPLIANCE_LAW25_ENABLED'] ?? 'true') !== 'false',
   COMPLIANCE_ZERO_RETENTION: (process.env['COMPLIANCE_ZERO_RETENTION'] ?? 'true') !== 'false',
   COMPLIANCE_PHI_FREE_LOGGING: (process.env['COMPLIANCE_PHI_FREE_LOGGING'] ?? 'true') !== 'false',
+  
+  // Model selection feature flags
+  FEATURE_MODEL_SELECTION: (process.env['FEATURE_MODEL_SELECTION'] ?? 'false') === 'true',
+  FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS: (process.env['FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS'] ?? 'false') === 'true',
+  FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS: (process.env['FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS'] ?? 'false') === 'true',
+  FEATURE_MODEL_SELECTION_DICTATION: (process.env['FEATURE_MODEL_SELECTION_DICTATION'] ?? 'false') === 'true',
+  
+  // Enhanced transcript analysis features
+  FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS: (process.env['FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS'] ?? 'false') === 'true',
+  FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS: (process.env['FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS'] ?? 'false') === 'true',
+  
+  // Layer processing
+  FEATURE_LAYER_PROCESSING: (process.env['FEATURE_LAYER_PROCESSING'] ?? 'false') === 'true',
+  
+  // Model version feature flags
+  FEATURE_GPT5: (process.env['FEATURE_GPT5'] ?? 'false') === 'true',
+  FEATURE_CLAUDE4: (process.env['FEATURE_CLAUDE4'] ?? 'false') === 'true',
+  FEATURE_GEMINI2: (process.env['FEATURE_GEMINI2'] ?? 'false') === 'true',
+  FEATURE_LLAMA: (process.env['FEATURE_LLAMA'] ?? 'false') === 'true',
+  FEATURE_MISTRAL: (process.env['FEATURE_MISTRAL'] ?? 'false') === 'true',
 } as const;
+
+// Experiment allowlist configuration
+export const EXPERIMENT_ALLOWLIST = (process.env['EXPERIMENT_ALLOWLIST'] ?? '')
+  .split(',')
+  .map(email => email.trim())
+  .filter(Boolean);
+
+export function isAllowedForExperiment(userEmail?: string): boolean {
+  if (!FLAGS.FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS) {
+    return false;
+  }
+  
+  // If allowlist empty, allow all (when flag enabled)
+  if (EXPERIMENT_ALLOWLIST.length === 0) {
+    return true;
+  }
+  
+  return userEmail ? EXPERIMENT_ALLOWLIST.includes(userEmail) : false;
+}
