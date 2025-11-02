@@ -2,7 +2,7 @@ import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
 import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
-import { getAIProvider, AIProvider } from "../../lib/aiProvider.js";
+import { getAIProvider } from "../../lib/aiProvider.js";
 
 function pickPrompt(inputLang: 'fr' | 'en', t: string): string { 
   // Always use French prompt for output, but add English input context when needed
@@ -101,10 +101,10 @@ export class UniversalCleanupLayer implements LayerProcessor {
     }
 
     try {
-      // Get model from options or use default
-      const modelId = options.model || process.env['OPENAI_MODEL'] || "gpt-4o-mini";
-      const temperature = options.temperature !== undefined 
-        ? options.temperature 
+      // Get model from options or use default (using bracket notation for index signature)
+      const modelId = (options['model'] as string | undefined) || process.env['OPENAI_MODEL'] || "gpt-4o-mini";
+      const temperature = options['temperature'] !== undefined 
+        ? (options['temperature'] as number)
         : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
       
       console.log('UniversalCleanupLayer: Creating AI completion for transcript length:', cleaned_text.length);

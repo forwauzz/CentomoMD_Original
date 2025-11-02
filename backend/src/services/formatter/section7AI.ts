@@ -1,16 +1,5 @@
-import OpenAI from "openai";
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-
-// Lazy initialization of OpenAI client
-let openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-  }
-  return openai;
-}
 
 export interface Section7AIResult {
   formatted: string;

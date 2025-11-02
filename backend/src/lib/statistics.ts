@@ -38,12 +38,16 @@ export function wilcoxonSignedRankTest(pairedDifferences: number[]): {
   let i = 0;
 
   while (i < indexed.length) {
-    const currentAbs = indexed[i].abs;
+    const currentItem = indexed[i];
+    if (!currentItem) break; // Safety check
+    const currentAbs = currentItem.abs;
     const tieGroup: number[] = [i];
 
     // Find all ties
     let j = i + 1;
-    while (j < indexed.length && indexed[j].abs === currentAbs) {
+    while (j < indexed.length) {
+      const nextItem = indexed[j];
+      if (!nextItem || nextItem.abs !== currentAbs) break;
       tieGroup.push(j);
       j++;
     }
@@ -53,7 +57,10 @@ export function wilcoxonSignedRankTest(pairedDifferences: number[]): {
 
     // Assign ranks
     for (const idx of tieGroup) {
-      ranks[indexed[idx].index] = averageRank * indexed[idx].sign;
+      const item = indexed[idx];
+      if (item && item.sign !== undefined) {
+        ranks[item.index] = averageRank * item.sign;
+      }
     }
 
     currentRank += tieGroup.length;
@@ -205,9 +212,13 @@ function normalCDF(x: number): number {
 
 function resample<T>(data: T[]): T[] {
   const resampled: T[] = [];
+  if (data.length === 0) return resampled;
   for (let i = 0; i < data.length; i++) {
     const randomIndex = Math.floor(Math.random() * data.length);
-    resampled.push(data[randomIndex]);
+    const item = data[randomIndex];
+    if (item !== undefined) {
+      resampled.push(item);
+    }
   }
   return resampled;
 }
@@ -220,11 +231,16 @@ function percentile(sortedData: number[], percentile: number): number {
   const upper = Math.ceil(index);
 
   if (lower === upper) {
-    return sortedData[lower];
+    const value = sortedData[lower];
+    return value !== undefined ? value : 0;
   }
 
+  const lowerValue = sortedData[lower];
+  const upperValue = sortedData[upper];
+  if (lowerValue === undefined || upperValue === undefined) return 0;
+  
   const weight = index - lower;
-  return sortedData[lower] * (1 - weight) + sortedData[upper] * weight;
+  return lowerValue * (1 - weight) + upperValue * weight;
 }
 
 function variance(values: number[]): number {

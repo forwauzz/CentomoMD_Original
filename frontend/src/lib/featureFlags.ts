@@ -68,22 +68,6 @@ export const getFeatureFlags = (): FeatureFlags => {
     templateCombinationsInAnalysis: import.meta.env.VITE_FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS === 'true',
   };
   
-  // Debug: Log env flags in development
-  if (import.meta.env.DEV) {
-    const rawValue = import.meta.env.VITE_FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS;
-    const evaluated = envFlags.modelSelectionTranscriptAnalysis;
-    console.log('[FeatureFlags] Environment flags:', {
-      modelSelectionTranscriptAnalysis: {
-        raw: rawValue,
-        rawType: typeof rawValue,
-        evaluated: evaluated,
-        evaluatedType: typeof evaluated,
-        isExplicitlyTrue: rawValue === 'true',
-        finalValue: envFlags.modelSelectionTranscriptAnalysis !== undefined ? envFlags.modelSelectionTranscriptAnalysis : devFlags.modelSelectionTranscriptAnalysis,
-      },
-    });
-  }
-
   // For development, we can enable features for testing
   const devFlags = {
     voiceCommands: true, // Enable for development
@@ -103,6 +87,22 @@ export const getFeatureFlags = (): FeatureFlags => {
     enhancedTranscriptAnalysis: false, // Keep OFF by default; enable via env var only
     templateCombinationsInAnalysis: false, // Keep OFF by default; enable via env var only
   };
+
+  // Debug: Log env flags in development
+  if (import.meta.env.DEV) {
+    const rawValue = import.meta.env.VITE_FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS;
+    const evaluated = envFlags.modelSelectionTranscriptAnalysis;
+    console.log('[FeatureFlags] Environment flags:', {
+      modelSelectionTranscriptAnalysis: {
+        raw: rawValue,
+        rawType: typeof rawValue,
+        evaluated: evaluated,
+        evaluatedType: typeof evaluated,
+        isExplicitlyTrue: rawValue === 'true',
+        finalValue: envFlags.modelSelectionTranscriptAnalysis !== undefined ? envFlags.modelSelectionTranscriptAnalysis : devFlags.modelSelectionTranscriptAnalysis,
+      },
+    });
+  }
 
   // Use environment flags if available, otherwise use dev flags
   // For model selection flags, prefer env flags explicitly (don't fall back to devFlags false)
