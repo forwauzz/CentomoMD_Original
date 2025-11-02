@@ -416,14 +416,20 @@ async function generateEvaluationReport(
     outputPreview: result.outputPreview || '',
   }));
 
-  const systemPrompt = `You are an expert medical transcription quality analyst specializing in template performance evaluation. Your role is to analyze template outputs against a gold standard reference and provide actionable insights.`;
+  const systemPrompt = `You are an expert medical transcription quality analyst. 
+
+Your job is to compare multiple AI template outputs against a gold-standard reference written by a physician.
+
+You identify strengths, weaknesses, and key areas for improvement in a clear, structured, and intuitive way — avoiding technical jargon.
+
+Your tone is analytical but practical: focus on clarity, not theory.`;
 
   const userPrompt = `Evaluate the following template performance comparison:
 
 ORIGINAL TRANSCRIPT:
 ${originalTranscript.substring(0, 2000)}${originalTranscript.length > 2000 ? '...' : ''}
 
-REFERENCE/BENCHMARK (Gold Standard - MD Final):
+REFERENCE (Gold Standard - MD Final):
 ${referenceBenchmark.substring(0, 2000)}${referenceBenchmark.length > 2000 ? '...' : ''}
 
 TEMPLATE PERFORMANCE RESULTS:
@@ -439,32 +445,57 @@ ${t.missingPhrases.length > 0 ? `- Top Missing Phrases:\n${t.missingPhrases.map(
 ${t.outputPreview ? `- Output Preview: ${t.outputPreview.substring(0, 200)}${t.outputPreview.length > 200 ? '...' : ''}` : ''}
 `).join('\n---\n')}
 
-Provide a comprehensive evaluation report in the following structure:
+---
 
-1. PERFORMANCE SUMMARY
-   - Compare overall performance metrics
-   - Identify which template performed best and why
-   - Highlight key differences in scores
+Generate a clear, structured evaluation using the format below:
 
-2. HALLUCINATION ANALYSIS
-   - Analyze each template for potential hallucinations (content not in original)
-   - Identify any fabricated or incorrectly inferred information
-   - Compare hallucination risk across templates
+==============================
+🏁 OVERVIEW (Quick Summary)
+- Rank templates from best to worst overall.
+- State the top 3 reasons why the best template performed better.
+- Summarize major differences in readability, accuracy, and completeness in one paragraph.
 
-3. CONTENT PRESERVATION ANALYSIS
-   - Evaluate how well each template preserved original content
-   - Analyze missing phrases and their impact
-   - Identify patterns in what content is being lost
+==============================
+🔍 HALLUCINATION CHECK
+- Identify any invented, distorted, or medically inaccurate content per template.
+- Use ✅ None, ⚠️ Mild, or ❌ Major for each.
+- Provide short examples of fabricated or exaggerated phrases if any.
 
-4. PERFORMANCE COMPARISON
-   - Explain why the best-performing template scored higher
-   - Compare strengths and weaknesses of each template
-   - Highlight specific metrics that differentiate performance
+==============================
+🧩 CONTENT PRESERVATION
+- Score and explain how well each template preserved original meaning and detail.
+- Highlight **what types of details are commonly lost** (e.g., timelines, causes, follow-up plans).
+- Note any consistent omissions or truncations.
 
-5. IMPROVEMENT RECOMMENDATIONS
-   - For each template, provide specific, actionable recommendations
-   - Suggest prompt improvements, formatting rules, or processing steps
-   - Recommend prioritization for template refinement
+==============================
+🧱 STRUCTURE & FORMATTING
+- Compare formatting fidelity and readability.
+- Note if sentence flow or section organization aligns with the gold standard.
+- Flag structural issues like missing headings, collapsed paragraphs, or merged sections.
+
+==============================
+📊 PERFORMANCE COMPARISON TABLE
+| Template | Overall | Similarity | Hallucination | Content Preservation | Formatting | Key Strength | Key Weakness |
+|----------|---------|------------|---------------|----------------------|------------|--------------|--------------|
+${templatesData.map(t => `| ${t.name} | ${t.overallScore.toFixed(1)}% | ${t.similarity.toFixed(1)}% | ${t.missingPhrasesCount === 0 ? '✅ None' : t.missingPhrasesCount < 3 ? '⚠️ Mild' : '❌ Major'} | ${t.contentPreservation >= 90 ? 'Excellent' : t.contentPreservation >= 75 ? 'Good' : 'Poor'} | ${t.formattingAccuracy >= 85 ? 'Strong' : t.formattingAccuracy >= 70 ? 'Fair' : 'Weak'} | [AI to fill] | [AI to fill] |`).join('\n')}
+
+==============================
+🩺 INSIGHT SUMMARY
+- Identify 3 biggest flaws across *all* templates (systemic issues).
+- Identify 3 recurring strengths that can be reused in future templates.
+
+==============================
+🧭 IMPROVEMENT RECOMMENDATIONS
+For each template:
+1. Give 2–3 **specific, actionable** improvements (e.g., "Add symptom progression timeline after diagnosis" or "Preserve paragraph breaks from original").
+2. Highlight which improvements would yield the highest scoring gain.
+
+==============================
+🎯 FINAL VERDICT
+In one paragraph, summarize:
+- Which template is best suited for clinical use now.
+- Which has most potential after refinement.
+- Which should be deprioritized or redesigned.
 
 Write the report in clear, concise language. Focus on actionable insights and specific examples from the data provided.`;
 
