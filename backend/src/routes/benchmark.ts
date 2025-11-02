@@ -8,7 +8,7 @@ import { FLAGS, isAllowedForExperiment } from '../config/flags.js';
 import { wilcoxonSignedRankTest, bootstrapConfidenceInterval, cohensD } from '../lib/statistics.js';
 import { getDb } from '../database/connection.js';
 import { eval_runs, eval_results } from '../database/schema.js';
-import OpenAI from 'openai';
+import { getAIProvider } from '../lib/aiProvider.js';
 
 const router = Router();
 
@@ -234,15 +234,17 @@ router.post('/', async (req, res) => {
         'Evaluation completed',
     };
 
-    // Generate AI-powered evaluation report
+    // Generate AI-powered evaluation report (using model from config, default to gpt-4o-mini)
+    const evaluationModel = model !== 'unknown' ? model : process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
     let evaluationReport: string | null = null;
     try {
       evaluationReport = await generateEvaluationReport(
         original.trim(),
         reference.trim(),
-        rankedResults
+        rankedResults,
+        evaluationModel // Pass model parameter
       );
-      console.log('[Benchmark] AI evaluation report generated successfully');
+      console.log('[Benchmark] AI evaluation report generated successfully', { model: evaluationModel });
     } catch (reportError) {
       console.warn('[Benchmark] Failed to generate AI evaluation report:', reportError);
       // Continue without report - don't fail the entire request
@@ -375,8 +377,9 @@ function extractMissingPhrases(
 }
 
 /**
- * Generate AI-powered evaluation report using OpenAI
+ * Generate AI-powered evaluation report using AIProvider abstraction
  * Analyzes template performance, hallucinations, and provides improvement recommendations
+ * Supports multiple AI providers (OpenAI, Anthropic, Google) via model selection
  */
 async function generateEvaluationReport(
   originalTranscript: string,
@@ -393,14 +396,11 @@ async function generateEvaluationReport(
     };
     missingPhrases?: string[];
     outputPreview?: string;
-  }>
+  }>,
+  model: string = 'gpt-4o-mini' // Model selection parameter
 ): Promise<string> {
-  const apiKey = process.env['OPENAI_API_KEY'];
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY not configured');
-  }
-
-  const openai = new OpenAI({ apiKey });
+  // Use AIProvider abstraction to support multiple providers
+  const provider = getAIProvider(model);
 
   // Build template comparison data for the prompt
   const templatesData = templateResults.map((result, index) => ({
@@ -500,8 +500,8 @@ In one paragraph, summarize:
 Write the report in clear, concise language. Focus on actionable insights and specific examples from the data provided.`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using efficient model for evaluation
+    const response = await provider.createCompletion({
+      model: model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -510,14 +510,21 @@ Write the report in clear, concise language. Focus on actionable insights and sp
       max_tokens: 2000,
     });
 
-    const report = completion.choices[0]?.message?.content;
+    const report = response.content;
     if (!report) {
-      throw new Error('OpenAI returned empty response');
+      throw new Error('AI provider returned empty response');
     }
+
+    console.log('[Benchmark] Evaluation report generated', {
+      model: model,
+      provider: provider.name,
+      reportLength: report.length,
+      cost: response.cost_usd,
+    });
 
     return report;
   } catch (error) {
-    console.error('[Benchmark] OpenAI API error:', error);
+    console.error('[Benchmark] AI API error:', error);
     throw new Error(`Failed to generate evaluation report: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
