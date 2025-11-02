@@ -2,7 +2,7 @@ import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
 import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
-import { openai as defaultOpenAI } from "../../lib/openai.js";
+import { getAIProvider, AIProvider } from "../../lib/aiProvider.js";
 
 function pickPrompt(inputLang: 'fr' | 'en', t: string): string { 
   // Always use French prompt for output, but add English input context when needed
@@ -40,7 +40,7 @@ function sanitize(ce: Partial<ClinicalEntities>): ClinicalEntities {
 }
 
 export class UniversalCleanupLayer implements LayerProcessor {
-  constructor(private readonly client = defaultOpenAI) {}
+  constructor() {} // Model will be resolved via AIProvider abstraction
 
   async process(
     transcript: string,
@@ -101,24 +101,32 @@ export class UniversalCleanupLayer implements LayerProcessor {
     }
 
     try {
-      console.log('UniversalCleanupLayer: Creating OpenAI completion for transcript length:', cleaned_text.length);
-      console.log('UniversalCleanupLayer: Using model:', process.env['OPENAI_MODEL'] || "gpt-4o-mini");
-      console.log('UniversalCleanupLayer: Using temperature:', process.env['OPENAI_TEMPERATURE'] || '0.1');
+      // Get model from options or use default
+      const modelId = options.model || process.env['OPENAI_MODEL'] || "gpt-4o-mini";
+      const temperature = options.temperature !== undefined 
+        ? options.temperature 
+        : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
+      
+      console.log('UniversalCleanupLayer: Creating AI completion for transcript length:', cleaned_text.length);
+      console.log('UniversalCleanupLayer: Using model:', modelId);
+      console.log('UniversalCleanupLayer: Using temperature:', temperature);
 
-      const completion = await this.client.chat.completions.create({
-        model: process.env['OPENAI_MODEL'] || "gpt-4o-mini",
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const provider = getAIProvider(modelId);
+      const completion = await provider.createCompletion({
+        model: modelId,
         messages: [
           {
             role: "system",
             content: pickPrompt(opts.language, cleaned_text)
           }
         ],
-        temperature: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1'),
+        temperature: temperature,
         response_format: { type: "json_object" },
         max_tokens: 800
       });
 
-      const raw = completion.choices[0]?.message?.content ?? "{}";
+      const raw = completion.content ?? "{}";
       let parsed: any = {};
       try { 
         parsed = JSON.parse(raw); 
