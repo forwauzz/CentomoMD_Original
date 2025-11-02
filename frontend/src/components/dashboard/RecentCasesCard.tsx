@@ -223,7 +223,7 @@ export const RecentCasesCard: React.FC = () => {
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="hover:shadow-md transition-shadow duration-200 w-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-slate-700 flex items-center gap-2">

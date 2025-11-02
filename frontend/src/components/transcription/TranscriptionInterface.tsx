@@ -22,6 +22,9 @@ import { useBackendConfig } from '@/hooks/useBackendConfig';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { useTranscriptionContext, TranscriptionContextData } from '@/contexts/TranscriptionContext';
 import { supabase } from '@/lib/authClient';
+import { useTemplateTracking } from '@/hooks/useTemplateTracking';
+import { TemplateFeedbackBanner } from '@/components/feedback/TemplateFeedbackBanner';
+import { TemplateFormattingLoader } from '@/components/loading/TemplateFormattingLoader';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -61,6 +64,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   // Use URL parameters if available, otherwise use props
   const effectiveCaseId = urlCaseId || caseId;
   const effectiveSectionId = urlSectionId || sectionId;
+  
+  // Template tracking and feedback
+  const {
+    trackTemplateApplication,
+    submitFeedback,
+    dismissFeedback,
+    pendingFeedback,
+    showFeedbackBanner,
+  } = useTemplateTracking(sessionId, effectiveCaseId);
+  
   const [mode, setMode] = useState<TranscriptionMode>('smart_dictation');
   
   // Derive dictation language from canonical state (no local state needed)
@@ -148,10 +161,12 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     latestOpRef.current = opId;
     console.log('[UNIVERSAL] Starting operation:', opId);
     
-    setFormattingProgress('Cleaning transcript...');
+    setFormattingProgress('Preparing transcript...');
+    await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
     
     // Step 1: Clean transcript and extract clinical entities
-    setFormattingProgress('Extracting clinical entities...');
+    setFormattingProgress('Analyzing transcript...');
+    await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
     
     // Determine section from template metadata or fallback to template ID
     let section = '7'; // Default fallback
@@ -164,6 +179,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     }
     
     console.log(`[Universal Cleanup] Using section: ${section} for template: ${template.id}`);
+    
+    setFormattingProgress('Extracting clinical entities...');
+    await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
     
     const result: UniversalCleanupResponse = await apiFetch('/api/format/mode2', {
       method: 'POST',
@@ -187,7 +205,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       throw new Error('Operation cancelled due to race condition');
     }
     
-    setFormattingProgress('Formatting...');
+    setFormattingProgress('Applying formatting...');
+    await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
     
     // Store clinical entities for reuse
     if (result.clinical_entities) {
@@ -566,6 +585,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         // Capture transcripts for analysis
         captureTranscriptsForAnalysis(rawTranscript, result.formatted, template.title);
         
+        // Track template application
+        if (template.id) {
+          await trackTemplateApplication(template.id, {
+            sectionId: effectiveSectionId || activeSection,
+            modeId: mode,
+          });
+        }
+        
         setIsFormatting(false);
         setFormattingProgress('');
         return;
@@ -700,6 +727,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         // Capture transcripts for analysis
         captureTranscriptsForAnalysis(rawTranscript, formattedTranscript, template.title);
         
+        // Track template application
+        if (template.id) {
+          await trackTemplateApplication(template.id, {
+            sectionId: effectiveSectionId || activeSection,
+            modeId: mode,
+          });
+        }
+        
         setIsFormatting(false);
         setFormattingProgress('');
         return;
@@ -750,6 +785,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           setEditedTranscript(result.formatted);
           setAiStepStatus('success');
           
+          // Track template application
+          if (template.id) {
+            await trackTemplateApplication(template.id, {
+              sectionId: effectiveSectionId || activeSection,
+              modeId: mode,
+            });
+          }
+          
         } catch (error) {
           console.error('Clinical extraction error:', error);
           setAiStepStatus('error');
@@ -794,7 +837,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           }
           
           console.log('User authenticated, proceeding with Section 7 AI formatting');
-          setFormattingProgress('Sending to AI formatter...');
+          setFormattingProgress('Preparing AI formatting...');
           
           // Prepare template combination options
           const templateComboOptions = template.meta?.aiFormatter || {};
@@ -828,6 +871,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           }
           
           console.log('Using section:', section, 'for template:', template.id);
+          
+          // Section-specific message
+          if (section === '8') {
+            setFormattingProgress('Formatting Section 8...');
+          } else if (section === '7') {
+            setFormattingProgress('Formatting Section 7...');
+          } else {
+            setFormattingProgress('Sending to AI formatter...');
+          }
+          await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
           
           // Call Mode2Formatter API (auth-aware)
           const result = await apiFetch('/api/format/mode2', {
@@ -874,7 +927,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             console.error('[FORMAT] diagnostic error', e);
           }
           
-          setFormattingProgress('Processing AI response...');
+          // Section-specific processing message
+          if (section === '8') {
+            setFormattingProgress('Processing Section 8 formatting...');
+          } else if (section === '7') {
+            setFormattingProgress('Processing Section 7 formatting...');
+          } else {
+            setFormattingProgress('Processing AI response...');
+          }
+          await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
           
           // Check for race condition
           if (latestOpRef.current !== opId) {
@@ -898,7 +959,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             console.log('[FORMAT] UI state now - editedTranscript length:', editedTranscript?.length || 0);
           }, 0);
           
-          setFormattingProgress('Finalizing formatting...');
+          // Section-specific finalizing message
+          if (section === '8') {
+            setFormattingProgress('Finalizing Section 8 formatting...');
+          } else if (section === '7') {
+            setFormattingProgress('Finalizing Section 7 formatting...');
+          } else {
+            setFormattingProgress('Finalizing formatting...');
+          }
+          await new Promise(resolve => setTimeout(resolve, 50)); // Allow React to render
           
           // Show any issues to the user
           if (result.issues && result.issues.length > 0) {
@@ -908,6 +977,14 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           
           // Capture transcripts for analysis
           captureTranscriptsForAnalysis(rawTranscript, result.formatted, template.title);
+          
+          // Track template application
+          if (template.id) {
+            await trackTemplateApplication(template.id, {
+              sectionId: effectiveSectionId || activeSection,
+              modeId: mode,
+            });
+          }
           
           setIsFormatting(false);
           setFormattingProgress('');
@@ -1256,7 +1333,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           </Card>
 
           {/* Final Transcript Card - Enhanced when output exists */}
-          <Card className={`bg-white border shadow-sm transition-all duration-300 ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'}`}>
+          <Card className={`bg-white border shadow-sm transition-all duration-300 ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
             <CardHeader className={hasFinalOutput ? 'bg-green-50 border-b border-green-200' : ''}>
               <CardTitle className={`text-gray-800 flex items-center justify-between ${hasFinalOutput ? 'text-xl font-bold' : 'text-lg font-semibold'}`}>
                 <div className="flex items-center space-x-2">
@@ -1427,22 +1504,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 </div>
               )}
 
-              {/* Formatting Loading State */}
-              {isFormatting && (
-                <div className="flex items-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-800">
-                      Applying template formatting...
-                    </p>
-                    {formattingProgress && (
-                      <p className="text-xs text-blue-600 mt-1">
-                        {formattingProgress}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Loading indicator removed - now using full-screen overlay */}
 
             </CardContent>
           </Card>
@@ -1531,6 +1593,37 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         <div className="mt-6">
           <OrthopedicNarrative narrative={orthopedicNarrative} />
         </div>
+      )}
+
+      {/* Full-Screen Template Formatting Loader */}
+      {isFormatting && (
+        <TemplateFormattingLoader 
+          key={formattingProgress || 'loading'} // Force re-render when message changes
+          message={formattingProgress || 'Applying template formatting'}
+        />
+      )}
+
+      {/* Template Feedback Banner */}
+      {showFeedbackBanner && pendingFeedback && selectedTemplate && (
+        <TemplateFeedbackBanner
+          templateId={pendingFeedback.templateId}
+          templateName={selectedTemplate.title}
+          onRating={async (rating) => {
+            await submitFeedback(
+              pendingFeedback.templateId,
+              rating,
+              {
+                appliedAt: pendingFeedback.scheduledAt,
+              }
+            );
+          }}
+          onDismiss={async () => {
+            await dismissFeedback(
+              pendingFeedback.templateId,
+              pendingFeedback.scheduledAt
+            );
+          }}
+        />
       )}
 
       {/* Note: Feedback button is now global and accessible from anywhere in the app */}

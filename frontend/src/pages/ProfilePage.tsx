@@ -23,6 +23,7 @@ interface ProfileData {
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;
   consent_marketing: boolean;
+  consent_analytics: boolean; // Required to match UserProfile type
   default_clinic_id?: string;
 }
 
@@ -79,6 +80,7 @@ export const ProfilePage: React.FC = () => {
     locale: 'en-CA',
     consent_pipeda: false,
     consent_marketing: false,
+    consent_analytics: true, // Default to true
   });
 
   // Load profile data on component mount and when user changes
@@ -153,6 +155,7 @@ export const ProfilePage: React.FC = () => {
           locale: 'fr-CA',
           consent_pipeda: false,
           consent_marketing: false,
+          consent_analytics: true, // Default to true
         };
         setProfile(defaultProfile);
         setFormData(defaultProfile);
@@ -174,6 +177,7 @@ export const ProfilePage: React.FC = () => {
         locale: 'en-CA',
         consent_pipeda: false,
         consent_marketing: false,
+        consent_analytics: true, // Default to true
       };
       setProfile(fallbackData);
       setFormData(fallbackData);
