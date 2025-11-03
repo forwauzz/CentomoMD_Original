@@ -51,6 +51,9 @@ export const FLAGS = {
   FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS: (process.env['FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS'] ?? 'false') === 'true',
   FEATURE_MODEL_SELECTION_DICTATION: (process.env['FEATURE_MODEL_SELECTION_DICTATION'] ?? 'false') === 'true',
   
+  // Template version selection (MVP manifest-based resolver)
+  FEATURE_TEMPLATE_VERSION_SELECTION: (process.env['FEATURE_TEMPLATE_VERSION_SELECTION'] ?? 'false') === 'true',
+  
   // Enhanced transcript analysis features
   FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS: (process.env['FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS'] ?? 'false') === 'true',
   FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS: (process.env['FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS'] ?? 'false') === 'true',

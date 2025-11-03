@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { FLAGS } from '../../config/flags.js';
 
 export interface Section7AIResult {
   formatted: string;
@@ -97,15 +98,23 @@ export class Section7AIFormatter {
       let masterPromptPath: string;
       let jsonConfigPath: string;
       let goldenExamplePath: string;
-      
-      if (language === 'fr') {
-        masterPromptPath = join(basePath, 'section7_master.md');
-        jsonConfigPath = join(basePath, 'section7_master.json');
-        goldenExamplePath = join(basePath, 'section7_golden_example.md');
+
+      if (FLAGS.FEATURE_TEMPLATE_VERSION_SELECTION) {
+        const { resolveSection7AiPaths } = await import('../artifacts/PromptBundleResolver.js');
+        const resolved = resolveSection7AiPaths(language);
+        masterPromptPath = resolved.masterPromptPath;
+        jsonConfigPath = resolved.jsonConfigPath;
+        goldenExamplePath = resolved.goldenExamplePath;
       } else {
-        masterPromptPath = join(basePath, 'section7_master_en.md');
-        jsonConfigPath = join(basePath, 'section7_master_en.json');
-        goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+        if (language === 'fr') {
+          masterPromptPath = join(basePath, 'section7_master.md');
+          jsonConfigPath = join(basePath, 'section7_master.json');
+          goldenExamplePath = join(basePath, 'section7_golden_example.md');
+        } else {
+          masterPromptPath = join(basePath, 'section7_master_en.md');
+          jsonConfigPath = join(basePath, 'section7_master_en.json');
+          goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+        }
       }
       
       // Validate files exist before loading

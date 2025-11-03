@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { logger } from '../utils/logger.js';
+import { FLAGS } from '../config/flags.js';
 
 export interface Section7RdResult {
   success: boolean;
@@ -333,20 +334,29 @@ export class Section7RdService {
    */
   private async runCompleteRdPipeline(inputText: string, model?: string, temperature?: number, seed?: number): Promise<string> {
     try {
-      // Step 1: Load master configuration (from backend/configs)
-      const masterConfigPath = path.join(process.cwd(), 'configs', 'master_prompt_section7.json');
+      // Step 1-4: Resolve artifact paths (manifest when enabled, else filesystem)
+      let masterConfigPath: string;
+      let systemConductorPath: string;
+      let planPath: string;
+      let goldenCasesPath: string;
+      
+      if (FLAGS.FEATURE_TEMPLATE_VERSION_SELECTION) {
+        const { resolveSection7RdPaths } = await import('../services/artifacts/PromptBundleResolver.js');
+        const resolved = resolveSection7RdPaths();
+        masterConfigPath = resolved.masterConfigPath;
+        systemConductorPath = resolved.systemConductorPath;
+        planPath = resolved.planPath;
+        goldenCasesPath = resolved.goldenCasesPath;
+      } else {
+        masterConfigPath = path.join(process.cwd(), 'configs', 'master_prompt_section7.json');
+        systemConductorPath = path.join(process.cwd(), 'prompts', 'system_section7_fr.xml');
+        planPath = path.join(process.cwd(), 'prompts', 'plan_section7_fr.xml');
+        goldenCasesPath = path.join(process.cwd(), 'training', 'golden_cases_section7.jsonl');
+      }
+      
       const masterConfig = JSON.parse(await fs.readFile(masterConfigPath, 'utf-8'));
-      
-      // Step 2: Load system conductor
-      const systemConductorPath = path.join(process.cwd(), 'prompts', 'system_section7_fr.xml');
       const systemConductor = await fs.readFile(systemConductorPath, 'utf-8');
-      
-      // Step 3: Load formatting plan
-      const planPath = path.join(process.cwd(), 'prompts', 'plan_section7_fr.xml');
       const formattingPlan = await fs.readFile(planPath, 'utf-8');
-      
-      // Step 4: Load golden cases for reference
-      const goldenCasesPath = path.join(process.cwd(), 'training', 'golden_cases_section7.jsonl');
       const goldenCases = await fs.readFile(goldenCasesPath, 'utf-8');
       
       // Step 5: Construct comprehensive prompt using all artifacts
