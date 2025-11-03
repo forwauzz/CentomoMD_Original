@@ -43,7 +43,7 @@ export class Section7RdService {
   /**
    * Process input text through Section 7 R&D pipeline
    */
-  async processInput(inputText: string): Promise<Section7RdResult> {
+  async processInput(inputText: string, model?: string, temperature?: number, seed?: number): Promise<Section7RdResult> {
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
 
@@ -54,7 +54,7 @@ export class Section7RdService {
       const tempInputPath = await this.createTempInput(inputText);
       
       // Step 2: Run formatting (placeholder - would integrate with actual formatter)
-      const formattedText = await this.formatText(inputText);
+      const formattedText = await this.formatText(inputText, model, temperature, seed);
       
       // Step 3: Run compliance evaluation
       const compliance = await this.runComplianceCheck(formattedText);
@@ -120,10 +120,10 @@ export class Section7RdService {
   /**
    * Format text using the complete Section 7 R&D Pipeline with all artifacts
    */
-  private async formatText(inputText: string): Promise<string> {
+  private async formatText(inputText: string, model?: string, temperature?: number, seed?: number): Promise<string> {
     try {
       // Use the complete R&D pipeline with all artifacts
-      const formattedText = await this.runCompleteRdPipeline(inputText);
+      const formattedText = await this.runCompleteRdPipeline(inputText, model, temperature, seed);
       
       logger.info('Section 7 R&D Pipeline formatting completed', {
         originalLength: inputText.length,
@@ -331,7 +331,7 @@ export class Section7RdService {
   /**
    * Run the complete R&D Pipeline using all artifacts
    */
-  private async runCompleteRdPipeline(inputText: string): Promise<string> {
+  private async runCompleteRdPipeline(inputText: string, model?: string, temperature?: number, seed?: number): Promise<string> {
     try {
       // Step 1: Load master configuration (from backend/configs)
       const masterConfigPath = path.join(process.cwd(), 'configs', 'master_prompt_section7.json');
@@ -358,12 +358,24 @@ export class Section7RdService {
         goldenCases
       );
       
-      // Step 6: Call OpenAI with the comprehensive prompt
-      const { OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
+      // Step 6: Call AI provider with the comprehensive prompt (using AIProvider abstraction)
+      const modelId = model || process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      const temp = temperature !== undefined ? temperature : 0.1; // Low temperature for consistent formatting
       
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+      // PROOF: Log model being used
+      console.log(`[PROOF] Section7RdService - Using model: ${modelId}`, {
+        requestedModel: model,
+        defaultModel: 'gpt-4o-mini',
+        temperature: temp,
+        seed: seed,
+        promptLength: comprehensivePrompt.length
+      });
+      
+      const { getAIProvider } = await import('../lib/aiProvider.js');
+      const provider = getAIProvider(modelId);
+      
+      const response = await provider.createCompletion({
+        model: modelId,
         messages: [
           {
             role: 'system',
@@ -374,11 +386,34 @@ export class Section7RdService {
             content: comprehensivePrompt
           }
         ],
-        temperature: 0.1, // Low temperature for consistent formatting
-        max_tokens: 4000
+        temperature: temp,
+        max_tokens: 4000,
+        ...(seed !== undefined && { seed })
       });
       
-      const formattedText = completion.choices[0]?.message?.content || inputText;
+      // PROOF: Log actual model used
+      console.log(`[PROOF] Section7RdService - Response received`, {
+        requestedModel: model,
+        actualModel: response.model,
+        modelMatches: response.model === modelId,
+        outputLength: response.content?.length || 0,
+        usage: response.usage
+      });
+      
+      if (response.model !== modelId && modelId) {
+        console.warn(`[PROOF] ⚠️ Section7RdService MODEL MISMATCH: Requested ${modelId}, but API used ${response.model}`);
+      }
+      
+      // Store actual model used for reporting
+      const actualModelUsed = response.model || modelId;
+      logger.info('Section7RdService - Model usage proof', {
+        requestedModel: model,
+        actualModelUsed: actualModelUsed,
+        modelId: modelId,
+        modelMatches: actualModelUsed === modelId
+      });
+      
+      const formattedText = response.content?.trim() || inputText;
       
       logger.info('Complete R&D Pipeline executed', {
         masterConfigLoaded: !!masterConfig,
@@ -394,9 +429,23 @@ export class Section7RdService {
     } catch (error) {
       logger.error('Complete R&D Pipeline failed, falling back to basic AI formatter:', error);
       
-      // Fallback to basic AI formatter
+      // PROOF: Log fallback
+      console.error(`[PROOF] ⚠️ Section7RdService - Model ${model || 'default'} FAILED, falling back to gpt-4o-mini`, {
+        requestedModel: model,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error instanceof Error ? error.constructor.name : typeof error
+      });
+      
+      // Fallback to basic AI formatter (uses gpt-4o-mini by default)
       const { Section7AIFormatter } = await import('./formatter/section7AI.js');
       const result = await Section7AIFormatter.formatSection7Content(inputText, 'fr');
+      
+      console.log(`[PROOF] Section7RdService - Fallback completed using gpt-4o-mini`, {
+        originalModelRequested: model,
+        fallbackModelUsed: 'gpt-4o-mini',
+        outputLength: result.formatted.length
+      });
+      
       return result.formatted;
     }
   }

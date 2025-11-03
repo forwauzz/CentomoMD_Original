@@ -9,6 +9,8 @@ export enum AIErrorType {
   BadRequest = 'BAD_REQUEST',
   Auth = 'AUTH',
   Unavailable = 'UNAVAILABLE',
+  ServiceUnavailable = 'SERVICE_UNAVAILABLE',
+  ConfigurationError = 'CONFIGURATION_ERROR',
   Unknown = 'UNKNOWN',
 }
 
@@ -59,11 +61,14 @@ export class AIError extends Error {
       case AIErrorType.Auth:
         return 'Authentication error. Please check your API key configuration.';
       case AIErrorType.Unavailable:
+      case AIErrorType.ServiceUnavailable:
         return 'Model is temporarily unavailable. Please try a different model or try again later.';
       case AIErrorType.Timeout:
         return 'Request timed out. Please try again.';
       case AIErrorType.BadRequest:
         return 'Invalid request. Please check your input and try again.';
+      case AIErrorType.ConfigurationError:
+        return 'Configuration error. Please check your API keys and feature flags.';
       default:
         return 'An error occurred while processing. Please try again.';
     }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 
 export interface LayerOptions {
   language: 'fr' | 'en'; // Legacy parameter for backward compatibility
@@ -148,6 +149,106 @@ export class LayerManager {
    */
   getLayerConfig(layerName: string): LayerConfig | null {
     return this.layers.get(layerName) || null;
+  }
+
+  /**
+   * Resolve templateRef to base template and layer stack
+   * Returns: { baseTemplateId, layerStack, stack_fingerprint }
+   */
+  resolveTemplateRef(templateRef: string): {
+    baseTemplateId: string;
+    layerStack: string[];
+    stack_fingerprint: string;
+  } {
+    // Check if it's a template combination
+    const combination = this.getTemplateCombination(templateRef);
+    if (combination) {
+      // Extract base template from combination (assumes format like "template-verbatim")
+      // Base template is typically the first part before the layer suffix
+      const baseTemplateId = this.extractBaseTemplateFromCombination(templateRef);
+      const layerStack = combination.layers || [];
+      const stack_fingerprint = this.hashLayerStack(layerStack);
+      
+      return {
+        baseTemplateId,
+        layerStack,
+        stack_fingerprint,
+      };
+    }
+    
+    // Treat as base template (no layers)
+    return {
+      baseTemplateId: templateRef,
+      layerStack: [],
+      stack_fingerprint: this.hashLayerStack([]),
+    };
+  }
+
+  /**
+   * Resolve template identity with backward compatibility
+   * Supports templateRef, templateId, templateCombo
+   */
+  resolveTemplateIdentity(
+    templateRef?: string,
+    templateId?: string,
+    templateCombo?: string
+  ): { 
+    templateRef: string;
+    deprecated: boolean;
+    warning?: string;
+    baseTemplateId: string;
+    layerStack: string[];
+    stack_fingerprint: string;
+  } {
+    // NEW: Prefer templateRef
+    if (templateRef) {
+      const resolved = this.resolveTemplateRef(templateRef);
+      return {
+        templateRef,
+        deprecated: false,
+        ...resolved,
+      };
+    }
+    
+    // DEPRECATED: Map old fields to templateRef
+    const mapped = templateId || templateCombo;
+    if (mapped) {
+      const resolved = this.resolveTemplateRef(mapped);
+      return {
+        templateRef: mapped,
+        deprecated: true,
+        warning: 'templateId/templateCombo are deprecated, use templateRef',
+        ...resolved,
+      };
+    }
+    
+    // Fallback: section-based default
+    throw new Error('No template identifier provided');
+  }
+
+  /**
+   * Extract base template ID from combination name
+   * e.g., "template-verbatim" -> "section7-ai-formatter"
+   */
+  private extractBaseTemplateFromCombination(comboName: string): string {
+    // For now, default to section7-ai-formatter
+    // In future, could map combinations to specific base templates
+    if (comboName.includes('section7') || comboName.includes('section_7')) {
+      return 'section7-ai-formatter';
+    }
+    if (comboName.includes('section8') || comboName.includes('section_8')) {
+      return 'section8-ai-formatter';
+    }
+    // Default fallback
+    return 'section7-ai-formatter';
+  }
+
+  /**
+   * Hash layer stack for fingerprinting
+   */
+  private hashLayerStack(layerStack: string[]): string {
+    const stackStr = layerStack.sort().join(',');
+    return createHash('sha256').update(stackStr).digest('hex').substring(0, 16);
   }
 
   /**

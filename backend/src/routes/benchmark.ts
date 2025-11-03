@@ -51,13 +51,13 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const { original, reference, templates, config } = req.body;
+    const { original, reference, templates, combinations, autoGenerate, config } = req.body;
 
     // Validate shared fields
     if (!original || !original.trim()) {
       return res.status(400).json({
         success: false,
-        error: 'original transcript is required (shared for all templates)',
+        error: 'original transcript is required (shared for all combinations)',
       });
     }
 
@@ -68,41 +68,224 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate templates array
-    if (!templates || !Array.isArray(templates) || templates.length === 0) {
+    // Support both manual mode (templates with pre-formatted outputs) and auto-generate mode (combinations with model+template)
+    let templateOutputs: Array<{ name: string; output: string; model?: string; templateId?: string; requestedModel?: string }> = [];
+    
+    if (autoGenerate && combinations && Array.isArray(combinations) && combinations.length > 0) {
+      // Auto-generate mode: format transcript with each model+template combination
+      console.log('[Benchmark] Auto-generating outputs for combinations:', combinations.length);
+      
+      // Import format router dynamically to avoid circular dependency
+      const formatRouter = await import('./format.js').catch(() => null);
+      if (!formatRouter) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to load format router for auto-generation',
+        });
+      }
+
+      // Generate outputs for each combination
+      for (const combination of combinations) {
+        const { name, model, templateId, templateRef } = combination;
+        
+        if (!model || !templateId) {
+          console.warn(`[Benchmark] Skipping combination "${name}": missing model or templateId`);
+          continue;
+        }
+
+        try {
+          // Import the processing orchestrator (same as format endpoint)
+          const { processingOrchestrator } = await import('../services/processing/ProcessingOrchestrator.js');
+          const { LayerManager } = await import('../services/layers/LayerManager.js');
+          const layerManager = new LayerManager();
+          
+          // Resolve template identity (same logic as format endpoint)
+          let resolvedTemplate: {
+            templateRef: string;
+            baseTemplateId: string;
+            layerStack: string[];
+            stack_fingerprint: string;
+          };
+          
+          try {
+            resolvedTemplate = layerManager.resolveTemplateIdentity(
+              templateRef || templateId,
+              templateId,
+              undefined // No legacy templateCombo
+            );
+          } catch (error) {
+            console.warn(`[Benchmark] Template not found: ${templateId}`, error);
+            templateOutputs.push({
+              name: name || `${model} + ${templateId}`,
+              output: '',
+              model,
+              templateId,
+            });
+            continue;
+          }
+
+          // Determine section from template or config
+          const section = config?.section?.replace('section_', '') || '7';
+          
+          // Process transcript with this model+template combination
+          const correlationId = `benchmark-${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
+          
+          // Build processing request (omit seed if not provided to avoid undefined)
+          const processingRequest: {
+            sectionId: string;
+            modeId: string;
+            templateId: string;
+            layerStack: string[];
+            model?: string;
+            temperature?: number;
+            language: string;
+            content: string;
+            correlationId: string;
+            options?: Record<string, any>;
+          } = {
+            sectionId: `section_${section}`,
+            modeId: 'mode2', // Use mode2 (smart dictation)
+            templateId: resolvedTemplate.baseTemplateId,
+            layerStack: resolvedTemplate.layerStack,
+            temperature: 0.1, // Use consistent temperature for comparison
+            language: config?.language || 'fr',
+            content: original.trim(),
+            correlationId,
+            options: {
+              // Additional options if needed
+            },
+          };
+          
+          // Add model if provided
+          if (model) {
+            // Check if model is enabled
+            try {
+              const { isModelEnabled, getModelVersion } = await import('../config/modelVersions.js');
+              if (!isModelEnabled(model)) {
+                const modelInfo = getModelVersion(model);
+                const errorMsg = modelInfo?.featureFlag 
+                  ? `Model ${model} requires feature flag ${modelInfo.featureFlag}=true (currently disabled)`
+                  : `Model ${model} is not enabled`;
+                console.warn(`[Benchmark] ${errorMsg}`);
+                // Continue anyway - the provider will handle the validation
+                // But log which model was requested vs what will be used
+              } else {
+                console.log(`[Benchmark] Model ${model} is enabled and will be used`);
+              }
+            } catch (error) {
+              console.warn(`[Benchmark] Could not check model enablement for ${model}:`, error);
+            }
+            processingRequest.model = model;
+          }
+          
+          const processed = await processingOrchestrator.processContent(processingRequest);
+          
+          // Log the actual model used (from operational metadata if available)
+          const actualModelUsed = processed.operational?.model || model || 'default';
+          if (actualModelUsed !== model && model) {
+            console.warn(`[Benchmark] Model requested: ${model}, but actual model used: ${actualModelUsed}`);
+          } else {
+            console.log(`[Benchmark] Model used: ${actualModelUsed} for ${templateId}`);
+          }
+
+          templateOutputs.push({
+            name: name || `${actualModelUsed} + ${templateId}`,
+            output: processed.processedContent || '',
+            model: actualModelUsed, // Use actual model that was used
+            templateId,
+            requestedModel: model, // Keep track of what was requested
+          });
+
+          console.log(`[Benchmark] Generated output for ${actualModelUsed} + ${templateId}: ${processed.processedContent?.length || 0} chars`);
+        } catch (error) {
+          console.error(`[Benchmark] Failed to generate output for ${model} + ${templateId}:`, error);
+          
+          // PROOF: Log failure reason
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`[PROOF] ⚠️ Benchmark - Model ${model} FAILED for ${templateId}: ${errorMessage}`, {
+            requestedModel: model,
+            templateId: templateId,
+            errorType: error instanceof Error ? error.constructor.name : typeof error
+          });
+          
+          // Store error in output for failed models
+          templateOutputs.push({
+            name: name || `${model} + ${templateId}`,
+            output: `[ERROR] Model ${model} failed: ${errorMessage}`, // Store error in output
+            model: 'FAILED', // Mark as failed
+            templateId,
+            requestedModel: model,
+          });
+        }
+      }
+    } else if (templates && Array.isArray(templates) && templates.length > 0) {
+      // Manual mode: use pre-formatted outputs
+      templateOutputs = templates.map((t: any) => ({
+        name: t.name,
+        output: t.output,
+        model: t.model || 'unknown',
+        templateId: t.templateId || 'unknown',
+      }));
+    } else {
       return res.status(400).json({
         success: false,
-        error: 'templates array is required and must contain at least one template output',
+        error: 'Either templates array (manual mode) or combinations array (auto-generate mode) is required',
+      });
+    }
+
+    if (templateOutputs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No template outputs available for comparison',
       });
     }
 
     // Support both single-template (simple comparison) and multi-template (statistical analysis)
-    const isStatisticalMode = templates.length >= 3;
+    const isStatisticalMode = templateOutputs.length >= 3;
 
     const {
-      templateRef = 'unknown',
-      model = 'unknown',
       section = 'section_7',
       language = 'fr',
+      evaluationModel: evaluationModelFromConfig,
     } = config || {};
+    
+    // Get evaluation model from config (for generating AI report)
+    const evaluationModelForReport = evaluationModelFromConfig || 'gpt-4o-mini';
 
     console.log('[Benchmark] Processing template performance evaluation:', {
-      templateCount: templates.length,
-      templateRef,
-      model,
+      templateCount: templateOutputs.length,
+      autoGenerate,
       section,
       language,
     });
 
-    // Calculate metrics for each template (all use same original and reference)
-    const results = templates.map((template: any, index: number) => {
-      const { name, output } = template;
+    // Calculate metrics for each template output (all use same original and reference)
+    const results = templateOutputs.map((item: any, index: number) => {
+      const { name, output, model, templateId, requestedModel } = item;
 
-      if (!name || !output || !output.trim()) {
+      // Check for failures (empty output or error message in output)
+      if (!name || !output || !output.trim() || output.includes('[ERROR]') || model === 'FAILED') {
+        const failureReason = output.includes('[ERROR]') 
+          ? output.replace('[ERROR] ', '') 
+          : 'Missing required fields: combination name or output';
+        console.warn(`[PROOF] ⚠️ Benchmark Result - Model failed: ${model || requestedModel || 'unknown'}`, {
+          templateId: templateId || 'unknown',
+          failureReason: failureReason,
+          outputLength: output?.length || 0
+        });
+        
         return {
-          templateName: name || `Template ${index + 1}`,
+          templateName: name || `Combination ${index + 1}`,
+          model: model || 'FAILED',
+          requestedModel: requestedModel || model || 'unknown',
+          templateId: templateId || 'unknown',
           index,
-          error: 'Missing required fields: template name or output',
+          error: failureReason,
+          failureInfo: {
+            requestedModel: requestedModel || model,
+            actualModel: model === 'FAILED' ? 'fallback or error' : model,
+            reason: failureReason
+          }
         };
       }
 
@@ -114,6 +297,9 @@ router.post('/', async (req, res) => {
 
       return {
         templateName: name,
+        model: model || 'unknown',
+        requestedModel: requestedModel || model || 'unknown', // Include requested model if different
+        templateId: templateId || 'unknown',
         index,
         metrics,
         missingPhrases,
@@ -180,9 +366,14 @@ router.post('/', async (req, res) => {
     try {
       const db = getDb();
       if (db && isStatisticalMode && statistics && statistics.mode === 'statistical') {
+        // Use first combination's template/model for database entry (or 'unknown' if auto-generated)
+        const firstValidResult = rankedResults.find(r => !r.error);
+        const templateRefForDb = firstValidResult?.templateId || 'unknown';
+        const modelForDb = firstValidResult?.model || evaluationModelForReport || 'unknown';
+        
         const [run] = await db.insert(eval_runs).values({
-          template_ref: templateRef,
-          model: model,
+          template_ref: templateRefForDb,
+          model: modelForDb,
           section: section as 'section_7' | 'section_8' | 'section_11',
           lang: language as 'fr' | 'en',
           p_value: statistics.p_value?.toString(),
@@ -215,16 +406,16 @@ router.post('/', async (req, res) => {
     const bestTemplate = rankedResults.length > 0 ? rankedResults[0] : null;
 
     const summary = isStatisticalMode && statistics ? {
-      totalTemplates: templates.length,
+      totalTemplates: templateOutputs.length,
       validTemplates: rankedResults.length,
       bestTemplate: bestTemplate?.templateName || null,
       bestScore: bestTemplate?.metrics?.overallScore || null,
       significant: statistics.significant,
       interpretation: statistics.significant
-        ? 'Templates show significant performance differences'
-        : 'No significant performance differences detected between templates',
+        ? (autoGenerate ? 'Model+template combinations show significant performance differences' : 'Templates show significant performance differences')
+        : (autoGenerate ? 'No significant performance differences detected between model+template combinations' : 'No significant performance differences detected between templates'),
     } : {
-      totalTemplates: templates.length,
+      totalTemplates: templateOutputs.length,
       validTemplates: rankedResults.length,
       bestTemplate: bestTemplate?.templateName || null,
       bestScore: bestTemplate?.metrics?.overallScore || null,
@@ -234,17 +425,16 @@ router.post('/', async (req, res) => {
         'Evaluation completed',
     };
 
-    // Generate AI-powered evaluation report (using model from config, default to gpt-4o-mini)
-    const evaluationModel = model !== 'unknown' ? model : process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+    // Generate AI-powered evaluation report (using evaluationModel from config, default to gpt-4o-mini)
     let evaluationReport: string | null = null;
     try {
       evaluationReport = await generateEvaluationReport(
         original.trim(),
         reference.trim(),
         rankedResults,
-        evaluationModel // Pass model parameter
+        evaluationModelForReport // Pass model parameter
       );
-      console.log('[Benchmark] AI evaluation report generated successfully', { model: evaluationModel });
+      console.log('[Benchmark] AI evaluation report generated successfully', { model: evaluationModelForReport });
     } catch (reportError) {
       console.warn('[Benchmark] Failed to generate AI evaluation report:', reportError);
       // Continue without report - don't fail the entire request
@@ -257,6 +447,7 @@ router.post('/', async (req, res) => {
       runId,
       summary,
       evaluationReport, // AI-generated evaluation report
+      autoGenerated: autoGenerate || false, // Indicate if outputs were auto-generated
     });
   } catch (error) {
     console.error('[Benchmark] Error:', error);

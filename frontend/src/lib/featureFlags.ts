@@ -81,7 +81,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     caseManagement: true, // Enable for development - case management integration
     landingPage: false, // Keep OFF by default; enable via env var only
     modelSelection: false, // Keep OFF by default; enable via env var only
-    modelSelectionTranscriptAnalysis: false, // Keep OFF by default; enable via env var only
+    modelSelectionTranscriptAnalysis: true, // Enable for development/testing - Quick Compare feature
     modelSelectionTemplateCombinations: false, // Keep OFF by default; enable via env var only
     modelSelectionDictation: false, // Keep OFF by default; enable via env var only
     enhancedTranscriptAnalysis: false, // Keep OFF by default; enable via env var only

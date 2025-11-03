@@ -157,6 +157,20 @@ export const MODEL_VERSIONS: Record<string, ModelVersion> = {
     provider: 'google',
     enabled: FLAGS.FEATURE_MODEL_SELECTION,
   },
+  'gemini-2.0-flash-exp': {
+    id: 'gemini-2.0-flash-exp',
+    name: 'Gemini 2.0 Flash Experimental',
+    provider: 'google',
+    enabled: FLAGS.FEATURE_MODEL_SELECTION,
+    description: 'Experimental Gemini 2.0 Flash model (latest)',
+  },
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    provider: 'google',
+    enabled: FLAGS.FEATURE_MODEL_SELECTION,
+    description: 'Latest Gemini 2.5 Flash model',
+  },
   
   // Future Gemini Models (Feature-Flagged)
   'gemini-2-pro': {

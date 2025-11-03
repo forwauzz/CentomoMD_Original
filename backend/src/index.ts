@@ -3,6 +3,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { ENV, logNonSecretEnv } from './config/env.js';
 // import { authenticateUser } from './middleware/auth.js'; // Unused for now
+import { optionalAuth } from './middleware/auth.js';
 import { wsAuthCheck } from './ws/auth.js';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
@@ -150,8 +151,8 @@ try {
   console.error('❌ mount /api/clinics:', e);
 }
 
-// Transcript Analysis endpoints
-app.post('/api/analyze/transcript', async (req, res) => {
+// Transcript Analysis endpoints (public for testing)
+app.post('/api/analyze/transcript', optionalAuth, async (req, res) => {
   try {
     const { original, formatted, language = 'fr' } = req.body;
     
@@ -178,7 +179,7 @@ app.post('/api/analyze/transcript', async (req, res) => {
   }
 });
 
-app.post('/api/analyze/compare', async (req, res) => {
+app.post('/api/analyze/compare', optionalAuth, async (req, res) => {
   try {
     const { original, formatted } = req.body;
     
@@ -668,11 +669,11 @@ try {
   console.error('❌ mount /api/models:', e);
 }
 
-// Benchmark routes
+// Benchmark routes (optional auth for testing)
 try {
   const benchmarkRouter = await import('./routes/benchmark.js');
-  app.use('/api/benchmark', benchmarkRouter.default);
-  console.log('✅ /api/benchmark routes mounted');
+  app.use('/api/benchmark', optionalAuth, benchmarkRouter.default);
+  console.log('✅ /api/benchmark routes mounted (with optional auth)');
 } catch(e) {
   console.error('❌ mount /api/benchmark:', e);
 }

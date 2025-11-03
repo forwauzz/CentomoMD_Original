@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useUIStore } from '@/stores/uiStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TemplateUsageStats } from '@/components/stats/TemplateUsageStats';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -375,6 +376,11 @@ export const SettingsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Template Usage Statistics */}
+        <div className="lg:col-span-2">
+          <TemplateUsageStats />
+        </div>
       </div>
     </div>
   );
