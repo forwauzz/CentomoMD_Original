@@ -84,12 +84,29 @@ export function resolveSection7AiPaths(language: Language): Section7AiPaths {
   const ai = manifest.versions?.[version]?.ai_formatter?.[language];
   
   // Resolve paths relative to base path (repo root)
+  // Manifest paths are relative to repo root (e.g., "prompts/section7_master.md")
   const resolved = {
     masterPromptPath: ai?.master ? join(basePath, ai.master) : defaults.masterPromptPath,
     jsonConfigPath: ai?.json ? join(basePath, ai.json) : defaults.jsonConfigPath,
     goldenExamplePath: ai?.golden ? join(basePath, ai.golden) : defaults.goldenExamplePath,
   };
-  console.log(`[PROOF] template=section7 version=${version} source=local status=ok`);
+  
+  // Log resolved paths for debugging
+  console.log(`[PROOF] template=section7 version=${version} source=local status=ok`, {
+    basePath,
+    manifestPaths: ai ? { master: ai.master, json: ai.json, golden: ai.golden } : 'none',
+    resolvedPaths: {
+      master: resolved.masterPromptPath,
+      json: resolved.jsonConfigPath,
+      golden: resolved.goldenExamplePath
+    },
+    filesExist: {
+      master: existsSync(resolved.masterPromptPath),
+      json: existsSync(resolved.jsonConfigPath),
+      golden: existsSync(resolved.goldenExamplePath)
+    }
+  });
+  
   return { ...resolved, versionUsed: version };
 }
 
