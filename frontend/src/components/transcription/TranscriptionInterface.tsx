@@ -25,6 +25,7 @@ import { supabase } from '@/lib/authClient';
 import { TemplateFormattingLoader } from '@/components/loading/TemplateFormattingLoader';
 import { useTemplateTracking } from '@/hooks/useTemplateTracking';
 import { TemplateFeedbackBanner } from '@/components/feedback/TemplateFeedbackBanner';
+import { ModelSelector } from '@/components/ui/ModelSelector';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -87,6 +88,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [templateContent, setTemplateContent] = useState<string>('');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Model selection state (feature-flagged for dictation)
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
   const [formattingProgress, setFormattingProgress] = useState('');
@@ -193,7 +197,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         inputLanguage: inputLanguage,
         outputLanguage: outputLanguage,
         useUniversal: true,
-        templateId: template.id
+        templateId: template.id,
+        ...(featureFlags.modelSelectionDictation && selectedModel && { model: selectedModel })
       })
     });
     
@@ -769,7 +774,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               inputLanguage: inputLanguage,
               outputLanguage: outputLanguage,
               templateCombo: 'template-clinical-extraction',
-              correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+              correlationId: `clinical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              ...(featureFlags.modelSelectionDictation && selectedModel && { model: selectedModel })
             })
           });
           
@@ -894,7 +900,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               outputLanguage: outputLanguage,
               templateCombo,
               verbatimSupport,
-              voiceCommandsSupport
+              voiceCommandsSupport,
+              ...(featureFlags.modelSelectionDictation && selectedModel && { model: selectedModel })
             })
           });
           
@@ -1221,6 +1228,29 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   language={language}
                 />
               </div>
+
+              {/* Model Selection (Feature-flagged) */}
+              {featureFlags.modelSelectionDictation && (
+                <div className="space-y-2">
+                  <ModelSelector
+                    value={selectedModel}
+                    onValueChange={setSelectedModel}
+                    disabled={isFormatting}
+                    showAllowlistError={false}
+                    featureFlag="dictation"
+                  />
+                  {selectedModel && (
+                    <p className="text-xs text-gray-500">
+                      Using {selectedModel} for AI formatting (default: gpt-4o-mini)
+                    </p>
+                  )}
+                  {!selectedModel && (
+                    <p className="text-xs text-gray-500">
+                      Default: gpt-4o-mini (select a model to override)
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Recording Control Buttons */}
               <div className="space-y-2">

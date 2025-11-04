@@ -2483,11 +2483,11 @@ export const TranscriptAnalysisPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="mt-4">
-                          <p className="text-xs text-gray-600 mb-1">Formatted Output</p>
+                          <p className="text-xs text-gray-600 mb-1">Formatted Output (Complete)</p>
                           <Textarea
-                            value={result.outputPreview || result.output || ''}
+                            value={result.output || result.outputPreview || ''}
                             readOnly
-                            className="min-h-[200px] text-xs font-mono"
+                            className="min-h-[300px] text-xs font-mono"
                           />
                         </div>
                       </CardContent>
@@ -3074,6 +3074,18 @@ export const TranscriptAnalysisPage: React.FC = () => {
                                       </div>
                                     </div>
                                   )}
+                                  
+                                  {/* Complete Formatted Output */}
+                                  <div className="mt-3 pt-3 border-t">
+                                    <div className="text-xs font-medium text-gray-700 mb-2">
+                                      Complete Formatted Output
+                                    </div>
+                                    <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                                      <pre className="text-xs font-mono whitespace-pre-wrap max-h-96 overflow-y-auto text-gray-800">
+                                        {result.output || result.outputPreview || 'No output available'}
+                                      </pre>
+                                    </div>
+                                  </div>
                                 </CardContent>
                               </Card>
                             )

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { ClinicalEntities } from '../../../shared/types/clinical';
+import { ClinicalEntities } from '../../../shared/types/clinical.js';
 
 export interface Section8AIResult {
   formatted: string;

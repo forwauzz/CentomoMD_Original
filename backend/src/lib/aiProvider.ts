@@ -267,6 +267,30 @@ export class OpenAIProvider implements AIProvider {
       // Record failure
       circuitBreaker.recordFailure(this.name);
       
+      // Log detailed error information for debugging (OpenAI-specific)
+      if (this.name === 'openai' && error && typeof error === 'object') {
+        // Type assertion for error object with OpenAI SDK structure
+        const openaiError = error as any;
+        const status = openaiError?.status || openaiError?.response?.status;
+        const errorDetails = openaiError?.error || openaiError?.response?.data?.error || {};
+        const errorMessage = openaiError?.message || errorDetails?.message || 'Unknown error';
+        
+        console.error(`[OpenAI] Error details:`, {
+          status,
+          message: errorMessage,
+          type: errorDetails?.type || openaiError?.code,
+          error: errorDetails,
+          headers: openaiError?.response?.headers || openaiError?.headers,
+          // Log quota-related headers if available
+          rateLimitHeaders: {
+            'x-ratelimit-limit-requests': openaiError?.response?.headers?.['x-ratelimit-limit-requests'],
+            'x-ratelimit-remaining-requests': openaiError?.response?.headers?.['x-ratelimit-remaining-requests'],
+            'x-ratelimit-reset-requests': openaiError?.response?.headers?.['x-ratelimit-reset-requests'],
+            'retry-after': openaiError?.response?.headers?.['retry-after'] || openaiError?.headers?.['retry-after']
+          }
+        });
+      }
+      
       // Convert to standardized error
       throw AIError.fromProviderError(this.name, error);
     }
@@ -346,8 +370,30 @@ export class AnthropicProvider implements AIProvider {
     }
     
     try {
-      // Map model name to Anthropic format (claude-3-5-sonnet -> claude-3-5-sonnet-20241022)
-      const modelId = req.model.startsWith('claude-') ? req.model : `claude-${req.model}`;
+      // Map model name to Anthropic format (claude-3-5-sonnet -> claude-sonnet-4-20250514)
+      let modelId = req.model.startsWith('claude-') ? req.model : `claude-${req.model}`;
+      
+      // Anthropic requires versioned model names - map to correct versions
+      // NOTE: Claude 3.5 Sonnet models (20240620, 20241022) were deprecated Aug 13, 2025 and retired Oct 22, 2025
+      // Use Claude Sonnet 4 as replacement for claude-3-5-sonnet
+      const modelVersionMap: Record<string, string> = {
+        'claude-3-5-sonnet': 'claude-sonnet-4-20250514', // Replaced with Claude Sonnet 4 (3.5 deprecated)
+        'claude-3-5-haiku': 'claude-3-5-haiku-20240715', // Still available: July 2024
+        'claude-3-opus': 'claude-3-opus-20240229',
+        'claude-3-sonnet': 'claude-3-sonnet-20240229',
+        'claude-3-haiku': 'claude-3-haiku-20240307',
+        // Claude 4 models (available)
+        'claude-4-sonnet': 'claude-sonnet-4-20250514', // Claude Sonnet 4
+        'claude-4-haiku': 'claude-haiku-4-20250514', // Claude Haiku 4
+        'claude-4-opus': 'claude-opus-4-1-20250805', // Claude Opus 4.1
+      };
+      
+      // If model is in the map, use the versioned name; otherwise use as-is (may already be versioned)
+      const mappedModel = modelVersionMap[modelId];
+      if (mappedModel) {
+        modelId = mappedModel;
+        console.log(`[Anthropic] Mapped ${req.model} -> ${modelId}`);
+      }
       
       // Extract system and user messages
       const systemMessage = req.messages.find(m => m.role === 'system')?.content || '';

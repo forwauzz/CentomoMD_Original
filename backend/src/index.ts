@@ -681,11 +681,11 @@ try {
   console.error('❌ mount /api/format:', e);
 }
 
-// Models routes
+// Models routes (optional auth for testing)
 try {
   const modelsRouter = await import('./routes/models.js');
-  app.use('/api/models', modelsRouter.default);
-  console.log('✅ /api/models routes mounted');
+  app.use('/api/models', optionalAuth, modelsRouter.default);
+  console.log('✅ /api/models routes mounted (with optional auth)');
 } catch(e) {
   console.error('❌ mount /api/models:', e);
 }
@@ -1409,15 +1409,19 @@ app.get('/api/templates/:section',  (req, res) => {
   
   try {
     const { section } = req.params;
+    
+    // CRITICAL: Exclude reserved routes from section parameter FIRST
+    // These routes are handled by separate endpoints and must not be processed as sections
+    const reservedRoutes = ['bundles', 'analytics', 'stats', 'export', 'import', 'search', 'bulk'];
+    if (reservedRoutes.includes(section)) {
+      // Return 404 to let Express try other route handlers
+      return res.status(404).json({ success: false, error: 'Route not found' });
+    }
+    
     // const { language, search, tags } = req.query; // Unused - template library archived
     
     if (!section) {
       return res.status(400).json({ success: false, error: 'Missing section parameter' });
-    }
-    
-    // Exclude 'bundles' from section parameter (handled by separate router)
-    if (section === 'bundles') {
-      return res.status(404).json({ success: false, error: 'Route not found' });
     }
     
     // Audit logging for secure event tracking

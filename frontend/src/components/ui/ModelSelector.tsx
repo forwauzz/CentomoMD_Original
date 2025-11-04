@@ -22,6 +22,7 @@ interface ModelSelectorProps {
   disabled?: boolean;
   className?: string;
   showAllowlistError?: boolean;
+  featureFlag?: 'transcriptAnalysis' | 'dictation' | 'both'; // Which feature flag to check
 }
 
 /**
@@ -36,6 +37,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   disabled = false,
   className = '',
   showAllowlistError = true,
+  featureFlag = 'transcriptAnalysis', // Default to transcript analysis for backward compatibility
 }) => {
   const flags = useFeatureFlags();
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -43,8 +45,12 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const [allowlistError, setAllowlistError] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
-  // Check if feature is enabled
-  const isEnabled = flags.modelSelectionTranscriptAnalysis;
+  // Check if feature is enabled based on featureFlag prop
+  const isEnabled = featureFlag === 'both' 
+    ? (flags.modelSelectionTranscriptAnalysis || flags.modelSelectionDictation)
+    : featureFlag === 'dictation'
+    ? flags.modelSelectionDictation
+    : flags.modelSelectionTranscriptAnalysis;
 
   // Fetch available models and check allowlist
   useEffect(() => {
