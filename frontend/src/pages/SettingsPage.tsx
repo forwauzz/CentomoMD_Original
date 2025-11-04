@@ -22,7 +22,6 @@ import {
   Upload,
   Trash2
 } from 'lucide-react';
-import { TemplateUsageStats } from '@/components/stats/TemplateUsageStats';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useI18n();
