@@ -22,6 +22,8 @@ export interface ProcessingRequest {
   model?: string;
   seed?: number;
   temperature?: number;
+  // NEW: Template version selection
+  templateVersion?: string; // e.g., '1.0.0', 'latest', 'stable', or bundle-specific version
   options?: {
     timeout?: number;
     retryAttempts?: number;
@@ -424,6 +426,12 @@ export class ProcessingOrchestrator {
       return await this.processSection7AIFormatter(content, template, request);
     }
     
+    // Handle Section 7 v1 template (uses same formatter, different manifest)
+    if (template.id === 'section7-v1') {
+      console.log(`[${correlationId}] Routing to processSection7AIFormatter (v1)`);
+      return await this.processSection7AIFormatter(content, template, request);
+    }
+    
     // Handle Section 7 R&D Pipeline template
     if (template.id === 'section7-rd') {
       console.log(`[${correlationId}] Routing to processSection7Rd`);
@@ -648,7 +656,9 @@ export class ProcessingOrchestrator {
         request.language as 'fr' | 'en',
         request.model,
         request.temperature,
-        request.seed
+        request.seed,
+        request.templateVersion,
+        template.id
       );
       
       const processedContent = result.formatted;
@@ -698,12 +708,13 @@ export class ProcessingOrchestrator {
         seed: request.seed
       });
       
-      // Process through R&D pipeline (pass model, temperature, seed if provided)
+      // Process through R&D pipeline (pass model, temperature, seed, templateVersion if provided)
       const result = await section7RdService.processInput(
         content,
         request.model,
         request.temperature,
-        request.seed
+        request.seed,
+        request.templateVersion
       );
       
       if (!result.success) {

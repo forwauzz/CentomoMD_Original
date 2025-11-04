@@ -53,6 +53,8 @@ export const FLAGS = {
   
   // Template version selection (MVP manifest-based resolver)
   FEATURE_TEMPLATE_VERSION_SELECTION: (process.env['FEATURE_TEMPLATE_VERSION_SELECTION'] ?? 'false') === 'true',
+  // Template version remote storage (Phase 1: Supabase Storage integration)
+  FEATURE_TEMPLATE_VERSION_REMOTE_STORAGE: (process.env['FEATURE_TEMPLATE_VERSION_REMOTE_STORAGE'] ?? 'false') === 'true',
   
   // Enhanced transcript analysis features
   FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS: (process.env['FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS'] ?? 'false') === 'true',

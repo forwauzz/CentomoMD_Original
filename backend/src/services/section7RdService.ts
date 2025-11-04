@@ -44,7 +44,7 @@ export class Section7RdService {
   /**
    * Process input text through Section 7 R&D pipeline
    */
-  async processInput(inputText: string, model?: string, temperature?: number, seed?: number): Promise<Section7RdResult> {
+  async processInput(inputText: string, model?: string, temperature?: number, seed?: number, templateVersion?: string): Promise<Section7RdResult> {
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
 
@@ -55,7 +55,7 @@ export class Section7RdService {
       const tempInputPath = await this.createTempInput(inputText);
       
       // Step 2: Run formatting (placeholder - would integrate with actual formatter)
-      const formattedText = await this.formatText(inputText, model, temperature, seed);
+      const formattedText = await this.formatText(inputText, model, temperature, seed, templateVersion);
       
       // Step 3: Run compliance evaluation
       const compliance = await this.runComplianceCheck(formattedText);
@@ -121,10 +121,10 @@ export class Section7RdService {
   /**
    * Format text using the complete Section 7 R&D Pipeline with all artifacts
    */
-  private async formatText(inputText: string, model?: string, temperature?: number, seed?: number): Promise<string> {
+  private async formatText(inputText: string, model?: string, temperature?: number, seed?: number, templateVersion?: string): Promise<string> {
     try {
       // Use the complete R&D pipeline with all artifacts
-      const formattedText = await this.runCompleteRdPipeline(inputText, model, temperature, seed);
+      const formattedText = await this.runCompleteRdPipeline(inputText, model, temperature, seed, templateVersion);
       
       logger.info('Section 7 R&D Pipeline formatting completed', {
         originalLength: inputText.length,
@@ -332,7 +332,7 @@ export class Section7RdService {
   /**
    * Run the complete R&D Pipeline using all artifacts
    */
-  private async runCompleteRdPipeline(inputText: string, model?: string, temperature?: number, seed?: number): Promise<string> {
+  private async runCompleteRdPipeline(inputText: string, model?: string, temperature?: number, seed?: number, templateVersion?: string): Promise<string> {
     try {
       // Step 1-4: Resolve artifact paths (manifest when enabled, else filesystem)
       let masterConfigPath: string;
@@ -342,7 +342,7 @@ export class Section7RdService {
       
       if (FLAGS.FEATURE_TEMPLATE_VERSION_SELECTION) {
         const { resolveSection7RdPaths } = await import('../services/artifacts/PromptBundleResolver.js');
-        const resolved = resolveSection7RdPaths();
+        const resolved = await resolveSection7RdPaths(templateVersion);
         masterConfigPath = resolved.masterConfigPath;
         systemConductorPath = resolved.systemConductorPath;
         planPath = resolved.planPath;

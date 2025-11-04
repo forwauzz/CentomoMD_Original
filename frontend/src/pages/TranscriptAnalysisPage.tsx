@@ -11,6 +11,7 @@ import { apiFetch } from '@/lib/api';
 import { TemplatePreview } from '@/components/transcription/TemplatePreview';
 import { useTemplates } from '@/contexts/TemplateContext';
 import { ModelSelector } from '@/components/ui/ModelSelector';
+import { VersionSelector } from '@/components/ui/VersionSelector';
 import { useFeatureFlags } from '@/lib/featureFlags';
 
 // Using TemplateContext for standardized template loading
@@ -193,6 +194,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
   
   // Direct template processing state
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedTemplateVersion, setSelectedTemplateVersion] = useState<string | undefined>(undefined);
   const [isProcessingTemplate, setIsProcessingTemplate] = useState(false);
   const [templateProcessingResult, setTemplateProcessingResult] = useState<string>('');
   const [templateProcessingError, setTemplateProcessingError] = useState<string>('');
@@ -293,7 +295,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
   }, []);
 
   // Direct template processing function (like dictation page)
-  const processWithTemplate = useCallback(async (templateId: string, content: string) => {
+  const processWithTemplate = useCallback(async (templateId: string, content: string, templateVersion?: string) => {
     // Enhanced validation and logging
     console.log('[Template Processing] Input validation:', {
       templateId: templateId,
@@ -330,6 +332,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
       section: section,
       language: detectLanguage(content),
       templateRef: templateId, // Use templateRef (new unified identifier)
+      templateVersion: templateVersion, // Include selected version if specified
       verbatimSupport: false,
       voiceCommandsSupport: false
     };
@@ -426,8 +429,8 @@ export const TranscriptAnalysisPage: React.FC = () => {
     setTemplateProcessingResult('');
 
     try {
-      console.log(`[Single Template] Processing with template: ${selectedTemplate}, transcript length: ${originalTranscript.length}`);
-      const result = await processWithTemplate(selectedTemplate, originalTranscript);
+      console.log(`[Single Template] Processing with template: ${selectedTemplate}, version: ${selectedTemplateVersion || 'default'}, transcript length: ${originalTranscript.length}`);
+      const result = await processWithTemplate(selectedTemplate, originalTranscript, selectedTemplateVersion);
       setTemplateProcessingResult(result);
       setFormattedTranscript(result);
       console.log(`[Single Template] Processing completed successfully`);
@@ -783,9 +786,20 @@ export const TranscriptAnalysisPage: React.FC = () => {
     setBenchmarkResult(null);
 
     try {
-      // Prepare combinations for auto-generation or manual comparison
-      const combinations = benchmarkItems.map(item => {
-        if (benchmarkMode === 'auto') {
+      // Prepare request body based on mode
+      let requestBody: any = {
+        original: benchmarkOriginal.trim(),
+        reference: benchmarkReference.trim(),
+        config: {
+          section: 'section_7', // Default, can be inferred from template
+          language: detectLanguage(benchmarkOriginal),
+          evaluationModel: selectedModel || 'gpt-4o-mini', // Model for evaluation report
+        },
+      };
+
+      if (benchmarkMode === 'auto') {
+        // Auto-generate mode: send combinations array
+        const combinations = benchmarkItems.map(item => {
           // Auto-generate mode: require model and templateId
           if (!item.model || !item.templateId) {
             throw new Error(`Combination "${item.templateName}" must have both model and template selected for auto-generation.`);
@@ -797,7 +811,12 @@ export const TranscriptAnalysisPage: React.FC = () => {
             templateRef: item.templateId,
             // Output will be auto-generated on backend
           };
-        } else {
+        });
+        requestBody.combinations = combinations;
+        requestBody.autoGenerate = true;
+      } else {
+        // Manual mode: send templates array with pre-formatted outputs
+        const templates = benchmarkItems.map(item => {
           // Manual mode: require pre-formatted output
           if (!item.templateOutput || !item.templateOutput.trim()) {
             throw new Error(`Combination "${item.templateName}" must have a formatted output for manual comparison.`);
@@ -808,8 +827,10 @@ export const TranscriptAnalysisPage: React.FC = () => {
             model: item.model || 'unknown',
             templateId: item.templateId || 'unknown',
           };
-        }
-      });
+        });
+        requestBody.templates = templates;
+        requestBody.autoGenerate = false;
+      }
 
       // Send to backend for processing (auto-generation if needed, then comparison)
       const response = await apiFetch('/api/benchmark', {
@@ -817,17 +838,7 @@ export const TranscriptAnalysisPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          original: benchmarkOriginal.trim(),
-          reference: benchmarkReference.trim(),
-          combinations: combinations, // Changed from 'templates' to 'combinations'
-          autoGenerate: benchmarkMode === 'auto', // Tell backend to auto-generate
-          config: {
-            section: 'section_7', // Default, can be inferred from template
-            language: detectLanguage(benchmarkOriginal),
-            evaluationModel: selectedModel || 'gpt-4o-mini', // Model for evaluation report
-          },
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.success) {
@@ -1285,7 +1296,10 @@ export const TranscriptAnalysisPage: React.FC = () => {
                 <div className="flex space-x-2">
                   <Select 
                     value={selectedTemplate} 
-                    onValueChange={setSelectedTemplate}
+                    onValueChange={(value) => {
+                      setSelectedTemplate(value);
+                      setSelectedTemplateVersion(undefined); // Reset version when template changes
+                    }}
                     items={getAllTemplates().filter(t => t.isActive).map((template) => ({
                       label: template.name,
                       value: template.id
@@ -1308,6 +1322,16 @@ export const TranscriptAnalysisPage: React.FC = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Template Version Selection */}
+              {selectedTemplate && (
+                <VersionSelector
+                  templateId={selectedTemplate}
+                  value={selectedTemplateVersion}
+                  onChange={setSelectedTemplateVersion}
+                  disabled={isProcessingTemplate}
+                />
+              )}
 
               {/* Model Selection (Feature-flagged) */}
               {/* DEBUG: Always render a test div first */}

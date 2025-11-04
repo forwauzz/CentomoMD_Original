@@ -10,7 +10,7 @@ export const DashboardPage: React.FC = () => {
     <div className="space-y-6">
       {/* Hero banner */}
       <div className="-mx-4 lg:-mx-6">
-        <div className="w-full bg-[#0b2a4f] text-white">
+        <div className="w-full bg-white text-gray-900">
           <div className="px-4 lg:px-6 py-10 md:py-14">
             <h1 className="font-semibold tracking-tight text-center text-3xl md:text-5xl lg:text-6xl">
               {`Welcome Back${user ? `, ${user.name || user.email}` : ''}`}

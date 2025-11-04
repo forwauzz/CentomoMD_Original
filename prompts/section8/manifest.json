@@ -4,12 +4,14 @@
     "current": {
       "ai_formatter": {
         "fr": {
-          "master": "prompts/section8_master.md",
-          "golden": "prompts/section8_golden_example.md"
+          "master": "backend/prompts/section8_master.md",
+          "json": "backend/prompts/section8_master.json",
+          "golden": "backend/prompts/section8_golden_example.md"
         },
         "en": {
-          "master": "prompts/section8_master_en.md",
-          "golden": "prompts/section8_golden_example_en.md"
+          "master": "backend/prompts/section8_master_en.md",
+          "json": "backend/prompts/section8_master_en.json",
+          "golden": "backend/prompts/section8_golden_example_en.md"
         }
       }
     }

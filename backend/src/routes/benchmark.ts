@@ -86,7 +86,7 @@ router.post('/', async (req, res) => {
 
       // Generate outputs for each combination
       for (const combination of combinations) {
-        const { name, model, templateId, templateRef } = combination;
+        const { name, model, templateId, templateRef, templateVersion } = combination;
         
         if (!model || !templateId) {
           console.warn(`[Benchmark] Skipping combination "${name}": missing model or templateId`);
@@ -138,6 +138,7 @@ router.post('/', async (req, res) => {
             layerStack: string[];
             model?: string;
             temperature?: number;
+            templateVersion?: string; // NEW: Template version selection (optional, backward compatible)
             language: string;
             content: string;
             correlationId: string;
@@ -148,6 +149,7 @@ router.post('/', async (req, res) => {
             templateId: resolvedTemplate.baseTemplateId,
             layerStack: resolvedTemplate.layerStack,
             temperature: 0.1, // Use consistent temperature for comparison
+            templateVersion: templateVersion, // NEW: Template version selection (optional, backward compatible)
             language: config?.language || 'fr',
             content: original.trim(),
             correlationId,

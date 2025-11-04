@@ -82,6 +82,7 @@ router.post('/mode2', async (req, res) => {
       seed, // NEW: Reproducibility
       temperature, // NEW: Reproducibility
       prompt_hash, // NEW: Prompt version tracking
+      templateVersion, // NEW: Template version selection (optional, backward compatible)
     } = req.body;
     
     console.log('[API] Mode2 request body:', {
@@ -218,6 +219,7 @@ router.post('/mode2', async (req, res) => {
       model: modelRequested && FLAGS.FEATURE_MODEL_SELECTION ? modelRequested : undefined, // NEW: Model selection
       seed: seed, // NEW: Reproducibility
       temperature: temperature, // NEW: Reproducibility
+      templateVersion: templateVersion, // NEW: Template version selection (optional, backward compatible)
       language: finalInputLanguage,
       content: transcript,
       correlationId,

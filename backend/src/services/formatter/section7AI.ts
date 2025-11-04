@@ -30,7 +30,9 @@ export class Section7AIFormatter {
     language: 'fr' | 'en' = 'fr',
     model?: string,
     temperature?: number,
-    seed?: number
+    seed?: number,
+    templateVersion?: string,
+    templateId?: string
   ): Promise<Section7AIResult> {
     const startTime = Date.now();
     const correlationId = `s7-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -44,7 +46,7 @@ export class Section7AIFormatter {
 
       // STEP 1: Load language-specific files (Flowchart Step 1)
       console.log(`[${correlationId}] 📁 STEP 1: Loading language-specific files`);
-      const promptFiles = await this.loadLanguageSpecificFiles(language, correlationId);
+      const promptFiles = await this.loadLanguageSpecificFiles(language, correlationId, templateVersion, templateId);
       
       // STEP 2: Construct comprehensive system prompt (Flowchart Step 2-4)
       console.log(`[${correlationId}] 🔧 STEP 2-4: Constructing comprehensive system prompt`);
@@ -81,7 +83,9 @@ export class Section7AIFormatter {
    */
   private static async loadLanguageSpecificFiles(
     language: 'fr' | 'en', 
-    correlationId: string
+    correlationId: string,
+    templateVersion?: string,
+    templateId?: string
   ): Promise<{
     masterPrompt: string;
     jsonConfig: any;
@@ -100,20 +104,49 @@ export class Section7AIFormatter {
       let goldenExamplePath: string;
 
       if (FLAGS.FEATURE_TEMPLATE_VERSION_SELECTION) {
-        const { resolveSection7AiPaths } = await import('../artifacts/PromptBundleResolver.js');
-        const resolved = resolveSection7AiPaths(language);
-        masterPromptPath = resolved.masterPromptPath;
-        jsonConfigPath = resolved.jsonConfigPath;
-        goldenExamplePath = resolved.goldenExamplePath;
-      } else {
-        if (language === 'fr') {
-          masterPromptPath = join(basePath, 'section7_master.md');
-          jsonConfigPath = join(basePath, 'section7_master.json');
-          goldenExamplePath = join(basePath, 'section7_golden_example.md');
+        // Use different resolver for section7-v1
+        if (templateId === 'section7-v1') {
+          const { resolveSection7V1AiPaths } = await import('../artifacts/PromptBundleResolver.js');
+          const resolved = await resolveSection7V1AiPaths(language, templateVersion);
+          masterPromptPath = resolved.masterPromptPath;
+          jsonConfigPath = resolved.jsonConfigPath;
+          goldenExamplePath = resolved.goldenExamplePath;
         } else {
-          masterPromptPath = join(basePath, 'section7_master_en.md');
-          jsonConfigPath = join(basePath, 'section7_master_en.json');
-          goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+          const { resolveSection7AiPaths } = await import('../artifacts/PromptBundleResolver.js');
+          const resolved = await resolveSection7AiPaths(language, templateVersion);
+          masterPromptPath = resolved.masterPromptPath;
+          jsonConfigPath = resolved.jsonConfigPath;
+          goldenExamplePath = resolved.goldenExamplePath;
+        }
+      } else {
+        // Fallback paths - check template ID for section7-v1
+        // Handle both cases: running from repo root or from backend/ directory
+        if (templateId === 'section7-v1') {
+          // Try prompts/ first (when running from backend/), then backend/prompts/ (when at repo root)
+          const promptsInBackend = join(process.cwd(), 'prompts');
+          const promptsAtRepoRoot = join(process.cwd(), 'backend', 'prompts');
+          const promptsPath = existsSync(promptsInBackend) ? promptsInBackend : promptsAtRepoRoot;
+          
+          if (language === 'fr') {
+            masterPromptPath = join(promptsPath, 'section7_v1_master.md');
+            jsonConfigPath = join(promptsPath, 'section7_v1_master.json');
+            goldenExamplePath = join(promptsPath, 'section7_v1_golden_example.md');
+          } else {
+            masterPromptPath = join(promptsPath, 'section7_v1_master_en.md');
+            jsonConfigPath = join(promptsPath, 'section7_v1_master_en.json');
+            goldenExamplePath = join(promptsPath, 'section7_v1_golden_example_en.md');
+          }
+        } else {
+          // For other section7 templates, use prompts/ directory at repo root
+          if (language === 'fr') {
+            masterPromptPath = join(basePath, 'section7_master.md');
+            jsonConfigPath = join(basePath, 'section7_master.json');
+            goldenExamplePath = join(basePath, 'section7_golden_example.md');
+          } else {
+            masterPromptPath = join(basePath, 'section7_master_en.md');
+            jsonConfigPath = join(basePath, 'section7_master_en.json');
+            goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+          }
         }
       }
       

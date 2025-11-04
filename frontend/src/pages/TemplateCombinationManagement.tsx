@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils';
 import { TemplateConfig } from '@/config/template-config';
 import { useTemplates } from '@/contexts/TemplateContext';
 import { useUIStore } from '@/stores/uiStore';
+import { BundleUpload } from '@/components/bundles/BundleUpload';
+import { BundleList } from '@/components/bundles/BundleList';
 
 interface TemplateCombinationManagementProps {
   // Add any props if needed
@@ -154,6 +156,16 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
           <span>Add Template</span>
         </Button>
       </div>
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="templates" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="bundles">Bundle Management</TabsTrigger>
+        </TabsList>
+
+        {/* Templates Tab */}
+        <TabsContent value="templates" className="space-y-6">
 
       {/* Error Display */}
       {error && (
@@ -718,6 +730,27 @@ export const TemplateCombinationManagement: React.FC<TemplateCombinationManageme
           </div>
         </div>
       )}
+        </TabsContent>
+
+        {/* Bundle Management Tab */}
+        <TabsContent value="bundles" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <BundleUpload />
+            </div>
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Uploaded Bundles</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BundleList />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
