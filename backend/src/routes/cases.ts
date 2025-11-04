@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getDb } from '../database/connection';
-import { cases } from '../database/schema';
+import { getDb } from '../database/connection.js';
+import { cases } from '../database/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { authenticateUser } from '../middleware/auth.js';
 

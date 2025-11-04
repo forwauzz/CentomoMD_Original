@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Template Feedback Banner
  * Centered modal-style feedback banner for template ratings
  */

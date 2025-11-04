@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TEMPLATE_CONFIGS, TemplateConfig } from '@/config/template-config';
+import { apiJSON } from '@/lib/api';
 
-// Template combinations are managed locally, not via backend API
+// Template combinations can be loaded from API or static config (with fallback)
 
 interface TemplateContextType {
   templates: TemplateConfig[];
@@ -28,22 +29,84 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Template combinations are managed locally
+  /**
+   * Map database TemplateCombination to frontend TemplateConfig
+   * This ensures backward compatibility - frontend interface unchanged
+   */
+  const mapDbTemplateToConfig = (dbTemplate: any): TemplateConfig => {
+    return {
+      id: dbTemplate.id,
+      name: dbTemplate.name_en || dbTemplate.name,
+      nameFr: dbTemplate.name_fr,
+      description: dbTemplate.description_en || dbTemplate.description || '',
+      descriptionFr: dbTemplate.description_fr || dbTemplate.description || '',
+      type: dbTemplate.type as 'formatter' | 'ai-formatter' | 'template-combo',
+      compatibleSections: dbTemplate.compatible_sections || [],
+      compatibleModes: dbTemplate.compatible_modes || [],
+      language: dbTemplate.language as 'fr' | 'en' | 'both',
+      complexity: dbTemplate.complexity as 'low' | 'medium' | 'high',
+      tags: dbTemplate.tags || [],
+      isActive: dbTemplate.is_active ?? true,
+      isDefault: dbTemplate.is_default ?? false,
+      features: {
+        verbatimSupport: dbTemplate.features?.verbatimSupport || false,
+        voiceCommandsSupport: dbTemplate.features?.voiceCommandsSupport || false,
+        aiFormatting: dbTemplate.features?.aiFormatting || false,
+        postProcessing: dbTemplate.features?.postProcessing || false,
+      },
+      prompt: dbTemplate.prompt || undefined,
+      promptFr: dbTemplate.prompt_fr || undefined,
+      content: dbTemplate.content || undefined,
+      config: dbTemplate.config || {},
+      usage: {
+        count: dbTemplate.usage_stats?.count || 0,
+        lastUsed: dbTemplate.usage_stats?.lastUsed || undefined,
+        successRate: dbTemplate.usage_stats?.successRate || 0,
+      },
+      created: dbTemplate.created_at
+        ? new Date(dbTemplate.created_at).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      updated: dbTemplate.updated_at
+        ? new Date(dbTemplate.updated_at).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+    };
+  };
 
-  // Load template combinations (not content templates from backend)
+  // Load template combinations from API with static fallback
   const loadTemplateCombinations = async (): Promise<TemplateConfig[]> => {
     try {
       setLoading(true);
       setError(null);
 
-      // Use only active template combinations from static config
-      // These are the template combinations, not the 66 content templates
-      const activeTemplates = TEMPLATE_CONFIGS.filter(template => template.isActive);
-      console.log('Loading template combinations:', activeTemplates.length, 'active templates out of', TEMPLATE_CONFIGS.length, 'total');
-      return activeTemplates;
+      // Try to fetch from API first
+      try {
+        const apiData = await apiJSON<{ success: boolean; data: any[]; count?: number }>(
+          '/api/template-combinations?active=true'
+        );
+
+        if (apiData.success && Array.isArray(apiData.data)) {
+          // Map database templates to TemplateConfig format
+          const mappedTemplates = apiData.data.map(mapDbTemplateToConfig);
+          const activeTemplates = mappedTemplates.filter(t => t.isActive);
+          console.log('✅ Loaded templates from API:', activeTemplates.length, 'active templates out of', mappedTemplates.length, 'total');
+          return activeTemplates;
+        } else {
+          throw new Error('Invalid API response format');
+        }
+      } catch (apiError) {
+        // API fetch failed - fall back to static config
+        console.warn('⚠️ API fetch failed, using static config:', apiError);
+        console.log('Using static TEMPLATE_CONFIGS as fallback');
+
+        // Return static config (original behavior)
+        const activeTemplates = TEMPLATE_CONFIGS.filter(template => template.isActive);
+        console.log('Loading template combinations from static config:', activeTemplates.length, 'active templates out of', TEMPLATE_CONFIGS.length, 'total');
+        return activeTemplates;
+      }
     } catch (error) {
       console.error('Error loading template combinations:', error);
       setError('Failed to load template combinations');
+      // Final fallback to static config
       return TEMPLATE_CONFIGS.filter(template => template.isActive);
     } finally {
       setLoading(false);

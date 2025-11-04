@@ -229,7 +229,7 @@ router.patch('/api/profile', async (req, res) => {
     }
 
     // Validate request body
-    const { display_name, locale, consent_pipeda, consent_marketing, default_clinic_id } = req.body;
+    const { display_name, locale, consent_pipeda, consent_marketing, consent_analytics, default_clinic_id } = req.body;
 
     // Server-side validation
     const validationErrors: string[] = [];
@@ -256,6 +256,10 @@ router.patch('/api/profile', async (req, res) => {
 
     if (consent_marketing !== undefined && typeof consent_marketing !== 'boolean') {
       validationErrors.push('consent_marketing must be a boolean');
+    }
+
+    if (consent_analytics !== undefined && typeof consent_analytics !== 'boolean') {
+      validationErrors.push('consent_analytics must be a boolean');
     }
 
     if (default_clinic_id !== undefined && default_clinic_id !== null) {
@@ -295,6 +299,7 @@ router.patch('/api/profile', async (req, res) => {
     if (locale !== undefined) updateData.locale = locale;
     if (consent_pipeda !== undefined) updateData.consent_pipeda = consent_pipeda;
     if (consent_marketing !== undefined) updateData.consent_marketing = consent_marketing;
+    if (consent_analytics !== undefined) updateData.consent_analytics = consent_analytics;
     if (default_clinic_id !== undefined) updateData.default_clinic_id = default_clinic_id;
 
     // Update profile

@@ -29,6 +29,8 @@ import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import feedbackRouter from './routes/feedback.js';
 import clinicsRouter from './routes/clinics.js';
+import templateCombinationsRouter from './routes/template-combinations.js';
+import templateUsageFeedbackRouter from './routes/template-usage-feedback.js';
 import { securityMiddleware } from './server/security.js';
 import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
@@ -152,8 +154,24 @@ try {
   console.error('❌ mount /api/clinics:', e);
 }
 
-// Transcript Analysis endpoints (public for testing)
-app.post('/api/analyze/transcript', optionalAuth, async (req, res) => {
+// Template Combinations routes
+try { 
+  app.use('/api/template-combinations', templateCombinationsRouter); 
+  console.log('✅ /api/template-combinations routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/template-combinations:', e);
+}
+
+// Template Usage & Feedback routes
+try {
+  app.use('/api/templates', templateUsageFeedbackRouter);
+  console.log('✅ /api/templates routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/templates:', e);
+}
+
+// Transcript Analysis endpoints
+app.post('/api/analyze/transcript', async (req, res) => {
   try {
     const { original, formatted, language = 'fr' } = req.body;
     
