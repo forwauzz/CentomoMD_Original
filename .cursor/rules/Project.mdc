@@ -43,23 +43,6 @@ YYYY-MM-DD HH:mm — [branch] type(scope): summary — commit:<shortsha>
 
 ---
 
-## 🔁 Escalation Protocol – "3-Try Rule"
-
-If the same task fails after **3 development attempts**:
-
-1. **STOP coding**
-2. Create `/docs/contextual_summary.md` with:
- - Problem summary
- - High-level architecture
- - Reproduction steps, logs, errors
- - All attempts so far
- - Constraints / non-negotiables
- - Suspected root cause(s)
- - Narrow fix proposal
-3. Request human review before proceeding
-
----
-
 ## 🔐 Feature Flags & Authentication Deferral
 
 - All new features must be **feature-flagged** (default OFF)
@@ -113,7 +96,6 @@ If the same task fails after **3 development attempts**:
 
 ### ✅ After Coding
 
-- Submit PR with clean checklist
 - Update SHIPLOG with **PR merge**, not individual commits
 - If 3 failed attempts → escalate using contextual summary
 

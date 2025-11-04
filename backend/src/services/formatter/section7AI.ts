@@ -1,16 +1,6 @@
-import OpenAI from "openai";
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-
-// Lazy initialization of OpenAI client
-let openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-  }
-  return openai;
-}
+import { FLAGS } from '../../config/flags.js';
 
 export interface Section7AIResult {
   formatted: string;
@@ -37,7 +27,12 @@ export class Section7AIFormatter {
    */
   static async formatSection7Content(
     content: string, 
-    language: 'fr' | 'en' = 'fr'
+    language: 'fr' | 'en' = 'fr',
+    model?: string,
+    temperature?: number,
+    seed?: number,
+    templateVersion?: string,
+    templateId?: string
   ): Promise<Section7AIResult> {
     const startTime = Date.now();
     const correlationId = `s7-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -51,15 +46,15 @@ export class Section7AIFormatter {
 
       // STEP 1: Load language-specific files (Flowchart Step 1)
       console.log(`[${correlationId}] 📁 STEP 1: Loading language-specific files`);
-      const promptFiles = await this.loadLanguageSpecificFiles(language, correlationId);
+      const promptFiles = await this.loadLanguageSpecificFiles(language, correlationId, templateVersion, templateId);
       
       // STEP 2: Construct comprehensive system prompt (Flowchart Step 2-4)
       console.log(`[${correlationId}] 🔧 STEP 2-4: Constructing comprehensive system prompt`);
       const { systemPrompt, promptLength } = this.constructSystemPrompt(promptFiles, language, correlationId);
       
-      // STEP 3: Call OpenAI with comprehensive prompt (Flowchart Step 5)
-      console.log(`[${correlationId}] 🤖 STEP 5: Calling OpenAI API`);
-      const result = await this.callOpenAI(systemPrompt, content, language, correlationId);
+      // STEP 3: Call AI provider with comprehensive prompt (Flowchart Step 5)
+      console.log(`[${correlationId}] 🤖 STEP 5: Calling AI API`);
+      const result = await this.callOpenAI(systemPrompt, content, language, correlationId, model, temperature, seed);
       
       // STEP 4: Post-processing and validation (Flowchart Step 6)
       console.log(`[${correlationId}] ✅ STEP 6: Post-processing and validation`);
@@ -88,7 +83,9 @@ export class Section7AIFormatter {
    */
   private static async loadLanguageSpecificFiles(
     language: 'fr' | 'en', 
-    correlationId: string
+    correlationId: string,
+    templateVersion?: string,
+    templateId?: string
   ): Promise<{
     masterPrompt: string;
     jsonConfig: any;
@@ -105,15 +102,52 @@ export class Section7AIFormatter {
       let masterPromptPath: string;
       let jsonConfigPath: string;
       let goldenExamplePath: string;
-      
-      if (language === 'fr') {
-        masterPromptPath = join(basePath, 'section7_master.md');
-        jsonConfigPath = join(basePath, 'section7_master.json');
-        goldenExamplePath = join(basePath, 'section7_golden_example.md');
+
+      if (FLAGS.FEATURE_TEMPLATE_VERSION_SELECTION) {
+        // Use different resolver for section7-v1
+        if (templateId === 'section7-v1') {
+          const { resolveSection7V1AiPaths } = await import('../artifacts/PromptBundleResolver.js');
+          const resolved = await resolveSection7V1AiPaths(language, templateVersion);
+          masterPromptPath = resolved.masterPromptPath;
+          jsonConfigPath = resolved.jsonConfigPath;
+          goldenExamplePath = resolved.goldenExamplePath;
+        } else {
+          const { resolveSection7AiPaths } = await import('../artifacts/PromptBundleResolver.js');
+          const resolved = await resolveSection7AiPaths(language, templateVersion);
+          masterPromptPath = resolved.masterPromptPath;
+          jsonConfigPath = resolved.jsonConfigPath;
+          goldenExamplePath = resolved.goldenExamplePath;
+        }
       } else {
-        masterPromptPath = join(basePath, 'section7_master_en.md');
-        jsonConfigPath = join(basePath, 'section7_master_en.json');
-        goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+        // Fallback paths - check template ID for section7-v1
+        // Handle both cases: running from repo root or from backend/ directory
+        if (templateId === 'section7-v1') {
+          // Try prompts/ first (when running from backend/), then backend/prompts/ (when at repo root)
+          const promptsInBackend = join(process.cwd(), 'prompts');
+          const promptsAtRepoRoot = join(process.cwd(), 'backend', 'prompts');
+          const promptsPath = existsSync(promptsInBackend) ? promptsInBackend : promptsAtRepoRoot;
+          
+          if (language === 'fr') {
+            masterPromptPath = join(promptsPath, 'section7_v1_master.md');
+            jsonConfigPath = join(promptsPath, 'section7_v1_master.json');
+            goldenExamplePath = join(promptsPath, 'section7_v1_golden_example.md');
+          } else {
+            masterPromptPath = join(promptsPath, 'section7_v1_master_en.md');
+            jsonConfigPath = join(promptsPath, 'section7_v1_master_en.json');
+            goldenExamplePath = join(promptsPath, 'section7_v1_golden_example_en.md');
+          }
+        } else {
+          // For other section7 templates, use prompts/ directory at repo root
+          if (language === 'fr') {
+            masterPromptPath = join(basePath, 'section7_master.md');
+            jsonConfigPath = join(basePath, 'section7_master.json');
+            goldenExamplePath = join(basePath, 'section7_golden_example.md');
+          } else {
+            masterPromptPath = join(basePath, 'section7_master_en.md');
+            jsonConfigPath = join(basePath, 'section7_master_en.json');
+            goldenExamplePath = join(basePath, 'section7_golden_example_en.md');
+          }
+        }
       }
       
       // Validate files exist before loading
@@ -270,17 +304,24 @@ export class Section7AIFormatter {
   }
 
   /**
-   * Call OpenAI with comprehensive prompt
+   * Call AI provider with comprehensive prompt (using AIProvider abstraction)
    */
   private static async callOpenAI(
     systemPrompt: string,
     content: string,
     language: 'fr' | 'en',
-    correlationId: string
+    correlationId: string,
+    model?: string,
+    temperature?: number,
+    seed?: number
   ): Promise<Section7AIResult> {
     try {
-      console.log(`[${correlationId}] Calling OpenAI API`, {
-        model: 'gpt-4o-mini',
+      // Use provided model or default to gpt-4o-mini
+      const modelId = model || process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      const temp = temperature !== undefined ? temperature : 0.2;
+      
+      console.log(`[${correlationId}] Calling AI API`, {
+        model: modelId,
         systemPromptLength: systemPrompt.length,
         contentLength: content.length
       });
@@ -289,8 +330,12 @@ export class Section7AIFormatter {
         ? `Formate ce texte médical brut selon les standards québécois CNESST pour la Section 7:\n\n${content}`
         : `Format this raw medical text according to Quebec CNESST standards for Section 7:\n\n${content}`;
       
-      const response = await getOpenAI().chat.completions.create({
-        model: 'gpt-4o-mini',
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(modelId);
+      
+      const response = await provider.createCompletion({
+        model: modelId,
         messages: [
           {
             role: 'system',
@@ -301,18 +346,21 @@ export class Section7AIFormatter {
             content: userMessage
           }
         ],
-        temperature: 0.2, // Low temperature for deterministic formatting
-        max_tokens: 4000
+        temperature: temp,
+        max_tokens: 4000,
+        ...(seed !== undefined && { seed })
       });
       
-      const formatted = response.choices[0]?.message?.content?.trim() || content;
+      const formatted = response.content?.trim() || content;
       
       // Remove any markdown headers that might have been added
       const cleanedFormatted = formatted.replace(/^#+\s*.*$/gm, '').trim();
       
-      console.log(`[${correlationId}] OpenAI API response received`, {
+      console.log(`[${correlationId}] AI API response received`, {
         outputLength: cleanedFormatted.length,
-        usage: response.usage
+        usage: response.usage,
+        cost: response.cost_usd,
+        deterministic: response.deterministic
       });
       
       return {
@@ -321,8 +369,8 @@ export class Section7AIFormatter {
       };
       
     } catch (error) {
-      console.error(`[${correlationId}] OpenAI API call failed:`, error);
-      throw new Error(`OpenAI API call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`[${correlationId}] AI API call failed:`, error);
+      throw new Error(`AI API call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

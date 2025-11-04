@@ -445,7 +445,7 @@ export const PrimarySidebar: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#0a2342]">
         {!sidebarCollapsed && (
-          <div 
+          <div
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate(ROUTES.DASHBOARD)}
             role="button"

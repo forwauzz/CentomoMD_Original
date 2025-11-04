@@ -6,6 +6,7 @@
 import { sectionManager } from '../../config/sections.js';
 import { modeManager, ModeConfig } from '../../config/modes.js';
 import { templateManager, TemplateConfig } from '../../config/templates.js';
+import { FLAGS } from '../../config/flags.js';
 
 export interface ProcessingRequest {
   sectionId: string;
@@ -14,11 +15,21 @@ export interface ProcessingRequest {
   language: string;
   content: string;
   correlationId?: string;
+  // NEW: Layer support
+  layerStack?: string[];
+  stack_fingerprint?: string;
+  // NEW: Model selection
+  model?: string;
+  seed?: number;
+  temperature?: number;
+  // NEW: Template version selection
+  templateVersion?: string; // e.g., '1.0.0', 'latest', 'stable', or bundle-specific version
   options?: {
     timeout?: number;
     retryAttempts?: number;
     fallbackMode?: string;
     fallbackTemplate?: string;
+    prompt_hash?: string; // NEW: Prompt version tracking
   };
 }
 
@@ -33,6 +44,15 @@ export interface ProcessingResult {
     processingTime: number;
     warnings: string[];
     errors: string[];
+  };
+  // NEW: Operational metadata
+  operational?: {
+    latencyMs: number;
+    tokensIn?: number;
+    tokensOut?: number;
+    costUsd?: number;
+    model?: string;
+    deterministic?: boolean;
   };
 }
 
@@ -260,9 +280,65 @@ export class ProcessingOrchestrator {
       // Process content based on mode and template
       let processedContent = request.content;
 
+      // NEW: Apply pre-layers if layerStack provided (feature-flagged)
+      if (FLAGS.FEATURE_LAYER_PROCESSING && request.layerStack && request.layerStack.length > 0) {
+        // Filter pre-layers (layers that should run before template)
+        const preLayers = request.layerStack.filter(layerName => this.isPreLayer(layerName));
+        
+        for (const layerName of preLayers) {
+          try {
+            console.log(`[${correlationId}] Applying pre-layer: ${layerName}`);
+            // Get layer processor directly
+            const processor = await this.getLayerProcessor(layerName);
+            if (processor) {
+              const layerResult = await processor.process(processedContent, {
+                language: request.language,
+                correlationId,
+              });
+              if (layerResult.success && layerResult.data?.cleaned_text) {
+                processedContent = layerResult.data.cleaned_text;
+                console.log(`[${correlationId}] Pre-layer ${layerName} processed successfully`);
+              }
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Pre-layer ${layerName} processing failed: ${errorMsg}`);
+            console.error(`[${correlationId}] Pre-layer ${layerName} error:`, errorMsg);
+          }
+        }
+      }
+
       // Apply template processing if template is specified
       if (template) {
         processedContent = await this.applyTemplateProcessing(processedContent, template, request);
+      }
+
+      // NEW: Apply post-layers if layerStack provided (feature-flagged)
+      if (FLAGS.FEATURE_LAYER_PROCESSING && request.layerStack && request.layerStack.length > 0) {
+        // Filter post-layers (layers that should run after template)
+        const postLayers = request.layerStack.filter(layerName => !this.isPreLayer(layerName));
+        
+        for (const layerName of postLayers) {
+          try {
+            console.log(`[${correlationId}] Applying post-layer: ${layerName}`);
+            // Get layer processor directly
+            const processor = await this.getLayerProcessor(layerName);
+            if (processor) {
+              const layerResult = await processor.process(processedContent, {
+                language: request.language,
+                correlationId,
+              });
+              if (layerResult.success && layerResult.data?.cleaned_text) {
+                processedContent = layerResult.data.cleaned_text;
+                console.log(`[${correlationId}] Post-layer ${layerName} processed successfully`);
+              }
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Post-layer ${layerName} processing failed: ${errorMsg}`);
+            console.error(`[${correlationId}] Post-layer ${layerName} error:`, errorMsg);
+          }
+        }
       }
 
       // Apply mode processing
@@ -270,7 +346,19 @@ export class ProcessingOrchestrator {
 
       const processingTime = Date.now() - startTime;
 
-      return {
+      // NEW: Collect operational metadata
+      const operational: ProcessingResult['operational'] = {
+        latencyMs: processingTime,
+        deterministic: request.seed !== undefined,
+      };
+      
+      // Only add model if provided
+      if (request.model) {
+        operational.model = request.model;
+        console.log(`[PROOF] ProcessingOrchestrator - Model requested: ${request.model}, correlationId: ${correlationId}`);
+      }
+
+      const result: ProcessingResult = {
         success: errors.length === 0,
         processedContent,
         metadata: {
@@ -281,8 +369,13 @@ export class ProcessingOrchestrator {
           processingTime,
           warnings,
           errors
-        }
+        },
       };
+      
+      // Add operational metadata if we have it
+      result.operational = operational;
+      
+      return result;
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -330,6 +423,12 @@ export class ProcessingOrchestrator {
     // Handle Section 7 AI Formatter template
     if (template.id === 'section7-ai-formatter') {
       console.log(`[${correlationId}] Routing to processSection7AIFormatter`);
+      return await this.processSection7AIFormatter(content, template, request);
+    }
+    
+    // Handle Section 7 v1 template (uses same formatter, different manifest)
+    if (template.id === 'section7-v1') {
+      console.log(`[${correlationId}] Routing to processSection7AIFormatter (v1)`);
       return await this.processSection7AIFormatter(content, template, request);
     }
     
@@ -542,9 +641,24 @@ export class ProcessingOrchestrator {
       // Use the original Section 7 AI formatter (working version)
       const { Section7AIFormatter } = await import('../../services/formatter/section7AI.js');
       
+      // PROOF: Log model being passed to Section7AIFormatter
+      if (request.model) {
+        console.log(`[PROOF] ProcessingOrchestrator - Passing model to Section7AIFormatter: ${request.model}`, {
+          correlationId,
+          requestedModel: request.model,
+          temperature: request.temperature,
+          seed: request.seed
+        });
+      }
+
       const result = await Section7AIFormatter.formatSection7Content(
         content,
-        request.language as 'fr' | 'en'
+        request.language as 'fr' | 'en',
+        request.model,
+        request.temperature,
+        request.seed,
+        request.templateVersion,
+        template.id
       );
       
       const processedContent = result.formatted;
@@ -586,8 +700,22 @@ export class ProcessingOrchestrator {
       // Import the Section 7 R&D service
       const { section7RdService } = await import('../../services/section7RdService.js');
       
-      // Process through R&D pipeline
-      const result = await section7RdService.processInput(content);
+      // PROOF: Log model being passed to Section7RdService
+      console.log(`[PROOF] ProcessingOrchestrator - Passing model to Section7RdService: ${request.model || 'default'}`, {
+        correlationId: correlationId,
+        requestedModel: request.model,
+        temperature: request.temperature,
+        seed: request.seed
+      });
+      
+      // Process through R&D pipeline (pass model, temperature, seed, templateVersion if provided)
+      const result = await section7RdService.processInput(
+        content,
+        request.model,
+        request.temperature,
+        request.seed,
+        request.templateVersion
+      );
       
       if (!result.success) {
         console.warn(`[${correlationId}] Section 7 R&D pipeline failed, returning original content`);
@@ -783,6 +911,38 @@ export class ProcessingOrchestrator {
       console.error(`[${correlationId}] Section 7 full formatting error:`, error);
       // Return original content if formatting fails
       return content;
+    }
+  }
+
+  /**
+   * Determine if layer is a pre-layer (runs before template)
+   */
+  private isPreLayer(layerName: string): boolean {
+    // Pre-layers: universal-cleanup, clinical-extraction (run before template)
+    const preLayers = ['universal-cleanup-layer', 'clinical-extraction-layer'];
+    return preLayers.includes(layerName);
+  }
+
+  /**
+   * Get layer processor instance
+   */
+  private async getLayerProcessor(layerName: string): Promise<any> {
+    try {
+      switch (layerName) {
+        case 'clinical-extraction-layer':
+          const { ClinicalExtractionLayer } = await import('../layers/ClinicalExtractionLayer.js');
+          return new ClinicalExtractionLayer();
+        case 'universal-cleanup-layer':
+          const { UniversalCleanupLayer } = await import('../layers/UniversalCleanupLayer.js');
+          return new UniversalCleanupLayer();
+        // Add other layer processors as needed
+        default:
+          console.warn(`No processor found for layer: ${layerName}`);
+          return null;
+      }
+    } catch (error) {
+      console.error(`Failed to load processor for layer ${layerName}:`, error);
+      return null;
     }
   }
 

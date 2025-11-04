@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Template Usage Statistics Component
  * Displays template usage and feedback statistics for users
  */

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Template Formatting Loader
  * Full-screen loading overlay with blurred content during template formatting
  */

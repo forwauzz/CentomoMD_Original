@@ -1,0 +1,26 @@
+{
+  "defaultVersion": "current",
+  "versions": {
+    "current": {
+      "ai_formatter": {
+        "fr": {
+          "master": "backend/prompts/section7_master.md",
+          "json": "backend/prompts/section7_master.json",
+          "golden": "backend/prompts/section7_golden_example.md"
+        },
+        "en": {
+          "master": "backend/prompts/section7_master_en.md",
+          "json": "backend/prompts/section7_master_en.json",
+          "golden": "backend/prompts/section7_golden_example_en.md"
+        }
+      },
+      "rd": {
+        "master_config": "backend/configs/master_prompt_section7.json",
+        "system_xml": "backend/prompts/system_section7_fr.xml",
+        "plan_xml": "backend/prompts/plan_section7_fr.xml",
+        "golden_cases": "backend/training/golden_cases_section7.jsonl"
+      }
+    }
+  }
+}
+

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { getSupabaseClient } from '@/utils/supabaseClient';
-import { logger, complianceLogger } from '@/utils/logger.js';
-import '@/types/express';
+import { getSupabaseClient } from '../utils/supabaseClient.js';
+import { logger, complianceLogger } from '../utils/logger.js';
+// Type declarations are automatically included - no need to import .d.ts files
 
 export const authMiddleware = async (
   req: Request,

@@ -22,8 +22,6 @@ import { useBackendConfig } from '@/hooks/useBackendConfig';
 import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { useTranscriptionContext, TranscriptionContextData } from '@/contexts/TranscriptionContext';
 import { supabase } from '@/lib/authClient';
-import { useTemplateTracking } from '@/hooks/useTemplateTracking';
-import { TemplateFeedbackBanner } from '@/components/feedback/TemplateFeedbackBanner';
 import { TemplateFormattingLoader } from '@/components/loading/TemplateFormattingLoader';
 
 interface TranscriptionInterfaceProps {
@@ -1109,6 +1107,11 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   
   return (
     <div className="space-y-6 pb-16">
+      {/* Template Formatting Loader Overlay */}
+      {formattingProgress && (
+        <TemplateFormattingLoader message={formattingProgress} />
+      )}
+      
       {/* Dynamic Layout based on output state */}
       <div className={`grid grid-cols-1 gap-6 ${hasFinalOutput ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
         {/* Left Column - Dictation Controls Card */}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Template Tracking Hook
  * Tracks template applications and manages feedback prompts
  */
@@ -51,9 +51,9 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
         if (response.success && response.tracked !== false) {
           // Prompt is enqueued on server - polling will pick it up
           // No need for client-side timer anymore
-          console.log('✅ Template application tracked:', templateId);
+          console.log('Γ£à Template application tracked:', templateId);
         } else {
-          console.log('ℹ️ Template application not tracked (user opted out):', templateId);
+          console.log('Γä╣∩╕Å Template application not tracked (user opted out):', templateId);
         }
       } catch (error) {
         // Silently fail - don't break UX
@@ -110,7 +110,7 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
             timersRef.current.delete(timerKey);
           }
 
-          console.log('✅ Feedback submitted:', templateId, rating);
+          console.log('Γ£à Feedback submitted:', templateId, rating);
         }
       } catch (error) {
         console.error('Failed to submit feedback:', error);
@@ -153,7 +153,7 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
           timersRef.current.delete(timerKey);
         }
 
-        console.log('✅ Feedback dismissed:', templateId);
+        console.log('Γ£à Feedback dismissed:', templateId);
       } catch (error) {
         // Even if submission fails, hide the banner
         console.warn('Failed to dismiss feedback:', error);
@@ -195,7 +195,7 @@ export const useTemplateTracking = (sessionId?: string, caseId?: string) => {
             });
             setShowFeedbackBanner(true);
             
-            console.log('✅ Due feedback prompt found:', duePrompt.templateId);
+            console.log('Γ£à Due feedback prompt found:', duePrompt.templateId);
             // Don't remove prompt from queue yet - wait for user to provide feedback or dismiss
             // The prompt will be removed when submitFeedback or dismissFeedback is called
           }
