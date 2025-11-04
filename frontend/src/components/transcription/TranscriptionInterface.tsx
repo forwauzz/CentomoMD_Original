@@ -23,6 +23,8 @@ import { ClinicalEntities, UniversalCleanupResponse } from '@/types/clinical';
 import { useTranscriptionContext, TranscriptionContextData } from '@/contexts/TranscriptionContext';
 import { supabase } from '@/lib/authClient';
 import { TemplateFormattingLoader } from '@/components/loading/TemplateFormattingLoader';
+import { useTemplateTracking } from '@/hooks/useTemplateTracking';
+import { TemplateFeedbackBanner } from '@/components/feedback/TemplateFeedbackBanner';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -1611,7 +1613,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         <TemplateFeedbackBanner
           templateId={pendingFeedback.templateId}
           templateName={selectedTemplate.title}
-          onRating={async (rating) => {
+          onRating={async (rating: number) => {
             await submitFeedback(
               pendingFeedback.templateId,
               rating,
