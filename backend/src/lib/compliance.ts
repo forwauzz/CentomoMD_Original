@@ -44,6 +44,79 @@ export class ComplianceLayer {
   }
   
   /**
+   * Scrub sensitive keys from objects (API keys, tokens, etc.)
+   */
+  static scrubSensitiveKeys(obj: any): any {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    const sensitiveKeys = [
+      'api_key',
+      'apiKey',
+      'access_token',
+      'accessToken',
+      'token',
+      'secret',
+      'password',
+      'auth',
+      'authorization',
+      'openai_api_key',
+      'anthropic_api_key',
+      'google_api_key',
+      'aws_access_key_id',
+      'aws_secret_access_key',
+      'supabase_service_role_key',
+      'jwt_secret',
+      'ws_jwt_secret',
+      'transcript',
+      'transcript_content',
+      'transcriptContent',
+      'audio_data',
+      'audioData',
+      'patient_name',
+      'patientName',
+      'patient_id',
+      'patientId',
+      'medical_record_number',
+      'medicalRecordNumber',
+      'social_security_number',
+      'socialSecurityNumber',
+      'phone_number',
+      'phoneNumber',
+      'email',
+      'address',
+      'date_of_birth',
+      'dateOfBirth',
+      'diagnosis',
+      'symptoms',
+      'medications',
+      'treatment_plan',
+      'treatmentPlan'
+    ];
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.scrubSensitiveKeys(item));
+    }
+    
+    const scrubbed: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const keyLower = key.toLowerCase();
+      const isSensitive = sensitiveKeys.some(sk => keyLower.includes(sk.toLowerCase()));
+      
+      if (isSensitive) {
+        scrubbed[key] = '[REDACTED]';
+      } else if (typeof value === 'string') {
+        scrubbed[key] = this.scrubForLogging(value);
+      } else if (typeof value === 'object' && value !== null) {
+        scrubbed[key] = this.scrubSensitiveKeys(value);
+      } else {
+        scrubbed[key] = value;
+      }
+    }
+    
+    return scrubbed;
+  }
+  
+  /**
    * Hash content for audit logs (SHA-256)
    * Never store raw PHI in logs
    */
@@ -68,12 +141,14 @@ export class ComplianceLayer {
         process.env['COMPLIANCE_PHI_FREE_LOGGING'] === 'true') {
       // TODO: Insert into audit_logs table with hashed content
       // Never log raw transcript content in production
+      const scrubbedMetadata = this.scrubSensitiveKeys(metadata);
+      const scrubbedString = this.scrubForLogging(JSON.stringify(scrubbedMetadata));
       console.log('[AUDIT]', {
         userId,
         templateRef,
         model,
         contentHash, // Only hash, never raw content
-        metadata: this.scrubForLogging(JSON.stringify(metadata)),
+        metadata: scrubbedString,
         timestamp: new Date().toISOString(),
       });
     }

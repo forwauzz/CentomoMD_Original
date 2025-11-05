@@ -13,6 +13,7 @@ import { useTemplates } from '@/contexts/TemplateContext';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { VersionSelector } from '@/components/ui/VersionSelector';
 import { useFeatureFlags } from '@/lib/featureFlags';
+import { safeLogger } from '@/lib/safeLogger';
 
 // Using TemplateContext for standardized template loading
 
@@ -337,9 +338,9 @@ export const TranscriptAnalysisPage: React.FC = () => {
       voiceCommandsSupport: false
     };
 
-    // Debug: Log request body (including actual transcript for verification)
-    console.log('[Template Processing] Request body:', {
-      transcript: requestBody.transcript ? `${requestBody.transcript.substring(0, 100)}...` : 'MISSING',
+    // Debug: Log request body (PHI scrubbed)
+    safeLogger.log('[Template Processing] Request body:', {
+      transcript: requestBody.transcript ? '[REDACTED]' : 'MISSING',
       transcriptLength: requestBody.transcript?.length,
       transcriptType: typeof requestBody.transcript,
       section: requestBody.section,
@@ -350,10 +351,10 @@ export const TranscriptAnalysisPage: React.FC = () => {
       hasTemperature: !!requestBody.temperature,
     });
     
-    // CRITICAL DEBUG: Log the full request body structure
-    console.log('[Template Processing] Full request body keys:', Object.keys(requestBody));
-    console.log('[Template Processing] transcript field exists?', 'transcript' in requestBody);
-    console.log('[Template Processing] transcript value type:', typeof requestBody.transcript);
+    // CRITICAL DEBUG: Log the full request body structure (PHI scrubbed)
+    safeLogger.log('[Template Processing] Full request body keys:', Object.keys(requestBody));
+    safeLogger.log('[Template Processing] transcript field exists?', 'transcript' in requestBody);
+    safeLogger.log('[Template Processing] transcript value type:', typeof requestBody.transcript);
 
     // Add model selection parameters if feature enabled and model selected
     if (flags.modelSelectionTranscriptAnalysis && selectedModel) {
@@ -374,21 +375,21 @@ export const TranscriptAnalysisPage: React.FC = () => {
       }
     }
 
-    // CRITICAL: Verify request body before sending
+    // CRITICAL: Verify request body before sending (PHI scrubbed)
     const jsonBody = JSON.stringify(requestBody);
-    console.log('[Template Processing] JSON stringified body length:', jsonBody.length);
-    console.log('[Template Processing] JSON body contains "transcript":', jsonBody.includes('"transcript"'));
-    console.log('[Template Processing] JSON body preview:', jsonBody.substring(0, 200));
+    safeLogger.log('[Template Processing] JSON stringified body length:', jsonBody.length);
+    safeLogger.log('[Template Processing] JSON body contains "transcript":', jsonBody.includes('"transcript"'));
+    safeLogger.log('[Template Processing] JSON body preview:', '[REDACTED - contains PHI]');
     
     // Parse back to verify
     try {
       const parsed = JSON.parse(jsonBody);
-      console.log('[Template Processing] Parsed body keys:', Object.keys(parsed));
-      console.log('[Template Processing] Parsed transcript exists?', 'transcript' in parsed);
-      console.log('[Template Processing] Parsed transcript type:', typeof parsed.transcript);
-      console.log('[Template Processing] Parsed transcript length:', parsed.transcript?.length);
+      safeLogger.log('[Template Processing] Parsed body keys:', Object.keys(parsed));
+      safeLogger.log('[Template Processing] Parsed transcript exists?', 'transcript' in parsed);
+      safeLogger.log('[Template Processing] Parsed transcript type:', typeof parsed.transcript);
+      safeLogger.log('[Template Processing] Parsed transcript length:', parsed.transcript?.length);
     } catch (e) {
-      console.error('[Template Processing] Failed to parse JSON:', e);
+      safeLogger.error('[Template Processing] Failed to parse JSON:', e);
     }
 
     const response = await apiFetch('/api/format/mode2', {
