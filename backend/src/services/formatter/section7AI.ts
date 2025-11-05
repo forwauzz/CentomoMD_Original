@@ -316,8 +316,11 @@ export class Section7AIFormatter {
     seed?: number
   ): Promise<Section7AIResult> {
     try {
-      // Use provided model or default to gpt-4o-mini
-      const modelId = model || process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      // Use provided model, or check feature flag for default, or fallback to gpt-4o-mini
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = model || defaultModel;
       const temp = temperature !== undefined ? temperature : 0.2;
       
       console.log(`[${correlationId}] Calling AI API`, {
@@ -334,6 +337,7 @@ export class Section7AIFormatter {
       const { getAIProvider } = await import('../../lib/aiProvider.js');
       const provider = getAIProvider(modelId);
       
+      const apiStart = Date.now();
       const response = await provider.createCompletion({
         model: modelId,
         messages: [
@@ -365,7 +369,14 @@ export class Section7AIFormatter {
       
       return {
         formatted: cleanedFormatted,
-        suggestions: []
+        suggestions: [],
+        metadata: {
+          language,
+          filesLoaded: [],
+          promptLength: systemPrompt.length,
+          processingTime: Date.now() - apiStart,
+          model: modelId
+        }
       };
       
     } catch (error) {
@@ -510,7 +521,7 @@ export class Section7AIFormatter {
         filesLoaded: promptFiles.filesLoaded,
         promptLength,
         processingTime,
-        model: 'gpt-4o-mini'
+        model: result.metadata?.model || 'gpt-4o-mini' // Use actual model from callOpenAI, fallback to gpt-4o-mini
       }
     };
   }

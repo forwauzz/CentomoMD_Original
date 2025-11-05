@@ -346,8 +346,30 @@ export class AnthropicProvider implements AIProvider {
     }
     
     try {
-      // Map model name to Anthropic format (claude-3-5-sonnet -> claude-3-5-sonnet-20241022)
-      const modelId = req.model.startsWith('claude-') ? req.model : `claude-${req.model}`;
+      // Map model name to Anthropic format (claude-3-5-sonnet -> claude-sonnet-4-20250514)
+      let modelId = req.model.startsWith('claude-') ? req.model : `claude-${req.model}`;
+      
+      // Anthropic requires versioned model names - map to correct versions
+      // NOTE: Claude 3.5 Sonnet models (20240620, 20241022) were deprecated Aug 13, 2025 and retired Oct 22, 2025
+      // Use Claude Sonnet 4 as replacement for claude-3-5-sonnet
+      const modelVersionMap: Record<string, string> = {
+        'claude-3-5-sonnet': 'claude-sonnet-4-20250514', // Replaced with Claude Sonnet 4 (3.5 deprecated)
+        'claude-3-5-haiku': 'claude-3-5-haiku-20240715', // Still available: July 2024
+        'claude-3-opus': 'claude-3-opus-20240229',
+        'claude-3-sonnet': 'claude-3-sonnet-20240229',
+        'claude-3-haiku': 'claude-3-haiku-20240307',
+        // Claude 4 models (available)
+        'claude-4-sonnet': 'claude-sonnet-4-20250514', // Claude Sonnet 4
+        'claude-4-haiku': 'claude-haiku-4-20250514', // Claude Haiku 4
+        'claude-4-opus': 'claude-opus-4-1-20250805', // Claude Opus 4.1
+      };
+      
+      // If model is in the map, use the versioned name; otherwise use as-is (may already be versioned)
+      const mappedModel = modelVersionMap[modelId];
+      if (mappedModel) {
+        modelId = mappedModel;
+        console.log(`[Anthropic] Mapped ${req.model} -> ${modelId}`);
+      }
       
       // Extract system and user messages
       const systemMessage = req.messages.find(m => m.role === 'system')?.content || '';

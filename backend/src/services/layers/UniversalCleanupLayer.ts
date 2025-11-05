@@ -3,6 +3,7 @@ import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
 import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
 import { getAIProvider } from "../../lib/aiProvider.js";
+import { FLAGS } from "../../config/flags.js";
 
 function pickPrompt(inputLang: 'fr' | 'en', t: string): string { 
   // Always use French prompt for output, but add English input context when needed
@@ -101,8 +102,11 @@ export class UniversalCleanupLayer implements LayerProcessor {
     }
 
     try {
-      // Get model from options or use default (using bracket notation for index signature)
-      const modelId = (options['model'] as string | undefined) || process.env['OPENAI_MODEL'] || "gpt-4o-mini";
+      // Get model from options, or check feature flag for default, or fallback to gpt-4o-mini
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = (options['model'] as string | undefined) || defaultModel;
       const temperature = options['temperature'] !== undefined 
         ? (options['temperature'] as number)
         : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
@@ -113,12 +117,24 @@ export class UniversalCleanupLayer implements LayerProcessor {
 
       // Use AIProvider abstraction instead of direct OpenAI call
       const provider = getAIProvider(modelId);
+      
+      // Get the prompt (includes transcript and instructions)
+      const promptContent = pickPrompt(opts.language, cleaned_text);
+      
+      // Ensure prompt is not empty
+      if (!promptContent || promptContent.trim().length === 0) {
+        throw new Error('UniversalCleanupLayer: Prompt content is empty');
+      }
+      
+      // For Anthropic, we need at least a user message with content
+      // The pickPrompt function returns the full prompt including instructions and transcript
+      // So we use it as the user message
       const completion = await provider.createCompletion({
         model: modelId,
         messages: [
           {
-            role: "system",
-            content: pickPrompt(opts.language, cleaned_text)
+            role: "user",
+            content: promptContent
           }
         ],
         temperature: temperature,

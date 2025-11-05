@@ -249,11 +249,20 @@ router.post('/mode2', async (req, res) => {
     }
     
     // Prepare operational metadata
+    // Determine which model was actually used (explicit or default)
+    const actualModelUsed = modelRequested || 
+      (FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT ? 'claude-3-5-sonnet' : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini'));
+    
     const operationalMetadata = orchestrated.operational || {
       latencyMs: processingLatency,
-      model: modelRequested,
+      model: actualModelUsed, // Include default model if none was explicitly requested
       deterministic: seed !== undefined,
     };
+    
+    // Ensure model is set even if orchestrated.operational exists but model is missing
+    if (!operationalMetadata.model) {
+      operationalMetadata.model = actualModelUsed;
+    }
 
     // Determine if processing was deterministic (seed was used and provider supports it)
     const isDeterministic = seed !== undefined && (orchestrated.operational?.deterministic ?? true);

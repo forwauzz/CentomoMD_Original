@@ -369,7 +369,11 @@ export class Section7RdService {
       );
       
       // Step 6: Call AI provider with the comprehensive prompt (using AIProvider abstraction)
-      const modelId = model || process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      // Respect feature flag for default model
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = model || defaultModel;
       const temp = temperature !== undefined ? temperature : 0.1; // Low temperature for consistent formatting
       
       // PROOF: Log model being used
@@ -440,19 +444,24 @@ export class Section7RdService {
       logger.error('Complete R&D Pipeline failed, falling back to basic AI formatter:', error);
       
       // PROOF: Log fallback
-      console.error(`[PROOF] ⚠️ Section7RdService - Model ${model || 'default'} FAILED, falling back to gpt-4o-mini`, {
+      const fallbackModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      
+      console.error(`[PROOF] ⚠️ Section7RdService - Model ${model || 'default'} FAILED, falling back to ${fallbackModel}`, {
         requestedModel: model,
+        fallbackModel: fallbackModel,
         error: error instanceof Error ? error.message : 'Unknown error',
         errorType: error instanceof Error ? error.constructor.name : typeof error
       });
       
-      // Fallback to basic AI formatter (uses gpt-4o-mini by default)
+      // Fallback to basic AI formatter (uses feature flag default)
       const { Section7AIFormatter } = await import('./formatter/section7AI.js');
-      const result = await Section7AIFormatter.formatSection7Content(inputText, 'fr');
+      const result = await Section7AIFormatter.formatSection7Content(inputText, 'fr', fallbackModel);
       
-      console.log(`[PROOF] Section7RdService - Fallback completed using gpt-4o-mini`, {
+      console.log(`[PROOF] Section7RdService - Fallback completed using ${fallbackModel}`, {
         originalModelRequested: model,
-        fallbackModelUsed: 'gpt-4o-mini',
+        fallbackModelUsed: fallbackModel,
         outputLength: result.formatted.length
       });
       

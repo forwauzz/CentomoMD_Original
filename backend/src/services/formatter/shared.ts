@@ -1,18 +1,13 @@
-import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { extractNameWhitelist, stripInventedFirstNames } from '../../utils/names.js';
 import { thinQuotes, keepRadiologyImpressionOnly, ensureParagraphFormatting } from '../../utils/quotes.js';
 import { validateNames, validateQuoteCounts } from '../../utils/validation.js';
+import { FLAGS } from '../../config/flags.js';
 
 // Load environment variables
 dotenv.config();
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
 
 export interface FormattingResult {
   formatted: string;
@@ -183,8 +178,16 @@ async function callOpenAI(
     // Build the complete system prompt with guardrails
     const fullSystemPrompt = buildSystemPrompt(systemPrompt, guardrails, goldenExample, nameWhitelist);
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using the more cost-effective model
+    // Use AIProvider abstraction - respect feature flag for default model
+    const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+      ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+      : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+    
+    const { getAIProvider } = await import('../../lib/aiProvider.js');
+    const provider = getAIProvider(defaultModel);
+    
+    const response = await provider.createCompletion({
+      model: defaultModel,
       messages: [
         {
           role: 'system',
@@ -199,10 +202,10 @@ async function callOpenAI(
       max_tokens: 2000, // Sufficient for medical reports
     });
 
-    let formatted = response.choices[0]?.message?.content?.trim();
+    let formatted = response.content?.trim();
     
     if (!formatted) {
-      throw new Error('No response from OpenAI');
+      throw new Error(`No response from AI provider (${defaultModel})`);
     }
 
     // Remove any markdown headings that might have been added
@@ -211,8 +214,8 @@ async function callOpenAI(
     return formatted;
 
   } catch (error) {
-    console.error('OpenAI API error:', error);
-    throw new Error(`OpenAI API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('AI provider error:', error);
+    throw new Error(`AI provider error: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
