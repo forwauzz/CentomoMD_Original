@@ -51,6 +51,9 @@ export const FLAGS = {
   FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS: (process.env['FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS'] ?? 'false') === 'true',
   FEATURE_MODEL_SELECTION_DICTATION: (process.env['FEATURE_MODEL_SELECTION_DICTATION'] ?? 'false') === 'true',
   
+  // Default model override flags (for switching default model without UI changes)
+  USE_CLAUDE_SONNET_4_AS_DEFAULT: (process.env['USE_CLAUDE_SONNET_4_AS_DEFAULT'] ?? 'false') === 'true',
+  
   // Template version selection (MVP manifest-based resolver)
   FEATURE_TEMPLATE_VERSION_SELECTION: (process.env['FEATURE_TEMPLATE_VERSION_SELECTION'] ?? 'false') === 'true',
   // Template version remote storage (Phase 1: Supabase Storage integration)

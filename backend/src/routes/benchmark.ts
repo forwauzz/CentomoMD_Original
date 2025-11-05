@@ -306,8 +306,7 @@ router.post('/', async (req, res) => {
         metrics,
         missingPhrases,
         outputLength: output.trim().length,
-        output: output.trim(), // Include full output (not truncated)
-        outputPreview: output.trim().substring(0, 150) + (output.trim().length > 150 ? '...' : ''), // Keep preview for quick reference
+        outputPreview: output.trim().substring(0, 150) + (output.trim().length > 150 ? '...' : ''),
       };
     });
 

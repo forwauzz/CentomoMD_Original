@@ -264,12 +264,9 @@ router.post('/upload', authMiddleware, async (req, res) => {
 /**
  * GET /api/templates/bundles
  * List all template bundles with versions
- * NOTE: This route is handled by the explicit route in index.ts (line 1277) to avoid conflicts
- * with /api/templates/:section. The explicit route ensures it matches before the parameterized route.
- * This handler is commented out to prevent duplicate route registration.
  */
-/*
 router.get('/', authMiddleware, async (_req, res) => {
+  
   try {
     const sql = getSql();
     
@@ -331,7 +328,6 @@ router.get('/', authMiddleware, async (_req, res) => {
     });
   }
 });
-*/
 
 /**
  * GET /api/templates/bundles/by-template/:templateId

@@ -6,11 +6,7 @@ import { loadPromptFile } from './promptLoader.js';
 import { extractClinicalEntities } from './Extractor.js';
 import { assessASRQuality } from './ASRQualityGate.js';
 import { validateCNESSTCompliance } from './validators.js';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
+import { FLAGS } from '../../config/flags.js';
 
 export interface TemplatePipelineResult {
   formatted: string;
@@ -143,11 +139,18 @@ export class TemplatePipeline {
         console.log(`[FMT] Trimmed transcript from ${transcript.length} to ${trimmed.length} chars`);
       }
       
-      // Format with clinical entities
-      console.log(`[FMT] Calling OpenAI with enhanced prompt length: ${enhancedPrompt.length}`);
+      // Format with clinical entities using AIProvider abstraction
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
       
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+      console.log(`[FMT] Calling AI provider (${defaultModel}) with enhanced prompt length: ${enhancedPrompt.length}`);
+      
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(defaultModel);
+      
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           { role: "system", content: enhancedPrompt },
           { role: "user", content: `TRANSCRIPT (possibly truncated):\n${trimmed}\n\n[Clinical Entities]\n${JSON.stringify(clinicalEntities)}` }
@@ -156,10 +159,9 @@ export class TemplatePipeline {
         max_tokens: 1200
       });
       
-      const choice = completion?.choices?.[0];
-      const out = choice?.message?.content?.trim() ?? '';
+      const out = response.content?.trim() ?? '';
       
-      console.log(`[FMT] finish_reason: ${choice?.finish_reason}, usage:`, completion?.usage);
+      console.log(`[FMT] Usage:`, response.usage);
       console.log(`[FMT] Output length: ${out.length}`);
       console.log(`[FMT] Output preview: ${out.substring(0, 200)}...`);
       

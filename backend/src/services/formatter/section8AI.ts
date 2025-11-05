@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { ClinicalEntities } from '../../../shared/types/clinical.js';
+import { ClinicalEntities } from '../../../shared/types/clinical';
+import { FLAGS } from '../../config/flags.js';
 
 export interface Section8AIResult {
   formatted: string;
@@ -262,8 +263,11 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
     seed?: number
   ): Promise<string> {
     try {
-      // Use provided model or default to gpt-4o-mini
-      const modelId = model || process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      // Use provided model, or check feature flag for default, or fallback to gpt-4o-mini
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = model || defaultModel;
       const temp = temperature !== undefined 
         ? temperature 
         : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
@@ -330,7 +334,10 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
       console.log(`[${correlationId}] ✅ Post-processing and validating result`);
       
       const processingTime = Date.now() - startTime;
-      const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const model = defaultModel;
       
       // Basic validation
       const issues: string[] = [];

@@ -267,30 +267,6 @@ export class OpenAIProvider implements AIProvider {
       // Record failure
       circuitBreaker.recordFailure(this.name);
       
-      // Log detailed error information for debugging (OpenAI-specific)
-      if (this.name === 'openai' && error && typeof error === 'object') {
-        // Type assertion for error object with OpenAI SDK structure
-        const openaiError = error as any;
-        const status = openaiError?.status || openaiError?.response?.status;
-        const errorDetails = openaiError?.error || openaiError?.response?.data?.error || {};
-        const errorMessage = openaiError?.message || errorDetails?.message || 'Unknown error';
-        
-        console.error(`[OpenAI] Error details:`, {
-          status,
-          message: errorMessage,
-          type: errorDetails?.type || openaiError?.code,
-          error: errorDetails,
-          headers: openaiError?.response?.headers || openaiError?.headers,
-          // Log quota-related headers if available
-          rateLimitHeaders: {
-            'x-ratelimit-limit-requests': openaiError?.response?.headers?.['x-ratelimit-limit-requests'],
-            'x-ratelimit-remaining-requests': openaiError?.response?.headers?.['x-ratelimit-remaining-requests'],
-            'x-ratelimit-reset-requests': openaiError?.response?.headers?.['x-ratelimit-reset-requests'],
-            'retry-after': openaiError?.response?.headers?.['retry-after'] || openaiError?.headers?.['retry-after']
-          }
-        });
-      }
-      
       // Convert to standardized error
       throw AIError.fromProviderError(this.name, error);
     }

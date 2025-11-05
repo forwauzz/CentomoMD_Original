@@ -30,29 +30,10 @@ export class AIError extends Error {
    */
   static fromProviderError(provider: string, error: any): AIError {
     const status = error?.status || error?.response?.status;
-    const message = error?.message || error?.error?.message || 'Unknown error';
+    const message = error?.message || 'Unknown error';
     
     if (status === 429) {
-      // Extract detailed error information from OpenAI
-      const errorDetails = error?.error || error?.response?.data?.error || {};
-      const errorType = errorDetails?.type || error?.code || '';
-      const errorMessage = errorDetails?.message || message;
-      
-      // Check if it's a quota/billing issue vs rate limit
-      const isQuotaError = errorMessage.toLowerCase().includes('quota') || 
-                          errorMessage.toLowerCase().includes('billing') ||
-                          errorMessage.toLowerCase().includes('exceeded your current quota');
-      
-      // Extract retry-after header if available
-      const retryAfter = error?.response?.headers?.['retry-after'] || 
-                        error?.headers?.['retry-after'] ||
-                        error?.response?.headers?.['x-ratelimit-reset-requests'];
-      
-      const detailedMessage = isQuotaError
-        ? `Quota exceeded: ${errorMessage}. This may be a billing/payment issue or account limit. Check your OpenAI account settings and billing details.`
-        : `Rate limit exceeded: ${errorMessage}${retryAfter ? ` (Retry after: ${retryAfter}s)` : ''}`;
-      
-      return new AIError(AIErrorType.RateLimited, detailedMessage, provider, error);
+      return new AIError(AIErrorType.RateLimited, 'Rate limit exceeded', provider, error);
     }
     if (status === 401 || status === 403) {
       return new AIError(AIErrorType.Auth, 'Authentication failed', provider, error);
@@ -76,12 +57,6 @@ export class AIError extends Error {
   getUserMessage(): string {
     switch (this.type) {
       case AIErrorType.RateLimited:
-        // Check if it's a quota/billing issue vs rate limit
-        const isQuotaError = this.message.toLowerCase().includes('quota') || 
-                            this.message.toLowerCase().includes('billing');
-        if (isQuotaError) {
-          return 'OpenAI account quota exceeded. This may be due to billing/payment issues or account limits. Please check your OpenAI account settings, billing information, and account status at https://platform.openai.com/account/billing.';
-        }
         return 'Model is currently busy. Please try again in a few moments.';
       case AIErrorType.Auth:
         return 'Authentication error. Please check your API key configuration.';
