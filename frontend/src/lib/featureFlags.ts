@@ -79,7 +79,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: true, // Enable for development - feedback server sync
     outputLanguageSelection: true, // Enable for development - output language selection
     caseManagement: true, // Enable for development - case management integration
-    landingPage: false, // Keep OFF by default; enable via env var only
+    landingPage: true, // Enable for testing - landing page feature
     modelSelection: false, // Keep OFF by default; enable via env var only
     modelSelectionTranscriptAnalysis: true, // Enable for development/testing - Quick Compare feature
     modelSelectionTemplateCombinations: false, // Keep OFF by default; enable via env var only

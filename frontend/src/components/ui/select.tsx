@@ -22,6 +22,7 @@ type Props<T extends string = string> = {
 
   disabled?: boolean;
   items: Array<SelectItem<T>>;
+  placeholder?: string;
   className?: string;
   buttonClassName?: string;
   menuClassName?: string;
@@ -62,6 +63,7 @@ export function Select<T extends string = string>({
   onOpenChange,
   disabled,
   items,
+  placeholder = "Select…",
   className,
   buttonClassName,
   menuClassName,
@@ -110,8 +112,10 @@ export function Select<T extends string = string>({
         onMouseDown={(e) => e.preventDefault()}
         onClick={toggle}
       >
-        {items.find((i) => i.value === value)?.label ?? "Select…"}
-        <span aria-hidden>▾</span>
+        <span className="flex-1 text-left min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+          {items.find((i) => i.value === value)?.label ?? placeholder}
+        </span>
+        <span aria-hidden className="flex-shrink-0">▾</span>
       </button>
 
       {/* MENU — truly non-interactive when closed */}

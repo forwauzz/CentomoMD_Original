@@ -9,10 +9,8 @@ import { SectionSelector } from './SectionSelector';
 import { ModeDropdown } from './ModeDropdown';
 import { InputLanguageSelector } from './LanguageSelector';
 import { OutputLanguageSelector } from './OutputLanguageSelector';
-import { OrthopedicNarrative } from './OrthopedicNarrative';
 import { TemplateDropdown, TemplateJSON } from './TemplateDropdown';
 import { FormattingService, FormattingOptions } from '@/services/formattingService';
-import { TemplateSelector } from './TemplateSelector';
 import { SaveToSectionDropdown, SaveToSectionOption } from './SaveToSectionDropdown';
 import { api, apiFetch } from '@/lib/api';
 import { useCaseStore } from '@/stores/caseStore';
@@ -85,7 +83,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const [editedTranscript, setEditedTranscript] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
   const [templateContent, setTemplateContent] = useState<string>('');
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -245,8 +242,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     stopRecording,
     error,
     setActiveSection,
-    mode3Narrative,
-    mode3Progress,
     // cleanedConversation,
     orthopedicNarrative
   } = useTranscription(sessionId, dictationLanguage, mode);
@@ -1108,26 +1103,26 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const hasFinalOutput = editedTranscript || paragraphs.length > 0;
   
   return (
-    <div className="space-y-6 pb-16">
+    <div className="flex flex-col h-full p-4 lg:p-6">
       {/* Template Formatting Loader Overlay */}
       {formattingProgress && (
         <TemplateFormattingLoader message={formattingProgress} />
       )}
       
-      {/* Dynamic Layout based on output state */}
-      <div className={`grid grid-cols-1 gap-6 ${hasFinalOutput ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+      {/* Dynamic Layout - Always 1/4 controls, 3/4 transcript */}
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 flex-1 min-h-0 md:grid-cols-2 lg:grid-cols-4">
         {/* Left Column - Dictation Controls Card */}
-        <div className="lg:col-span-1">
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800">
+        <div className="lg:col-span-1 flex flex-col min-h-0">
+          <Card className="bg-white border border-gray-200 shadow-sm flex flex-col h-full">
+            <CardHeader className="flex-shrink-0 py-2 px-3">
+              <CardTitle className="text-sm font-semibold text-gray-800">
                 Dictation Controls
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-1 p-2 flex-1 min-h-0 overflow-hidden">
               {/* Input Language Selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Input Language</label>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-bold text-gray-700 leading-tight">Input Language</label>
                 <InputLanguageSelector
                   language={dictationLanguage}
                   onLanguageChange={handleInputLanguageChange}
@@ -1137,8 +1132,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
               {/* Output Language Selector - Only show if feature is enabled */}
               {featureFlags.outputLanguageSelection && backendConfig?.enableOutputLanguageSelection && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Output Language</label>
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-bold text-gray-700 leading-tight">Output Language</label>
                   <OutputLanguageSelector
                     language={outputLanguage}
                     onLanguageChange={handleOutputLanguageChange}
@@ -1146,7 +1141,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                     showWarning={!backendConfig.allowNonFrenchOutput}
                   />
                   {!backendConfig.allowNonFrenchOutput && outputLanguage === 'en' && (
-                    <p className="text-xs text-yellow-600">
+                    <p className="text-[10px] text-yellow-600 leading-tight">
                       ⚠️ English output may not be CNESST compliant
                     </p>
                   )}
@@ -1155,16 +1150,16 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
               {/* Legacy message when output language selection is disabled */}
               {(!featureFlags.outputLanguageSelection || !backendConfig?.enableOutputLanguageSelection) && (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-500">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] text-gray-500 leading-tight">
                     Output will always be in French (CNESST compliant)
                   </p>
                 </div>
               )}
 
               {/* Section Selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Section</label>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-bold text-gray-700 leading-tight">Section</label>
                 <SectionSelector
                   currentSection={activeSection}
                   onSectionChange={setActiveSection}
@@ -1172,8 +1167,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </div>
 
               {/* Template Dropdown */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Template</label>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-bold text-gray-700 leading-tight">Template</label>
                 <TemplateDropdown
                   currentSection={activeSection || 'section_7'}
                   currentLanguage={dictationLanguage}
@@ -1192,19 +1187,19 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                 />
                 {/* AI Step Status Chip */}
                 {aiStepStatus && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 mt-0.5">
                     {aiStepStatus === 'skipped' && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-800">
                         AI cleanup skipped
                       </span>
                     )}
                     {aiStepStatus === 'success' && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800">
                         AI cleanup applied
                       </span>
                     )}
                     {aiStepStatus === 'error' && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800">
                         AI cleanup failed
                       </span>
                     )}
@@ -1213,8 +1208,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </div>
 
               {/* Mode Dropdown */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Mode</label>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-bold text-gray-700 leading-tight">Mode</label>
                 <ModeDropdown
                   currentMode={mode}
                   onModeChange={setMode}
@@ -1223,25 +1218,25 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </div>
 
               {/* Recording Control Buttons */}
-              <div className="space-y-2">
+              <div className="space-y-1 pt-1">
                 {!isRecording ? (
                   <Button
                     onClick={handleStartRecording}
                     variant="medical"
-                    size="medical"
-                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                    size="sm"
+                    className="w-full flex items-center justify-center space-x-1 h-7 bg-blue-600 hover:bg-blue-700 text-[10px] py-1"
                   >
-                    <Mic className="h-5 w-5" />
+                    <Mic className="h-3 w-3" />
                     <span>Start Dictating</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleStopRecording}
                     variant="medical"
-                    size="medical"
-                    className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700"
+                    size="sm"
+                    className="w-full flex items-center justify-center space-x-1 h-7 bg-red-600 hover:bg-red-700 text-[10px] py-1"
                   >
-                    <MicOff className="h-5 w-5" />
+                    <MicOff className="h-3 w-3" />
                     <span>Stop Dictating</span>
                   </Button>
                 )}
@@ -1250,151 +1245,74 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           </Card>
         </div>
 
-        {/* Right Column - Live and Final Transcript Cards */}
-        <div className={hasFinalOutput ? 'lg:col-span-3 space-y-6' : 'lg:col-span-2 space-y-6'}>
-          {/* Live Transcription Card - Minimized when final output exists */}
-          <Card className={`bg-white border border-gray-200 shadow-sm transition-all duration-300 ${hasFinalOutput ? 'max-h-32 overflow-hidden' : 'max-h-[50vh]'} `}>
-            <CardHeader className={hasFinalOutput ? 'pb-2' : ''}>
-              <CardTitle className={`text-gray-800 flex items-center space-x-2 ${hasFinalOutput ? 'text-sm' : 'text-lg font-semibold'}`}>
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Live Transcription</span>
-                {hasFinalOutput && (
-                  <span className="text-xs text-gray-500 ml-2">(Minimized - Final output available)</span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className={hasFinalOutput ? 'space-y-2 py-2' : 'space-y-4'}>
-              {/* Duration and Audio Level Indicators */}
-              {isRecording && (
-                <div className={hasFinalOutput ? 'space-y-1' : 'space-y-3'}>
-                  {/* Duration Indicator */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Recording Duration</span>
-                    <span className="font-mono font-medium text-blue-600">
-                      {formatDuration(sessionDuration)}
-                    </span>
-                  </div>
-                  
-                  {/* Audio Level Bar */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <Volume2 className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-600">Audio Level</span>
-                      </div>
-                      <span className="text-green-600 font-medium">{Math.round(audioLevel)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full transition-all duration-100 ease-out"
-                        style={{ width: `${audioLevel}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Live Transcript Content */}
-              <div className={`bg-gray-50 rounded-md p-4 ${hasFinalOutput ? 'min-h-[60px] max-h-[60px] overflow-hidden' : 'min-h-[150px] md:min-h-[200px] max-h-[40vh] overflow-auto'}`}>
-                {currentTranscript ? (
-                  <p className={`text-gray-700 leading-relaxed ${hasFinalOutput ? 'text-xs' : 'text-sm'}`}>
-                    {hasFinalOutput ? (
-                      <span className="truncate block">
-                        {currentTranscript.length > 100 ? `${currentTranscript.substring(0, 100)}...` : currentTranscript}
-                      </span>
-                    ) : (
-                      currentTranscript
-                    )}
-                  </p>
-                ) : (
-                  <p className={`text-gray-500 italic ${hasFinalOutput ? 'text-xs' : 'text-sm'}`}>
-                    {hasFinalOutput ? 'Live transcription...' : 'Live transcription will appear here when you start dictating...'}
-                  </p>
-                )}
-              </div>
-
-              {/* Mode 3 Pipeline Display - Hidden when minimized */}
-              {mode === 'ambient' && !hasFinalOutput && (
-                <div className="mt-3">
-                  {/* Progress indicators */}
-                  <div className="text-sm opacity-70 mb-2">
-                    {mode3Progress === 'transcribing' && 'Transcribing…'}
-                    {mode3Progress === 'processing' && 'Cleaning & building narrative…'}
-                    {mode3Progress === 'ready' && 'Ready'}
-                  </div>
-
-                  {/* Narrative output */}
-                  {mode3Narrative && (
-                    <div className="mt-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Processed Narrative:</h4>
-                      <pre className="whitespace-pre-wrap rounded-lg border p-3 bg-white/50 text-sm text-gray-800 font-mono">
-                        {mode3Narrative}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Final Transcript Card - Enhanced when output exists */}
-          <Card className={`bg-white border shadow-sm transition-all duration-300 ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
-            <CardHeader className={hasFinalOutput ? 'bg-green-50 border-b border-green-200' : ''}>
-              <CardTitle className={`text-gray-800 flex items-center justify-between ${hasFinalOutput ? 'text-xl font-bold' : 'text-lg font-semibold'}`}>
+        {/* Right Column - Final Transcript Card Only (3/4 of page) */}
+        <div className="lg:col-span-3 flex flex-col min-h-0">
+          {/* Final Transcript Card - Takes full height (3/4 of page) */}
+          <Card className={`bg-white border shadow-sm transition-all duration-300 flex flex-col flex-1 min-h-0 ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
+            <CardHeader className={`flex-shrink-0 py-2 ${hasFinalOutput ? 'bg-green-50 border-b border-green-200' : ''}`}>
+              <CardTitle className={`text-gray-800 flex items-center justify-between ${hasFinalOutput ? 'text-lg font-bold' : 'text-base font-semibold'}`}>
                 <div className="flex items-center space-x-2">
-                  <FileText className={`${hasFinalOutput ? 'h-6 w-6 text-green-600' : 'h-5 w-5'}`} />
-                  <span>Final Transcript</span>
+                  <FileText className={`${hasFinalOutput ? 'h-5 w-5 text-green-600' : 'h-4 w-4'}`} />
+                  <span>{hasFinalOutput ? 'Final Transcript' : isRecording ? 'Live Transcription' : 'Final Transcript'}</span>
                   {hasFinalOutput && (
-                    <span className="text-sm text-green-600 font-normal">(Ready for Review)</span>
+                    <span className="text-xs text-green-600 font-normal">(Ready for Review)</span>
+                  )}
+                  {!hasFinalOutput && isRecording && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    className="h-7 w-7 p-0 hover:bg-gray-100"
                     onClick={handleCopy}
                     title="Copy transcript"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3.5 w-3.5" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    className="h-7 w-7 p-0 hover:bg-gray-100"
                     onClick={handleEdit}
                     title="Edit transcript"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                    className="h-7 w-7 p-0 hover:bg-gray-100"
                     onClick={handleDelete}
                     title="Delete transcript"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </CardTitle>
               
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Action Buttons - Moved to top for better accessibility */}
-              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => setShowTemplateModal(true)}
-                  disabled={isFormatting}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>{isFormatting ? 'Formatting...' : 'Select Template'}</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <MessageSquare className="h-4 w-4" />
+            <CardContent className="flex flex-col flex-1 min-h-0 space-y-3">
+              {/* Action Buttons - Compact to save space */}
+              <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 flex-shrink-0">
+                {/* Template Dropdown - Simplified */}
+                <div className="flex-1">
+                  <TemplateDropdown
+                    currentSection={activeSection || 'section_7'}
+                    currentLanguage={dictationLanguage}
+                    selectedTemplate={selectedTemplate}
+                    onTemplateSelect={(template) => {
+                      console.log('Template selected:', template);
+                      setSelectedTemplate(template);
+                      setTemplateContent(template.content);
+                      setAiStepStatus(null);
+                      injectTemplateContent(template);
+                    }}
+                  />
+                </div>
+                <Button variant="outline" size="sm" className="flex items-center space-x-1.5 h-7 px-2 text-xs">
+                  <MessageSquare className="h-3.5 w-3.5" />
                   <span>Voice Command</span>
                 </Button>
                 <SaveToSectionDropdown
@@ -1403,9 +1321,22 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   disabled={!editedTranscript && paragraphs.length === 0}
                 />
               </div>
+              
+              {/* Live transcription indicators when recording (shown in Final Transcript area) */}
+              {!hasFinalOutput && isRecording && (
+                <div className="flex items-center justify-between text-xs text-gray-600 flex-shrink-0 pb-2 border-b border-gray-100">
+                  <div className="flex items-center space-x-4">
+                    <span>Duration: <span className="font-mono font-medium text-blue-600">{formatDuration(sessionDuration)}</span></span>
+                    <div className="flex items-center space-x-2">
+                      <Volume2 className="h-3 w-3 text-green-500" />
+                      <span>Audio: <span className="font-medium text-green-600">{Math.round(audioLevel)}%</span></span>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Template Content Display */}
               {selectedTemplate && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex-shrink-0">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <FileText className="h-4 w-4 text-blue-600" />
@@ -1435,63 +1366,72 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                       </Button>
                     </div>
                   </div>
-                  <div className="text-xs text-blue-700 bg-white p-2 rounded border max-h-32 overflow-y-auto">
+                  <div className="text-xs text-blue-700 bg-white p-2 rounded border max-h-24 overflow-y-auto">
                     {templateContent}
                   </div>
                 </div>
               )}
 
-              {/* Final Transcript Text Area - Enhanced when output exists */}
-              <div className={`bg-gray-50 rounded-md p-4 transition-all duration-300 ${hasFinalOutput ? 'min-h-[300px] md:min-h-[400px]' : 'min-h-[200px]'}`}>
+              {/* Final Transcript Text Area - Main editing/viewing area - Shows live transcription when recording */}
+              <div className="bg-gray-50 rounded-md p-4 flex-1 min-h-0 overflow-auto relative z-0">
                 {isEditing ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex flex-col flex-1 min-h-0">
                     <textarea
                       value={editedTranscript}
                       onChange={(e) => setEditedTranscript(e.target.value)}
-                      className={`w-full p-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasFinalOutput ? 'h-64 md:h-80' : 'h-40 md:h-48'}`}
+                      className="w-full flex-1 min-h-0 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
                       placeholder="Edit your transcript here..."
+                      style={{ lineHeight: '1.6' }}
                     />
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 flex-shrink-0">
                       <Button 
                         size="sm" 
                         onClick={handleSaveEdit}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 h-7 px-3 text-xs"
                       >
                         Save
                       </Button>
                       <Button 
                         size="sm" 
-                        variant="outline" 
+                        variant="outline"
                         onClick={handleCancelEdit}
+                        className="h-7 px-3 text-xs"
                       >
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : editedTranscript ? (
-                  <div className="space-y-3">
-                    <p className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${hasFinalOutput ? 'text-base' : 'text-sm'}`}>
+                  <div className="space-y-2">
+                    <p className={`text-gray-700 whitespace-pre-wrap ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
                       {editedTranscript}
                     </p>
                   </div>
                 ) : paragraphs.length > 0 ? (
                   <div className="space-y-3">
                     {paragraphs.map((paragraph, index) => (
-                      <p key={index} className={`text-gray-700 leading-relaxed ${hasFinalOutput ? 'text-base' : 'text-sm'}`}>
+                      <p key={index} className={`text-gray-700 ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em', marginBottom: '0.75rem' }}>
                         {paragraph}
                       </p>
                     ))}
                   </div>
+                ) : currentTranscript && isRecording && !hasFinalOutput ? (
+                  /* Show live transcription directly in Final Transcript area when recording */
+                  <div className="space-y-2">
+                    <p className="text-gray-700 text-sm" style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
+                      {currentTranscript}
+                    </p>
+                  </div>
                 ) : (
-                  <p className={`text-gray-500 italic ${hasFinalOutput ? 'text-base' : 'text-sm'}`}>
-                    Final transcript will appear here after you stop dictating...
+                  <p className={`text-gray-500 italic ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.6' }}>
+                    {isRecording ? 'Live transcription will appear here...' : 'Final transcript will appear here after you stop dictating...'}
                   </p>
                 )}
               </div>
 
               {/* Success Message */}
               {saveSuccess && (
-                <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-md flex-shrink-0">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-sm text-green-800">
                     Transcript saved to {activeSection} successfully!
@@ -1501,7 +1441,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
               {/* Copy Success Message */}
               {copySuccess && (
-                <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-md flex-shrink-0">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
                   <span className="text-sm text-blue-800">
                     Copied to clipboard
@@ -1528,22 +1468,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         </Card>
       )}
 
-      {/* Template Selection Modal */}
-      {showTemplateModal && (
-        <TemplateSelector
-          isOpen={showTemplateModal}
-          onClose={() => setShowTemplateModal(false)}
-          onSelect={(template) => {
-            console.log('Template selected from modal:', template);
-            setSelectedTemplate(template);
-            injectTemplateContent(template);
-            setShowTemplateModal(false);
-          }}
-          currentSection={activeSection || 'section_7'}
-          currentLanguage={dictationLanguage}
-          isFormatting={isFormatting}
-        />
-      )}
 
       {/* Analysis Prompt Modal */}
       {showAnalysisPrompt && capturedTranscripts && (
@@ -1590,13 +1514,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Orthopedic Narrative Section - Only show for ambient mode */}
-      {mode === 'ambient' && featureFlags.speakerLabeling && (
-        <div className="mt-6">
-          <OrthopedicNarrative narrative={orthopedicNarrative} />
         </div>
       )}
 

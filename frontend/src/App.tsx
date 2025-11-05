@@ -25,6 +25,9 @@ import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
 import { TranscriptionProvider } from '@/contexts/TranscriptionContext';
 import { LandingPage } from '@/pages/LandingPage';
+import { PrivacyPolicy } from '@/pages/PrivacyPolicy';
+import { TermsOfService } from '@/pages/TermsOfService';
+import { SecurityPolicy } from '@/pages/SecurityPolicy';
 
 function App() {
   const featureFlags = useFeatureFlags();
@@ -43,6 +46,11 @@ function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/select-clinic" element={<SelectClinicPage />} />
+        
+        {/* Legal pages */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/security-policy" element={<SecurityPolicy />} />
         
         {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
