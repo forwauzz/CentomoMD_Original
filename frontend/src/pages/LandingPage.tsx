@@ -30,7 +30,7 @@ export const LandingPage: React.FC = () => {
         <div className="mt-10">
           <Button
             size="lg"
-            className="bg-[#072544] hover:bg-[#0a3463] text-white px-8 py-6 rounded-xl shadow-xl"
+            className="bg-white hover:bg-slate-50 text-[#061a30] px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-200 transform hover:scale-105"
             onClick={() => navigate('/login')}
           >
             Sign In
@@ -39,11 +39,26 @@ export const LandingPage: React.FC = () => {
 
         {/* Footer links */}
         <div className="absolute bottom-6 inset-x-0 flex items-center justify-center space-x-6 text-sm text-slate-300">
-          <a className="hover:text-white" href="#">Privacy Policy</a>
+          <button
+            className="hover:text-white transition-colors cursor-pointer"
+            onClick={() => navigate('/privacy-policy')}
+          >
+            Privacy Policy
+          </button>
           <span className="opacity-50">•</span>
-          <a className="hover:text-white" href="#">Terms of Service</a>
+          <button
+            className="hover:text-white transition-colors cursor-pointer"
+            onClick={() => navigate('/terms-of-service')}
+          >
+            Terms of Service
+          </button>
           <span className="opacity-50">•</span>
-          <a className="hover:text-white" href="#">Contact</a>
+          <button
+            className="hover:text-white transition-colors cursor-pointer"
+            onClick={() => navigate('/security-policy')}
+          >
+            Security Policy
+          </button>
         </div>
       </div>
     </div>
