@@ -57,11 +57,19 @@ function App() {
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Dashboard - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Dashboard - PROTECTED */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
           
-          {/* New Case - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/case/new" element={<NewCasePage />} />
+          {/* New Case - PROTECTED */}
+          <Route path="/case/new" element={
+            <ProtectedRoute>
+              <NewCasePage />
+            </ProtectedRoute>
+          } />
           
           {/* Templates - PROTECTED */}
           <Route path="/templates" element={
@@ -118,11 +126,19 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Settings - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/settings" element={<SettingsPage />} />
+          {/* Settings - PROTECTED */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
           
-          {/* Profile - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/profile" element={<ProfilePage />} />
+          {/* Profile - PROTECTED */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
           
           {/* Legacy route for backward compatibility */}
           <Route path="/legacy" element={<LegacyApp />} />
