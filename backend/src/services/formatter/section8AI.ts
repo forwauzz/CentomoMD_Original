@@ -409,7 +409,10 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
     console.log(`[${correlationId}] 🔄 Using fallback formatting`);
     
     const processingTime = Date.now() - startTime;
-    const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+    // Use flag-controlled default model
+    const model = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+      ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+      : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
     
     // Basic fallback - just clean up the content
     const fallbackResult = content

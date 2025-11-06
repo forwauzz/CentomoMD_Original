@@ -531,15 +531,9 @@ export class ProcessingOrchestrator {
         contentLength: content.length
       });
       
-      const OpenAI = (await import('openai')).default;
       const fs = await import('fs');
       const path = await import('path');
       
-      // Initialize OpenAI client
-      const openai = new OpenAI({
-        apiKey: process.env['OPENAI_API_KEY'],
-      });
-
       // Load the Word-for-Word AI formatting prompt
       const promptPath = path.join(process.cwd(), 'prompts', 'word-for-word-ai-formatting.md');
       let systemPrompt: string;
@@ -559,15 +553,23 @@ export class ProcessingOrchestrator {
       // Prepare the user message
       const userMessage = `RAW TRANSCRIPT:\n${content}`;
 
-      console.info(`[${correlationId}] Calling OpenAI API`, {
-        model: 'gpt-4o-mini',
+      // Use flag-controlled default model
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+
+      console.info(`[${correlationId}] Calling AI API`, {
+        model: defaultModel,
         inputLength: content.length,
         promptLength: systemPrompt.length
       });
 
-      // Call OpenAI with the custom prompt
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(defaultModel);
+
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           {
             role: 'system',
@@ -582,11 +584,11 @@ export class ProcessingOrchestrator {
         max_tokens: 4000
       });
 
-      const formatted = completion.choices[0]?.message?.content?.trim() || content;
+      const formatted = response.content?.trim() || content;
       
-      console.info(`[${correlationId}] OpenAI API response received`, {
+      console.info(`[${correlationId}] AI API response received`, {
         outputLength: formatted.length,
-        usage: completion.usage
+        usage: response.usage
       });
       
       return {
