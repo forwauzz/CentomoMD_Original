@@ -112,7 +112,7 @@ export function Select<T extends string = string>({
         onMouseDown={(e) => e.preventDefault()}
         onClick={toggle}
       >
-        <span className="flex-1 text-left min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+        <span className={`flex-1 text-left min-w-0 overflow-hidden text-ellipsis whitespace-nowrap ${!value ? 'text-base font-bold text-gray-700' : ''}`}>
           {items.find((i) => i.value === value)?.label ?? placeholder}
         </span>
         <span aria-hidden className="flex-shrink-0">▾</span>
