@@ -165,6 +165,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
         placeholder={loading ? 'Loading...' : 'Select template...'}
         disabled={loading}
         className="w-full"
+        buttonClassName={!selectedTemplate ? "text-sm font-bold" : ""}
       />
     </div>
   );

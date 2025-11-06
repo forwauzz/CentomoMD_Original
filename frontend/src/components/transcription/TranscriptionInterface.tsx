@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3 } from 'lucide-react';
+import { Mic, MicOff, FileText, Copy, Edit, Trash2, MessageSquare, Volume2, CheckCircle, BarChart3, ChevronDown } from 'lucide-react';
 import { t } from '@/lib/utils';
 import { TranscriptionMode } from '@/types';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -1103,152 +1103,84 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const hasFinalOutput = editedTranscript || paragraphs.length > 0;
   
   return (
-    <div className="flex flex-col h-full p-4 lg:p-6">
+    <div className="flex flex-col h-full max-h-full p-4 lg:p-6 overflow-hidden">
       {/* Template Formatting Loader Overlay */}
       {formattingProgress && (
         <TemplateFormattingLoader message={formattingProgress} />
       )}
       
-      {/* Dynamic Layout - Always 1/4 controls, 3/4 transcript */}
-      <div className="grid grid-cols-1 gap-4 lg:gap-6 flex-1 min-h-0 md:grid-cols-2 lg:grid-cols-4">
-        {/* Left Column - Dictation Controls Card */}
-        <div className="lg:col-span-1 flex flex-col min-h-0">
-          <Card className="bg-white border border-gray-200 shadow-sm flex flex-col h-full">
-            <CardHeader className="flex-shrink-0 py-2 px-3">
-              <CardTitle className="text-sm font-semibold text-gray-800">
-                Dictation Controls
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 p-2 flex-1 min-h-0 overflow-hidden">
-              {/* Input Language Selector */}
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-bold text-gray-700 leading-tight">Input Language</label>
-                <InputLanguageSelector
-                  language={dictationLanguage}
-                  onLanguageChange={handleInputLanguageChange}
-                  disabled={isRecording}
-                />
-              </div>
-
-              {/* Output Language Selector - Only show if feature is enabled */}
-              {featureFlags.outputLanguageSelection && backendConfig?.enableOutputLanguageSelection && (
-                <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold text-gray-700 leading-tight">Output Language</label>
-                  <OutputLanguageSelector
-                    language={outputLanguage}
-                    onLanguageChange={handleOutputLanguageChange}
-                    disabled={isRecording}
-                    showWarning={!backendConfig.allowNonFrenchOutput}
-                  />
-                  {!backendConfig.allowNonFrenchOutput && outputLanguage === 'en' && (
-                    <p className="text-[10px] text-yellow-600 leading-tight">
-                      ⚠️ English output may not be CNESST compliant
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Legacy message when output language selection is disabled */}
-              {(!featureFlags.outputLanguageSelection || !backendConfig?.enableOutputLanguageSelection) && (
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-gray-500 leading-tight">
-                    Output will always be in French (CNESST compliant)
-                  </p>
-                </div>
-              )}
-
-              {/* Section Selector */}
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-bold text-gray-700 leading-tight">Section</label>
-                <SectionSelector
-                  currentSection={activeSection}
-                  onSectionChange={setActiveSection}
-                />
-              </div>
-
-              {/* Template Dropdown */}
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-bold text-gray-700 leading-tight">Template</label>
-                <TemplateDropdown
-                  currentSection={activeSection || 'section_7'}
-                  currentLanguage={dictationLanguage}
-                  selectedTemplate={selectedTemplate}
-                  onTemplateSelect={(template) => {
-                    console.log('Template selected:', template);
-                    console.log('Selected template ID:', template.id);
-                    console.log('Selected template category:', template.category);
-                    setSelectedTemplate(template);
-                    setTemplateContent(template.content);
-                    setAiStepStatus(null); // Reset AI step status when selecting new template
-                    
-                    // Inject template content into the transcript
-                    injectTemplateContent(template);
-                  }}
-                />
-                {/* AI Step Status Chip */}
-                {aiStepStatus && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {aiStepStatus === 'skipped' && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-800">
-                        AI cleanup skipped
-                      </span>
-                    )}
-                    {aiStepStatus === 'success' && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800">
-                        AI cleanup applied
-                      </span>
-                    )}
-                    {aiStepStatus === 'error' && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800">
-                        AI cleanup failed
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Mode Dropdown */}
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-bold text-gray-700 leading-tight">Mode</label>
-                <ModeDropdown
-                  currentMode={mode}
-                  onModeChange={setMode}
-                  language={language}
-                />
-              </div>
-
-              {/* Recording Control Buttons */}
-              <div className="space-y-1 pt-1">
-                {!isRecording ? (
-                  <Button
-                    onClick={handleStartRecording}
-                    variant="medical"
-                    size="sm"
-                    className="w-full flex items-center justify-center space-x-1 h-7 bg-blue-600 hover:bg-blue-700 text-[10px] py-1"
-                  >
-                    <Mic className="h-3 w-3" />
-                    <span>Start Dictating</span>
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleStopRecording}
-                    variant="medical"
-                    size="sm"
-                    className="w-full flex items-center justify-center space-x-1 h-7 bg-red-600 hover:bg-red-700 text-[10px] py-1"
-                  >
-                    <MicOff className="h-3 w-3" />
-                    <span>Stop Dictating</span>
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Top Control Bar - Horizontal layout */}
+      <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-200 flex-shrink-0">
+        {/* Input Language Selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Input Language</label>
+          <InputLanguageSelector
+            language={dictationLanguage}
+            onLanguageChange={handleInputLanguageChange}
+            disabled={isRecording}
+          />
         </div>
 
-        {/* Right Column - Final Transcript Card Only (3/4 of page) */}
-        <div className="lg:col-span-3 flex flex-col min-h-0">
+        {/* Output Language Selector - Only show if feature is enabled */}
+        {featureFlags.outputLanguageSelection && backendConfig?.enableOutputLanguageSelection && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Output Language</label>
+            <OutputLanguageSelector
+              language={outputLanguage}
+              onLanguageChange={handleOutputLanguageChange}
+              disabled={isRecording}
+              showWarning={!backendConfig.allowNonFrenchOutput}
+            />
+          </div>
+        )}
+
+        {/* Section Selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Section</label>
+          <SectionSelector
+            currentSection={activeSection}
+            onSectionChange={setActiveSection}
+          />
+        </div>
+
+        {/* Mode Dropdown */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Mode</label>
+          <ModeDropdown
+            currentMode={mode}
+            onModeChange={setMode}
+            language={language}
+          />
+        </div>
+
+        {/* Start Dictating Button - Right side */}
+        <div className="flex-1 flex justify-end">
+          {!isRecording ? (
+            <Button
+              onClick={handleStartRecording}
+              variant="medical"
+              className="flex items-center justify-center space-x-2 h-12 px-6 rounded-full bg-[#0a2342] hover:bg-[#081c33] text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+            >
+              <Mic className="h-5 w-5" />
+              <span>Start Dictating</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={handleStopRecording}
+              variant="medical"
+              className="flex items-center justify-center space-x-2 h-12 px-6 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+            >
+              <MicOff className="h-5 w-5" />
+              <span>Stop Dictating</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Final Transcript Card - Full width */}
+      <div className="flex flex-col flex-1 min-h-0 max-h-full overflow-hidden">
           {/* Final Transcript Card - Takes full height (3/4 of page) */}
-          <Card className={`bg-white border shadow-sm transition-all duration-300 flex flex-col flex-1 min-h-0 ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
+          <Card className={`bg-white border shadow-sm transition-all duration-300 flex flex-col flex-1 min-h-0 max-h-full overflow-hidden ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
             <CardHeader className={`flex-shrink-0 py-2 ${hasFinalOutput ? 'bg-green-50 border-b border-green-200' : ''}`}>
               <CardTitle className={`text-gray-800 flex items-center justify-between ${hasFinalOutput ? 'text-lg font-bold' : 'text-base font-semibold'}`}>
                 <div className="flex items-center space-x-2">
@@ -1265,11 +1197,13 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 w-7 p-0 hover:bg-gray-100"
+                    className="h-7 px-2 flex items-center gap-1 hover:bg-gray-100"
                     onClick={handleCopy}
                     title="Copy transcript"
                   >
                     <Copy className="h-3.5 w-3.5" />
+                    <span className="text-xs">Copy</span>
+                    <ChevronDown className="h-3 w-3" />
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -1311,6 +1245,26 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                     }}
                   />
                 </div>
+                {/* AI Step Status Chip - Show next to template dropdown */}
+                {aiStepStatus && (
+                  <div className="flex items-center">
+                    {aiStepStatus === 'skipped' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        AI cleanup skipped
+                      </span>
+                    )}
+                    {aiStepStatus === 'success' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        AI cleanup applied
+                      </span>
+                    )}
+                    {aiStepStatus === 'error' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        AI cleanup failed
+                      </span>
+                    )}
+                  </div>
+                )}
                 <Button variant="outline" size="sm" className="flex items-center space-x-1.5 h-7 px-2 text-xs">
                   <MessageSquare className="h-3.5 w-3.5" />
                   <span>Voice Command</span>
@@ -1373,13 +1327,20 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               )}
 
               {/* Final Transcript Text Area - Main editing/viewing area - Shows live transcription when recording */}
-              <div className="bg-gray-50 rounded-md p-4 flex-1 min-h-0 overflow-auto relative z-0">
+              <div 
+                className="bg-gray-50 rounded-md p-4 flex-1 min-h-[300px] overflow-y-auto overflow-x-hidden relative z-0" 
+                style={{ 
+                  maxHeight: 'calc(100vh - 25rem)',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #f3f4f6'
+                }}
+              >
                 {isEditing ? (
-                  <div className="space-y-3 flex flex-col flex-1 min-h-0">
+                  <div className="space-y-3 flex flex-col h-full min-h-0">
                     <textarea
                       value={editedTranscript}
                       onChange={(e) => setEditedTranscript(e.target.value)}
-                      className="w-full flex-1 min-h-0 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
+                      className="w-full flex-1 min-h-[200px] p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
                       placeholder="Edit your transcript here..."
                       style={{ lineHeight: '1.6' }}
                     />
@@ -1402,15 +1363,15 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                     </div>
                   </div>
                 ) : editedTranscript ? (
-                  <div className="space-y-2">
-                    <p className={`text-gray-700 whitespace-pre-wrap ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
+                  <div className="w-full">
+                    <p className={`text-gray-700 whitespace-pre-wrap break-words ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
                       {editedTranscript}
                     </p>
                   </div>
                 ) : paragraphs.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="w-full space-y-3">
                     {paragraphs.map((paragraph, index) => (
-                      <p key={index} className={`text-gray-700 ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em', marginBottom: '0.75rem' }}>
+                      <p key={index} className={`text-gray-700 break-words ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em', marginBottom: '0.75rem' }}>
                         {paragraph}
                       </p>
                     ))}
@@ -1454,7 +1415,6 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             </CardContent>
           </Card>
         </div>
-      </div>
 
       {/* Error Display */}
       {error && (
