@@ -1,16 +1,7 @@
-import OpenAI from "openai";
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-
-// Lazy initialization of OpenAI client
-let openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-  }
-  return openai;
-}
+import { FLAGS } from '../../config/flags.js';
+import { getAIProvider } from '../../lib/aiProvider.js';
 
 // SECTION7_GUARD: Enhanced result interface with JSON contract
 export interface Section7AIResult {
@@ -537,8 +528,13 @@ export class Section7AIFormatter {
     correlationId: string
   ): Promise<OpenAIJSONResponse> {
     try {
+      // Use flag-controlled default model
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+
       console.log(`[${correlationId}] Calling OpenAI API with JSON contract`, {
-        model: 'gpt-4o-mini',
+        model: defaultModel,
         systemPromptLength: systemPrompt.length,
         contentLength: content.length
       });
@@ -547,8 +543,11 @@ export class Section7AIFormatter {
         ? `Formate ce texte médical brut selon les standards québécois CNESST pour la Section 7. Réponds UNIQUEMENT en JSON selon le format requis:\n\n${content}`
         : `Format this raw medical text according to Quebec CNESST standards for Section 7. Respond ONLY in JSON according to the required format:\n\n${content}`;
       
-      const response = await getOpenAI().chat.completions.create({
-        model: 'gpt-4o-mini',
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const provider = getAIProvider(defaultModel);
+      
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           {
             role: 'system',
@@ -563,7 +562,7 @@ export class Section7AIFormatter {
         max_tokens: 4000
       });
       
-      const rawResponse = response.choices[0]?.message?.content?.trim() || '';
+      const rawResponse = response.content?.trim() || '';
       
       console.log(`[${correlationId}] OpenAI API response received`, {
         outputLength: rawResponse.length,
@@ -688,7 +687,10 @@ export class Section7AIFormatter {
         filesLoaded: promptFiles.filesLoaded,
         promptLength,
         processingTime,
-        model: 'gpt-4o-mini',
+        // Use flag-controlled default model for metadata
+        model: FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+          ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+          : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini'),
         guard_applied: guardApplied
       }
     };
