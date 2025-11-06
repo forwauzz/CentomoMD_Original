@@ -1,7 +1,7 @@
-import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
+import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical.js";
 import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
-import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
+import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager.js";
 import { getAIProvider } from "../../lib/aiProvider.js";
 import { FLAGS } from "../../config/flags.js";
 

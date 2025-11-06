@@ -52,7 +52,21 @@ export const FLAGS = {
   FEATURE_MODEL_SELECTION_DICTATION: (process.env['FEATURE_MODEL_SELECTION_DICTATION'] ?? 'false') === 'true',
   
   // Default model override flags (for switching default model without UI changes)
-  USE_CLAUDE_SONNET_4_AS_DEFAULT: (process.env['USE_CLAUDE_SONNET_4_AS_DEFAULT'] ?? 'false') === 'true',
+  // In production: defaults to true (Claude) if not explicitly set
+  // In development: defaults to false (GPT) if not explicitly set
+  // Can be explicitly overridden via USE_CLAUDE_SONNET_4_AS_DEFAULT env var in both environments
+  USE_CLAUDE_SONNET_4_AS_DEFAULT: (() => {
+    const isProduction = (process.env['NODE_ENV'] ?? 'development') === 'production';
+    const explicitValue = process.env['USE_CLAUDE_SONNET_4_AS_DEFAULT'];
+    
+    // If explicitly set, respect that value
+    if (explicitValue !== undefined) {
+      return explicitValue === 'true';
+    }
+    
+    // If not explicitly set, use environment-aware default
+    return isProduction; // true in production, false in development
+  })(),
   
   // Template version selection (MVP manifest-based resolver)
   FEATURE_TEMPLATE_VERSION_SELECTION: (process.env['FEATURE_TEMPLATE_VERSION_SELECTION'] ?? 'false') === 'true',
