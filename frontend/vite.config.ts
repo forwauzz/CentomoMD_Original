@@ -26,6 +26,11 @@ export default defineConfig({
         target: 'ws://localhost:3001',
         ws: true,
       },
+      '/rag-api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rag-api/, ''),
+      },
     },
   },
 
@@ -34,9 +39,9 @@ export default defineConfig({
     sourcemap: true,
     minify: 'esbuild',
     target: 'esnext',
+  },
+  esbuild: {
     // Remove console statements in production builds
-    esbuild: {
-      drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
-    },
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
 });

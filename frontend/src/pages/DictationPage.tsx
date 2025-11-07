@@ -21,8 +21,8 @@ export const DictationPage: React.FC = () => {
       </div>
       
       {/* Transcription Interface - Direct, no tabs */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="min-h-full bg-white rounded-lg shadow-sm border border-gray-200">
           <TranscriptionInterface
             sessionId={sessionId}
             onSessionUpdate={handleSessionUpdate}

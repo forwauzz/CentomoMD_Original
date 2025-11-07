@@ -23,6 +23,7 @@ import { supabase } from '@/lib/authClient';
 import { TemplateFormattingLoader } from '@/components/loading/TemplateFormattingLoader';
 import { useTemplateTracking } from '@/hooks/useTemplateTracking';
 import { TemplateFeedbackBanner } from '@/components/feedback/TemplateFeedbackBanner';
+import { RagChat } from './RagChat';
 
 interface TranscriptionInterfaceProps {
   sessionId?: string;
@@ -39,6 +40,19 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   sectionId
 }) => {
   const featureFlags = useFeatureFlags();
+  
+  // Debug: Log RAG chat feature flag status
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[TranscriptionInterface] RAG Chat feature flag:', {
+        ragChat: featureFlags.ragChat,
+        envVar: import.meta.env.VITE_FEATURE_RAG_CHAT,
+        envVarType: typeof import.meta.env.VITE_FEATURE_RAG_CHAT,
+        willRender: featureFlags.ragChat,
+      });
+    }
+  }, [featureFlags.ragChat]);
+  
   const { inputLanguage, outputLanguage, setInputLanguage, setOutputLanguage, addToast } = useUIStore();
   const { config: backendConfig } = useBackendConfig();
   const { setTranscriptionData } = useTranscriptionContext();
@@ -1103,7 +1117,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
   const hasFinalOutput = editedTranscript || paragraphs.length > 0;
   
   return (
-    <div className="flex flex-col h-full max-h-full p-4 lg:p-6 overflow-hidden">
+    <div className="flex flex-col h-full max-h-full p-4 lg:p-6 overflow-y-auto">
       {/* Template Formatting Loader Overlay */}
       {formattingProgress && (
         <TemplateFormattingLoader message={formattingProgress} />
@@ -1178,7 +1192,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       </div>
 
       {/* Final Transcript Card - Full width */}
-      <div className="flex flex-col flex-1 min-h-0 max-h-full overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 max-h-full overflow-hidden flex-shrink-0">
           {/* Final Transcript Card - Takes full height (3/4 of page) */}
           <Card className={`bg-white border shadow-sm transition-all duration-300 flex flex-col flex-1 min-h-0 max-h-full overflow-hidden ${hasFinalOutput ? 'border-green-200 shadow-lg' : 'border-gray-200'} ${isFormatting ? 'blur-sm opacity-60' : ''}`}>
             <CardHeader className={`flex-shrink-0 py-2 ${hasFinalOutput ? 'bg-green-50 border-b border-green-200' : ''}`}>
@@ -1415,6 +1429,19 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             </CardContent>
           </Card>
         </div>
+
+      {/* RAG Chat - Feature Flagged */}
+      {featureFlags.ragChat ? (
+        <div className="mt-4">
+          <RagChat />
+        </div>
+      ) : (
+        import.meta.env.DEV && (
+          <div className="mt-4 text-xs text-gray-400 italic p-2 bg-gray-50 rounded">
+            [Debug] RAG Chat disabled - featureFlags.ragChat = {String(featureFlags.ragChat)}
+          </div>
+        )
+      )}
 
       {/* Error Display */}
       {error && (

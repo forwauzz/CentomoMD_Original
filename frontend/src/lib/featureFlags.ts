@@ -22,6 +22,7 @@ export interface FeatureFlags {
   modelSelectionDictation: boolean;
   enhancedTranscriptAnalysis: boolean;
   templateCombinationsInAnalysis: boolean;
+  ragChat: boolean;
 }
 
 // Default feature flags - all disabled by default for safety
@@ -42,6 +43,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   modelSelectionDictation: false,
   enhancedTranscriptAnalysis: false,
   templateCombinationsInAnalysis: false,
+  ragChat: false,
 };
 
   // Environment-based feature flags
@@ -66,6 +68,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     modelSelectionDictation: import.meta.env.VITE_FEATURE_MODEL_SELECTION_DICTATION === 'true',
     enhancedTranscriptAnalysis: import.meta.env.VITE_FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS === 'true',
     templateCombinationsInAnalysis: import.meta.env.VITE_FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS === 'true',
+    ragChat: import.meta.env.VITE_FEATURE_RAG_CHAT === 'true',
   };
   
   // For development, we can enable features for testing
@@ -86,6 +89,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     modelSelectionDictation: false, // Keep OFF by default; enable via env var only
     enhancedTranscriptAnalysis: false, // Keep OFF by default; enable via env var only
     templateCombinationsInAnalysis: false, // Keep OFF by default; enable via env var only
+    ragChat: false, // Keep OFF by default; enable via env var only
   };
 
   // Debug: Log env flags in development
@@ -123,6 +127,7 @@ export const getFeatureFlags = (): FeatureFlags => {
     modelSelectionDictation: envFlags.modelSelectionDictation !== undefined ? envFlags.modelSelectionDictation : devFlags.modelSelectionDictation,
     enhancedTranscriptAnalysis: envFlags.enhancedTranscriptAnalysis !== undefined ? envFlags.enhancedTranscriptAnalysis : devFlags.enhancedTranscriptAnalysis,
     templateCombinationsInAnalysis: envFlags.templateCombinationsInAnalysis !== undefined ? envFlags.templateCombinationsInAnalysis : devFlags.templateCombinationsInAnalysis,
+    ragChat: envFlags.ragChat || devFlags.ragChat,
   };
 };
 
