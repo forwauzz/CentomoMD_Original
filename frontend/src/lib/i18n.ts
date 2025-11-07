@@ -171,6 +171,22 @@ export const translations = {
     breadcrumbNewCase: 'Nouveau dossier',
     section: 'Section',
     
+    // RAG Chat
+    ragDocumentTitle: 'Règlement annoté sur le barème des dommages corporels',
+    ragQATab: 'Q&A',
+    ragSearchTab: 'Recherche',
+    ragAskQuestion: 'Posez une question sur le document…',
+    ragAskButton: 'Poser la question',
+    ragSearchPlaceholder: 'Ex.: poignet, arthrodèse, 106129',
+    ragSearchButton: 'Chercher',
+    ragAnswer: 'Réponse',
+    ragSources: 'Sources',
+    ragResults: 'résultats',
+    ragEmptyState: 'Entrez un terme de recherche pour trouver des occurrences dans le document…',
+    ragSearching: 'Recherche...',
+    ragSending: 'Envoi en cours...',
+    ragClickPage: 'Cliquez une page dans le PDF pour vérifier si besoin.',
+    
     // Time
     minutes: 'minutes',
     hours: 'heures',
@@ -375,6 +391,22 @@ export const translations = {
     home: 'Home',
     breadcrumbNewCase: 'New Case',
     section: 'Section',
+    
+    // RAG Chat
+    ragDocumentTitle: 'Annotated Regulation on the Scale of Bodily Injuries',
+    ragQATab: 'Q&A',
+    ragSearchTab: 'Search',
+    ragAskQuestion: 'Ask a question about the document...',
+    ragAskButton: 'Ask the question',
+    ragSearchPlaceholder: 'E.g.: wrist, arthrodesis, 106129',
+    ragSearchButton: 'Search',
+    ragAnswer: 'Answer',
+    ragSources: 'Sources',
+    ragResults: 'results',
+    ragEmptyState: 'Enter a search term to find occurrences in the document...',
+    ragSearching: 'Searching...',
+    ragSending: 'Sending...',
+    ragClickPage: 'Click a page in the PDF to verify if needed.',
   },
 } as const;
 

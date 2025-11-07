@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { searchDoc } from '@/services/ragClient';
 import type { SearchHit } from '@/types/rag';
+import { useI18n } from '@/lib/i18n';
 
 export const RagSearch: React.FC = () => {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export const RagSearch: React.FC = () => {
     
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
-      setError('Veuillez entrer un terme de recherche');
+      setError(t('ragEmptyState') || 'Veuillez entrer un terme de recherche');
       return;
     }
 
@@ -59,25 +61,25 @@ export const RagSearch: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ex.: poignet, arthrodèse, 106129"
+              placeholder={t('ragSearchPlaceholder')}
               disabled={loading}
-              className="flex-1"
-              aria-label="Recherche dans le document"
+              className="flex-1 focus:ring-2 focus:ring-blue-500 border-gray-300"
+              aria-label={t('ragSearchPlaceholder')}
             />
             <Button
               type="submit"
               disabled={loading || !query.trim()}
-              className="px-4"
+              className="px-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Recherche...
+                  {t('ragSearching')}
                 </>
               ) : (
                 <>
                   <Search className="mr-2 h-4 w-4" />
-                  Chercher
+                  {t('ragSearchButton')}
                 </>
               )}
             </Button>
@@ -96,25 +98,25 @@ export const RagSearch: React.FC = () => {
         <div className="space-y-3 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-gray-700">
-              {hits.length} résultat{hits.length > 1 ? 's' : ''}
+              {hits.length} {t('ragResults')}
             </h4>
             <p className="text-xs text-gray-500 italic">
-              Cliquez une page dans le PDF pour vérifier si besoin.
+              {t('ragClickPage')}
             </p>
           </div>
           <ul className="space-y-2">
             {hits.map((hit, index) => (
               <li key={index} className="text-sm text-gray-600">
-                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700">
-                      Page {hit.page}
+                    <span className="font-medium text-gray-700 flex items-center space-x-1">
+                      <span className="text-blue-600">Page {hit.page}</span>
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
                       Score: {Math.round(hit.score * 100) / 100}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
                     {hit.snippet}
                   </div>
                 </div>
@@ -127,7 +129,7 @@ export const RagSearch: React.FC = () => {
       {/* Empty State */}
       {!hits.length && !loading && !error && (
         <p className="text-sm text-gray-500 italic text-center py-4">
-          Entrez un terme de recherche pour trouver des occurrences dans le document…
+          {t('ragEmptyState')}
         </p>
       )}
     </div>
