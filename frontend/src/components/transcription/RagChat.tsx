@@ -7,10 +7,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Copy, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { MessageSquare, Copy, CheckCircle, Loader2, AlertCircle, Search } from 'lucide-react';
 import { askDoc } from '@/services/ragClient';
 import type { AskResponse } from '@/types/rag';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RagSearch } from './RagSearch';
 
 const SNIPPET_MAX_LENGTH = 240;
 
@@ -95,10 +97,22 @@ export const RagChat: React.FC = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center space-x-2">
           <MessageSquare className="h-5 w-5 text-blue-600" />
-          <span>Posez une question sur le document</span>
+          <span>Document Q&A et Recherche</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <Tabs defaultValue="ask" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="ask" className="flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Q&A</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <span>Recherche</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="ask" className="space-y-4 mt-4">
         {/* Input Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-2">
@@ -220,6 +234,11 @@ export const RagChat: React.FC = () => {
             Posez une question sur le document…
           </p>
         )}
+          </TabsContent>
+          <TabsContent value="search" className="mt-4">
+            <RagSearch />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -14,3 +14,14 @@ export type AskResponse = {
   footer: string;
 };
 
+export type SearchHit = {
+  page: number;
+  snippet: string;
+  score: number;
+};
+
+export type SearchResponse = {
+  query: string;
+  results: SearchHit[];
+};
+
