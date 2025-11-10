@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "age": 61,
+    "sex": "M",
+    "dominance": "droitier",
+    "occupation": "carrossier",
+    "employment_status": "non retour travail prélésionnel",
+    "visit_date_expertise": "2024-02-01"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Tendinopathie de Quervain pouce droit",
+    "Syndrome tunnel carpien bilatéral"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [],
+    "surgical": ["Lésions deux épaules consolidées septembre 2023"],
+    "at_site": [],
+    "accidents": [],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2023-02-11", "event": "Événement d'origine: maladie professionnelle gestes répétitifs", "source": "fiche réclamation"},
+    {"date": "2023-03-01", "event": "Physiothérapie", "source": "dossier médical"},
+    {"date": "2023-08-29", "event": "Chirurgie décompression tunnel carpien droit", "source": "dossier médical"},
+    {"date": "2023-10-23", "event": "Consolidation tunnel carpien bilatéral avec AIPP et limitations", "source": "médecin traitant"},
+    {"date": "2024-02-01", "event": "Consolidation tendinopathie Quervain avec AIPP et limitations", "source": "médecin traitant"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Douleurs et engourdissements doigts D1-D3",
+      "Intolérance températures froides",
+      "Détérioration main gauche (compensation)",
+      "Douleur pouce droit et tabatière anatomique",
+      "Éveils nocturnes"
+    ],
+    "AVQ_AVD": "Non retour travail prélésionnel carrossier"
+  },
+  "S9_examen": {
+    "regions": {
+      "epaule": {
+        "amplitude": "normale",
+        "pain": "aucune"
+      }
+    },
+    "findings_summary": "Tests positifs tunnel carpien gauche. Diminution sensibilité base pouce droite. Sensibilité palpation cicatrice paume main droite. Amplitude articulaire doigts et poignets normale. Force normale (OK sign normal main droite). Coude normal."
+  },
+  "S10_paraclinique": [],
+  "clinician_interpretations": {
+    "plateau_therapeutique": true,
+    "treatment_sufficiency": "suffisants",
+    "limitations_exist": true,
+    "limitations_description": "Limitations dextérité fine, précision, mouvements rapides doigts, nécessite gants chauffants"
+  },
+  "consolidation": true,
+  "AIPP_percent": null,
+  "AIPP_details": null
+}
+

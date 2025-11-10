@@ -10,6 +10,8 @@ import { useCaseStore } from '@/stores/caseStore';
 import { useUserStore } from '@/stores/userStore';
 import { getSectionMeta, isSchemaDrivenEnabled } from '@/lib/formSchema';
 import { CNESST_SECTIONS } from '@/lib/constants';
+import { TemplateDropdown, TemplateJSON } from '@/components/transcription/TemplateDropdown';
+import { VersionSelector } from '@/components/ui/VersionSelector';
 
 interface SectionFormProps {
   sectionId: string;
@@ -781,11 +783,19 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
   const renderSection11 = () => {
     const { generateSection11FromSections } = useCaseStore();
     const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+    const [selectedVersion, setSelectedVersion] = useState<string | undefined>(undefined);
+    const currentLanguage = 'fr-CA'; // Section 11 is French-only (CNESST)
 
     const handleGenerateFromSections = async () => {
+      if (!selectedTemplate) {
+        console.error('No template selected');
+        return;
+      }
+
       setIsGenerating(true);
       try {
-        await generateSection11FromSections();
+        await generateSection11FromSections(selectedTemplate.id, selectedVersion);
         // Refresh form data after generation
         const currentSection = sections.find(s => s.id === sectionId);
         if (currentSection) {
@@ -805,10 +815,34 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           <CardTitle className="text-lg">11. Conclusion</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Template Selection */}
+          <div className="space-y-2">
+            <Label>Template</Label>
+            <TemplateDropdown
+              currentSection="section_11"
+              currentLanguage={currentLanguage}
+              selectedTemplate={selectedTemplate}
+              onTemplateSelect={setSelectedTemplate}
+            />
+          </div>
+
+          {/* Version Selection */}
+          {selectedTemplate && (
+            <div className="space-y-2">
+              <VersionSelector
+                templateId={selectedTemplate.id || null}
+                value={selectedVersion}
+                onChange={setSelectedVersion}
+                showLabel={true}
+              />
+            </div>
+          )}
+
+          {/* Generate Button */}
           <div className="flex gap-2 mb-4">
             <Button
               onClick={handleGenerateFromSections}
-              disabled={isGenerating}
+              disabled={isGenerating || !selectedTemplate}
               variant="outline"
               size="sm"
             >
@@ -820,7 +854,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
               ) : (
                 <>
                   <span className="mr-2">🤖</span>
-                  Générer à partir des sections 7, 8, 9
+                  Générer à partir des sections 1-10
                 </>
               )}
             </Button>
@@ -838,7 +872,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           </div>
           
           <div className="text-sm text-gray-500">
-            <p>💡 Cette section peut être générée automatiquement à partir des sections 7, 8 et 9.</p>
+            <p>💡 Cette section peut être générée automatiquement à partir des sections 1-10.</p>
           </div>
         </CardContent>
       </Card>

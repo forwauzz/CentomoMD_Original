@@ -1,0 +1,17 @@
+{
+  "defaultVersion": "current",
+  "versions": {
+    "current": {
+      "rd": {
+        "master_config": "backend/configs/master_prompt_section11.json",
+        "schema": "prompts/section11_schema.json",
+        "logicmap": "prompts/section11_logicmap.yaml",
+        "master_prompt": "prompts/section11_master.fr.md",
+        "golden_cases": "training/section11_examples.jsonl",
+        "json_config": "prompts/section11_master.json",
+        "golden_example": "prompts/section11_golden_example.fr.md"
+      }
+    }
+  }
+}
+

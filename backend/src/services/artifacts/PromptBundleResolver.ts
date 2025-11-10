@@ -26,6 +26,16 @@ interface Section7RdPaths {
   source?: SourceType;
 }
 
+interface Section11RdPaths {
+  masterConfigPath: string;
+  schemaPath: string;
+  logicmapPath: string;
+  masterPromptPath: string;
+  goldenCasesPath: string;
+  versionUsed: string;
+  source?: SourceType;
+}
+
 // Cache directory for downloaded artifacts
 const CACHE_DIR = join(process.cwd(), 'cache', 'template-artifacts');
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -652,5 +662,122 @@ export async function resolveSection7RdPaths(version?: string): Promise<Section7
     goldenCasesPath: rd?.golden_cases ? join(basePath, rd.golden_cases) : defaults.goldenCasesPath,
   };
   console.log(`[PROOF] template=section7-rd version=${manifestVersion} source=local status=ok`);
+  return { ...resolved, versionUsed: manifestVersion, source: 'local' };
+}
+
+export async function resolveSection11RdPaths(version?: string): Promise<Section11RdPaths> {
+  const bundleName = 'section11-rd';
+  const basePath = resolveBasePath();
+  
+  const defaults = {
+    masterConfigPath: join(basePath, 'backend', 'configs', 'master_prompt_section11.json'),
+    schemaPath: join(basePath, 'prompts', 'section11_schema.json'),
+    logicmapPath: join(basePath, 'prompts', 'section11_logicmap.yaml'),
+    masterPromptPath: join(basePath, 'prompts', 'section11_master.fr.md'),
+    goldenCasesPath: join(basePath, 'training', 'section11_examples.jsonl'),
+  };
+
+  // Determine which version to use: provided parameter > default > alias
+  let versionToUse = version;
+  
+  // Try remote first (if flag enabled)
+  if (FLAGS.FEATURE_TEMPLATE_VERSION_REMOTE_STORAGE) {
+    try {
+      const sql = getSql();
+      
+      if (!versionToUse) {
+        // Get default version from Postgres (could be semver or alias)
+        const bundles = await sql`
+          SELECT v.semver, b.default_version_id
+          FROM template_bundles b
+          LEFT JOIN template_bundle_versions v ON b.default_version_id = v.id
+          WHERE b.name = ${bundleName}
+          LIMIT 1
+        `;
+        
+        if (bundles && bundles.length > 0) {
+          versionToUse = (bundles[0] as { semver: string | null }).semver || undefined;
+          
+          // If no default_version_id set, try 'stable' alias, then 'latest'
+          if (!versionToUse) {
+            versionToUse = await resolveVersionAlias(bundleName, 'stable') || 
+                          await resolveVersionAlias(bundleName, 'latest') || 
+                          'current';
+          }
+        } else {
+          versionToUse = 'current';
+        }
+      }
+      
+      // Resolve alias if needed
+      if (versionToUse && versionToUse !== 'current') {
+        const resolvedAlias = await resolveVersionAlias(bundleName, versionToUse);
+        if (resolvedAlias) {
+          versionToUse = resolvedAlias;
+        }
+      }
+      
+      // Try to resolve all artifacts from remote
+      const masterResult = await resolveFromRemote(bundleName, versionToUse, 'master_config', undefined);
+      const schemaResult = await resolveFromRemote(bundleName, versionToUse, 'schema', undefined);
+      const logicmapResult = await resolveFromRemote(bundleName, versionToUse, 'logicmap', undefined);
+      const masterPromptResult = await resolveFromRemote(bundleName, versionToUse, 'master_prompt', undefined);
+      const goldenResult = await resolveFromRemote(bundleName, versionToUse, 'golden_cases', undefined);
+        
+        if (masterResult?.content && schemaResult?.content && logicmapResult?.content && masterPromptResult?.content && goldenResult?.content) {
+          // Write to temp paths for compatibility
+          const tempDir = join(basePath, 'backend', 'prompts', 'temp');
+          if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
+          
+          const masterPath = join(tempDir, `master_prompt_section11_${versionToUse}.json`);
+          const schemaPath = join(tempDir, `section11_schema_${versionToUse}.json`);
+          const logicmapPath = join(tempDir, `section11_logicmap_${versionToUse}.yaml`);
+          const masterPromptPath = join(tempDir, `section11_master_fr_${versionToUse}.md`);
+          const goldenPath = join(tempDir, `section11_examples_${versionToUse}.jsonl`);
+          
+          writeFileSync(masterPath, masterResult.content, 'utf8');
+          writeFileSync(schemaPath, schemaResult.content, 'utf8');
+          writeFileSync(logicmapPath, logicmapResult.content, 'utf8');
+          writeFileSync(masterPromptPath, masterPromptResult.content, 'utf8');
+          writeFileSync(goldenPath, goldenResult.content, 'utf8');
+          
+          console.log(`[PROOF] template=section11-rd version=${versionToUse} source=${masterResult.source} status=ok`);
+          
+          return {
+            masterConfigPath: masterPath,
+            schemaPath: schemaPath,
+            logicmapPath: logicmapPath,
+            masterPromptPath: masterPromptPath,
+            goldenCasesPath: goldenPath,
+            versionUsed: versionToUse,
+            source: masterResult.source,
+          };
+        }
+    } catch (error) {
+      console.error(`[PROOF] Remote resolution failed, falling back to local:`, error);
+      // Fall through to local manifest
+    }
+  }
+
+  // Fallback to local manifest
+  const manifest = readManifest('section11');
+  
+  if (!manifest) {
+    console.log('[PROOF] template=section11-rd version=none source=filesystem status=fallback');
+    return { ...defaults, versionUsed: 'none', source: 'filesystem' };
+  }
+
+  const manifestVersion = version || manifest.defaultVersion || 'current';
+  const rd = manifest.versions?.[manifestVersion]?.rd;
+  
+  // Resolve paths relative to base path (repo root)
+  const resolved = {
+    masterConfigPath: rd?.master_config ? join(basePath, rd.master_config) : defaults.masterConfigPath,
+    schemaPath: rd?.schema ? join(basePath, rd.schema) : defaults.schemaPath,
+    logicmapPath: rd?.logicmap ? join(basePath, rd.logicmap) : defaults.logicmapPath,
+    masterPromptPath: rd?.master_prompt ? join(basePath, rd.master_prompt) : defaults.masterPromptPath,
+    goldenCasesPath: rd?.golden_cases ? join(basePath, rd.golden_cases) : defaults.goldenCasesPath,
+  };
+  console.log(`[PROOF] template=section11-rd version=${manifestVersion} source=local status=ok`);
   return { ...resolved, versionUsed: manifestVersion, source: 'local' };
 }

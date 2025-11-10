@@ -444,6 +444,12 @@ export class ProcessingOrchestrator {
       return await this.processSection8AIFormatter(content, template, request);
     }
     
+    // Handle Section 11 R&D Pipeline template
+    if (template.id === 'section11-rd') {
+      console.log(`[${correlationId}] Routing to processSection11Rd`);
+      return await this.processSection11Rd(content, template, request);
+    }
+    
     // Handle History of Evolution AI Formatter template
     if (template.id === 'history-evolution-ai-formatter') {
       console.log(`[${correlationId}] Routing to processHistoryEvolutionAIFormatter`);
@@ -782,6 +788,107 @@ export class ProcessingOrchestrator {
     } catch (error) {
       console.error(`[${correlationId}] Section 8 AI formatting error:`, error);
       // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 11 R&D Pipeline template
+   * Supports both structured JSON input (for synthesis) and raw transcript (for formatting)
+   */
+  private async processSection11Rd(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 11 R&D Pipeline template: ${template.id}`);
+      
+      // Detect input type: try parsing as JSON first
+      let inputData: any;
+      let isJsonInput = false;
+      try {
+        inputData = JSON.parse(content);
+        // Validate it's a structured object (not just a string that happens to be valid JSON)
+        if (typeof inputData === 'object' && inputData !== null && !Array.isArray(inputData)) {
+          isJsonInput = true;
+          console.log(`[${correlationId}] Detected JSON input for Section 11 synthesis`);
+        }
+      } catch (parseError) {
+        // Not JSON, treat as raw transcript
+        isJsonInput = false;
+        console.log(`[${correlationId}] Detected raw transcript input for Section 11 formatting`);
+      }
+      
+      if (isJsonInput) {
+        // JSON input: Use Section 11 R&D pipeline for synthesis
+        const { Section11RdService } = await import('../../services/section11RdService.js');
+        const section11Service = new Section11RdService();
+        
+        const result = await section11Service.processInput(
+          inputData,
+          request.model,
+          request.temperature,
+          request.seed,
+          request.templateVersion
+        );
+        
+        if (!result.success) {
+          console.error(`[${correlationId}] Section 11 R&D pipeline failed`);
+          return content;
+        }
+        
+        const processedContent = result.formattedText;
+        
+        if (result.compliance.failedRules.length > 0) {
+          console.warn(`[${correlationId}] Section 11 compliance issues:`, result.compliance.failedRules);
+        }
+        
+        console.log(`[${correlationId}] Section 11 R&D pipeline completed (JSON input)`, {
+          originalLength: JSON.stringify(inputData).length,
+          processedLength: processedContent.length,
+          templateId: template.id,
+          hasIssues: result.compliance.failedRules.length > 0,
+          rulesScore: result.compliance.rulesScore,
+          processingTime: result.metadata.processingTime
+        });
+        
+        return processedContent;
+      } else {
+        // Raw transcript: Format like Section 7/8 using TemplatePipeline
+        console.log(`[${correlationId}] Formatting Section 11 raw transcript`);
+        
+        const { TemplatePipeline } = await import('../formatter/TemplatePipeline.js');
+        const pipeline = new TemplatePipeline();
+        
+        // Create CleanedInput from raw transcript
+        const cleanedInput = {
+          cleaned_text: content,
+          clinical_entities: {}, // Will be extracted if needed
+          meta: {
+            processing_ms: 0,
+            source: 'smart_dictation' as const,
+            language: ((request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en') as 'fr' | 'en'
+          }
+        };
+        
+        const result = await pipeline.process(cleanedInput, {
+          section: '11',
+          inputLanguage: (request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en',
+          outputLanguage: (request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en',
+          templateId: template.id
+        });
+        
+        console.log(`[${correlationId}] Section 11 transcript formatting completed`, {
+          originalLength: content.length,
+          processedLength: result.formatted.length,
+          templateId: template.id,
+          confidence: result.confidence_score,
+          hasIssues: result.issues.length > 0
+        });
+        
+        return result.formatted;
+      }
+    } catch (error) {
+      console.error(`[${correlationId}] Section 11 processing error:`, error);
       return content;
     }
   }

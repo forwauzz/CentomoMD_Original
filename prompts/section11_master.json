@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "section": "11",
+    "nom": "Conclusion",
+    "locale": "fr-CA",
+    "version": "1.0.0",
+    "description": "JSON de garde-fous pour structurer et valider la Section 11 (Conclusion CNESST). Sert à normaliser la terminologie, la structure de conclusion, et à vérifier que la conclusion respecte les standards CNESST avec sections Résumé, Opinion clinique structurée, Motifs et Références."
+  },
+
+  "structure": {
+    "contrat_entree": "La Section 11 doit contenir une conclusion médicale structurée basée sur les sections précédentes (S1-S10).",
+    "titres_requis": [
+      "Résumé",
+      "Opinion clinique structurée",
+      "Motifs",
+      "Références internes"
+    ],
+    "sections_obligatoires": {
+      "resume": true,
+      "opinion_clinique": true,
+      "motifs": true,
+      "references": true
+    },
+    "structure_opinion_clinique": [
+      "Diagnostic",
+      "Date de consolidation",
+      "Nature, nécessité, suffisance et durée des soins/traitements",
+      "Existence de l'atteinte permanente à l'intégrité physique ou psychique",
+      "Existence de limitations fonctionnelles",
+      "Évaluation des limitations fonctionnelles"
+    ]
+  },
+
+  "regles_style": {
+    "ton_clinique_neutre": true,
+    "phrases_courtes": true,
+    "style_dr_centomo": true,
+    "utiliser_considérant": true,
+    "croiser_subjectif_objectif": true,
+    "en_tete_section_obligatoire": "11. Conclusion",
+    "terme_patient_interdit": true,
+    "guillemets_conserves": true,
+    "paragraphe_par_section": true,
+    "varier_les_verbes": true,
+    "eviter_repetition_mecanique": true,
+    "langue": "fr-CA"
+  },
+
+  "terminologie": {
+    "preferes": {
+      "patient": "le travailleur",
+      "la patiente": "la travailleuse",
+      "le patient": "le travailleur",
+      "consolidation": "consolidation",
+      "atteinte permanente": "atteinte permanente à l'intégrité physique ou psychique",
+      "limitations fonctionnelles": "limitations fonctionnelles résultant de la lésion professionnelle"
+    },
+    "interdits": [
+      "le patient",
+      "la patiente",
+      "On consolide",
+      "Je consolide sans motifs"
+    ],
+    "verbes_conclusion": [
+      "considérant",
+      "j'attribue",
+      "je consolide",
+      "je ne consolide pas",
+      "je suis d'avis",
+      "je crois",
+      "je ne crois pas"
+    ],
+    "phrases_consolidation": [
+      "Je consolide la lésion en date d'aujourd'hui",
+      "Je ne consolide pas la lésion professionnelle",
+      "Pour ces raisons, je ne consolide pas la lésion professionnelle"
+    ],
+    "phrases_plateau_therapeutique": [
+      "À mon avis, il y a une atteinte du plateau thérapeutique",
+      "À mon avis, il y a une atteinte du plateau thérapeutique et stabilisation de la condition"
+    ],
+    "phrases_suffisance_traitements": [
+      "Je suis d'avis qu'il y a suffisance de traitements",
+      "Je suis d'avis qu'il y a suffisance de traitements en date de consolidation"
+    ],
+    "phrases_atteinte_permanente": [
+      "J'attribue une atteinte permanente à l'intégrité physique",
+      "J'attribue aucune atteinte permanente à l'intégrité physique",
+      "Les pourcentages de l'atteinte permanente à l'intégrité physique seront présentés au point 12"
+    ],
+    "phrases_limitations": [
+      "J'attribue des limitations fonctionnelles résultant de la lésion professionnelle",
+      "J'attribue aucune limitation fonctionnelle résultant de la lésion professionnelle"
+    ]
+  },
+
+  "dates": {
+    "formats_autorises": [
+      "d MMMM yyyy",
+      "d MMM yyyy",
+      "dd MMMM yyyy",
+      "aujourd'hui",
+      "en date d'aujourd'hui"
+    ],
+    "normaliser_noms_mois": true,
+    "exemples": [
+      "le 23 juillet 2024",
+      "aujourd'hui soit le 23 juillet 2024",
+      "en date de consolidation soit aujourd'hui le 23 juillet 2024"
+    ],
+    "consolidation_date": {
+      "si_plateau_therapeutique": "utiliser date d'expertise",
+      "si_non_plateau": "Non déterminée"
+    }
+  },
+
+  "motifs": {
+    "regex_considérant": "^\\s*Considérant\\s+",
+    "regex_consolidation": "\\b(Je consolide|Je ne consolide pas)\\b",
+    "regex_attribution": "\\b(J'attribue|J'attribue aucune)\\b",
+    "regex_reference_sections": "\\b(S[0-9]+|section [0-9]+)\\b",
+    "regex_plateau_therapeutique": "\\b(plateau thérapeutique|stabilisation de la condition)\\b",
+    "exiger_considérant_avant_conclusion": true,
+    "exiger_reference_sections": true
+  },
+
+  "normalisation": {
+    "corrections_casse": [
+      { "trouver": "\\bConsidérant\\b", "remplacer": "Considérant" },
+      { "trouver": "\\bconsidérant\\b", "remplacer": "Considérant" }
+    ],
+    "remplacements_termes_ci": [
+      { "trouver": "\\ble\\s+patient\\b", "remplacer": "le travailleur" },
+      { "trouver": "\\bla\\s+patiente\\b", "remplacer": "la travailleuse" },
+      { "trouver": "\\bOn consolide\\b", "remplacer": "Je consolide" },
+      { "trouver": "\\bOn attribue\\b", "remplacer": "J'attribue" }
+    ],
+    "titres": {
+      "toujours_exiger_titre": true,
+      "titres_preferes": ["11. Conclusion"]
+    },
+    "espacements": {
+      "apres_virgule": true,
+      "espaces_simples": true,
+      "apres_considérant": true
+    }
+  },
+
+  "verifications_QA": {
+    "exiger_resume": true,
+    "exiger_opinion_clinique": true,
+    "exiger_motifs": true,
+    "exiger_references": true,
+    "exiger_considérant_avant_conclusions": true,
+    "exiger_croisement_subjectif_objectif": {
+      "pour_limitations": true,
+      "message": "Les limitations doivent être justifiées par croisement entre S8 (subjectif) et S9 (objectif)"
+    },
+    "exiger_diagnostic": true,
+    "exiger_date_consolidation": true,
+    "exiger_section_soins_traitements": true,
+    "exiger_section_atteinte_permanente": true,
+    "exiger_section_limitations": true,
+    "validation_consolidation": {
+      "si_consolidation_false": "doit_conclure_non_consolidation",
+      "si_consolidation_true": "doit_preciser_limitations_et_aipp"
+    },
+    "validation_plateau_therapeutique": {
+      "si_plateau_true": "utiliser_date_expertise_comme_consolidation",
+      "si_plateau_false": "consolidation_non_determinee"
+    },
+    "validation_suffisance_traitements": {
+      "si_soins_complets_et_stable": "suffisants",
+      "sinon": "preciser_raison"
+    },
+    "garde_fou_doublons": {
+      "activer": true,
+      "distance_min_caracteres": 50
+    },
+    "integrite_citations": {
+      "preserver_exactitude": true
+    }
+  },
+
+  "exemples": [
+    {
+      "note_entree": "consolidation cheville droite, plateau thérapeutique atteint, limitations fonctionnelles présentes",
+      "extrait_sortie": "Considérant le diagnostic retenu par la CNESST ainsi que sa consolidation;\nConsidérant tous les points mentionnés aux points précédents;\nJe consolide la lésion en date d'aujourd'hui soit le 23 juillet 2024.\nJ'attribue des limitations fonctionnelles résultant de la lésion professionnelle."
+    },
+    {
+      "note_entree": "non consolidation, condition non stable, soins insuffisants",
+      "extrait_sortie": "Considérant le diagnostic retenu par la CNESST;\nConsidérant que la condition clinique n'est pas stable;\nConsidérant que les traitements n'ont pas été suffisants;\nPour ces raisons, je ne consolide pas la lésion professionnelle."
+    }
+  ],
+
+  "politique_injection": {
+    "toujours_injecter_sections": ["regles_style", "terminologie.verbes_conclusion", "exemples"],
+    "injecter_long_exemple_conditionnel": true,
+    "etiquette_long_exemple": "EXEMPLE COMPLET (référence de forme, ne pas copier mot à mot)"
+  },
+
+  "reconnaissance_ner": {
+    "entite_type": "PERSON + PROFESSIONAL_TITLE",
+    "patron_reconnaissance": "[Titre] + [Prénom] + [Nom(s) de famille]",
+    "contexte": "Documents médicaux/légaux CNESST",
+    "completude": "Rétention obligatoire du nom complet",
+    "regles_amelioration": {
+      "si_entite_type_medical_professional": "preserve_full_name = TRUE",
+      "si_contexte_document_formel": "troncation_allowed = FALSE",
+      "support_noms_composes": "noms_hyphenés, noms_composés",
+      "verification_coherence": "instances_document"
+    },
+    "prevention_erreurs": {
+      "bloquer_troncation_noms_professionnels": true,
+      "validation_completude_personnel_medical": true,
+      "signaler_identifications_incompletes": true
+    }
+  }
+}
+

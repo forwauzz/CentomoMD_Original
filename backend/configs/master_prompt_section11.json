@@ -1,0 +1,18 @@
+{
+    "id": "section11_pipeline_frCA",
+    "description": "Pipeline R&D — Section 11 (CNESST, fr-CA) : synthèse multi-sections S1-S10 → conclusion structurée.",
+    "language": "fr-CA",
+    "artifacts": {
+      "schema": "./prompts/section11_schema.json",
+      "logicmap": "./prompts/section11_logicmap.yaml",
+      "master": "./prompts/section11_master.fr.md",
+      "golden_standard": "./training/section11_examples.jsonl"
+    },
+    "metadata": {
+      "section": 11,
+      "mode": "synthesis",
+      "version": "1.0.0",
+      "region": "CA-QC"
+    }
+  }
+

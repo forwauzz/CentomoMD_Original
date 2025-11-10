@@ -41,11 +41,39 @@ export async function formatWithGuardrails(
     const outputLanguage = options?.outputLanguage || language;
     
     // Load prompt system files - Use output language for formatting
-    const suffix = (section === '8') ? '' : (outputLanguage === 'en' ? '_en' : '');
+    // Section 8: no suffix
+    // Section 7: _en suffix for English, no suffix for French
+    // Section 11: .fr suffix for French, .en for English (files are named section11_master.fr.md, etc.)
+    let suffix = '';
+    let guardrailsSuffix = '';
+    if (section === '8') {
+      suffix = ''; // Section 8 has no suffix
+      guardrailsSuffix = '';
+    } else if (section === '11') {
+      suffix = outputLanguage === 'en' ? '.en' : '.fr'; // Section 11 uses .fr/.en suffix for prompts
+      guardrailsSuffix = ''; // Section 11 guardrails has no suffix (section11_master.json)
+    } else {
+      suffix = outputLanguage === 'en' ? '_en' : ''; // Section 7 uses _en suffix for English
+      guardrailsSuffix = suffix; // Section 7 guardrails uses same suffix
+    }
     const systemPrompt = await loadPromptFile(`section${section}_master${suffix}.md`);
-    const guardrails = await loadGuardrailsFile(`section${section}_master${suffix}.json`);
+    const guardrails = await loadGuardrailsFile(`section${section}_master${guardrailsSuffix}.json`);
     const goldenExample = await loadGoldenExampleFile(`section${section}_golden_example${suffix}.md`);
-
+    
+    // Debug logging for Section 11
+    if (section === '11') {
+      console.log(`[Section 11] Loading files:`);
+      console.log(`  - Prompt: section${section}_master${suffix}.md (${systemPrompt.length} chars)`);
+      console.log(`  - Guardrails: section${section}_master${guardrailsSuffix}.json (${Object.keys(guardrails || {}).length} keys)`);
+      console.log(`  - Golden example: section${section}_golden_example${suffix}.md (${goldenExample.length} chars)`);
+      if (systemPrompt.length === 0) {
+        console.warn(`[Section 11] WARNING: Prompt file is empty! Check file path.`);
+      }
+      if (systemPrompt.length > 0) {
+        console.log(`[Section 11] Prompt preview: ${systemPrompt.substring(0, 200)}...`);
+      }
+    }
+    
     // Add language context if input ≠ output
     let enhancedSystemPrompt = systemPrompt;
     if (inputLanguage !== outputLanguage) {
@@ -234,9 +262,11 @@ function buildSystemPrompt(systemPrompt: string, guardrails: any, goldenExample:
   }
 
   // Add guardrails information
-  if (guardrails?.style_rules) {
+  // Support both English (style_rules) and French (regles_style) guardrails structure
+  const styleRules = guardrails?.style_rules || guardrails?.regles_style;
+  if (styleRules) {
     fullPrompt += '\n\n## STYLE RULES (CRITICAL):\n';
-    Object.entries(guardrails.style_rules).forEach(([key, value]) => {
+    Object.entries(styleRules).forEach(([key, value]) => {
       if (typeof value === 'boolean' && value) {
         fullPrompt += `- ${key}: REQUIRED\n`;
       } else if (typeof value === 'string') {
@@ -246,9 +276,12 @@ function buildSystemPrompt(systemPrompt: string, guardrails: any, goldenExample:
   }
 
   // Add terminology rules
-  if (guardrails?.terminology?.preferred) {
+  // Support both English (terminology.preferred) and French (terminologie.preferes) guardrails structure
+  const terminology = guardrails?.terminology || guardrails?.terminologie;
+  if (terminology?.preferred || terminology?.preferes) {
     fullPrompt += '\n\n## TERMINOLOGY RULES:\n';
-    Object.entries(guardrails.terminology.preferred).forEach(([key, value]) => {
+    const preferred = terminology.preferred || terminology.preferes;
+    Object.entries(preferred).forEach(([key, value]) => {
       fullPrompt += `- Use "${value}" instead of "${key}"\n`;
     });
   }
@@ -354,50 +387,85 @@ async function validateOutput(
  * Load prompt file
  */
 async function loadPromptFile(filename: string): Promise<string> {
-  // Detect if we're running from root or backend directory
-  const isBackendDir = process.cwd().endsWith('backend');
-  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
-  const filepath = path.join(process.cwd(), promptsDir, filename);
+  // Try multiple locations: root/prompts, backend/prompts, and root/backend/prompts
+  const possiblePaths = [
+    path.join(process.cwd(), 'prompts', filename), // Root level prompts/
+    path.join(process.cwd(), 'backend', 'prompts', filename), // backend/prompts/
+    path.join(process.cwd(), '..', 'prompts', filename), // If running from backend, go up to root/prompts
+  ];
   
-  try {
-    return await fs.promises.readFile(filepath, 'utf-8');
-  } catch (error) {
-    console.warn(`Could not load prompt file: ${filepath}`);
-    return '';
+  for (const filepath of possiblePaths) {
+    try {
+      if (await fs.promises.access(filepath).then(() => true).catch(() => false)) {
+        const content = await fs.promises.readFile(filepath, 'utf-8');
+        console.log(`[loadPromptFile] Loaded: ${filepath} (${content.length} chars)`);
+        return content;
+      }
+    } catch (error) {
+      // Continue to next path
+    }
   }
+  
+  // If none found, log warning with all attempted paths
+  console.warn(`Could not load prompt file: ${filename}`);
+  console.warn(`Attempted paths: ${possiblePaths.join(', ')}`);
+  return '';
 }
 
 /**
  * Load guardrails configuration
  */
 async function loadGuardrailsFile(filename: string): Promise<any> {
-  // Detect if we're running from root or backend directory
-  const isBackendDir = process.cwd().endsWith('backend');
-  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
-  const filepath = path.join(process.cwd(), promptsDir, filename);
+  // Try multiple locations: root/prompts, backend/prompts, and root/backend/prompts
+  const possiblePaths = [
+    path.join(process.cwd(), 'prompts', filename), // Root level prompts/
+    path.join(process.cwd(), 'backend', 'prompts', filename), // backend/prompts/
+    path.join(process.cwd(), '..', 'prompts', filename), // If running from backend, go up to root/prompts
+  ];
   
-  try {
-    const content = await fs.promises.readFile(filepath, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    console.warn(`Could not load guardrails file: ${filepath}`);
-    return {};
+  for (const filepath of possiblePaths) {
+    try {
+      if (await fs.promises.access(filepath).then(() => true).catch(() => false)) {
+        const content = await fs.promises.readFile(filepath, 'utf-8');
+        console.log(`[loadGuardrailsFile] Loaded: ${filepath}`);
+        return JSON.parse(content);
+      }
+    } catch (error) {
+      // Continue to next path
+    }
   }
+  
+  // If none found, log warning with all attempted paths
+  console.warn(`Could not load guardrails file: ${filename}`);
+  console.warn(`Attempted paths: ${possiblePaths.join(', ')}`);
+  return {};
 }
 
 /**
  * Load golden example file
  */
 async function loadGoldenExampleFile(filename: string): Promise<string> {
-  // Detect if we're running from root or backend directory
-  const isBackendDir = process.cwd().endsWith('backend');
-  const promptsDir = isBackendDir ? 'prompts' : 'backend/prompts';
-  const filepath = path.join(process.cwd(), promptsDir, filename);
+  // Try multiple locations: root/prompts, backend/prompts, and root/backend/prompts
+  const possiblePaths = [
+    path.join(process.cwd(), 'prompts', filename), // Root level prompts/
+    path.join(process.cwd(), 'backend', 'prompts', filename), // backend/prompts/
+    path.join(process.cwd(), '..', 'prompts', filename), // If running from backend, go up to root/prompts
+  ];
   
-  try {
-    return await fs.promises.readFile(filepath, 'utf-8');
-  } catch (error) {
-    console.warn(`Could not load golden example file: ${filepath}`);
-    return '';
+  for (const filepath of possiblePaths) {
+    try {
+      if (await fs.promises.access(filepath).then(() => true).catch(() => false)) {
+        const content = await fs.promises.readFile(filepath, 'utf-8');
+        console.log(`[loadGoldenExampleFile] Loaded: ${filepath} (${content.length} chars)`);
+        return content;
+      }
+    } catch (error) {
+      // Continue to next path
+    }
   }
+  
+  // If none found, log warning with all attempted paths
+  console.warn(`Could not load golden example file: ${filename}`);
+  console.warn(`Attempted paths: ${possiblePaths.join(', ')}`);
+  return '';
 }

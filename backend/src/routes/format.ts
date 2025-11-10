@@ -9,10 +9,14 @@ import { addTraceId, metrics } from '../lib/metrics.js';
 
 const router = Router();
 
-// POST /api/format/merge/section11 - Generate Section 11 from other sections
+// POST /api/format/merge/section11 - Generate Section 11 from structured JSON input
 router.post('/merge/section11', async (req, res) => {
+  const requestStartTime = Date.now();
+  addTraceId(req, res);
+  const traceId = (req as any).traceId as string;
+
   try {
-    const { caseId, sourceSections = ['section_7', 'section_8', 'section_9'] } = req.body;
+    const { caseId, inputData, model, temperature, seed, templateVersion, templateId } = req.body;
 
     if (!caseId) {
       return res.status(400).json({ 
@@ -20,29 +24,70 @@ router.post('/merge/section11', async (req, res) => {
       });
     }
 
-    // TODO: Fetch actual section data from database
-    // TODO: Implement AI formatting pipeline
-    console.log('🤖 [Format] Generating Section 11 for case:', caseId);
-    console.log('📋 [Format] Source sections:', sourceSections);
+    if (!inputData) {
+      return res.status(400).json({ 
+        error: 'Missing required field: inputData (Section11Input JSON)' 
+      });
+    }
 
-    // For now, return a stub response
-    const autoSummary = `Conclusion générée automatiquement à partir des sections ${sourceSections.join(', ')}.
+    // Use provided templateId or default to section11-rd (logged but not used directly - service uses templateVersion)
+    console.log(`[${traceId}] 🤖 [Format] Generating Section 11 for case: ${caseId} with template: ${templateId || 'section11-rd'}`);
 
-Ceci est un exemple de contenu généré par l'IA. Dans la version finale, ce contenu sera généré en analysant les données des sections sources et en appliquant les templates de formatage appropriés.
+    // Import Section 11 R&D service
+    const { Section11RdService } = await import('../services/section11RdService.js');
+    const section11Service = new Section11RdService();
 
-[STUB] - Pipeline de formatage IA à implémenter`;
+    // Process input through Section 11 R&D pipeline
+    // Note: templateId is logged but not used directly (service uses templateVersion for artifact resolution)
+    const result = await section11Service.processInput(
+      inputData,
+      model,
+      temperature,
+      seed,
+      templateVersion || 'current' // Use provided version or default to 'current'
+    );
+
+    if (!result.success) {
+      console.error(`[${traceId}] ❌ Section 11 R&D pipeline failed`);
+      return res.status(500).json({ 
+        error: 'Failed to generate Section 11',
+        details: result.formattedText // Contains error message
+      });
+    }
+
+    const processingTime = Date.now() - requestStartTime;
+
+    console.log(`[${traceId}] ✅ Section 11 generated successfully`, {
+      caseId,
+      processingTime,
+      rulesScore: result.compliance.rulesScore,
+      passedRules: result.compliance.passedRules.length,
+      failedRules: result.compliance.failedRules.length
+    });
+
+    // Log compliance issues if any
+    if (result.compliance.failedRules.length > 0) {
+      console.warn(`[${traceId}] ⚠️ Section 11 compliance issues:`, result.compliance.failedRules);
+    }
 
     return res.json({
       success: true,
       caseId,
-      sourceSections,
-      autoSummary,
-      generatedAt: new Date().toISOString(),
-      message: 'Section 11 merge endpoint stub - AI pipeline pending'
+      autoSummary: result.formattedText,
+      compliance: result.compliance,
+      quality: result.quality,
+      metadata: {
+        ...result.metadata,
+        processingTime
+      },
+      generatedAt: new Date().toISOString()
     });
   } catch (error) {
-    console.error('❌ [Format] Failed to generate Section 11:', error);
-    return res.status(500).json({ error: 'Failed to generate Section 11' });
+    console.error(`[${traceId}] ❌ [Format] Failed to generate Section 11:`, error);
+    return res.status(500).json({ 
+      error: 'Failed to generate Section 11',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
@@ -171,7 +216,9 @@ router.post('/mode2', async (req, res) => {
       );
     } catch (error) {
       // Fallback to section-based default if no template provided
-      const mappedTemplateId = section === '7' ? 'section7-ai-formatter' : section === '8' ? 'section8-ai-formatter' : undefined;
+      const mappedTemplateId = section === '7' ? 'section7-ai-formatter' : 
+                                section === '8' ? 'section8-ai-formatter' : 
+                                section === '11' ? 'section11-rd' : undefined;
       if (!mappedTemplateId) {
         return res.status(400).json({ error: 'No formatter available for the requested section' });
       }

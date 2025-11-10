@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "age": 48,
+    "sex": "F",
+    "dominance": "droitière",
+    "occupation": "travailleuse",
+    "employment_status": "arrêt travail",
+    "visit_date_expertise": "2022-04-07"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Fracture tibia droit (fracture péroné)",
+    "Épicondylite externe coude droit (art. 31)"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [],
+    "surgical": [],
+    "at_site": [],
+    "accidents": [],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2019-05-23", "event": "Événement d'origine: fracture malléole interne et externe cheville droite, épicondylite coude droit (ergothérapie)", "source": "fiche réclamation"},
+    {"date": "2019-05-24", "event": "Chirurgie: réduction ouverte fixation interne bimalléolaire cheville droite (Dr Hinse)", "source": "dossier médical"},
+    {"date": "2019-06-01", "event": "Infection résolue antibiothérapie", "source": "dossier médical"},
+    {"date": "2020-03-01", "event": "Évolution ralentie COVID-19, épuisement professionnel", "source": "dossier médical"},
+    {"date": "2021-10-01", "event": "Exérèse plaques et vis cheville droite (Dr Hinse)", "source": "dossier médical"},
+    {"date": "2022-02-22", "event": "Médecin famille (Dr Nicolas): chronicité douleurs, plus rien à offrir première ligne", "source": "dossier médical"},
+    {"date": "2022-04-07", "event": "Consolidation", "source": "expertise"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Douleurs résiduelles cheville droite",
+      "Gêne fonctionnelle cheville droite",
+      "Manque force et endurance membre supérieur droit",
+      "Malalignement membre inférieur droit"
+    ],
+    "AVQ_AVD": "Inquiétude malalignement membre inférieur"
+  },
+  "S9_examen": {
+    "regions": {
+      "cheville": {
+        "amplitude": "diminuée",
+        "pain": "douleur fin course amplitudes articulaires"
+      },
+      "coude": {
+        "amplitude": "normale",
+        "pain": "douleur mise tension tendons extenseurs poignet"
+      }
+    },
+    "findings_summary": "Diminution mobilité cheville droite. Léger valgus genou et rotation externe membre inférieur droit. Coude: amplitude normale, douleur tension tendons extenseurs. Épaule normale."
+  },
+  "S10_paraclinique": [
+    "Bilan axial: aucune anomalie, consolidation fractures (radiologiste)"
+  ],
+  "clinician_interpretations": {
+    "plateau_therapeutique": true,
+    "treatment_sufficiency": "suffisants",
+    "limitations_exist": true,
+    "limitations_description": "Membre inférieur: terrains instables, positions accroupies, escaliers, positions statiques, marches prolongées. Membre supérieur: charges > 7.5kg, mouvements répétitifs, vibrations, contrecoups"
+  },
+  "consolidation": true,
+  "AIPP_percent": null,
+  "AIPP_details": null
+}
+

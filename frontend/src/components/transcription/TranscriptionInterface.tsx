@@ -183,9 +183,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
     let section = '7'; // Default fallback
     if (template.meta?.templateConfig?.compatibleSections?.[0]) {
       section = template.meta.templateConfig.compatibleSections[0].replace('section_', '');
-    } else if (template.id?.includes('section-8')) {
+    } else if (template.id?.includes('section-8') || template.id === 'section8-ai-formatter') {
       section = '8';
-    } else if (template.id?.includes('section-11')) {
+    } else if (template.id?.includes('section-11') || template.id === 'section11-rd') {
       section = '11';
     }
     
@@ -204,7 +204,9 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         inputLanguage: inputLanguage,
         outputLanguage: outputLanguage,
         useUniversal: true,
-        templateId: template.id
+        templateRef: template.id, // Pass template ID as templateRef for proper routing
+        templateId: template.id, // Legacy support
+        templateCombo: template.meta?.templateConfig?.config?.templateCombo || undefined
       })
     });
     
@@ -577,16 +579,62 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
         console.log('[UNIVERSAL] Result received:', {
           formatted: result.formatted?.substring(0, 100) + '...',
           formattedLength: result.formatted?.length,
-          issues: result.issues
+          issues: result.issues,
+          hasFormatted: !!result.formatted,
+          formattedPreview: result.formatted?.substring(0, 200)
         });
         
-        // Update the transcript with formatted content
-        if (isEditing) {
-          setEditedTranscript(result.formatted);
-        } else {
-          setEditedTranscript(result.formatted);
-          setIsEditing(true);
+        // Validate formatted content
+        if (!result.formatted || result.formatted.trim().length === 0) {
+          console.error('[UNIVERSAL] ERROR: Formatted content is empty!', result);
+          alert('Formatting returned empty content. Please try again.');
+          setIsFormatting(false);
+          setFormattingProgress('');
+          return;
         }
+        
+        console.log('[UNIVERSAL] Setting edited transcript:', {
+          formattedLength: result.formatted.length,
+          formattedPreview: result.formatted.substring(0, 100),
+          isEditing: isEditing,
+          willSetIsEditing: !isEditing
+        });
+        
+        // Always set both state values to ensure UI updates
+        // Use functional updates to ensure we're using the latest state
+        setEditedTranscript(() => {
+          console.log('[UNIVERSAL] Setting editedTranscript with length:', result.formatted.length);
+          return result.formatted;
+        });
+        setIsEditing(() => {
+          console.log('[UNIVERSAL] Setting isEditing to true');
+          return true;
+        });
+        
+        // Force a re-render by updating formatting progress
+        setFormattingProgress('Updating UI...');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Verify state after next tick
+        setTimeout(() => {
+          const textarea = document.querySelector('textarea');
+          const textareaValue = textarea?.value || '';
+          console.log('[UNIVERSAL] UI state after update - checking DOM:', {
+            textareaExists: !!textarea,
+            textareaValueLength: textareaValue.length,
+            textareaValuePreview: textareaValue.substring(0, 100),
+            editedTranscriptInState: editedTranscript?.length || 0,
+            isEditingInState: isEditing
+          });
+          
+          if (!textarea) {
+            console.error('[UNIVERSAL] ERROR: Textarea not found in DOM!', {
+              allTextareas: document.querySelectorAll('textarea').length,
+              isEditing,
+              editedTranscriptLength: editedTranscript?.length || 0
+            });
+          }
+        }, 300);
         
         setFormattingProgress('Universal Cleanup completed');
         setAiStepStatus('success');
@@ -814,8 +862,8 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
       return;
     }
     
-    // Check if this is a Section 7 or Section 8 AI formatter template or template combination
-    if (template.id === 'section7-ai-formatter' || template.id === 'section8-ai-formatter' || template.category === 'template-combo') {
+    // Check if this is a Section 7, Section 8, or Section 11 AI formatter template or template combination
+    if (template.id === 'section7-ai-formatter' || template.id === 'section8-ai-formatter' || template.id === 'section7-rd' || template.category === 'template-combo') {
       console.log('Applying AI formatting to current transcript');
       console.log('Template ID:', template.id);
       console.log('Template category:', template.category);
@@ -875,7 +923,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           let section = '7'; // Default to Section 7
           if (template.id === 'section8-ai-formatter') {
             section = '8';
-          } else if (template.id === 'section11-ai-formatter') {
+          } else if (template.id === 'section11-rd' || template.id === 'section11-ai-formatter') {
             section = '11';
           }
           
@@ -901,28 +949,36 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               language: inputLanguage,
               inputLanguage: inputLanguage,
               outputLanguage: outputLanguage,
+              templateRef: template.id, // Pass template ID as templateRef
+              templateId: template.id, // Legacy support
               templateCombo,
               verbatimSupport,
               voiceCommandsSupport
             })
           });
           
-          console.log('AI formatting successful');
-          console.log('Formatted result:', result.formatted);
-          console.log('Issues found:', result.issues);
-          console.log('Confidence score:', result.confidence_score);
+          console.log('[FORMAT] AI formatting response received:', {
+            hasFormatted: !!result?.formatted,
+            formattedLength: result?.formatted?.length || 0,
+            hasText: !!result?.text,
+            hasData: !!result?.data,
+            resultKeys: Object.keys(result || {}),
+            issues: result?.issues,
+            confidence_score: result?.confidence_score
+          });
           
           // GPT Diagnostic Code - Check for common issues
           try {
             console.log('[FORMAT] raw result', result);
 
             const formatted =
-              result?.formatted ??
-              result?.text ??
-              result?.data?.formatted ??
+              result?.formatted ?? 
+              result?.text ?? 
+              result?.data?.formatted ?? 
               '';
 
             console.log('[FORMAT] derived formatted length', formatted?.length);
+            console.log('[FORMAT] formatted preview:', formatted?.substring(0, 200));
             console.log('[FORMAT] issues', result?.issues);
             console.log('[FORMAT] path', result?.path || 'unknown');
             console.log('[FORMAT] shadowComparison exists?', !!result?.shadowComparison);
@@ -931,6 +987,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
               console.log('[FORMAT] shadow legacy formatted length', result.shadowComparison.legacyFormatted?.length);
               console.log('[FORMAT] shadow universal formatted length', result.shadowComparison.universalFormatted?.length);
               console.log('[FORMAT] shadow checksum match', result.shadowComparison.checksumMatch);
+            }
+            
+            // Validate formatted content
+            if (!formatted || formatted.trim().length === 0) {
+              console.error('[FORMAT] ERROR: Formatted content is empty!', {
+                result,
+                formatted,
+                hasFormatted: !!result?.formatted,
+                hasText: !!result?.text,
+                hasData: !!result?.data
+              });
             }
           } catch (e) {
             console.error('[FORMAT] diagnostic error', e);
@@ -954,19 +1021,37 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
           
           // Update the transcript with AI-formatted content
           const formatted = result?.formatted ?? result?.text ?? result?.data?.formatted ?? '';
-          console.log('[FORMAT] Setting edited transcript with length:', formatted.length);
+          console.log('[FORMAT] Setting edited transcript:', {
+            formattedLength: formatted.length,
+            formattedPreview: formatted.substring(0, 100),
+            isEditing: isEditing,
+            willSetIsEditing: !isEditing
+          });
           
-          if (isEditing) {
-            setEditedTranscript(formatted);
-          } else {
-            setEditedTranscript(formatted);
-            setIsEditing(true);
+          if (!formatted || formatted.trim().length === 0) {
+            console.error('[FORMAT] ERROR: Cannot set empty formatted content!', {
+              result,
+              formatted,
+              resultKeys: Object.keys(result || {})
+            });
+            alert('Formatting returned empty content. Please try again.');
+            setIsFormatting(false);
+            setFormattingProgress('');
+            return;
           }
+          
+          // Always set both state values to ensure UI updates
+          setEditedTranscript(formatted);
+          setIsEditing(true);
           
           // Verify state after next tick
           setTimeout(() => {
-            console.log('[FORMAT] UI state now - editedTranscript length:', editedTranscript?.length || 0);
-          }, 0);
+            console.log('[FORMAT] UI state after update:', {
+              editedTranscriptLength: editedTranscript?.length || 0,
+              isEditing: isEditing,
+              formattedLength: formatted.length
+            });
+          }, 100);
           
           // Section-specific finalizing message
           if (section === '8') {
@@ -1115,6 +1200,17 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
 
   // Determine if we have final output to show
   const hasFinalOutput = editedTranscript || paragraphs.length > 0;
+  
+  // Debug: Log state for UI rendering
+  useEffect(() => {
+    console.log('[UI STATE] Rendering with:', {
+      isEditing,
+      editedTranscriptLength: editedTranscript?.length || 0,
+      paragraphsLength: paragraphs.length,
+      hasFinalOutput,
+      currentTranscriptLength: currentTranscript?.length || 0
+    });
+  }, [isEditing, editedTranscript, paragraphs.length, hasFinalOutput, currentTranscript]);
   
   return (
     <div className="flex flex-col h-full max-h-full p-4 lg:p-6 overflow-y-auto">
@@ -1349,59 +1445,91 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
                   scrollbarColor: '#9ca3af #f3f4f6'
                 }}
               >
-                {isEditing ? (
-                  <div className="space-y-3 flex flex-col h-full min-h-0">
-                    <textarea
-                      value={editedTranscript}
-                      onChange={(e) => setEditedTranscript(e.target.value)}
-                      className="w-full flex-1 min-h-[200px] p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
-                      placeholder="Edit your transcript here..."
-                      style={{ lineHeight: '1.6' }}
-                    />
-                    <div className="flex space-x-2 flex-shrink-0">
-                      <Button 
-                        size="sm" 
-                        onClick={handleSaveEdit}
-                        className="bg-green-600 hover:bg-green-700 h-7 px-3 text-xs"
-                      >
-                        Save
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                        className="h-7 px-3 text-xs"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : editedTranscript ? (
-                  <div className="w-full">
-                    <p className={`text-gray-700 whitespace-pre-wrap break-words ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
-                      {editedTranscript}
+                {(() => {
+                  // Debug: Log rendering decision
+                  const shouldShowTextarea = isEditing || editedTranscript;
+                  const hasContent = editedTranscript && editedTranscript.length > 0;
+                  console.log('[RENDER] Final transcript area rendering decision:', {
+                    isEditing,
+                    editedTranscriptLength: editedTranscript?.length || 0,
+                    hasContent,
+                    shouldShowTextarea,
+                    hasFinalOutput
+                  });
+                  
+                  // Always show textarea if we have content or are in editing mode
+                  if (isEditing || hasContent) {
+                    console.log('[RENDER] Rendering textarea with content length:', editedTranscript?.length || 0);
+                    return (
+                      <div className="space-y-3 flex flex-col h-full min-h-0">
+                        <textarea
+                          key={`textarea-${editedTranscript?.length || 0}`}
+                          value={editedTranscript || ''}
+                          onChange={(e) => setEditedTranscript(e.target.value)}
+                          className="w-full flex-1 min-h-[200px] p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed bg-white"
+                          placeholder="Edit your transcript here..."
+                          style={{ lineHeight: '1.6' }}
+                          ref={(textarea) => {
+                            // Scroll textarea into view when content is set
+                            if (textarea && editedTranscript && editedTranscript.length > 0) {
+                              setTimeout(() => {
+                                textarea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                textarea.focus();
+                              }, 100);
+                            }
+                          }}
+                        />
+                        <div className="flex space-x-2 flex-shrink-0">
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveEdit}
+                            className="bg-green-600 hover:bg-green-700 h-7 px-3 text-xs"
+                          >
+                            Save
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            className="h-7 px-3 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Fallback to other rendering options
+                  if (paragraphs.length > 0) {
+                    return (
+                      <div className="w-full space-y-3">
+                        {paragraphs.map((paragraph, index) => (
+                          <p key={index} className={`text-gray-700 break-words ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em', marginBottom: '0.75rem' }}>
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }
+                  
+                  if (currentTranscript && isRecording && !hasFinalOutput) {
+                    // Show live transcription directly in Final Transcript area when recording
+                    return (
+                      <div className="space-y-2">
+                        <p className="text-gray-700 text-sm" style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
+                          {currentTranscript}
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <p className={`text-gray-500 italic ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.6' }}>
+                      {isRecording ? 'Live transcription will appear here...' : 'Final transcript will appear here after you stop dictating...'}
                     </p>
-                  </div>
-                ) : paragraphs.length > 0 ? (
-                  <div className="w-full space-y-3">
-                    {paragraphs.map((paragraph, index) => (
-                      <p key={index} className={`text-gray-700 break-words ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.7', wordSpacing: '0.05em', marginBottom: '0.75rem' }}>
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                ) : currentTranscript && isRecording && !hasFinalOutput ? (
-                  /* Show live transcription directly in Final Transcript area when recording */
-                  <div className="space-y-2">
-                    <p className="text-gray-700 text-sm" style={{ lineHeight: '1.7', wordSpacing: '0.05em' }}>
-                      {currentTranscript}
-                    </p>
-                  </div>
-                ) : (
-                  <p className={`text-gray-500 italic ${hasFinalOutput ? 'text-base' : 'text-sm'}`} style={{ lineHeight: '1.6' }}>
-                    {isRecording ? 'Live transcription will appear here...' : 'Final transcript will appear here after you stop dictating...'}
-                  </p>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Success Message */}

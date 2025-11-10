@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "age": 43,
+    "sex": "M",
+    "dominance": "droitier",
+    "occupation": "travailleur",
+    "employment_status": "retour travail prélésionnel",
+    "visit_date_expertise": "2023-05-17"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente à l'intégrité physique ou psychique",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Bursite rotulienne au genou gauche",
+    "Cellulite à la jambe gauche"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [],
+    "surgical": [],
+    "at_site": [],
+    "accidents": [],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2022-05-31", "event": "Événement d'origine: bursite rotulienne genou gauche surinfectée avec cellulite", "source": "fiche réclamation"},
+    {"date": "2022-06-01", "event": "Traitements antibiotiques intraveineux et oraux, repos", "source": "dossier médical"},
+    {"date": "2023-02-21", "event": "Première consolidation", "source": "médecin traitant"},
+    {"date": "2023-05-17", "event": "Deuxième consolidation", "source": "médecin traitant"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Intolérance position agenouillée prolongée",
+      "Nécessité changer position fréquemment",
+      "Douleur au genou gauche"
+    ],
+    "AVQ_AVD": "Peut reprendre travail prélésionnel avec limitations"
+  },
+  "S9_examen": {
+    "regions": {
+      "genou": {
+        "amplitude": "normale avec légère ankylose résiduelle",
+        "pain": "léger épaississement tendon rotulien"
+      }
+    },
+    "findings_summary": "Démarche normale. Légère ankylose résiduelle genou gauche. Examens rotule, ligaments, tendons normaux. Cheville et hanche normales. Aucun signe sensitivomoteur."
+  },
+  "S10_paraclinique": [],
+  "clinician_interpretations": {
+    "plateau_therapeutique": true,
+    "treatment_sufficiency": "suffisants",
+    "limitations_exist": true,
+    "limitations_description": "Intolérance position agenouillée prolongée"
+  },
+  "consolidation": true,
+  "AIPP_percent": null,
+  "AIPP_details": null
+}
+

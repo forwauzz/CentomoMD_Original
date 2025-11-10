@@ -91,10 +91,10 @@ router.post('/upload', authMiddleware, async (req, res) => {
     }
 
     // Validate bundle name format
-    if (!/^section[78](-ai-formatter|-rd)$/.test(bundleName)) {
+    if (!/^section(7|8|11)(-ai-formatter|-rd)$/.test(bundleName)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid bundle name. Must be: section7-ai-formatter, section7-rd, or section8-ai-formatter'
+        error: 'Invalid bundle name. Must be: section7-ai-formatter, section7-rd, section8-ai-formatter, or section11-rd'
       });
     }
 
@@ -348,6 +348,7 @@ router.get('/by-template/:templateId', authMiddleware, async (req, res) => {
       'section7-ai-formatter': 'section7-ai-formatter',
       'section7-rd': 'section7-rd',
       'section8-ai-formatter': 'section8-ai-formatter',
+      'section11-rd': 'section11-rd',
     };
     
     const bundleName = templateToBundleMap[templateId];

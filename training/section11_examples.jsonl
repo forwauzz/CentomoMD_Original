@@ -1,0 +1,7 @@
+{"inputs": "section11_inputs_cheville.json", "output": "section11_example_cheville.fr.md"}
+{"inputs": "section11_inputs_genou.json", "output": "section11_example_genou.fr.md"}
+{"inputs": "section11_inputs_tibia_fibula.json", "output": "section11_example_tibia_fibula.fr.md"}
+{"inputs": "section11_inputs_epicondylite_NC.json", "output": "section11_example_epicondylite_NC.fr.md"}
+{"inputs": "section11_inputs_rachis.json", "output": "section11_example_rachis.fr.md"}
+{"inputs": "section11_inputs_quervain.json", "output": "section11_example_quervain.fr.md"}
+

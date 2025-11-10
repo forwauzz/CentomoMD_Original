@@ -60,7 +60,7 @@ interface CaseState {
   resetCase: () => void;
   createSession: (sectionId: string, transcript: string, metadata?: any) => Promise<any>;
   commitSectionFromSession: (sectionId: string, sessionId: string, finalText: string) => Promise<any>;
-  generateSection11FromSections: () => Promise<any>;
+  generateSection11FromSections: (templateId?: string, templateVersion?: string) => Promise<any>;
   updateSection: (sectionId: string, data: Record<string, any>) => void;
   saveSection: (sectionId: string) => void;
   initializeCase: (sections: LegacySection[]) => void;
@@ -510,21 +510,61 @@ export const useCaseStore = create<CaseState>()(
         }
       },
 
-      generateSection11FromSections: async () => {
+      generateSection11FromSections: async (templateId?: string, templateVersion?: string) => {
         try {
+          const currentCase = get().currentCase;
+          if (!currentCase) {
+            throw new Error('No case selected');
+          }
+
+          // Extract structured input data from case sections
+          const sections = currentCase.draft?.sections || {};
+          const inputData = {
+            meta: sections.section_b?.data || {},
+            S1_mandate_points: (sections.section_1?.data as any)?.mandate_points || [],
+            S2_diagnostics_acceptes: (sections.section_2?.data as any)?.diagnostics_acceptes || [],
+            S5_antecedents_relevants: (sections.section_5?.data as any)?.antecedents_relevants || {
+              medical: [],
+              surgical: [],
+              at_site: [],
+              accidents: [],
+              habits: []
+            },
+            S7_historique: (sections.section_7?.data as any)?.historique || [],
+            S8_subjectif: (sections.section_8?.data as any)?.subjectif || {
+              main_complaints: [],
+              AVQ_AVD: ''
+            },
+            S9_examen: (sections.section_9?.data as any)?.examen || {
+              regions: {},
+              findings_summary: ''
+            },
+            S10_paraclinique: (sections.section_10?.data as any)?.paraclinique || [],
+            clinician_interpretations: (sections.section_9?.data as any)?.clinician_interpretations || {
+              plateau_therapeutique: false,
+              treatment_sufficiency: '',
+              limitations_exist: false,
+              limitations_description: ''
+            },
+            consolidation: (sections.section_7?.data as any)?.consolidation || false,
+            AIPP_percent: (sections.section_12?.data as any)?.AIPP_percent || null,
+            AIPP_details: (sections.section_12?.data as any)?.AIPP_details || null
+          };
+
           const response = await apiFetch('/api/format/merge/section11', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              caseId: get().currentCase?.id,
-              sourceSections: ['section_7', 'section_8', 'section_9'],
+              caseId: currentCase.id,
+              inputData: inputData,
+              templateId: templateId || 'section11-rd', // Default to section11-rd
+              templateVersion: templateVersion,
             }),
           });
           
           const result = response;
           
           // Update section 11 with generated content
-          const currentCase = get().currentCase;
           if (currentCase && result.autoSummary) {
             const updatedCase = {
               ...currentCase,

@@ -1,0 +1,13 @@
+consolidation:
+  true:
+    section_order: [Résumé, Opinion clinique structurée, Motifs, Références]
+    include_fields: [diagnostic, date_consolidation, soins, AIPP, limitations]
+  false:
+    section_order: [Résumé, Opinion clinique structurée (Non consolidé), Motifs, Références]
+    placeholders:
+      consolidation: "Non consolidé"
+      AIPP: "Non applicable"
+      limitations: "Non statué"
+    add_phrase:
+      - "Étant donné que je ne consolide pas le travailleur, je ne peux statuer sur ce point."
+

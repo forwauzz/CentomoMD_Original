@@ -114,7 +114,7 @@ export const TemplateDropdown: React.FC<TemplateDropdownProps> = ({
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load ALL templates (truly modular - not section-dependent)
+      // Load templates filtered by language only (all templates show regardless of section)
       const availableTemplates = getAllTemplates().filter(config => {
         // Filter by language (both or specific language)
         // Convert currentLanguage (fr-CA/en-US) to template language format (fr/en)

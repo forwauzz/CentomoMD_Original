@@ -38,6 +38,7 @@ export const BundleUpload: React.FC = () => {
     { value: 'section7-ai-formatter', label: 'Section 7 AI Formatter' },
     { value: 'section7-rd', label: 'Section 7 R&D' },
     { value: 'section8-ai-formatter', label: 'Section 8 AI Formatter' },
+    { value: 'section11-rd', label: 'Section 11 R&D' },
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +56,10 @@ export const BundleUpload: React.FC = () => {
     if (lower.includes('system') && lower.includes('.xml')) return 'system_xml';
     if (lower.includes('plan') && lower.includes('.xml')) return 'plan_xml';
     if (lower.includes('golden_cases') || lower.includes('.jsonl')) return 'golden_cases';
+    // Section 11 specific artifacts
+    if (lower.includes('schema') && lower.includes('.json')) return 'schema_json';
+    if (lower.includes('logicmap') && lower.includes('.yaml')) return 'logicmap_yaml';
+    if (lower.includes('examples') && lower.includes('.jsonl') && lower.includes('section11')) return 'examples_jsonl';
     return 'unknown';
   };
 

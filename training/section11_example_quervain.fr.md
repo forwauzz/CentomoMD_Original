@@ -1,0 +1,30 @@
+11. Conclusion
+Résumé :
+Il s'agit d'un homme de 61 ans connu pour des antécédents de lésions aux deux épaules consolidées en septembre 2023. La présente expertise est présentée sous forme d'une maladie professionnelle avec gestes répétitifs et diagnostic de tendinopathie de de Quervain au pouce droit et syndrome du tunnel carpien bilatéral ayant comme date d'évènement d'origine, le 11 février 2023. Le travailleur a bénéficié de traitements en physiothérapie et d'une chirurgie de décompression du tunnel carpien droit, le 29 août 2023. Le travailleur rapporte une diminution des engourdissements au niveau de sa main droite sans toutefois rapporter une disparition complète. Il ne sera pas en mesure de reprendre son travail prélésionnel de carrossier et sera consolidé pour syndrome de tunnel carpien bilatéral le 23 octobre 2023 avec atteinte permanente à l'intégrité physique ou psychique et limitations fonctionnelles. Il sera consolidé pour la tendinopathie de Quervain du pouce droit, le 1er février 2024 avec atteinte permanente à l'intégrité physique ou psychique et limitations fonctionnelles. Les deux médecins traitants ne produiront pas le rapport d'évaluation médicale (REM).
+Sur le plan subjectif, le travailleur se plaint de douleurs et d'engourdissements au niveau des doigts de D1-D3 avec une intolérance aux températures froides. Il note une détérioration niveau de sa main gauche à la suite de compensation. Il rapporte une douleur au niveau du pouce droit ainsi qu'au niveau de la tabatière anatomique. Il rapporte des éveils nocturnes secondaires à la douleur au niveau des mains droite et gauche.
+Sur le plan objectif, on note des tests positifs pour un syndrome de tunnel carpien gauche. On observe une diminution de la sensibilité au niveau de la base du pouce droite. On note une sensibilité à la palpation de la cicatrice au niveau de la paume de la main droite. L'amplitude articulaire au niveau des doigts de la main droit et gauche ainsi que des poignets sont dans les limites de la normale. Nous n'objectivons pas de diminution de la force et spécialement en lien avec le nerf médian (OK sign normal) au niveau de la main droite.
+L'examen du coude droit et gauche est dans les limites de la normale.
+Enfin nous n'avons pas relevé de signe objectif d'atteinte sensitivomotrice d'origine radiculaire ou centrale.
+À la lumière de l'analyse du dossier, du questionnaire subjectif et de l'examen objectif, voici notre opinion :
+Diagnostic :
+Tendinite de Quervain pouce droit et tunnel carpien bilatéral.
+Date de consolidation :
+Le travailleur est consolidé par ses médecins traitants, le 23 octobre 2023 pour ses tunnels carpiens et le 1er févier 2024 pour la tendinopathie de Quervain. Les deux lésions sont consolidées avec atteinte permanente à l'intégrité physique ou psychique et limitations fonctionnelles. Les médecins traitants ne produiront pas le rapport d'évaluation médical (REM)
+Existence de l'atteinte permanente à l'intégrité physique ou psychique :
+Les médecins qui ont charge se prononcent sur ce point;
+Considérant le diagnostic retenu par la CNESST ainsi que sa consolidation;
+Considérant tous les points mentionnés aux points précédents;
+J'attribue une atteinte permanente à l'intégrité physique.
+Les pourcentages de l'atteinte permanente à l'intégrité physique seront présentés au point 12.
+Existence de limitations fonctionnelles résultant de la lésion professionnelle :
+Les médecins qui ont à charge se prononcent sur ce point;
+Considérant le diagnostic retenu par la CNESST ainsi que sa consolidation;
+Considérant tous les points mentionnés aux points précédents;
+J'attribue des limitations fonctionnelles résultant de la lésion professionnelle.
+Évaluation des limitations fonctionnelles résultant de la lésion professionnelle :
+Aux limitations fonctionnelles déjà existantes :
+Le travailleur doit éviter les coups et les contrecoups au niveau du membre supérieur gauche. Il doit éviter de soulever des charges > 3.0 kg avec le membre supérieur gauche au-delà de 90o de flexion antérieure. Les mouvements répétitifs au-delà de 90o de flexion antérieure et d'abduction de l'épaule gauche devraient être évités. Il ne peut maintenir son membre supérieur gauche en position statique au-dessus de 90o. Avec son membre supérieur gauche, il doit prioriser la manutention des objets légers (< 10kg) en les gardant près de son corps.
+J'ajoute :
+Le travailleur ne peut réaliser des gestes rapidement nécessitant de la dextérité fine. Il ne peut manipuler ou saisir des objets du bout des doigts, faire du travail de précision (guider, placer, régler, ajuster) et exécuter des mouvements rapides des doigts.
+Le travailleur nécessite des gants chauffants s'il doit travailler à l'extérieur lors de température froide.
+

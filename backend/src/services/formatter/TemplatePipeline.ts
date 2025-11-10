@@ -351,22 +351,34 @@ export class TemplatePipeline {
 
   /**
    * Process Section 11 (Conclusion) with CleanedInput
+   * 
+   * Supports both raw transcript formatting (dictation mode) and structured JSON synthesis (case form mode).
+   * - Raw transcript: Formats transcript like Section 7/8 using AI formatting
+   * - Structured JSON: Handled by Section11RdService via ProcessingOrchestrator
    */
   private async processSection11(
     cleanedInput: CleanedInput,
-    _options: TemplatePipelineOptions
+    options: TemplatePipelineOptions
   ): Promise<TemplatePipelineResult> {
     const issues: string[] = [];
     
     try {
-      // TODO: Implement Section 11 AI formatting with clinical entities integration
-      // For now, return cleaned text with clinical entities
-      issues.push('Section 11 AI formatting not yet implemented');
+      // Format raw transcript using AI formatting (similar to Section 7/8)
+      // Extract name whitelist from cleaned text
+      const nameWhitelist = extractNameWhitelist(cleanedInput.cleaned_text);
+      
+      // Apply AI formatting with guardrails using cleaned text
+      const canon = (l?: string) => (l === 'fr' ? 'fr' : 'en');
+      const outputLanguage = canon(options.outputLanguage);
+      const result = await formatWithGuardrails('11', outputLanguage, cleanedInput.cleaned_text, undefined, { 
+        nameWhitelist,
+        clinicalEntities: cleanedInput.clinical_entities
+      });
       
       return {
-        formatted: cleanedInput.cleaned_text,
-        issues,
-        confidence_score: 0.5,
+        formatted: result.formatted,
+        issues: result.issues,
+        confidence_score: result.confidence_score || 0.8,
         clinical_entities: cleanedInput.clinical_entities
       };
     } catch (error) {
@@ -374,7 +386,7 @@ export class TemplatePipeline {
       return {
         formatted: cleanedInput.cleaned_text,
         issues,
-        confidence_score: 0,
+        confidence_score: 0.1,
         clinical_entities: cleanedInput.clinical_entities
       };
     }

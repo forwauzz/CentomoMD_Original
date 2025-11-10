@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "age": "int",
+    "sex": "string",
+    "dominance": "string",
+    "occupation": "string",
+    "employment_status": "string",
+    "visit_date_expertise": "string"
+  },
+  "S1_mandate_points": ["string"],
+  "S2_diagnostics_acceptes": ["string"],
+  "S5_antecedents_relevants": {
+    "medical": ["string"],
+    "surgical": ["string"],
+    "at_site": ["string"],
+    "accidents": ["string"],
+    "habits": ["string"]
+  },
+  "S7_historique": [
+    {"date": "string", "event": "string", "source": "string"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": ["string"],
+    "AVQ_AVD": "string"
+  },
+  "S9_examen": {
+    "regions": {
+      "cheville": {"amplitude": "string", "pain": "string"},
+      "genou": {"amplitude": "string", "pain": "string"},
+      "coude": {"amplitude": "string", "pain": "string"},
+      "epaule": {"amplitude": "string", "pain": "string"},
+      "rachis_lombaire": {"flexion": "int", "extension": "int", "rotation": "int", "pain": "string"}
+    },
+    "findings_summary": "string"
+  },
+  "S10_paraclinique": ["string"],
+  "clinician_interpretations": {
+    "plateau_therapeutique": "bool",
+    "treatment_sufficiency": "string",
+    "limitations_exist": "bool",
+    "limitations_description": "string"
+  },
+  "consolidation": "bool",
+  "AIPP_percent": "number",
+  "AIPP_details": {
+    "type": "object",
+    "optional": true
+  }
+}
+
