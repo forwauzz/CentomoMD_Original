@@ -16,7 +16,13 @@ const __dirname = dirname(__filename);
 // Load environment variables
 dotenv.config({ path: join(__dirname, '../.env') });
 
-const BEARER_TOKEN = 'eyJhbGciOiJIUzI1NiIsImtpZCI6InM2K1dlVjFjUE9mMTFXcUQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2tianVscHhnanF6Z2Jrc2hxc21lLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2MmYyMGU4YS1kZjk1LTRiMDctYjY5My0zNzBjYThjNTYwZTciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzYyNjMwMDQwLCJpYXQiOjE3NjI2MjY0NDAsImVtYWlsIjoidXp6aWVsdEB0ZWNoZWhlYWx0aHNlcnZpY2VzLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiLCJnb29nbGUiXX0sInVzZXJfbWV0YWRhdGEiOnsiY3VzdG9tX2NsYWltcyI6eyJoZCI6InRlY2hlaGVhbHRoc2VydmljZXMuY29tIn0sImVtYWlsIjoidXp6aWVsdEB0ZWNoZWhlYWx0aHNlcnZpY2VzLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJ1enppZWwgVGFtb24iLCJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJuYW1lIjoidXp6aWVsIFRhbW9uIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJwcm92aWRlcl9pZCI6IjEwOTg3MDY4MjU1OTgzMDE0Njc2OSIsInN1YiI6IjEwOTg3MDY4MjU1OTgzMDE0Njc2OSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6Im9hdXRoIiwidGltZXN0YW1wIjoxNzYyNjE1ODgwfV0sInNlc3Npb25faWQiOiJlZDcxZjk0OS03ZjU5LTQ4MjItYjAxZS1hNDU2ZDFmNTYwYWMiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.NkNFZsRAui3k1XRrfT98OA6t3zZs2QZMny25D-LsR4c';
+const BEARER_TOKEN = process.env.BEARER_TOKEN;
+
+if (!BEARER_TOKEN) {
+  console.error('❌ Error: BEARER_TOKEN environment variable is required');
+  console.error('   Please set BEARER_TOKEN in your .env file or environment');
+  process.exit(1);
+}
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 const ENDPOINT = `${API_URL}/api/format/merge/section11`;
