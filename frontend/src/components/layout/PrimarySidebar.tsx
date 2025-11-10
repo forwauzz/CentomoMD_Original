@@ -10,9 +10,6 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Plus,
-  MicIcon,
-  Quote,
   Zap,
   BarChart3,
   FileText as Template,
@@ -76,13 +73,14 @@ export const PrimarySidebar: React.FC = () => {
       icon: LayoutDashboard,
       href: ROUTES.DASHBOARD,
     },
-    {
-      id: 'new-case',
-      label: t('newCase'),
-      icon: Plus,
-      href: ROUTES.NEW_CASE,
-      hasSubmenu: featureFlags.caseManagement,
-    },
+    // New Case and Recent Cases hidden from navigation
+    // {
+    //   id: 'new-case',
+    //   label: t('newCase'),
+    //   icon: Plus,
+    //   href: ROUTES.NEW_CASE,
+    //   hasSubmenu: featureFlags.caseManagement,
+    // },
     {
       id: 'templates',
       label: t('templates'),
@@ -96,18 +94,19 @@ export const PrimarySidebar: React.FC = () => {
       href: ROUTES.DICTATION,
     },
     // Feature-flagged navigation items
-    ...(featureFlags.voiceCommands ? [{
-      id: 'voice-commands',
-      label: t('voiceCommands'),
-      icon: MicIcon,
-      href: ROUTES.VOICE_COMMANDS,
-    }] : []),
-    ...(featureFlags.verbatim ? [{
-      id: 'verbatim',
-      label: t('verbatim'),
-      icon: Quote,
-      href: ROUTES.VERBATIM,
-    }] : []),
+    // Voice commands and verbatim features hidden from navigation
+    // ...(featureFlags.voiceCommands ? [{
+    //   id: 'voice-commands',
+    //   label: t('voiceCommands'),
+    //   icon: MicIcon,
+    //   href: ROUTES.VOICE_COMMANDS,
+    // }] : []),
+    // ...(featureFlags.verbatim ? [{
+    //   id: 'verbatim',
+    //   label: t('verbatim'),
+    //   icon: Quote,
+    //   href: ROUTES.VERBATIM,
+    // }] : []),
     ...(featureFlags.macros ? [{
       id: 'macros',
       label: t('macros'),
@@ -283,7 +282,7 @@ export const PrimarySidebar: React.FC = () => {
             className={cn(
               'w-full justify-start gap-3 h-10',
               isActive && 'bg-blue-500 text-white hover:bg-blue-600',
-              !isActive && 'hover:bg-[#0a2342] text-white'
+              !isActive && 'hover:bg-[#3a153a] text-white'
             )}
             onClick={handleNewCase}
             aria-current={isActive ? 'page' : undefined}
@@ -297,7 +296,7 @@ export const PrimarySidebar: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 h-8 text-xs text-white hover:bg-[#0a2342]"
+              className="w-full justify-start gap-2 h-8 text-xs text-white hover:bg-[#3a153a]"
               onClick={() => setShowRecentCases(!showRecentCases)}
             >
               <Clock className="h-3 w-3" />
@@ -324,7 +323,7 @@ export const PrimarySidebar: React.FC = () => {
                   recentCases.map((caseItem) => (
                     <div
                       key={caseItem.id}
-                      className="border border-white/20 rounded p-2 hover:bg-[#0a2342] transition-colors cursor-pointer bg-[#0b2a4f]"
+                      className="border border-white/20 rounded p-2 hover:bg-[#3a153a] transition-colors cursor-pointer bg-[#4a1e4a]"
                       onClick={() => handleResumeCase(caseItem.id)}
                     >
                       <div className="flex items-start justify-between mb-1">
@@ -399,7 +398,7 @@ export const PrimarySidebar: React.FC = () => {
         className={cn(
           'w-full justify-start gap-3 h-10',
           isActive && 'bg-blue-500 text-white hover:bg-blue-600',
-          !isActive && 'hover:bg-[#0a2342] text-white'
+          !isActive && 'hover:bg-[#3a153a] text-white'
         )}
         onClick={() => handleItemClick(item.href)}
         aria-current={isActive ? 'page' : undefined}
@@ -435,7 +434,7 @@ export const PrimarySidebar: React.FC = () => {
   return (
     <div
       className={cn(
-        'flex flex-col bg-[#0b2a4f] border-r border-[#0a2342] transition-all duration-300 ease-in-out h-full',
+        'flex flex-col bg-[#4a1e4a] border-r border-[#3a153a] transition-all duration-300 ease-in-out h-full',
         sidebarCollapsed ? 'w-20' : 'w-70'
       )}
       style={{
@@ -443,7 +442,7 @@ export const PrimarySidebar: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[#0a2342]">
+      <div className="flex items-center justify-between p-4 border-b border-[#3a153a]">
         {!sidebarCollapsed && (
           <div
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -459,14 +458,14 @@ export const PrimarySidebar: React.FC = () => {
             aria-label="Go to Dashboard"
           >
             <Mic className="h-6 w-6 text-white" />
-            <h1 className="text-lg font-bold text-white">CentomoMD</h1>
+            <h1 className="text-lg font-bold text-white">techemd</h1>
           </div>
         )}
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className="h-8 w-8 p-0 hover:bg-[#0a2342] text-white"
+          className="h-8 w-8 p-0 hover:bg-[#3a153a] text-white"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!sidebarCollapsed}
         >
@@ -489,7 +488,7 @@ export const PrimarySidebar: React.FC = () => {
       </div>
 
       {/* Bottom items - Fixed at bottom */}
-      <div className="p-2 space-y-1 border-t border-[#0a2342] bg-[#0b2a4f] flex-shrink-0">
+      <div className="p-2 space-y-1 border-t border-[#3a153a] bg-[#4a1e4a] flex-shrink-0">
         {sidebarItems
           .filter((item) => item.isBottom)
           .map(renderSidebarItem)}

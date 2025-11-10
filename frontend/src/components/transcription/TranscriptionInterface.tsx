@@ -1269,7 +1269,7 @@ export const TranscriptionInterface: React.FC<TranscriptionInterfaceProps> = ({
             <Button
               onClick={handleStartRecording}
               variant="medical"
-              className="flex items-center justify-center space-x-2 h-12 px-6 rounded-full bg-[#0a2342] hover:bg-[#081c33] text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+              className="flex items-center justify-center space-x-2 h-12 px-6 rounded-full bg-[#3a153a] hover:bg-[#2a0f2a] text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Mic className="h-5 w-5" />
               <span>Start Dictating</span>

@@ -15,22 +15,22 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Navy gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#061a30] via-[#0b2a4f] to-[#0b2a4f]" />
+      {/* Dark purple gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2a0f2a] via-[#4a1e4a] to-[#4a1e4a]" />
 
       {/* Subtle light radial accents */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(closest-side, #dfe8f5, transparent)' }} />
       <div className="pointer-events-none absolute right-[-120px] top-[-120px] h-[520px] w-[520px] rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(closest-side, #b9cbe6, transparent)' }} />
 
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center text-white">
-        <h1 className="text-6xl md:text-7xl font-serif tracking-tight">centomomd</h1>
+        <h1 className="text-6xl md:text-7xl font-serif tracking-tight">techemd</h1>
         <p className="mt-6 max-w-2xl text-lg md:text-xl text-slate-200">
           The intelligent platform for modern medical documentation
         </p>
         <div className="mt-10">
           <Button
             size="lg"
-            className="bg-white hover:bg-slate-50 text-[#061a30] px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-200 transform hover:scale-105"
+            className="bg-white hover:bg-slate-50 text-[#4a1e4a] px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-200 transform hover:scale-105"
             onClick={() => navigate('/login')}
           >
             Sign In

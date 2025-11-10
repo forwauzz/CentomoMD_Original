@@ -26,8 +26,8 @@ export const TemplateFormattingLoader: React.FC<TemplateFormattingLoaderProps> =
   return (
     <div key={message} className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
       <div className="flex flex-col items-center justify-center space-y-6">
-        {/* CentomoMD Logo/Title */}
-        <h1 className="text-3xl font-bold text-white">CentomoMD</h1>
+        {/* techemd Logo/Title */}
+        <h1 className="text-3xl font-bold text-white">techemd</h1>
         
         {/* Loading Message */}
         <div className="flex flex-col items-center space-y-3">

@@ -25,14 +25,14 @@ export const TermsOfService: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
             <p className="mb-4">
-              By accessing or using CentomoMD's medical documentation platform ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
+              By accessing or using techemd's medical documentation platform ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
             <p className="mb-4">
-              CentomoMD provides a medical documentation platform that enables healthcare professionals to create, manage, and format medical documentation, including transcription services and template-based documentation for CNESST evaluations.
+              techemd provides a medical documentation platform that enables healthcare professionals to create, manage, and format medical documentation, including transcription services and template-based documentation for CNESST evaluations.
             </p>
           </section>
 
@@ -72,7 +72,7 @@ export const TermsOfService: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">6. Intellectual Property</h2>
             <p className="mb-4">
-              The Service and its original content, features, and functionality are owned by CentomoMD and are protected by copyright, trademark, and other intellectual property laws. You retain ownership of your medical documentation and content.
+              The Service and its original content, features, and functionality are owned by techemd and are protected by copyright, trademark, and other intellectual property laws. You retain ownership of your medical documentation and content.
             </p>
           </section>
 
@@ -93,7 +93,7 @@ export const TermsOfService: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">9. Limitation of Liability</h2>
             <p className="mb-4">
-              To the maximum extent permitted by law, CentomoMD shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the Service.
+              To the maximum extent permitted by law, techemd shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the Service.
             </p>
           </section>
 

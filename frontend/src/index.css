@@ -10,8 +10,8 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    /* Navy theme primary */
-    --primary: 209 76% 17%;
+    /* Dark purple theme primary */
+    --primary: 270 50% 20%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 209 76% 17%;
+    --ring: 270 50% 20%;
     --radius: 0.5rem;
   }
 
@@ -34,8 +34,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    /* Navy theme primary (dark mode) */
-    --primary: 209 76% 17%;
+    /* Dark purple theme primary (dark mode) */
+    --primary: 270 50% 20%;
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;

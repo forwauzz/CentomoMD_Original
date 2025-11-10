@@ -22,7 +22,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen relative flex">
       {/* Navy gradient background to match landing */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#061a30] via-[#0b2a4f] to-[#0b2a4f]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2a0f2a] via-[#4a1e4a] to-[#4a1e4a]" />
       {/* Subtle radial accents */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(closest-side, #dfe8f5, transparent)' }} />
       <div className="pointer-events-none absolute right-[-120px] top-[-120px] h-[420px] w-[420px] rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(closest-side, #b9cbe6, transparent)' }} />
@@ -33,9 +33,9 @@ export const LoginPage: React.FC = () => {
           {/* Branding */}
           <div className="flex items-center justify-center mb-8">
             <div className="w-10 h-10 bg-white rounded flex items-center justify-center mr-3">
-              <Plus className="w-6 h-6 text-[#0b2a4f]" />
+              <Plus className="w-6 h-6 text-[#4a1e4a]" />
             </div>
-            <h1 className="text-3xl font-bold">CentomoMD</h1>
+            <h1 className="text-3xl font-bold">techemd</h1>
           </div>
           
           {/* Main Title */}

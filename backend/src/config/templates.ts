@@ -261,7 +261,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'ai', 'medical', 'enhanced', 'flowchart'],
       version: '2.0.0',
-      author: 'CentomoMD',
+      author: 'techemd',
       implementation: '6-step-flowchart'
     }
   },
@@ -300,7 +300,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'ai', 'medical', 'v1', 'voice-corrections'],
       version: '1.0.0',
-      author: 'CentomoMD',
+      author: 'techemd',
       implementation: 'single-master-prompt'
     }
   },
@@ -340,7 +340,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'rd', 'pipeline', 'compliance', 'quality-assurance'],
       version: '1.1.0',
-      author: 'CentomoMD R&D Team',
+      author: 'techemd R&D Team',
       implementation: 'rd-pipeline'
     }
   },
@@ -379,7 +379,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-8', 'cnesst', 'ai', 'medical', 'enhanced', 'flowchart', 'subjective'],
       version: '1.0.0',
-      author: 'CentomoMD',
+      author: 'techemd',
       implementation: '6-step-flowchart'
     }
   },
@@ -419,7 +419,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-11', 'cnesst', 'rd', 'pipeline', 'synthesis', 'multi-section'],
       version: '1.0.0',
-      author: 'CentomoMD R&D Team',
+      author: 'techemd R&D Team',
       implementation: 'rd-pipeline'
     }
   },
@@ -454,7 +454,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'basic', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD'
+      author: 'techemd'
     }
   },
   'section-7-verbatim': {
@@ -488,7 +488,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'verbatim', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD'
+      author: 'techemd'
     }
   },
   'section-7-full': {
@@ -522,7 +522,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['section-7', 'cnesst', 'verbatim', 'voice-commands', 'template'],
       version: '1.0.0',
-      author: 'CentomoMD'
+      author: 'techemd'
     }
   },
   'history-evolution-ai-formatter': {
@@ -556,7 +556,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'section_specific',
       tags: ['history-evolution', 'cnesst', 'ai', 'medical', 'injury-tracking'],
       version: '1.0.0',
-      author: 'CentomoMD'
+      author: 'techemd'
     }
   },
   'mode3-transcribe-passthrough': {
@@ -590,7 +590,7 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       category: 'mode_specific',
       tags: ['ambient', 'transcribe', 'passthrough', 'pipeline'],
       version: '1.0.0',
-      author: 'CentomoMD'
+      author: 'techemd'
     }
   }
 };

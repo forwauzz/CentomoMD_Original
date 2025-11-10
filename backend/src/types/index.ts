@@ -1,4 +1,4 @@
-// Core application types for CentomoMD
+// Core application types for techemd
 
 export interface User {
   id: string;

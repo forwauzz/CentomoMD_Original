@@ -25,7 +25,7 @@ export const SecurityPolicy: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Security Commitment</h2>
             <p className="mb-4">
-              CentomoMD is committed to maintaining the highest standards of security to protect your sensitive medical information and personal data. We implement comprehensive security measures to safeguard data against unauthorized access, disclosure, alteration, or destruction.
+              techemd is committed to maintaining the highest standards of security to protect your sensitive medical information and personal data. We implement comprehensive security measures to safeguard data against unauthorized access, disclosure, alteration, or destruction.
             </p>
           </section>
 

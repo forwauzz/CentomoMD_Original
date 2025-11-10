@@ -172,7 +172,7 @@ function LegacyApp() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Mic className="h-8 w-8" />
-              <h1 className="text-2xl font-bold">CentomoMD</h1>
+              <h1 className="text-2xl font-bold">techemd</h1>
             </div>
             
             {/* Navigation */}
