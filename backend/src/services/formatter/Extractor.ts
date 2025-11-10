@@ -1,10 +1,6 @@
 // import { selectExtractorPrompts } from './langUtils.js';
 // import { loadPromptFile } from './promptLoader.js';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
+import { FLAGS } from '../../config/flags.js';
 
 export interface ClinicalEntities {
   injury_location?: { value: string | null; provenance?: string } | null;
@@ -67,24 +63,34 @@ You are a clinical entity extractor. Your ONLY job is to extract structured clin
 
 ## TRANSCRIPT TO EXTRACT FROM:`;
   
-  // Use OpenAI to extract clinical entities
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  // Use AIProvider abstraction - respect feature flag for default model
+  const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+    ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+    : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+  
+  const { getAIProvider } = await import('../../lib/aiProvider.js');
+  const provider = getAIProvider(defaultModel);
+  
+  console.log(`[Extractor] Using model: ${defaultModel} for clinical entity extraction`);
+  
+  const response = await provider.createCompletion({
+    model: defaultModel,
     messages: [
       { role: "system", content: enhancedPrompt },
       { role: "user", content: transcript }
     ],
     temperature: 0.1,
-    max_tokens: 1000
+    max_tokens: 1000,
+    response_format: { type: "json_object" }
   });
   
   // Parse and validate JSON response
-  const content = completion.choices[0]?.message?.content;
+  const content = response.content;
   if (!content) {
-    throw new Error('No content received from OpenAI');
+    throw new Error(`No content received from AI provider (${defaultModel})`);
   }
   
-  console.log(`[Extractor] Raw OpenAI response:`, content.substring(0, 200) + '...');
+  console.log(`[Extractor] Raw AI response (${defaultModel}):`, content.substring(0, 200) + '...');
   
   let extracted;
   try {
@@ -92,7 +98,7 @@ You are a clinical entity extractor. Your ONLY job is to extract structured clin
   } catch (parseError) {
     console.error(`[Extractor] JSON parse error:`, parseError);
     console.error(`[Extractor] Content that failed to parse:`, content);
-    throw new Error(`Failed to parse JSON from OpenAI response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+    throw new Error(`Failed to parse JSON from AI provider response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
   }
   
   // Validate schema and enforce no-new-facts

@@ -265,6 +265,45 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       implementation: '6-step-flowchart'
     }
   },
+  'section7-v1': {
+    id: 'section7-v1',
+    name: 'Section 7 v1',
+    nameEn: 'Section 7 v1',
+    description: 'Section 7 v1 - Formatage avec corrections vocales intégrées et règles complètes dans le master prompt',
+    descriptionEn: 'Section 7 v1 - Formatting with integrated voice corrections and complete rules in master prompt',
+    type: 'formatting',
+    compatibleSections: ['section_7'],
+    compatibleModes: ['mode1', 'mode2'],
+    supportedLanguages: ['fr'],
+    content: {
+      structure: 'ai-cnesst-formatting-v1',
+      placeholders: ['chronological_order', 'worker_first', 'medical_terminology', 'voice_corrections'],
+      validationRules: ['cnesst_compliance', 'chronological_validation', 'medical_accuracy', 'voice_recognition_corrections']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: true,
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
+    },
+    configuration: {
+      priority: 3,
+      timeout: 45,
+      retryAttempts: 2,
+      promptFiles: ['master_prompt', 'json_config', 'golden_example']
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-7', 'cnesst', 'ai', 'medical', 'v1', 'voice-corrections'],
+      version: '1.0.0',
+      author: 'CentomoMD',
+      implementation: 'single-master-prompt'
+    }
+  },
   'section7-rd': {
     id: 'section7-rd',
     name: 'Section 7 - R&D Pipeline',
@@ -342,6 +381,46 @@ export const TEMPLATE_REGISTRY: TemplateRegistry = {
       version: '1.0.0',
       author: 'CentomoMD',
       implementation: '6-step-flowchart'
+    }
+  },
+  'section11-rd': {
+    id: 'section11-rd',
+    name: 'Section 11 - R&D Pipeline',
+    nameEn: 'Section 11 - R&D Pipeline',
+    description: 'Section 11 - Conclusion (R&D Pipeline with multi-section synthesis from S1-S10)',
+    descriptionEn: 'Section 11 - Conclusion (R&D Pipeline with multi-section synthesis from S1-S10)',
+    type: 'formatting',
+    compatibleSections: ['section_11'],
+    compatibleModes: ['mode2', 'mode3'],
+    supportedLanguages: ['fr'],
+    content: {
+      structure: 'cnesst-section11-rd',
+      placeholders: ['synthesis', 'consolidation_logic', 'multi_section_data'],
+      validationRules: ['cnesst_compliance', 'rd_pipeline_validation', 'synthesis_validation']
+    },
+    features: {
+      verbatimSupport: false,
+      voiceCommandsSupport: false,
+      aiFormatting: true,
+      postProcessing: true,
+      realtimeProcessing: false, // Synthesis, not real-time
+      comprehensivePrompts: true,
+      languageAware: true,
+      metadataTracking: true
+    },
+    configuration: {
+      priority: 5,
+      timeout: 90,
+      retryAttempts: 2,
+      // No fallback for synthesis
+      promptFiles: ['rd_pipeline', 'schema', 'logicmap', 'master_prompt']
+    },
+    metadata: {
+      category: 'section_specific',
+      tags: ['section-11', 'cnesst', 'rd', 'pipeline', 'synthesis', 'multi-section'],
+      version: '1.0.0',
+      author: 'CentomoMD R&D Team',
+      implementation: 'rd-pipeline'
     }
   },
   'section-7-only': {

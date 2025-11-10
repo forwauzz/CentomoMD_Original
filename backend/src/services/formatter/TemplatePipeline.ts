@@ -6,11 +6,7 @@ import { loadPromptFile } from './promptLoader.js';
 import { extractClinicalEntities } from './Extractor.js';
 import { assessASRQuality } from './ASRQualityGate.js';
 import { validateCNESSTCompliance } from './validators.js';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
+import { FLAGS } from '../../config/flags.js';
 
 export interface TemplatePipelineResult {
   formatted: string;
@@ -143,11 +139,18 @@ export class TemplatePipeline {
         console.log(`[FMT] Trimmed transcript from ${transcript.length} to ${trimmed.length} chars`);
       }
       
-      // Format with clinical entities
-      console.log(`[FMT] Calling OpenAI with enhanced prompt length: ${enhancedPrompt.length}`);
+      // Format with clinical entities using AIProvider abstraction
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
       
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+      console.log(`[FMT] Calling AI provider (${defaultModel}) with enhanced prompt length: ${enhancedPrompt.length}`);
+      
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(defaultModel);
+      
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           { role: "system", content: enhancedPrompt },
           { role: "user", content: `TRANSCRIPT (possibly truncated):\n${trimmed}\n\n[Clinical Entities]\n${JSON.stringify(clinicalEntities)}` }
@@ -156,10 +159,9 @@ export class TemplatePipeline {
         max_tokens: 1200
       });
       
-      const choice = completion?.choices?.[0];
-      const out = choice?.message?.content?.trim() ?? '';
+      const out = response.content?.trim() ?? '';
       
-      console.log(`[FMT] finish_reason: ${choice?.finish_reason}, usage:`, completion?.usage);
+      console.log(`[FMT] Usage:`, response.usage);
       console.log(`[FMT] Output length: ${out.length}`);
       console.log(`[FMT] Output preview: ${out.substring(0, 200)}...`);
       
@@ -349,22 +351,34 @@ export class TemplatePipeline {
 
   /**
    * Process Section 11 (Conclusion) with CleanedInput
+   * 
+   * Supports both raw transcript formatting (dictation mode) and structured JSON synthesis (case form mode).
+   * - Raw transcript: Formats transcript like Section 7/8 using AI formatting
+   * - Structured JSON: Handled by Section11RdService via ProcessingOrchestrator
    */
   private async processSection11(
     cleanedInput: CleanedInput,
-    _options: TemplatePipelineOptions
+    options: TemplatePipelineOptions
   ): Promise<TemplatePipelineResult> {
     const issues: string[] = [];
     
     try {
-      // TODO: Implement Section 11 AI formatting with clinical entities integration
-      // For now, return cleaned text with clinical entities
-      issues.push('Section 11 AI formatting not yet implemented');
+      // Format raw transcript using AI formatting (similar to Section 7/8)
+      // Extract name whitelist from cleaned text
+      const nameWhitelist = extractNameWhitelist(cleanedInput.cleaned_text);
+      
+      // Apply AI formatting with guardrails using cleaned text
+      const canon = (l?: string) => (l === 'fr' ? 'fr' : 'en');
+      const outputLanguage = canon(options.outputLanguage);
+      const result = await formatWithGuardrails('11', outputLanguage, cleanedInput.cleaned_text, undefined, { 
+        nameWhitelist,
+        clinicalEntities: cleanedInput.clinical_entities
+      });
       
       return {
-        formatted: cleanedInput.cleaned_text,
-        issues,
-        confidence_score: 0.5,
+        formatted: result.formatted,
+        issues: result.issues,
+        confidence_score: result.confidence_score || 0.8,
         clinical_entities: cleanedInput.clinical_entities
       };
     } catch (error) {
@@ -372,7 +386,7 @@ export class TemplatePipeline {
       return {
         formatted: cleanedInput.cleaned_text,
         issues,
-        confidence_score: 0,
+        confidence_score: 0.1,
         clinical_entities: cleanedInput.clinical_entities
       };
     }

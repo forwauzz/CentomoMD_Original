@@ -38,12 +38,13 @@ export const AuthCallback: React.FC = () => {
     const handleAuthCallback = async () => {
       try {
         console.log('🔍 Auth callback triggered, processing...');
-        
-        // Get the hash fragment from the URL (Supabase puts tokens here)
-        const hash = location.hash;
-        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
-        
-        // Extract intended path in priority order
+        console.log('🔍 Full URL:', window.location.href);
+        console.log('🔍 Pathname:', location.pathname);
+        console.log('🔍 Search params:', location.search);
+        console.log('🔍 Hash:', location.hash);
+        console.log('🔍 VITE_SITE_URL:', import.meta.env.VITE_SITE_URL);
+
+        // Helper: extract intended destination (must be defined before use)
         const getIntendedDestination = () => {
           // 1. Check URL state parameter (from OAuth)
           const urlParams = new URLSearchParams(location.search);
@@ -59,25 +60,101 @@ export const AuthCallback: React.FC = () => {
               console.warn('⚠️ Failed to decode OAuth state:', error);
             }
           }
-          
+
           // 2. Check localStorage fallback
           const storedPath = getIntendedPath();
           if (storedPath) {
             console.log('🔍 Found intended path in localStorage:', storedPath);
             return storedPath;
           }
-          
+
           // 3. Check ?redirect param
           const redirectParam = urlParams.get('redirect');
           if (redirectParam) {
             console.log('🔍 Found intended path in redirect param:', redirectParam);
             return redirectParam;
           }
-          
+
           // 4. Default to root
           console.log('🔍 No intended path found, defaulting to /');
           return '/';
         };
+
+        // First, handle PKCE/code flow (?code= in search params)
+        const search = new URLSearchParams(location.search);
+        const codeParam = search.get('code');
+        const oauthError = search.get('error');
+        const oauthErrorDesc = search.get('error_description');
+
+        if (oauthError) {
+          throw new Error(oauthErrorDesc || oauthError);
+        }
+
+        if (codeParam) {
+          console.log('🔍 OAuth code detected, exchanging for session...');
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(codeParam);
+          if (exchangeError) throw exchangeError;
+
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('Session not established after code exchange');
+
+          // Try to create profile automatically
+          if (session.access_token) {
+            await createUserProfile(session.access_token);
+          }
+
+          setStatus('success');
+          setMessage('Authentication successful! Redirecting...');
+
+          const intendedDestination = getIntendedDestination();
+          clearIntendedPath();
+
+          // Clean up the URL (remove code/state params)
+          try { window.history.replaceState({}, document.title, '/auth/callback'); } catch {}
+
+          setTimeout(() => {
+            navigate(intendedDestination, { replace: true });
+          }, 500);
+          return; // Done handling code flow
+        }
+
+        // Next, handle magic link/recovery flows that return token_hash & type in the query
+        const tokenHash = search.get('token_hash');
+        const tokenType = search.get('type'); // e.g., 'magiclink', 'recovery', 'invite', 'email_change'
+
+        if (tokenHash && tokenType) {
+          console.log('🔍 Magic link detected, verifying token...');
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: tokenType as any,
+          } as any);
+          if (verifyError) throw verifyError;
+
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('Session not established after magic link verification');
+
+          if (session.access_token) {
+            await createUserProfile(session.access_token);
+          }
+
+          setStatus('success');
+          setMessage('Authentication successful! Redirecting...');
+
+          const intendedDestination = getIntendedDestination();
+          clearIntendedPath();
+
+          try { window.history.replaceState({}, document.title, '/auth/callback'); } catch {}
+
+          setTimeout(() => {
+            navigate(intendedDestination, { replace: true });
+          }, 500);
+          return; // Done handling magic link flow
+        }
+
+        // Get the hash fragment from the URL (implicit flow tokens live in hash)
+        const hash = location.hash;
+        console.log('🔍 Hash fragment:', hash ? 'present' : 'missing');
+
         
         if (hash) {
           // Parse the hash to extract access_token and refresh_token
@@ -192,6 +269,14 @@ export const AuthCallback: React.FC = () => {
         
       } catch (error) {
         console.error('❌ Auth callback error:', error);
+        console.error('❌ Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined,
+          url: window.location.href,
+          hash: location.hash,
+          search: location.search
+        });
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Authentication failed');
         

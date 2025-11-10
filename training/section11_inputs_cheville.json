@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "age": 40,
+    "sex": "M",
+    "dominance": "droitier",
+    "occupation": "travailleur",
+    "employment_status": "non retour travail prélésionnel",
+    "visit_date_expertise": "2024-07-23"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Entorse cheville droite"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [],
+    "surgical": [],
+    "at_site": [],
+    "accidents": ["Fracture tibia et fibula gauche (mai 2023)"],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2021-03-03", "event": "Événement d'origine: entorse cheville droite", "source": "fiche réclamation"},
+    {"date": "2021-03-15", "event": "Investigation IRM et radiographies: atteintes ligamentaires partielles", "source": "radiologie"},
+    {"date": "2021-04-01", "event": "Consultation Dr Blouin: traitement conservateur", "source": "dossier médical"},
+    {"date": "2021-05-01", "event": "Physiothérapie et ergothérapie: évolution peu favorable", "source": "dossier médical"},
+    {"date": "2023-05-15", "event": "Fracture tibia et fibula gauche (chute accidentelle)", "source": "dossier médical"},
+    {"date": "2024-07-23", "event": "Consolidation entorse cheville droite", "source": "expertise"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Douleurs externe pied droit irradiant plantaire",
+      "Signes instabilité cheville droite",
+      "Difficultés terrains instables/glissants",
+      "Difficulté monter escaliers",
+      "Éveils nocturnes",
+      "Raideurs matinales"
+    ],
+    "AVQ_AVD": "Envisage réorientation carrière"
+  },
+  "S9_examen": {
+    "regions": {
+      "cheville": {
+        "amplitude": "diminuée",
+        "pain": "douleur palpation malléole interne et externe"
+      }
+    },
+    "findings_summary": "Utilisation béquilles (lésion membre inférieur gauche). Déformation tibia gauche. Diminution amplitude articulaire cheville droite. Aucun signe clinique instabilité cheville droite. Genou et hanche normaux."
+  },
+  "S10_paraclinique": [
+    "IRM cheville droite: atteintes ligamentaires partielles",
+    "Radiographies: atteintes ligamentaires partielles"
+  ],
+  "clinician_interpretations": {
+    "plateau_therapeutique": true,
+    "treatment_sufficiency": "suffisants",
+    "limitations_exist": true,
+    "limitations_description": "Marche prolongée, terrains instables, escaliers, positions statiques"
+  },
+  "consolidation": true,
+  "AIPP_percent": 0,
+  "AIPP_details": null
+}
+

@@ -1,17 +1,7 @@
-import OpenAI from "openai";
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { ClinicalEntities } from '../../../shared/types/clinical';
-
-// Lazy initialization of OpenAI client
-let openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-  }
-  return openai;
-}
+import { ClinicalEntities } from '../../../shared/types/clinical.js';
+import { FLAGS } from '../../config/flags.js';
 
 export interface Section8AIResult {
   formatted: string;
@@ -39,7 +29,10 @@ export class Section8AIFormatter {
   static async formatSection8Content(
     content: string,
     clinicalEntities: ClinicalEntities,
-    inputLanguage: 'fr' | 'en' = 'fr'
+    inputLanguage: 'fr' | 'en' = 'fr',
+    model?: string,
+    temperature?: number,
+    seed?: number
   ): Promise<Section8AIResult> {
     const startTime = Date.now();
     const correlationId = `s8-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -60,9 +53,9 @@ export class Section8AIFormatter {
       console.log(`[${correlationId}] 🔧 STEP 2-4: Constructing comprehensive system prompt`);
       const { systemPrompt, promptLength } = this.constructSystemPrompt(promptFiles, inputLanguage, correlationId);
       
-      // STEP 3: Call OpenAI with comprehensive prompt (Flowchart Step 5)
-      console.log(`[${correlationId}] 🤖 STEP 5: Calling OpenAI API`);
-      const result = await this.callOpenAI(systemPrompt, content, inputLanguage, correlationId);
+      // STEP 3: Call AI provider with comprehensive prompt (Flowchart Step 5)
+      console.log(`[${correlationId}] 🤖 STEP 5: Calling AI API`);
+      const result = await this.callOpenAI(systemPrompt, content, inputLanguage, correlationId, model, temperature, seed);
       
       // STEP 4: Post-processing and validation (Flowchart Step 6)
       console.log(`[${correlationId}] ✅ STEP 6: Post-processing and validation`);
@@ -258,23 +251,38 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
   }
 
   /**
-   * Call OpenAI API with comprehensive prompt (Flowchart Step 5)
+   * Call AI provider with comprehensive prompt (Flowchart Step 5)
    */
   private static async callOpenAI(
     systemPrompt: string,
     content: string,
     language: 'fr' | 'en',
-    correlationId: string
+    correlationId: string,
+    model?: string,
+    temperature?: number,
+    seed?: number
   ): Promise<string> {
     try {
-      console.log(`[${correlationId}] 🤖 Calling OpenAI API for ${language}`);
+      // Use provided model, or check feature flag for default, or fallback to gpt-4o-mini
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = model || defaultModel;
+      const temp = temperature !== undefined 
+        ? temperature 
+        : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
       
-      const openai = getOpenAI();
-      const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
-      const temperature = parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
+      console.log(`[${correlationId}] 🤖 Calling AI API for ${language}`, {
+        model: modelId,
+        temperature: temp
+      });
       
-      const completion = await openai.chat.completions.create({
-        model,
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(modelId);
+      
+      const response = await provider.createCompletion({
+        model: modelId,
         messages: [
           {
             role: 'system',
@@ -285,24 +293,27 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
             content: content
           }
         ],
-        temperature,
+        temperature: temp,
         max_tokens: 2000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0
+        ...(seed !== undefined && { seed })
       });
       
-      const result = completion.choices[0]?.message?.content || '';
+      const result = response.content || '';
       
       if (!result) {
-        throw new Error('OpenAI returned empty response');
+        throw new Error('AI provider returned empty response');
       }
       
-      console.log(`[${correlationId}] ✅ OpenAI API call successful (${result.length} characters)`);
+      console.log(`[${correlationId}] ✅ AI API call successful`, {
+        outputLength: result.length,
+        usage: response.usage,
+        cost: response.cost_usd,
+        deterministic: response.deterministic
+      });
       return result;
       
     } catch (error) {
-      console.error(`[${correlationId}] ❌ OpenAI API call failed:`, error);
+      console.error(`[${correlationId}] ❌ AI API call failed:`, error);
       throw error;
     }
   }
@@ -323,7 +334,10 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
       console.log(`[${correlationId}] ✅ Post-processing and validating result`);
       
       const processingTime = Date.now() - startTime;
-      const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const model = defaultModel;
       
       // Basic validation
       const issues: string[] = [];
@@ -395,7 +409,10 @@ FORMATEZ LE TEXTE SUIVANT SELON CES INSTRUCTIONS:`;
     console.log(`[${correlationId}] 🔄 Using fallback formatting`);
     
     const processingTime = Date.now() - startTime;
-    const model = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+    // Use flag-controlled default model
+    const model = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+      ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+      : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
     
     // Basic fallback - just clean up the content
     const fallbackResult = content

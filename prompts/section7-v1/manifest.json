@@ -1,0 +1,15 @@
+{
+  "defaultVersion": "v1",
+  "versions": {
+    "v1": {
+      "ai_formatter": {
+        "fr": {
+          "master": "backend/prompts/section7_v1_master.md",
+          "json": "backend/prompts/section7_v1_master.json",
+          "golden": "backend/prompts/section7_v1_golden_example.md"
+        }
+      }
+    }
+  }
+}
+

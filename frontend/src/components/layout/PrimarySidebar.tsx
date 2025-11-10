@@ -282,8 +282,8 @@ export const PrimarySidebar: React.FC = () => {
             size="sm"
             className={cn(
               'w-full justify-start gap-3 h-10',
-              isActive && 'bg-blue-600 text-white hover:bg-blue-700',
-              !isActive && 'hover:bg-blue-50 text-slate-700'
+              isActive && 'bg-blue-500 text-white hover:bg-blue-600',
+              !isActive && 'hover:bg-[#0a2342] text-white'
             )}
             onClick={handleNewCase}
             aria-current={isActive ? 'page' : undefined}
@@ -297,7 +297,7 @@ export const PrimarySidebar: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 h-8 text-xs text-slate-600 hover:bg-blue-50"
+              className="w-full justify-start gap-2 h-8 text-xs text-white hover:bg-[#0a2342]"
               onClick={() => setShowRecentCases(!showRecentCases)}
             >
               <Clock className="h-3 w-3" />
@@ -314,28 +314,28 @@ export const PrimarySidebar: React.FC = () => {
               <div className="space-y-1 max-h-48 overflow-y-auto">
                 {isLoadingCases ? (
                   <div className="flex items-center justify-center py-2">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                   </div>
                 ) : recentCases.length === 0 ? (
-                  <div className="text-center py-2 text-gray-500 text-xs">
+                  <div className="text-center py-2 text-white/70 text-xs">
                     No recent cases
                   </div>
                 ) : (
                   recentCases.map((caseItem) => (
                     <div
                       key={caseItem.id}
-                      className="border rounded p-2 hover:bg-white transition-colors cursor-pointer bg-gray-50"
+                      className="border border-white/20 rounded p-2 hover:bg-[#0a2342] transition-colors cursor-pointer bg-[#0b2a4f]"
                       onClick={() => handleResumeCase(caseItem.id)}
                     >
                       <div className="flex items-start justify-between mb-1">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{caseItem.patientName}</p>
-                          <p className="text-xs text-gray-500">{formatDate(caseItem.lastModified)}</p>
+                          <p className="text-xs font-medium truncate text-white">{caseItem.patientName}</p>
+                          <p className="text-xs text-white/70">{formatDate(caseItem.lastModified)}</p>
                         </div>
                         <Badge className={`text-xs ${
-                          caseItem.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          caseItem.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
+                          caseItem.status === 'completed' ? 'bg-green-600 text-white' :
+                          caseItem.status === 'in_progress' ? 'bg-blue-500 text-white' :
+                          'bg-gray-600 text-white'
                         }`}>
                           {caseItem.status.replace('_', ' ')}
                         </Badge>
@@ -343,13 +343,13 @@ export const PrimarySidebar: React.FC = () => {
                       
                       {/* Progress Bar */}
                       <div className="mb-2">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <div className="flex justify-between text-xs text-white/80 mb-1">
                           <span>Progress</span>
                           <span>{caseItem.sectionsCompleted}/{caseItem.totalSections}</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1">
+                        <div className="w-full bg-white/20 rounded-full h-1">
                           <div
-                            className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                            className="bg-white h-1 rounded-full transition-all duration-300"
                             style={{ width: `${caseItem.progress}%` }}
                           />
                         </div>
@@ -364,7 +364,7 @@ export const PrimarySidebar: React.FC = () => {
                             e.stopPropagation();
                             handleResumeCase(caseItem.id);
                           }}
-                          className="flex-1 text-xs h-5"
+                          className="flex-1 text-xs h-5 border-white/30 text-white hover:bg-white/10"
                         >
                           <Play className="h-2 w-2 mr-1" />
                           Resume
@@ -376,7 +376,7 @@ export const PrimarySidebar: React.FC = () => {
                             e.stopPropagation();
                             handleDeleteCase(caseItem.id);
                           }}
-                          className="text-xs h-5 text-red-600 hover:text-red-700"
+                          className="text-xs h-5 border-red-400/50 text-red-300 hover:bg-red-500/20"
                         >
                           <Trash2 className="h-2 w-2" />
                         </Button>
@@ -398,8 +398,8 @@ export const PrimarySidebar: React.FC = () => {
         size="sm"
         className={cn(
           'w-full justify-start gap-3 h-10',
-          isActive && 'bg-blue-600 text-white hover:bg-blue-700',
-          !isActive && 'hover:bg-blue-50 text-slate-700'
+          isActive && 'bg-blue-500 text-white hover:bg-blue-600',
+          !isActive && 'hover:bg-[#0a2342] text-white'
         )}
         onClick={() => handleItemClick(item.href)}
         aria-current={isActive ? 'page' : undefined}
@@ -435,7 +435,7 @@ export const PrimarySidebar: React.FC = () => {
   return (
     <div
       className={cn(
-        'flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out',
+        'flex flex-col bg-[#0b2a4f] border-r border-[#0a2342] transition-all duration-300 ease-in-out h-full',
         sidebarCollapsed ? 'w-20' : 'w-70'
       )}
       style={{
@@ -443,18 +443,30 @@ export const PrimarySidebar: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-[#0a2342]">
         {!sidebarCollapsed && (
-          <div className="flex items-center gap-2">
-            <Mic className="h-6 w-6 text-blue-600" />
-            <h1 className="text-lg font-bold text-slate-700">CentomoMD</h1>
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate(ROUTES.DASHBOARD)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(ROUTES.DASHBOARD);
+              }
+            }}
+            aria-label="Go to Dashboard"
+          >
+            <Mic className="h-6 w-6 text-white" />
+            <h1 className="text-lg font-bold text-white">CentomoMD</h1>
           </div>
         )}
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className="h-8 w-8 p-0 hover:bg-blue-50"
+          className="h-8 w-8 p-0 hover:bg-[#0a2342] text-white"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!sidebarCollapsed}
         >
@@ -466,21 +478,21 @@ export const PrimarySidebar: React.FC = () => {
         </Button>
       </div>
 
-      {/* Navigation Items */}
-      <div className="flex-1 flex flex-col p-2 space-y-1">
+      {/* Navigation Items - Scrollable */}
+      <div className="flex-1 flex flex-col p-2 space-y-1 overflow-y-auto">
         {/* Top items */}
         <div className="space-y-1">
           {sidebarItems
             .filter((item) => !item.isBottom)
             .map(renderSidebarItem)}
         </div>
+      </div>
 
-        {/* Bottom items */}
-        <div className="mt-auto space-y-1">
-          {sidebarItems
-            .filter((item) => item.isBottom)
-            .map(renderSidebarItem)}
-        </div>
+      {/* Bottom items - Fixed at bottom */}
+      <div className="p-2 space-y-1 border-t border-[#0a2342] bg-[#0b2a4f] flex-shrink-0">
+        {sidebarItems
+          .filter((item) => item.isBottom)
+          .map(renderSidebarItem)}
       </div>
 
       {/* Clinic Selection Modal */}

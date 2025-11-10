@@ -10,7 +10,8 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    /* Navy theme primary */
+    --primary: 209 76% 17%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -22,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 209 76% 17%;
     --radius: 0.5rem;
   }
 
@@ -33,8 +34,9 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    /* Navy theme primary (dark mode) */
+    --primary: 209 76% 17%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -102,11 +104,11 @@
 
   /* Select Component Styles - Core */
   .select-trigger {
-    @apply flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-7 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 min-w-0;
   }
 
   .select-menu {
-    @apply absolute left-0 right-auto top-full mt-1 min-w-full z-50 bg-white border border-gray-300 rounded-md shadow-lg;
+    @apply absolute left-0 right-auto top-full mt-1 min-w-full z-[100] bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto;
     
     /* CLOSED */
     display: none;
@@ -125,7 +127,7 @@
   }
 
   .select-option {
-    @apply relative flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100;
+    @apply relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[10px] outline-none hover:bg-gray-100 focus:bg-gray-100;
   }
 
   .select-option.selected {

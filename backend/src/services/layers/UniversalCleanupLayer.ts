@@ -1,8 +1,9 @@
-import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical";
+import { ClinicalEntities, CleanedInput } from "../../../shared/types/clinical.js";
 import { PROMPT_FR } from "../../prompts/clinical.js";
 import { createHash } from "node:crypto";
-import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager";
-import { openai as defaultOpenAI } from "../../lib/openai.js";
+import { LayerProcessor, LayerOptions, LayerResult } from "./LayerManager.js";
+import { getAIProvider } from "../../lib/aiProvider.js";
+import { FLAGS } from "../../config/flags.js";
 
 function pickPrompt(inputLang: 'fr' | 'en', t: string): string { 
   // Always use French prompt for output, but add English input context when needed
@@ -40,7 +41,7 @@ function sanitize(ce: Partial<ClinicalEntities>): ClinicalEntities {
 }
 
 export class UniversalCleanupLayer implements LayerProcessor {
-  constructor(private readonly client = defaultOpenAI) {}
+  constructor() {} // Model will be resolved via AIProvider abstraction
 
   async process(
     transcript: string,
@@ -101,24 +102,47 @@ export class UniversalCleanupLayer implements LayerProcessor {
     }
 
     try {
-      console.log('UniversalCleanupLayer: Creating OpenAI completion for transcript length:', cleaned_text.length);
-      console.log('UniversalCleanupLayer: Using model:', process.env['OPENAI_MODEL'] || "gpt-4o-mini");
-      console.log('UniversalCleanupLayer: Using temperature:', process.env['OPENAI_TEMPERATURE'] || '0.1');
+      // Get model from options, or check feature flag for default, or fallback to gpt-4o-mini
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+      const modelId = (options['model'] as string | undefined) || defaultModel;
+      const temperature = options['temperature'] !== undefined 
+        ? (options['temperature'] as number)
+        : parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1');
+      
+      console.log('UniversalCleanupLayer: Creating AI completion for transcript length:', cleaned_text.length);
+      console.log('UniversalCleanupLayer: Using model:', modelId);
+      console.log('UniversalCleanupLayer: Using temperature:', temperature);
 
-      const completion = await this.client.chat.completions.create({
-        model: process.env['OPENAI_MODEL'] || "gpt-4o-mini",
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const provider = getAIProvider(modelId);
+      
+      // Get the prompt (includes transcript and instructions)
+      const promptContent = pickPrompt(opts.language, cleaned_text);
+      
+      // Ensure prompt is not empty
+      if (!promptContent || promptContent.trim().length === 0) {
+        throw new Error('UniversalCleanupLayer: Prompt content is empty');
+      }
+      
+      // For Anthropic, we need at least a user message with content
+      // The pickPrompt function returns the full prompt including instructions and transcript
+      // So we use it as the user message
+      const completion = await provider.createCompletion({
+        model: modelId,
         messages: [
           {
-            role: "system",
-            content: pickPrompt(opts.language, cleaned_text)
+            role: "user",
+            content: promptContent
           }
         ],
-        temperature: parseFloat(process.env['OPENAI_TEMPERATURE'] || '0.1'),
+        temperature: temperature,
         response_format: { type: "json_object" },
         max_tokens: 800
       });
 
-      const raw = completion.choices[0]?.message?.content ?? "{}";
+      const raw = completion.content ?? "{}";
       let parsed: any = {};
       try { 
         parsed = JSON.parse(raw); 

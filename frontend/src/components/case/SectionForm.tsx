@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Clock, Merge, Sparkles } from 'lucide-react';
+import { Save, Clock, Merge, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -7,26 +7,59 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useI18n } from '@/lib/i18n';
 import { useCaseStore } from '@/stores/caseStore';
+import { useUserStore } from '@/stores/userStore';
 import { getSectionMeta, isSchemaDrivenEnabled } from '@/lib/formSchema';
 import { CNESST_SECTIONS } from '@/lib/constants';
+import { TemplateDropdown, TemplateJSON } from '@/components/transcription/TemplateDropdown';
+import { VersionSelector } from '@/components/ui/VersionSelector';
 
 interface SectionFormProps {
   sectionId: string;
 }
 
 export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
+  // Get section metadata from schema or fallback to constants FIRST
+  const sectionMeta = getSectionMeta(sectionId);
+  const fallbackSection = CNESST_SECTIONS.find(s => s.id === sectionId);
+  const section = sectionMeta || fallbackSection;
+
+  // Early return if no section found - BEFORE any hooks
+  if (!section) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Section non trouvée
+      </div>
+    );
+  }
+
+  // Now safe to call hooks
   const { t } = useI18n();
-  const { updateSection, getSectionStatus, getAutosaveTimestamp, sections } = useCaseStore();
+  const { updateSection, getSectionStatus, getAutosaveTimestamp, sections, setActiveSection, schema, setSectionSaving, setSectionError } = useCaseStore();
+  const { profile } = useUserStore();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [lastSaved, setLastSaved] = useState<string>('');
   const [isMerging, setIsMerging] = useState(false);
   const [mergeStatus, setMergeStatus] = useState<'idle' | 'merging' | 'complete' | 'error'>('idle');
 
-  // Get section metadata from schema or fallback to constants
-  const sectionMeta = getSectionMeta(sectionId);
-  
-  const fallbackSection = CNESST_SECTIONS.find(s => s.id === sectionId);
-  const section = sectionMeta || fallbackSection;
+  // Navigation functions
+  const handlePreviousSection = () => {
+    if (!schema?.ui?.order) return;
+    const currentIndex = schema.ui.order.indexOf(sectionId);
+    if (currentIndex > 0) {
+      setActiveSection(schema.ui.order[currentIndex - 1]);
+    }
+  };
+
+  const handleNextSection = () => {
+    if (!schema?.ui?.order) return;
+    const currentIndex = schema.ui.order.indexOf(sectionId);
+    if (currentIndex < schema.ui.order.length - 1) {
+      setActiveSection(schema.ui.order[currentIndex + 1]);
+    }
+  };
+
+  const canGoPrevious = schema?.ui?.order ? schema.ui.order.indexOf(sectionId) > 0 : false;
+  const canGoNext = schema?.ui?.order ? schema.ui.order.indexOf(sectionId) < schema.ui.order.length - 1 : false;
   
   // Use section metadata for rendering
   
@@ -39,8 +72,20 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     if (sectionData && sectionData.data) {
       console.log(`📥 Loading data for ${sectionId}:`, sectionData.data);
       setFormData(sectionData.data);
+    } else if (sectionId === 'section_b' && profile && !formData.lastName) {
+      // Initialize Section B with profile data if no existing data
+      const profileName = profile.display_name || '';
+      const nameParts = profileName.split(' ');
+      setFormData({
+        lastName: nameParts[0] || 'CENTOMO',
+        firstName: nameParts[1] || 'Hugo',
+        license: '1-18154',
+        address: '5777 Boul. Gouin Ouest, Suite 370, Montréal, Qc, H4J 1E3',
+        phone: '514-331-1400',
+        email: 'adjointe.orthopedie@gmail.com'
+      });
     }
-  }, [sectionId, sections]);
+  }, [sectionId, sections, profile]);
 
   // Watch for changes in section data (e.g., when saved from dictation interface)
   useEffect(() => {
@@ -57,17 +102,41 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     }
   }, [sections, sectionId, formData]);
 
-  // Auto-save effect
+  // Auto-save effect with database persistence
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (Object.keys(formData).length > 0) {
-        updateSection(sectionId, formData);
-        setLastSaved(new Date().toLocaleTimeString());
+        try {
+          setSectionSaving(sectionId, true);
+          setSectionError(sectionId, false);
+          
+          // Update local state first
+          updateSection(sectionId, formData);
+          
+          // Get current case context for database save
+          const { currentCase, updateNewCaseSection } = useCaseStore.getState();
+          
+          // If we have a case with proper ID, save to database
+          if (currentCase?.id) {
+            await updateNewCaseSection(currentCase.id, sectionId, formData, 'in_progress');
+            console.log('✅ Auto-saved section to database:', sectionId);
+          }
+          
+          setLastSaved(new Date().toLocaleTimeString());
+        } catch (error) {
+          console.error('❌ Failed to auto-save section:', error);
+          setSectionError(sectionId, true);
+          // Still update local state even if database save fails
+          updateSection(sectionId, formData);
+          setLastSaved(new Date().toLocaleTimeString());
+        } finally {
+          setSectionSaving(sectionId, false);
+        }
       }
     }, 2000); // Auto-save after 2 seconds of inactivity
 
     return () => clearTimeout(timer);
-  }, [formData, sectionId, updateSection]);
+  }, [formData, sectionId, updateSection, setSectionSaving, setSectionError]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -76,9 +145,34 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     }));
   };
 
-  const handleSave = () => {
-    updateSection(sectionId, formData);
-    setLastSaved(new Date().toLocaleTimeString());
+  const handleSave = async () => {
+    try {
+      setSectionSaving(sectionId, true);
+      setSectionError(sectionId, false);
+      
+      // Update local state first
+      updateSection(sectionId, formData);
+
+      // Get current case context for database save
+      const { currentCase } = useCaseStore.getState();
+
+      // If we have a case with proper ID, save to database
+      if (currentCase?.id) {
+        const { updateNewCaseSection } = useCaseStore.getState();
+        await updateNewCaseSection(currentCase.id, sectionId, formData, 'in_progress');
+        console.log('✅ Section saved to database:', sectionId);
+      }
+
+      setLastSaved(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('❌ Failed to save section:', error);
+      setSectionError(sectionId, true);
+      // Still update local state even if database save fails
+      updateSection(sectionId, formData);
+      setLastSaved(new Date().toLocaleTimeString());
+    } finally {
+      setSectionSaving(sectionId, false);
+    }
   };
 
   const handleMergeSections = async () => {
@@ -219,9 +313,68 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
       <CardHeader>
         <CardTitle className="text-lg">B. Renseignements sur le médecin</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="text-gray-500 text-center py-8">
-          Les informations du médecin seront automatiquement remplies à partir du profil.
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="lastName">Nom</Label>
+            <Input
+              id="lastName"
+              value={formData.lastName || ''}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              placeholder="Nom de famille"
+            />
+          </div>
+          <div>
+            <Label htmlFor="firstName">Prénom</Label>
+            <Input
+              id="firstName"
+              value={formData.firstName || ''}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
+              placeholder="Prénom"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="license">No permis</Label>
+            <Input
+              id="license"
+              value={formData.license || ''}
+              onChange={(e) => handleInputChange('license', e.target.value)}
+              placeholder="Numéro de permis"
+            />
+          </div>
+          <div>
+            <Label htmlFor="phone">Téléphone</Label>
+            <Input
+              id="phone"
+              value={formData.phone || ''}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Numéro de téléphone"
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="address">Adresse</Label>
+          <Input
+            id="address"
+            value={formData.address || ''}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            placeholder="Adresse complète"
+          />
+        </div>
+        <div>
+          <Label htmlFor="email">Courriel</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email || ''}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            placeholder="Courriel professionnel"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Courriel professionnel (différent de l'adresse de connexion)
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -263,9 +416,20 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
       <CardHeader>
         <CardTitle className="text-lg">C2. Diagnostics acceptés par la CNESST</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="text-gray-500 text-center py-8">
-          Interface pour ajouter des diagnostics sera implémentée.
+      <CardContent className="space-y-2">
+        <div>
+          <Label htmlFor="diagnosticsText">Diagnostics acceptés (texte libre)</Label>
+          <Textarea
+            id="diagnosticsText"
+            value={(formData as any).diagnosticsText || ''}
+            onChange={(e) => handleInputChange('diagnosticsText', e.target.value)}
+            placeholder="Saisir le texte des diagnostics acceptés par la CNESST..."
+            rows={8}
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Ce contenu sera enregistré dans le brouillon et inclus lors de la finalisation.
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -619,11 +783,19 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
   const renderSection11 = () => {
     const { generateSection11FromSections } = useCaseStore();
     const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+    const [selectedVersion, setSelectedVersion] = useState<string | undefined>(undefined);
+    const currentLanguage = 'fr-CA'; // Section 11 is French-only (CNESST)
 
     const handleGenerateFromSections = async () => {
+      if (!selectedTemplate) {
+        console.error('No template selected');
+        return;
+      }
+
       setIsGenerating(true);
       try {
-        await generateSection11FromSections();
+        await generateSection11FromSections(selectedTemplate.id, selectedVersion);
         // Refresh form data after generation
         const currentSection = sections.find(s => s.id === sectionId);
         if (currentSection) {
@@ -643,10 +815,34 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           <CardTitle className="text-lg">11. Conclusion</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Template Selection */}
+          <div className="space-y-2">
+            <Label>Template</Label>
+            <TemplateDropdown
+              currentSection="section_11"
+              currentLanguage={currentLanguage}
+              selectedTemplate={selectedTemplate}
+              onTemplateSelect={setSelectedTemplate}
+            />
+          </div>
+
+          {/* Version Selection */}
+          {selectedTemplate && (
+            <div className="space-y-2">
+              <VersionSelector
+                templateId={selectedTemplate.id || null}
+                value={selectedVersion}
+                onChange={setSelectedVersion}
+                showLabel={true}
+              />
+            </div>
+          )}
+
+          {/* Generate Button */}
           <div className="flex gap-2 mb-4">
             <Button
               onClick={handleGenerateFromSections}
-              disabled={isGenerating}
+              disabled={isGenerating || !selectedTemplate}
               variant="outline"
               size="sm"
             >
@@ -658,7 +854,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
               ) : (
                 <>
                   <span className="mr-2">🤖</span>
-                  Générer à partir des sections 7, 8, 9
+                  Générer à partir des sections 1-10
                 </>
               )}
             </Button>
@@ -676,7 +872,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
           </div>
           
           <div className="text-sm text-gray-500">
-            <p>💡 Cette section peut être générée automatiquement à partir des sections 7, 8 et 9.</p>
+            <p>💡 Cette section peut être générée automatiquement à partir des sections 1-10.</p>
           </div>
         </CardContent>
       </Card>
@@ -924,14 +1120,6 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
     }
   };
 
-  if (!section) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        Section non trouvée
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -994,6 +1182,30 @@ export const SectionForm: React.FC<SectionFormProps> = ({ sectionId }) => {
                 Dernière sauvegarde: {new Date(autosaveTimestamp).toLocaleString()}
               </div>
             )}
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousSection}
+              disabled={!canGoPrevious}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Précédent
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextSection}
+              disabled={!canGoNext}
+              className="flex items-center gap-1"
+            >
+              Suivant
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

@@ -103,7 +103,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <header className="sticky top-0 z-40 bg-[#0b2a4f] border-b border-[#0a2342] shadow-sm">
       <div className="flex items-center justify-between px-4 lg:px-6 py-3">
         {/* Mobile Menu Button */}
         <div className="lg:hidden">
@@ -111,7 +111,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             variant="ghost"
             size="sm"
             onClick={onMobileMenuToggle}
-            className="text-slate-700 hover:bg-blue-50"
+            className="text-white hover:bg-[#0a2342]"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -121,7 +121,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
           {breadcrumbs.map((breadcrumb, index) => (
             <React.Fragment key={breadcrumb.href}>
               {index > 0 && (
-                <ChevronRight className="h-4 w-4 text-gray-400 mx-1" />
+                <ChevronRight className="h-4 w-4 text-white/60 mx-1" />
               )}
               <button
                 onClick={() => handleBreadcrumbClick(breadcrumb.href)}
@@ -134,8 +134,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
                 className={`
                   flex items-center gap-1 px-2 py-1 rounded-md transition-colors
                   ${index === breadcrumbs.length - 1 
-                    ? 'text-slate-900 font-semibold cursor-default' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-blue-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                    ? 'text-white font-semibold cursor-default' 
+                    : 'text-white/80 hover:text-white hover:bg-[#0a2342] cursor-pointer focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0b2a4f]'
                   }
                 `}
                 tabIndex={index === breadcrumbs.length - 1 ? -1 : 0}
@@ -155,7 +155,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             variant="ghost"
             size="sm"
             onClick={toggleLanguage}
-            className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
+            className="flex items-center gap-1 lg:gap-2 text-white hover:bg-[#0a2342]"
           >
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">{inputLanguage.toUpperCase()}</span>
@@ -165,7 +165,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-slate-700 hover:bg-blue-50"
+            className="text-white hover:bg-[#0a2342]"
           >
             <Bell className="h-4 w-4" />
           </Button>
@@ -175,7 +175,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 lg:gap-2 text-slate-700 hover:bg-blue-50"
+              onClick={() => navigate(ROUTES.PROFILE)}
+              className="flex items-center gap-1 lg:gap-2 text-white hover:bg-[#0a2342] cursor-pointer"
+              title="Open Profile"
             >
               <User className="h-4 w-4" />
               <span className="hidden lg:inline">{name}</span>
@@ -188,7 +190,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             size="sm"
             onClick={handleLogout}
             disabled={!user}
-            className="text-slate-700 hover:bg-blue-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+            className="text-white hover:bg-[#0a2342] disabled:text-white/40 disabled:cursor-not-allowed"
             title={user ? "Sign out" : "Not authenticated"}
           >
             <LogOut className="h-4 w-4" />

@@ -46,8 +46,26 @@ const getConfig = async () => {
 
 // Core API function with environment-driven base URL
 export async function api(path: string, init: RequestInit = {}) {
+  // Prepare headers with auth token if available
+  const headers = new Headers(init.headers);
+  
+  // Auto-add auth token from Supabase session if available
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      headers.set('Authorization', `Bearer ${session.access_token}`);
+    }
+  } catch (error) {
+    // Supabase not configured or session unavailable, continue without token
+    // (This is expected in some environments)
+  }
+  
   const url = `${BASE}${path.startsWith('/') ? '' : '/'}${path}`;
-  const res = await fetch(url, { credentials: 'include', ...init });
+  const res = await fetch(url, { 
+    credentials: 'include', 
+    ...init,
+    headers 
+  });
   if (!res.ok) {
     let body = '';
     try { body = await res.text(); } catch {}
@@ -89,6 +107,11 @@ export const apiFetch = async <T = any>(
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
   
+  // Ensure Content-Type header is set for JSON bodies
+  if (init.body && typeof init.body === 'string' && !headers.get('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   // Make request using the new api function
   const response = await api(path, {
     ...init,

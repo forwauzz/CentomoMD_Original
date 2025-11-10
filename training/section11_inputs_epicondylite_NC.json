@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "age": 55,
+    "sex": "F",
+    "dominance": "droitière",
+    "occupation": "préposée aux bénéficiaires",
+    "employment_status": "assignation temporaire",
+    "visit_date_expertise": "2024-06-15"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Contusion coude droit",
+    "Épicondylite coude droit",
+    "Déchirure partielle transfixiante haut grade coude droit"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [],
+    "surgical": [],
+    "at_site": [],
+    "accidents": [],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2022-07-11", "event": "Événement d'origine: contusion et épicondylite coude droit", "source": "fiche réclamation"},
+    {"date": "2022-08-01", "event": "IRM: déchirure partielle transfixiante tendons extenseurs", "source": "radiologie"},
+    {"date": "2022-09-01", "event": "Physiothérapie, ergothérapie, acupuncture", "source": "dossier médical"},
+    {"date": "2023-03-01", "event": "Infiltration PRP par physiatre", "source": "dossier médical"},
+    {"date": "2024-05-27", "event": "Médecin traitant: maintient assignations temporaires, relance physiatrie et chirurgie", "source": "dossier médical"},
+    {"date": "2024-06-15", "event": "En attente 2e infiltration PRP ou chirurgie", "source": "expertise"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Douleur latéral coude droit irradiant avant-bras et main droite",
+      "Éveils nocturnes",
+      "Difficultés pousser/tirer et transferts patients",
+      "Douleur au repos"
+    ],
+    "AVQ_AVD": "Confiance reprendre travail prélésionnel, espoir 2e infiltration PRP"
+  },
+  "S9_examen": {
+    "regions": {
+      "coude": {
+        "amplitude": "diminuée en actif, normale en passif",
+        "pain": "irritabilité épicondyle externe, extension poignet reproduit douleur"
+      }
+    },
+    "findings_summary": "Irritabilité épicondyle externe coude droit. Diminution amplitude articulaire en actif, normale en passif. Extension poignet reproduit douleur. Aucune instabilité coude. Poignet et épaule normaux."
+  },
+  "S10_paraclinique": [
+    "IRM coude droit: déchirure partielle transfixiante masse tendons extenseurs"
+  ],
+  "clinician_interpretations": {
+    "plateau_therapeutique": false,
+    "treatment_sufficiency": "en attente 2e infiltration PRP ou chirurgie",
+    "limitations_exist": true,
+    "limitations_description": "Perte fonction, difficulté effectuer toutes tâches"
+  },
+  "consolidation": false,
+  "AIPP_percent": null,
+  "AIPP_details": null
+}
+

@@ -24,6 +24,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useFeatureFlags } from '@/lib/featureFlags';
 import { TemplateProvider } from '@/contexts/TemplateContext';
 import { TranscriptionProvider } from '@/contexts/TranscriptionContext';
+import { LandingPage } from '@/pages/LandingPage';
+import { PrivacyPolicy } from '@/pages/PrivacyPolicy';
+import { TermsOfService } from '@/pages/TermsOfService';
+import { SecurityPolicy } from '@/pages/SecurityPolicy';
 
 function App() {
   const featureFlags = useFeatureFlags();
@@ -33,22 +37,39 @@ function App() {
       <TranscriptionProvider>
         <BrowserRouter>
       <Routes>
+        {/* Optional public landing page (feature-flagged) */}
+        {featureFlags.landingPage && (
+          <Route path="/" element={<LandingPage />} />
+        )}
         {/* Auth and utility routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/select-clinic" element={<SelectClinicPage />} />
         
+        {/* Legal pages */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/security-policy" element={<SecurityPolicy />} />
+        
         {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Dashboard - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Dashboard - PROTECTED */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
           
-          {/* New Case - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/case/new" element={<NewCasePage />} />
+          {/* New Case - PROTECTED */}
+          <Route path="/case/new" element={
+            <ProtectedRoute>
+              <NewCasePage />
+            </ProtectedRoute>
+          } />
           
           {/* Templates - PROTECTED */}
           <Route path="/templates" element={
@@ -105,11 +126,19 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Settings - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/settings" element={<SettingsPage />} />
+          {/* Settings - PROTECTED */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
           
-          {/* Profile - TODO: Wrap with ProtectedRoute after verification */}
-          <Route path="/profile" element={<ProfilePage />} />
+          {/* Profile - PROTECTED */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
           
           {/* Legacy route for backward compatibility */}
           <Route path="/legacy" element={<LegacyApp />} />

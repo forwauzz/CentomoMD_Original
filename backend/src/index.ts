@@ -3,6 +3,8 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { ENV, logNonSecretEnv } from './config/env.js';
 // import { authenticateUser } from './middleware/auth.js'; // Unused for now
+import { optionalAuth } from './middleware/auth.js';
+import { authMiddleware } from './middleware/authMiddleware.js';
 import { wsAuthCheck } from './ws/auth.js';
 
 console.log('🚀 Server starting - Build:', new Date().toISOString());
@@ -14,8 +16,6 @@ import { createSession, updateSessionSampleRate, cleanupSession } from './ws/ses
 // import { templateLibrary } from './template-library/index.js'; // Archived - using core template registry instead
 import { AIFormattingService } from './services/aiFormattingService.js';
 import { Mode1Formatter } from './services/formatter/mode1.js';
-import { Mode2Formatter } from './services/formatter/mode2.js';
-import { ShadowModeHook } from './services/shadow/ShadowModeHook.js';
 import { TranscriptAnalyzer } from './services/analysis/TranscriptAnalyzer.js';
 import { ProcessingOrchestrator } from './services/processing/ProcessingOrchestrator.js';
 import { TEMPLATE_REGISTRY } from './config/templates.js';
@@ -28,13 +28,14 @@ import { getConfig } from './routes/config.js';
 import { getWsToken } from './routes/auth.js';
 import profileRouter from './routes/profile.js';
 import feedbackRouter from './routes/feedback.js';
-import { caseController } from './controllers/caseController.js';
 import clinicsRouter from './routes/clinics.js';
+import templateCombinationsRouter from './routes/template-combinations.js';
+import templateUsageFeedbackRouter from './routes/template-usage-feedback.js';
 import { securityMiddleware } from './server/security.js';
 import { getPerformanceMetrics } from './middleware/performanceMiddleware.js';
 // import { authMiddleware } from './auth.js'; // Removed for development
 import jwt from 'jsonwebtoken';
-import { bootProbe, getDb } from './database/connection.js';
+import { bootProbe, getDb, getSql } from './database/connection.js';
 import { artifacts } from './database/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import dbRouter from './routes/db.js';
@@ -143,13 +144,7 @@ try {
   console.error('❌ mount /api/feedback:', e);
 }
 
-// Case management routes
-try { 
-  app.use('/api/cases', caseController); 
-  console.log('✅ /api/cases routes mounted'); 
-} catch(e) { 
-  console.error('❌ mount /api/cases:', e);
-}
+// Case management routes handled by dynamic import below
 
 // Clinics routes
 try { 
@@ -157,6 +152,22 @@ try {
   console.log('✅ /api/clinics routes mounted'); 
 } catch(e) { 
   console.error('❌ mount /api/clinics:', e);
+}
+
+// Template Combinations routes
+try { 
+  app.use('/api/template-combinations', templateCombinationsRouter); 
+  console.log('✅ /api/template-combinations routes mounted'); 
+} catch(e) { 
+  console.error('❌ mount /api/template-combinations:', e);
+}
+
+// Template Usage & Feedback routes
+try {
+  app.use('/api/templates', templateUsageFeedbackRouter);
+  console.log('✅ /api/templates routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/templates:', e);
 }
 
 // Transcript Analysis endpoints
@@ -187,7 +198,7 @@ app.post('/api/analyze/transcript', async (req, res) => {
   }
 });
 
-app.post('/api/analyze/compare', async (req, res) => {
+app.post('/api/analyze/compare', optionalAuth, async (req, res) => {
   try {
     const { original, formatted } = req.body;
     
@@ -395,10 +406,10 @@ function checkVoiceCommandProcessing(original: string, formatted: string): numbe
   return stillHasCommands ? 30 : 100;
 }
 
-// A/B Test endpoint
-app.post('/api/analyze/ab-test', async (req, res) => {
+// A/B Test endpoint (optional auth for testing)
+app.post('/api/analyze/ab-test', optionalAuth, async (req, res) => {
   try {
-    const { original, templateA, templateB, language = 'fr' } = req.body;
+    const { original, templateA, templateB, language = 'fr', templateVersionA, templateVersionB } = req.body;
     
     if (!original || !templateA || !templateB) {
       return res.status(400).json({ 
@@ -482,6 +493,7 @@ app.post('/api/analyze/ab-test', async (req, res) => {
         sectionId: 'section_7',
         modeId: templateAConfig.compatibleModes[0] || 'mode1',
         templateId: templateA,
+        templateVersion: templateVersionA, // NEW: Template version selection (optional, backward compatible)
         language: language as 'fr' | 'en',
         content: original,
         correlationId: `ab-test-a-${Date.now()}`
@@ -532,6 +544,7 @@ app.post('/api/analyze/ab-test', async (req, res) => {
         sectionId: 'section_7',
         modeId: templateBConfig.compatibleModes[0] || 'mode1',
         templateId: templateB,
+        templateVersion: templateVersionB, // NEW: Template version selection (optional, backward compatible)
         language: language as 'fr' | 'en',
         content: original,
         correlationId: `ab-test-b-${Date.now()}`
@@ -650,22 +663,40 @@ try {
   console.error('❌ mount /api/sessions:', e);
 }
 
-// Cases routes - Commented out to avoid conflict with caseController
-// try {
-//   const casesRouter = await import('./routes/cases.js');
-//   app.use('/api/cases', casesRouter.default);
-//   console.log('✅ /api/cases routes mounted');
-// } catch(e) {
-//   console.error('❌ mount /api/cases:', e);
-// }
+// Cases routes
+try {
+  const casesRouter = await import('./routes/cases.js');
+  app.use('/api/cases', casesRouter.default);
+  console.log('✅ /api/cases routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/cases:', e);
+}
 
-// Format routes
+// Format routes (optional auth for testing)
 try {
   const formatRouter = await import('./routes/format.js');
-  app.use('/api/format', formatRouter.default);
-  console.log('✅ /api/format routes mounted');
+  app.use('/api/format', optionalAuth, formatRouter.default);
+  console.log('✅ /api/format routes mounted (with optional auth)');
 } catch(e) {
   console.error('❌ mount /api/format:', e);
+}
+
+// Models routes
+try {
+  const modelsRouter = await import('./routes/models.js');
+  app.use('/api/models', modelsRouter.default);
+  console.log('✅ /api/models routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/models:', e);
+}
+
+// Benchmark routes (optional auth for testing)
+try {
+  const benchmarkRouter = await import('./routes/benchmark.js');
+  app.use('/api/benchmark', optionalAuth, benchmarkRouter.default);
+  console.log('✅ /api/benchmark routes mounted (with optional auth)');
+} catch(e) {
+  console.error('❌ mount /api/benchmark:', e);
 }
 
 // Debug routes
@@ -1241,6 +1272,80 @@ app.get('/api/templates/:id/versions',  (req, res) => {
   }
 });
 
+// Template Bundle routes (protected) - MUST be before /api/templates/:section to avoid route conflict
+// Define the GET /api/templates/bundles route directly to ensure it matches before :section
+app.get('/api/templates/bundles', authMiddleware, async (_req, res) => {
+  try {
+    const sql = getSql();
+    
+    const bundles = await sql`
+      SELECT 
+        b.id,
+        b.name,
+        b.enabled,
+        b.default_version_id,
+        v.id as version_id,
+        v.semver,
+        v.status,
+        v.created_at,
+        v.updated_at,
+        COUNT(a.id) as artifacts_count
+      FROM template_bundles b
+      LEFT JOIN template_bundle_versions v ON b.id = v.template_bundle_id
+      LEFT JOIN template_bundle_artifacts a ON v.id = a.template_bundle_version_id
+      GROUP BY b.id, v.id
+      ORDER BY b.name, v.semver DESC
+    `;
+    
+    // Group by bundle
+    const grouped: Record<string, any> = {};
+    for (const row of bundles) {
+      const bundleName = (row as any)['name'];
+      if (!grouped[bundleName]) {
+        grouped[bundleName] = {
+          id: (row as any)['id'],
+          name: bundleName,
+          enabled: (row as any)['enabled'],
+          defaultVersionId: (row as any)['default_version_id'],
+          versions: []
+        };
+      }
+      
+      if ((row as any)['version_id']) {
+        grouped[bundleName].versions.push({
+          id: (row as any)['version_id'],
+          semver: (row as any)['semver'],
+          status: (row as any)['status'],
+          artifactsCount: parseInt((row as any)['artifacts_count']) || 0,
+          createdAt: (row as any)['created_at'],
+          updatedAt: (row as any)['updated_at']
+        });
+      }
+    }
+    
+    return res.json({
+      success: true,
+      bundles: Object.values(grouped)
+    });
+  } catch (error) {
+    console.error('Error listing bundles:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to list bundles',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Mount the bundle router for other routes (POST /upload, GET /:bundleName, DELETE /:bundleName/:version)
+try {
+  const templateBundlesRouter = await import('./routes/templateBundles.js');
+  app.use('/api/templates/bundles', templateBundlesRouter.default);
+  console.log('✅ /api/templates/bundles routes mounted');
+} catch(e) {
+  console.error('❌ mount /api/templates/bundles:', e);
+}
+
 // Get template analytics - Protected with Auth
 app.get('/api/templates/analytics',  (req, res) => {
   const user = (req as any).user;
@@ -1298,7 +1403,7 @@ app.get('/api/templates/analytics',  (req, res) => {
   }
 });
 
-// Get templates by section (must come after /analytics to avoid route conflict) - Protected with Auth
+// Get templates by section (must come after /analytics and /bundles to avoid route conflict) - Protected with Auth
 app.get('/api/templates/:section',  (req, res) => {
   const user = (req as any).user;
   
@@ -1308,6 +1413,11 @@ app.get('/api/templates/:section',  (req, res) => {
     
     if (!section) {
       return res.status(400).json({ success: false, error: 'Missing section parameter' });
+    }
+    
+    // Exclude 'bundles' from section parameter (handled by separate router)
+    if (section === 'bundles') {
+      return res.status(404).json({ success: false, error: 'Route not found' });
     }
     
     // Audit logging for secure event tracking
@@ -1982,122 +2092,7 @@ app.post('/api/format-history-evolution', async (req, res) => {
   }
 });
 
-// Mode 2 Formatting Endpoint (Smart Dictation)
-app.post('/api/format/mode2', async (req, res) => {
-  try {
-    const { 
-      transcript, 
-      section, 
-      language, // Legacy parameter for backward compatibility
-      inputLanguage, 
-      outputLanguage, 
-      case_id, 
-      selected_sections, 
-      extra_dictation,
-      // Template combination parameters
-      templateCombo,
-      verbatimSupport,
-      voiceCommandsSupport,
-      templateId
-    } = req.body;
-    
-    console.log('[API] Mode2 request body:', {
-      section,
-      language,
-      inputLanguage,
-      outputLanguage,
-      templateId,
-      transcriptLength: transcript?.length
-    });
-    
-    if (!transcript || typeof transcript !== 'string') {
-      return res.status(400).json({ 
-        error: 'Transcript is required and must be a string' 
-      });
-    }
-
-    if (!section || !['7', '8', '11'].includes(section)) {
-      return res.status(400).json({ 
-        error: 'Section must be "7", "8", or "11"' 
-      });
-    }
-
-    // Handle backward compatibility and new language parameters
-    const finalInputLanguage = inputLanguage || language || 'fr';
-    const finalOutputLanguage = outputLanguage || ENV.CNESST_SECTIONS_DEFAULT_OUTPUT;
-
-    if (!['fr', 'en'].includes(finalInputLanguage)) {
-      return res.status(400).json({ 
-        error: 'Input language must be either "fr" or "en"' 
-      });
-    }
-
-    if (!['fr', 'en'].includes(finalOutputLanguage)) {
-      return res.status(400).json({ 
-        error: 'Output language must be either "fr" or "en"' 
-      });
-    }
-
-    // Policy gate for CNESST sections
-    if (['7','8','11'].includes(section) && 
-        finalOutputLanguage !== 'fr' && 
-        !ENV.ALLOW_NON_FRENCH_OUTPUT) {
-      return res.status(400).json({ 
-        error: 'CNESST sections must output French when ALLOW_NON_FRENCH_OUTPUT is false' 
-      });
-    }
-
-    // Development mode: no auth required
-
-    // Initialize Mode 2 formatter
-    const formatter = new Mode2Formatter();
-    
-    // Format the transcript with AI
-    const result = await formatter.format(transcript, {
-      language: finalInputLanguage as 'fr' | 'en', // Keep for backward compatibility
-      inputLanguage: finalInputLanguage as 'fr' | 'en',
-      outputLanguage: finalOutputLanguage as 'fr' | 'en',
-      section: section as '7' | '8' | '11',
-      case_id,
-      selected_sections,
-      extra_dictation,
-      // Template combination parameters
-      templateCombo,
-      verbatimSupport,
-      voiceCommandsSupport,
-      templateId
-    });
-
-    // Run shadow mode comparison if enabled
-    const shadowResult = await ShadowModeHook.runShadowComparison({
-      transcript,
-      section: section as '7' | '8' | '11',
-      language: finalInputLanguage as 'fr' | 'en',
-      inputLanguage: finalInputLanguage as 'fr' | 'en',
-      outputLanguage: finalOutputLanguage as 'fr' | 'en',
-      templateId: case_id || templateId
-    });
-
-    // Return the formatted result
-    return res.json({
-      formatted: result.formatted,
-      issues: result.issues,
-      sources_used: result.sources_used,
-      confidence_score: result.confidence_score,
-      clinical_entities: result.clinical_entities,
-      success: true,
-      // Include shadow comparison result in development
-      ...(shadowResult && { shadowComparison: shadowResult })
-    });
-
-  } catch (error) {
-    console.error('Mode 2 formatting error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to format transcript',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+// Mode 2 Formatting Endpoint moved to /api/format/mode2 in format router
 
 // Mode 3 Transcribe Processing Endpoint
 app.post('/api/transcribe/process', async (req, res) => {

@@ -15,6 +15,14 @@ export interface FeatureFlags {
   feedbackServerSync: boolean;
   outputLanguageSelection: boolean;
   caseManagement: boolean;
+  landingPage: boolean;
+  modelSelection: boolean;
+  modelSelectionTranscriptAnalysis: boolean;
+  modelSelectionTemplateCombinations: boolean;
+  modelSelectionDictation: boolean;
+  enhancedTranscriptAnalysis: boolean;
+  templateCombinationsInAnalysis: boolean;
+  ragChat: boolean;
 }
 
 // Default feature flags - all disabled by default for safety
@@ -28,12 +36,21 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   feedbackServerSync: false,
   outputLanguageSelection: false,
   caseManagement: false,
+  landingPage: false,
+  modelSelection: false,
+  modelSelectionTranscriptAnalysis: false,
+  modelSelectionTemplateCombinations: false,
+  modelSelectionDictation: false,
+  enhancedTranscriptAnalysis: false,
+  templateCombinationsInAnalysis: false,
+  ragChat: false,
 };
 
-// Environment-based feature flags
+  // Environment-based feature flags
 export const getFeatureFlags = (): FeatureFlags => {
   // In production, these would come from environment variables or a config service
   // Using Vite's import.meta.env instead of process.env for browser compatibility
+  // Vite only exposes variables prefixed with VITE_ and they are always strings
   const envFlags = {
     voiceCommands: import.meta.env.VITE_FEATURE_VOICE_COMMANDS === 'true',
     verbatim: import.meta.env.VITE_FEATURE_VERBATIM === 'true',
@@ -44,8 +61,16 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: import.meta.env.VITE_FEATURE_FEEDBACK_SERVER_SYNC === 'true',
     outputLanguageSelection: import.meta.env.VITE_FEATURE_OUTPUT_LANGUAGE_SELECTION === 'true',
     caseManagement: import.meta.env.VITE_FEATURE_CASE_MANAGEMENT === 'true',
+    landingPage: import.meta.env.VITE_FEATURE_LANDING_PAGE === 'true',
+    modelSelection: import.meta.env.VITE_FEATURE_MODEL_SELECTION === 'true',
+    modelSelectionTranscriptAnalysis: import.meta.env.VITE_FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS === 'true',
+    modelSelectionTemplateCombinations: import.meta.env.VITE_FEATURE_MODEL_SELECTION_TEMPLATE_COMBINATIONS === 'true',
+    modelSelectionDictation: import.meta.env.VITE_FEATURE_MODEL_SELECTION_DICTATION === 'true',
+    enhancedTranscriptAnalysis: import.meta.env.VITE_FEATURE_ENHANCED_TRANSCRIPT_ANALYSIS === 'true',
+    templateCombinationsInAnalysis: import.meta.env.VITE_FEATURE_TEMPLATE_COMBINATIONS_IN_ANALYSIS === 'true',
+    ragChat: import.meta.env.VITE_FEATURE_RAG_CHAT === 'true',
   };
-
+  
   // For development, we can enable features for testing
   const devFlags = {
     voiceCommands: true, // Enable for development
@@ -57,9 +82,34 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: true, // Enable for development - feedback server sync
     outputLanguageSelection: true, // Enable for development - output language selection
     caseManagement: true, // Enable for development - case management integration
+    landingPage: true, // Enable for testing - landing page feature
+    modelSelection: false, // Keep OFF by default; enable via env var only
+    modelSelectionTranscriptAnalysis: true, // Enable for development/testing - Quick Compare feature
+    modelSelectionTemplateCombinations: false, // Keep OFF by default; enable via env var only
+    modelSelectionDictation: false, // Keep OFF by default; enable via env var only
+    enhancedTranscriptAnalysis: false, // Keep OFF by default; enable via env var only
+    templateCombinationsInAnalysis: false, // Keep OFF by default; enable via env var only
+    ragChat: false, // Keep OFF by default; enable via env var only
   };
 
+  // Debug: Log env flags in development
+  if (import.meta.env.DEV) {
+    const rawValue = import.meta.env.VITE_FEATURE_MODEL_SELECTION_TRANSCRIPT_ANALYSIS;
+    const evaluated = envFlags.modelSelectionTranscriptAnalysis;
+    console.log('[FeatureFlags] Environment flags:', {
+      modelSelectionTranscriptAnalysis: {
+        raw: rawValue,
+        rawType: typeof rawValue,
+        evaluated: evaluated,
+        evaluatedType: typeof evaluated,
+        isExplicitlyTrue: rawValue === 'true',
+        finalValue: envFlags.modelSelectionTranscriptAnalysis !== undefined ? envFlags.modelSelectionTranscriptAnalysis : devFlags.modelSelectionTranscriptAnalysis,
+      },
+    });
+  }
+
   // Use environment flags if available, otherwise use dev flags
+  // For model selection flags, prefer env flags explicitly (don't fall back to devFlags false)
   return {
     voiceCommands: envFlags.voiceCommands || devFlags.voiceCommands,
     verbatim: envFlags.verbatim || devFlags.verbatim,
@@ -70,6 +120,14 @@ export const getFeatureFlags = (): FeatureFlags => {
     feedbackServerSync: envFlags.feedbackServerSync || devFlags.feedbackServerSync,
     outputLanguageSelection: envFlags.outputLanguageSelection || devFlags.outputLanguageSelection,
     caseManagement: envFlags.caseManagement || devFlags.caseManagement,
+    landingPage: envFlags.landingPage || devFlags.landingPage,
+    modelSelection: envFlags.modelSelection || devFlags.modelSelection,
+    modelSelectionTranscriptAnalysis: envFlags.modelSelectionTranscriptAnalysis !== undefined ? envFlags.modelSelectionTranscriptAnalysis : devFlags.modelSelectionTranscriptAnalysis,
+    modelSelectionTemplateCombinations: envFlags.modelSelectionTemplateCombinations !== undefined ? envFlags.modelSelectionTemplateCombinations : devFlags.modelSelectionTemplateCombinations,
+    modelSelectionDictation: envFlags.modelSelectionDictation !== undefined ? envFlags.modelSelectionDictation : devFlags.modelSelectionDictation,
+    enhancedTranscriptAnalysis: envFlags.enhancedTranscriptAnalysis !== undefined ? envFlags.enhancedTranscriptAnalysis : devFlags.enhancedTranscriptAnalysis,
+    templateCombinationsInAnalysis: envFlags.templateCombinationsInAnalysis !== undefined ? envFlags.templateCombinationsInAnalysis : devFlags.templateCombinationsInAnalysis,
+    ragChat: envFlags.ragChat || devFlags.ragChat,
   };
 };
 

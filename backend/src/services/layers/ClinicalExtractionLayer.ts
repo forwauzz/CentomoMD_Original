@@ -4,6 +4,8 @@
  */
 
 import { LayerProcessor, LayerOptions, LayerResult } from './LayerManager.js';
+import { FLAGS } from '../../config/flags.js';
+import { getAIProvider } from '../../lib/aiProvider.js';
 
 export interface ClinicalEntities {
   injury_location: string;
@@ -183,14 +185,16 @@ Respond ONLY in JSON format.
     const formattedPrompt = prompt.replace('{{TRANSCRIPT}}', transcript);
 
     try {
-      // Import OpenAI dynamically to avoid circular dependencies
-      const { OpenAI } = await import('openai');
-      const openai = new OpenAI({
-        apiKey: process.env['OPENAI_API_KEY']
-      });
+      // Use flag-controlled default model
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const provider = getAIProvider(defaultModel);
+
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           {
             role: "system",
@@ -201,7 +205,7 @@ Respond ONLY in JSON format.
         max_tokens: 1000
       });
 
-      const content = response.choices[0]?.message?.content;
+      const content = response.content;
       if (!content) {
         throw new Error('No response from OpenAI');
       }

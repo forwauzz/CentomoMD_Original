@@ -6,6 +6,7 @@
 import { sectionManager } from '../../config/sections.js';
 import { modeManager, ModeConfig } from '../../config/modes.js';
 import { templateManager, TemplateConfig } from '../../config/templates.js';
+import { FLAGS } from '../../config/flags.js';
 
 export interface ProcessingRequest {
   sectionId: string;
@@ -14,11 +15,21 @@ export interface ProcessingRequest {
   language: string;
   content: string;
   correlationId?: string;
+  // NEW: Layer support
+  layerStack?: string[];
+  stack_fingerprint?: string;
+  // NEW: Model selection
+  model?: string;
+  seed?: number;
+  temperature?: number;
+  // NEW: Template version selection
+  templateVersion?: string; // e.g., '1.0.0', 'latest', 'stable', or bundle-specific version
   options?: {
     timeout?: number;
     retryAttempts?: number;
     fallbackMode?: string;
     fallbackTemplate?: string;
+    prompt_hash?: string; // NEW: Prompt version tracking
   };
 }
 
@@ -33,6 +44,15 @@ export interface ProcessingResult {
     processingTime: number;
     warnings: string[];
     errors: string[];
+  };
+  // NEW: Operational metadata
+  operational?: {
+    latencyMs: number;
+    tokensIn?: number;
+    tokensOut?: number;
+    costUsd?: number;
+    model?: string;
+    deterministic?: boolean;
   };
 }
 
@@ -260,9 +280,65 @@ export class ProcessingOrchestrator {
       // Process content based on mode and template
       let processedContent = request.content;
 
+      // NEW: Apply pre-layers if layerStack provided (feature-flagged)
+      if (FLAGS.FEATURE_LAYER_PROCESSING && request.layerStack && request.layerStack.length > 0) {
+        // Filter pre-layers (layers that should run before template)
+        const preLayers = request.layerStack.filter(layerName => this.isPreLayer(layerName));
+        
+        for (const layerName of preLayers) {
+          try {
+            console.log(`[${correlationId}] Applying pre-layer: ${layerName}`);
+            // Get layer processor directly
+            const processor = await this.getLayerProcessor(layerName);
+            if (processor) {
+              const layerResult = await processor.process(processedContent, {
+                language: request.language,
+                correlationId,
+              });
+              if (layerResult.success && layerResult.data?.cleaned_text) {
+                processedContent = layerResult.data.cleaned_text;
+                console.log(`[${correlationId}] Pre-layer ${layerName} processed successfully`);
+              }
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Pre-layer ${layerName} processing failed: ${errorMsg}`);
+            console.error(`[${correlationId}] Pre-layer ${layerName} error:`, errorMsg);
+          }
+        }
+      }
+
       // Apply template processing if template is specified
       if (template) {
         processedContent = await this.applyTemplateProcessing(processedContent, template, request);
+      }
+
+      // NEW: Apply post-layers if layerStack provided (feature-flagged)
+      if (FLAGS.FEATURE_LAYER_PROCESSING && request.layerStack && request.layerStack.length > 0) {
+        // Filter post-layers (layers that should run after template)
+        const postLayers = request.layerStack.filter(layerName => !this.isPreLayer(layerName));
+        
+        for (const layerName of postLayers) {
+          try {
+            console.log(`[${correlationId}] Applying post-layer: ${layerName}`);
+            // Get layer processor directly
+            const processor = await this.getLayerProcessor(layerName);
+            if (processor) {
+              const layerResult = await processor.process(processedContent, {
+                language: request.language,
+                correlationId,
+              });
+              if (layerResult.success && layerResult.data?.cleaned_text) {
+                processedContent = layerResult.data.cleaned_text;
+                console.log(`[${correlationId}] Post-layer ${layerName} processed successfully`);
+              }
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Post-layer ${layerName} processing failed: ${errorMsg}`);
+            console.error(`[${correlationId}] Post-layer ${layerName} error:`, errorMsg);
+          }
+        }
       }
 
       // Apply mode processing
@@ -270,7 +346,19 @@ export class ProcessingOrchestrator {
 
       const processingTime = Date.now() - startTime;
 
-      return {
+      // NEW: Collect operational metadata
+      const operational: ProcessingResult['operational'] = {
+        latencyMs: processingTime,
+        deterministic: request.seed !== undefined,
+      };
+      
+      // Only add model if provided
+      if (request.model) {
+        operational.model = request.model;
+        console.log(`[PROOF] ProcessingOrchestrator - Model requested: ${request.model}, correlationId: ${correlationId}`);
+      }
+
+      const result: ProcessingResult = {
         success: errors.length === 0,
         processedContent,
         metadata: {
@@ -281,8 +369,13 @@ export class ProcessingOrchestrator {
           processingTime,
           warnings,
           errors
-        }
+        },
       };
+      
+      // Add operational metadata if we have it
+      result.operational = operational;
+      
+      return result;
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -333,6 +426,12 @@ export class ProcessingOrchestrator {
       return await this.processSection7AIFormatter(content, template, request);
     }
     
+    // Handle Section 7 v1 template (uses same formatter, different manifest)
+    if (template.id === 'section7-v1') {
+      console.log(`[${correlationId}] Routing to processSection7AIFormatter (v1)`);
+      return await this.processSection7AIFormatter(content, template, request);
+    }
+    
     // Handle Section 7 R&D Pipeline template
     if (template.id === 'section7-rd') {
       console.log(`[${correlationId}] Routing to processSection7Rd`);
@@ -343,6 +442,12 @@ export class ProcessingOrchestrator {
     if (template.id === 'section8-ai-formatter') {
       console.log(`[${correlationId}] Routing to processSection8AIFormatter`);
       return await this.processSection8AIFormatter(content, template, request);
+    }
+    
+    // Handle Section 11 R&D Pipeline template
+    if (template.id === 'section11-rd') {
+      console.log(`[${correlationId}] Routing to processSection11Rd`);
+      return await this.processSection11Rd(content, template, request);
     }
     
     // Handle History of Evolution AI Formatter template
@@ -432,15 +537,9 @@ export class ProcessingOrchestrator {
         contentLength: content.length
       });
       
-      const OpenAI = (await import('openai')).default;
       const fs = await import('fs');
       const path = await import('path');
       
-      // Initialize OpenAI client
-      const openai = new OpenAI({
-        apiKey: process.env['OPENAI_API_KEY'],
-      });
-
       // Load the Word-for-Word AI formatting prompt
       const promptPath = path.join(process.cwd(), 'prompts', 'word-for-word-ai-formatting.md');
       let systemPrompt: string;
@@ -460,15 +559,23 @@ export class ProcessingOrchestrator {
       // Prepare the user message
       const userMessage = `RAW TRANSCRIPT:\n${content}`;
 
-      console.info(`[${correlationId}] Calling OpenAI API`, {
-        model: 'gpt-4o-mini',
+      // Use flag-controlled default model
+      const defaultModel = FLAGS.USE_CLAUDE_SONNET_4_AS_DEFAULT 
+        ? 'claude-3-5-sonnet'  // Maps to claude-sonnet-4-20250514
+        : (process.env['OPENAI_MODEL'] || 'gpt-4o-mini');
+
+      console.info(`[${correlationId}] Calling AI API`, {
+        model: defaultModel,
         inputLength: content.length,
         promptLength: systemPrompt.length
       });
 
-      // Call OpenAI with the custom prompt
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+      // Use AIProvider abstraction instead of direct OpenAI call
+      const { getAIProvider } = await import('../../lib/aiProvider.js');
+      const provider = getAIProvider(defaultModel);
+
+      const response = await provider.createCompletion({
+        model: defaultModel,
         messages: [
           {
             role: 'system',
@@ -483,11 +590,11 @@ export class ProcessingOrchestrator {
         max_tokens: 4000
       });
 
-      const formatted = completion.choices[0]?.message?.content?.trim() || content;
+      const formatted = response.content?.trim() || content;
       
-      console.info(`[${correlationId}] OpenAI API response received`, {
+      console.info(`[${correlationId}] AI API response received`, {
         outputLength: formatted.length,
-        usage: completion.usage
+        usage: response.usage
       });
       
       return {
@@ -542,9 +649,24 @@ export class ProcessingOrchestrator {
       // Use the original Section 7 AI formatter (working version)
       const { Section7AIFormatter } = await import('../../services/formatter/section7AI.js');
       
+      // PROOF: Log model being passed to Section7AIFormatter
+      if (request.model) {
+        console.log(`[PROOF] ProcessingOrchestrator - Passing model to Section7AIFormatter: ${request.model}`, {
+          correlationId,
+          requestedModel: request.model,
+          temperature: request.temperature,
+          seed: request.seed
+        });
+      }
+
       const result = await Section7AIFormatter.formatSection7Content(
         content,
-        request.language as 'fr' | 'en'
+        request.language as 'fr' | 'en',
+        request.model,
+        request.temperature,
+        request.seed,
+        request.templateVersion,
+        template.id
       );
       
       const processedContent = result.formatted;
@@ -586,8 +708,22 @@ export class ProcessingOrchestrator {
       // Import the Section 7 R&D service
       const { section7RdService } = await import('../../services/section7RdService.js');
       
-      // Process through R&D pipeline
-      const result = await section7RdService.processInput(content);
+      // PROOF: Log model being passed to Section7RdService
+      console.log(`[PROOF] ProcessingOrchestrator - Passing model to Section7RdService: ${request.model || 'default'}`, {
+        correlationId: correlationId,
+        requestedModel: request.model,
+        temperature: request.temperature,
+        seed: request.seed
+      });
+      
+      // Process through R&D pipeline (pass model, temperature, seed, templateVersion if provided)
+      const result = await section7RdService.processInput(
+        content,
+        request.model,
+        request.temperature,
+        request.seed,
+        request.templateVersion
+      );
       
       if (!result.success) {
         console.warn(`[${correlationId}] Section 7 R&D pipeline failed, returning original content`);
@@ -652,6 +788,107 @@ export class ProcessingOrchestrator {
     } catch (error) {
       console.error(`[${correlationId}] Section 8 AI formatting error:`, error);
       // Return original content if formatting fails
+      return content;
+    }
+  }
+
+  /**
+   * Process Section 11 R&D Pipeline template
+   * Supports both structured JSON input (for synthesis) and raw transcript (for formatting)
+   */
+  private async processSection11Rd(content: string, template: TemplateConfig, request: ProcessingRequest): Promise<string> {
+    const correlationId = request.correlationId || 'no-correlation-id';
+    
+    try {
+      console.log(`[${correlationId}] Processing Section 11 R&D Pipeline template: ${template.id}`);
+      
+      // Detect input type: try parsing as JSON first
+      let inputData: any;
+      let isJsonInput = false;
+      try {
+        inputData = JSON.parse(content);
+        // Validate it's a structured object (not just a string that happens to be valid JSON)
+        if (typeof inputData === 'object' && inputData !== null && !Array.isArray(inputData)) {
+          isJsonInput = true;
+          console.log(`[${correlationId}] Detected JSON input for Section 11 synthesis`);
+        }
+      } catch (parseError) {
+        // Not JSON, treat as raw transcript
+        isJsonInput = false;
+        console.log(`[${correlationId}] Detected raw transcript input for Section 11 formatting`);
+      }
+      
+      if (isJsonInput) {
+        // JSON input: Use Section 11 R&D pipeline for synthesis
+        const { Section11RdService } = await import('../../services/section11RdService.js');
+        const section11Service = new Section11RdService();
+        
+        const result = await section11Service.processInput(
+          inputData,
+          request.model,
+          request.temperature,
+          request.seed,
+          request.templateVersion
+        );
+        
+        if (!result.success) {
+          console.error(`[${correlationId}] Section 11 R&D pipeline failed`);
+          return content;
+        }
+        
+        const processedContent = result.formattedText;
+        
+        if (result.compliance.failedRules.length > 0) {
+          console.warn(`[${correlationId}] Section 11 compliance issues:`, result.compliance.failedRules);
+        }
+        
+        console.log(`[${correlationId}] Section 11 R&D pipeline completed (JSON input)`, {
+          originalLength: JSON.stringify(inputData).length,
+          processedLength: processedContent.length,
+          templateId: template.id,
+          hasIssues: result.compliance.failedRules.length > 0,
+          rulesScore: result.compliance.rulesScore,
+          processingTime: result.metadata.processingTime
+        });
+        
+        return processedContent;
+      } else {
+        // Raw transcript: Format like Section 7/8 using TemplatePipeline
+        console.log(`[${correlationId}] Formatting Section 11 raw transcript`);
+        
+        const { TemplatePipeline } = await import('../formatter/TemplatePipeline.js');
+        const pipeline = new TemplatePipeline();
+        
+        // Create CleanedInput from raw transcript
+        const cleanedInput = {
+          cleaned_text: content,
+          clinical_entities: {}, // Will be extracted if needed
+          meta: {
+            processing_ms: 0,
+            source: 'smart_dictation' as const,
+            language: ((request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en') as 'fr' | 'en'
+          }
+        };
+        
+        const result = await pipeline.process(cleanedInput, {
+          section: '11',
+          inputLanguage: (request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en',
+          outputLanguage: (request.language === 'fr' || request.language === 'fr-CA') ? 'fr' : 'en',
+          templateId: template.id
+        });
+        
+        console.log(`[${correlationId}] Section 11 transcript formatting completed`, {
+          originalLength: content.length,
+          processedLength: result.formatted.length,
+          templateId: template.id,
+          confidence: result.confidence_score,
+          hasIssues: result.issues.length > 0
+        });
+        
+        return result.formatted;
+      }
+    } catch (error) {
+      console.error(`[${correlationId}] Section 11 processing error:`, error);
       return content;
     }
   }
@@ -783,6 +1020,38 @@ export class ProcessingOrchestrator {
       console.error(`[${correlationId}] Section 7 full formatting error:`, error);
       // Return original content if formatting fails
       return content;
+    }
+  }
+
+  /**
+   * Determine if layer is a pre-layer (runs before template)
+   */
+  private isPreLayer(layerName: string): boolean {
+    // Pre-layers: universal-cleanup, clinical-extraction (run before template)
+    const preLayers = ['universal-cleanup-layer', 'clinical-extraction-layer'];
+    return preLayers.includes(layerName);
+  }
+
+  /**
+   * Get layer processor instance
+   */
+  private async getLayerProcessor(layerName: string): Promise<any> {
+    try {
+      switch (layerName) {
+        case 'clinical-extraction-layer':
+          const { ClinicalExtractionLayer } = await import('../layers/ClinicalExtractionLayer.js');
+          return new ClinicalExtractionLayer();
+        case 'universal-cleanup-layer':
+          const { UniversalCleanupLayer } = await import('../layers/UniversalCleanupLayer.js');
+          return new UniversalCleanupLayer();
+        // Add other layer processors as needed
+        default:
+          console.warn(`No processor found for layer: ${layerName}`);
+          return null;
+      }
+    } catch (error) {
+      console.error(`Failed to load processor for layer ${layerName}:`, error);
+      return null;
     }
   }
 

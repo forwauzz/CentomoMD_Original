@@ -90,7 +90,8 @@
       "audioRequired": false,
       "templateId": "section_c_diag_v1",
       "data": {
-        "diagnostics": []
+        "diagnostics": [],
+        "diagnosticsText": ""
       },
       "lastModified": null
     },

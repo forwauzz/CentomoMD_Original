@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "age": 29,
+    "sex": "F",
+    "dominance": "droitière",
+    "occupation": "préposée aux bénéficiaires",
+    "employment_status": "arrêt travail",
+    "visit_date_expertise": "2024-03-15"
+  },
+  "S1_mandate_points": [
+    "Existence de l'atteinte permanente",
+    "Pourcentage de l'atteinte permanente",
+    "Existence de limitations fonctionnelles",
+    "Évaluation des limitations fonctionnelles"
+  ],
+  "S2_diagnostics_acceptes": [
+    "Entorse lombaire"
+  ],
+  "S5_antecedents_relevants": {
+    "medical": [
+      "Multiples entorses lombaires CNESST consolidées sans séquelle",
+      "Entorse cervico-dorsale CNESST consolidée avec limitation fonctionnelle"
+    ],
+    "surgical": [],
+    "at_site": [],
+    "accidents": [],
+    "habits": []
+  },
+  "S7_historique": [
+    {"date": "2022-08-22", "event": "Événement d'origine: entorse lombaire", "source": "fiche réclamation"},
+    {"date": "2022-09-01", "event": "IRM: hernies discales L4-L5 et L5-S1, sténoses foraminales légères à modérées gauche", "source": "radiologie"},
+    {"date": "2022-10-01", "event": "Physiothérapie, assignations temporaires", "source": "dossier médical"},
+    {"date": "2023-11-30", "event": "Arrêt traitements: grossesse et accouchement", "source": "dossier médical"},
+    {"date": "2024-02-15", "event": "Médecin traitant: maintient arrêt travail congé maternité, optimise analgésie, maintient physiothérapie piscine", "source": "dossier médical"},
+    {"date": "2024-03-15", "event": "En attente reprise physiothérapie et consultation physiatrie", "source": "expertise"}
+  ],
+  "S8_subjectif": {
+    "main_complaints": [
+      "Douleurs lombaires irradiant membre inférieur gauche",
+      "Exacerbation position statique prolongée debout/assise",
+      "Nécessité changer position régulièrement"
+    ],
+    "AVQ_AVD": "Aimerait reprendre travail mais pas en mesure actuellement"
+  },
+  "S9_examen": {
+    "regions": {
+      "rachis_lombaire": {
+        "flexion": 0,
+        "extension": 0,
+        "rotation": 0,
+        "pain": "aucune irritation racines lombaires"
+      }
+    },
+    "findings_summary": "Démarche normale. Marche tandem, talons, bout pieds normale. Forces segmentaires, sensibilité, réflexes normaux. Légère diminution amplitude hanches. Rachis cervical normal."
+  },
+  "S10_paraclinique": [
+    "IRM rachis lombaire: hernies discales L4-L5 et L5-S1, sténoses foraminales légères à modérées gauche"
+  ],
+  "clinician_interpretations": {
+    "plateau_therapeutique": false,
+    "treatment_sufficiency": "en attente reprise physiothérapie et consultation physiatrie",
+    "limitations_exist": true,
+    "limitations_description": "Perte fonction, symptômes douloureux persistants"
+  },
+  "consolidation": false,
+  "AIPP_percent": null,
+  "AIPP_details": null
+}
+

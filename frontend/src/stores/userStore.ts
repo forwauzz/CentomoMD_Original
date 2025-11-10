@@ -10,6 +10,7 @@ export interface UserProfile {
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;
   consent_marketing: boolean;
+  consent_analytics: boolean;
   default_clinic_id?: string;
 }
 

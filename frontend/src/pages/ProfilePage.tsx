@@ -23,6 +23,7 @@ interface ProfileData {
   locale: 'en-CA' | 'fr-CA';
   consent_pipeda: boolean;
   consent_marketing: boolean;
+  consent_analytics: boolean; // Required to match UserProfile type
   default_clinic_id?: string;
 }
 
@@ -79,13 +80,17 @@ export const ProfilePage: React.FC = () => {
     locale: 'en-CA',
     consent_pipeda: false,
     consent_marketing: false,
+    consent_analytics: true, // Default to true
   });
 
-  // Load profile data on component mount
+  // Load profile data on component mount and when user changes
   useEffect(() => {
-    loadProfile();
-    checkPasswordAuth();
-  }, []);
+    if (user?.id) {
+      console.log('🔍 ProfilePage: User ID changed, loading profile for:', user.id);
+      loadProfile();
+      checkPasswordAuth();
+    }
+  }, [user?.id]);
 
   const checkPasswordAuth = async () => {
     try {
@@ -105,11 +110,30 @@ export const ProfilePage: React.FC = () => {
     try {
       console.log('🔍 ProfilePage: Starting profile load...');
       setLoading(true);
+      
+      // Clear any persisted profile data to ensure fresh data
+      const { clearProfile } = useUserStore.getState();
+      clearProfile();
+      
+      // Also clear localStorage directly to ensure no stale data
+      try {
+        localStorage.removeItem('user-storage');
+        console.log('🔍 ProfilePage: Cleared localStorage for user-storage');
+      } catch (error) {
+        console.warn('⚠️ ProfilePage: Failed to clear localStorage:', error);
+      }
+      
       const data = await profileService.getProfile();
       console.log('🔍 ProfilePage: Profile data received:', data);
       
       // Ensure we have valid profile data
       if (data && typeof data === 'object') {
+        console.log('🔍 ProfilePage: Setting profile data:', {
+          display_name: data.display_name,
+          email: data.email,
+          user_id: data.user_id
+        });
+        
         setProfile(data);
         setFormData(data);
         setErrors({});
@@ -131,6 +155,7 @@ export const ProfilePage: React.FC = () => {
           locale: 'fr-CA',
           consent_pipeda: false,
           consent_marketing: false,
+          consent_analytics: true, // Default to true
         };
         setProfile(defaultProfile);
         setFormData(defaultProfile);
@@ -152,6 +177,7 @@ export const ProfilePage: React.FC = () => {
         locale: 'en-CA',
         consent_pipeda: false,
         consent_marketing: false,
+        consent_analytics: true, // Default to true
       };
       setProfile(fallbackData);
       setFormData(fallbackData);

@@ -21,7 +21,7 @@ export const AppLayout: React.FC = () => {
 
       {/* Primary Sidebar */}
       <div className={`
-        fixed lg:relative z-50
+        fixed lg:relative z-50 h-screen
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         transition-transform duration-300 ease-in-out
       `}>
@@ -34,7 +34,7 @@ export const AppLayout: React.FC = () => {
         <AppHeader onMobileMenuToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
         
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <div className="container mx-auto px-4 lg:px-6 py-4 lg:py-6">
             <Outlet />
           </div>

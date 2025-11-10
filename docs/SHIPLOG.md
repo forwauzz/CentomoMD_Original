@@ -1,5 +1,7 @@
 # SHIPLOG
 
+## 2025-10-28 20:30 — [recent-cases-sync] fix(cleanup): resolve universal cleanup layer authentication and UI issues — commit:e768bdc
+
 ## 2025-01-12 11:05 — [rnd_section7_pipeline] feat(rd-pipeline): migrate Section 7 R&D pipeline to backend directory for EC2 deployment — commit:c69e877
 
 ## 2025-01-12 01:45 — [default-transcript-output-language-fr] feat(output-language): implement comprehensive output language selection feature — commit:35c25cf
@@ -85,4 +87,5 @@
 ## 2024-12-19 15:20 — [feature/minimal-auth-testing] docs(auth): add minimal auth configuration documentation and guides — commit:c29d5c1
 2 0 2 5 - 0 1 - 1 0   1 3 : 5 1     [ f e a t / s m a r t - d i c t a t i o n - t e m p l a t e - i m p r o v e m e n t s ]   f e a t ( s e c t i o n 7 ) :   e n h a n c e   p r o m p t   f o r   e x a c t   d o c t o r   n a m e   p r e s e r v a t i o n     c o m m i t : 1 3 5 8 9 b 1 
  
+ 2 0 2 4 - 1 0 - 2 8   2 1 : 1 5     [ r e c e n t - c a s e s - s y n c ]   f i x ( a u t h ) :   r e s o l v e   p r o f i l e   d i s p l a y   a n d   c a s e s   a u t h e n t i c a t i o n   i s s u e s     c o m m i t : 7 b 9 4 a 1 7  
  
