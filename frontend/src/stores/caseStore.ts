@@ -723,8 +723,30 @@ export const useCaseStore = create<CaseState>()(
       createNewCase: async (patientInfo?: any): Promise<string> => {
         set({ isLoading: true });
         try {
+          // Get user profile to include clinic_id
+          const profile = useUserStore.getState().profile;
+          let clinicId = profile?.default_clinic_id;
+          
+          // If no default clinic, try to get from user auth metadata as fallback
+          if (!clinicId) {
+            try {
+              const { useAuth } = await import('@/lib/authClient');
+              // Note: useAuth is a hook, not a store, so we need to access it differently
+              // For now, we'll rely on the profile being set correctly
+              console.warn('⚠️ No default_clinic_id in profile. User should set default clinic in profile settings.');
+            } catch (e) {
+              // Ignore import errors
+            }
+          }
+          
+          // If still no clinic_id, throw a helpful error
+          if (!clinicId) {
+            throw new Error('No clinic ID found. Please set a default clinic in your profile settings before creating cases.');
+          }
+
           // Create case with auto-save enabled
           const caseData = {
+            clinic_id: clinicId,
             patientInfo: patientInfo || {},
             sections: {},
             metadata: {
@@ -747,7 +769,7 @@ export const useCaseStore = create<CaseState>()(
           console.log('✅ Case created successfully:', caseId, result.data);
           
           // Auto-save the case locally for immediate access
-          const profile = useUserStore.getState().profile;
+          // profile is already declared above
           const localCase: Case = {
             id: caseId,
             user_id: profile?.user_id || 'unknown-user',

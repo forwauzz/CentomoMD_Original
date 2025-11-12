@@ -15,8 +15,8 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Dark purple gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2a0f2a] via-[#4a1e4a] to-[#4a1e4a]" />
+      {/* CNESST green gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#007a2e] via-[#009639] to-[#009639]" />
 
       {/* Subtle light radial accents */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(closest-side, #dfe8f5, transparent)' }} />
@@ -30,7 +30,7 @@ export const LandingPage: React.FC = () => {
         <div className="mt-10">
           <Button
             size="lg"
-            className="bg-white hover:bg-slate-50 text-[#4a1e4a] px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-200 transform hover:scale-105"
+            className="bg-white hover:bg-slate-50 text-[#009639] px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-200 transform hover:scale-105"
             onClick={() => navigate('/login')}
           >
             Sign In

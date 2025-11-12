@@ -118,6 +118,9 @@ export const ROUTES = {
   VERBATIM: '/verbatim',
   MACROS: '/macros',
   TRANSCRIPT_ANALYSIS: '/transcript-analysis',
+  REVIEW_CASES: '/review-cases',
+  CASE_EDITOR: '/case/edit',
+  ADMIN_DASHBOARD: '/admin',
   SETTINGS: '/settings',
   PROFILE: '/profile',
 } as const;

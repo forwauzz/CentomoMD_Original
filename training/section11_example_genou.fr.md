@@ -25,3 +25,4 @@ Le travailleur devrait éviter :
 De rester agenouillé plus de 1 à 2 heures consécutives sans pouvoir changer de position.
 Il doit bénéficier de pouvoir porter des protecteurs / genouillères lors de ses quarts de travail.
 
+

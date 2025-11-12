@@ -36,3 +36,4 @@ J'attribue des limitations fonctionnelles.
 Pour son membre inférieur droit, la travailleuse doit éviter de marcher en terrain accidenté ou glissant. Elle doit en aucun temps travailler en position accroupie ou dans des environnements instables. Elle doit éviter de monter et descendre plusieurs escaliers à la fois dans la même journée. Elle doit éviter les positions statiques prolongées de plus de 45 minutes et les marches prolongées de plus de 30 minutes.
 Pour son membre supérieur droit, la travailleuse doit éviter de tirer, pousser et soutenir des charges de plus de 7.5 kg avec son membre supérieur droit. La travailleuse doit éviter les mouvements répétitifs avec son coude et son poignet droit surtout en extension. En aucun temps elle doit subir des vibrations ou des contrecoups directs ou indirects à son membre supérieur droit.
 
+

@@ -10,9 +10,9 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    /* Dark purple theme primary */
-    --primary: 270 50% 20%;
-    --primary-foreground: 210 40% 98%;
+    /* CNESST green theme primary */
+    --primary: 142 71% 35%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 270 50% 20%;
+    --ring: 142 71% 35%;
     --radius: 0.5rem;
   }
 
@@ -34,9 +34,9 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    /* Dark purple theme primary (dark mode) */
-    --primary: 270 50% 20%;
-    --primary-foreground: 210 40% 98%;
+    /* CNESST green theme primary (dark mode) */
+    --primary: 142 71% 35%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;

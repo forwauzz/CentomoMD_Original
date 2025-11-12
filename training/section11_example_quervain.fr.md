@@ -28,3 +28,4 @@ J'ajoute :
 Le travailleur ne peut réaliser des gestes rapidement nécessitant de la dextérité fine. Il ne peut manipuler ou saisir des objets du bout des doigts, faire du travail de précision (guider, placer, régler, ajuster) et exécuter des mouvements rapides des doigts.
 Le travailleur nécessite des gants chauffants s'il doit travailler à l'extérieur lors de température froide.
 
+

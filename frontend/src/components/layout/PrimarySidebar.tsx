@@ -15,7 +15,11 @@ import {
   FileText as Template,
   Clock,
   Play,
-  Trash2
+  Trash2,
+  ClipboardCheck,
+  Shield,
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -40,6 +44,7 @@ interface SidebarItem {
   href: string;
   isBottom?: boolean;
   hasSubmenu?: boolean;
+  badgeCount?: number;
 }
 
 interface RecentCase {
@@ -65,8 +70,9 @@ export const PrimarySidebar: React.FC = () => {
   const [recentCases, setRecentCases] = useState<RecentCase[]>([]);
   const [isLoadingCases, setIsLoadingCases] = useState(false);
   const [isClinicModalOpen, setIsClinicModalOpen] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(2);
 
-  const sidebarItems: SidebarItem[] = [
+  const sidebarItems: SidebarItem[] = React.useMemo(() => [
     {
       id: 'dashboard',
       label: t('dashboard'),
@@ -120,6 +126,37 @@ export const PrimarySidebar: React.FC = () => {
       href: ROUTES.TRANSCRIPT_ANALYSIS,
     },
     {
+      id: 'review-cases',
+      label: 'Review Cases',
+      icon: ClipboardCheck,
+      href: ROUTES.REVIEW_CASES,
+      badgeCount: pendingReviewCount,
+    },
+    {
+      id: 'analytics',
+      label: t('analytics'),
+      icon: BarChart3,
+      href: '/analytics',
+    },
+    {
+      id: 'calendar',
+      label: t('calendar'),
+      icon: Calendar,
+      href: '/calendar',
+    },
+    {
+      id: 'admin',
+      label: 'Administration',
+      icon: Shield,
+      href: ROUTES.ADMIN_DASHBOARD,
+    },
+    {
+      id: 'audit-log',
+      label: t('auditLog'),
+      icon: FileText,
+      href: '/audit-log',
+    },
+    {
       id: 'settings',
       label: t('settings'),
       icon: Settings,
@@ -133,7 +170,7 @@ export const PrimarySidebar: React.FC = () => {
       href: ROUTES.PROFILE,
       isBottom: true,
     },
-  ];
+  ], [pendingReviewCount, featureFlags.macros, t]);
 
   // Load recent cases when submenu is expanded
   useEffect(() => {
@@ -141,6 +178,24 @@ export const PrimarySidebar: React.FC = () => {
       loadRecentCases();
     }
   }, [showRecentCases, featureFlags.caseManagement, sidebarCollapsed]);
+
+  // Load pending review count
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        // Mock count for now - replace with actual API call
+        // const response = await apiFetch('/api/cases/pending-review/count');
+        // setPendingReviewCount(response.count || 0);
+        setPendingReviewCount(2);
+      } catch (error) {
+        console.error('Failed to load pending review count:', error);
+      }
+    };
+    loadPendingCount();
+    // Refresh count every 30 seconds
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadRecentCases = async () => {
     setIsLoadingCases(true);
@@ -282,7 +337,7 @@ export const PrimarySidebar: React.FC = () => {
             className={cn(
               'w-full justify-start gap-3 h-10',
               isActive && 'bg-blue-500 text-white hover:bg-blue-600',
-              !isActive && 'hover:bg-[#3a153a] text-white'
+              !isActive && 'hover:bg-[#007a2e] text-white'
             )}
             onClick={handleNewCase}
             aria-current={isActive ? 'page' : undefined}
@@ -296,7 +351,7 @@ export const PrimarySidebar: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 h-8 text-xs text-white hover:bg-[#3a153a]"
+              className="w-full justify-start gap-2 h-8 text-xs text-white hover:bg-[#007a2e]"
               onClick={() => setShowRecentCases(!showRecentCases)}
             >
               <Clock className="h-3 w-3" />
@@ -323,7 +378,7 @@ export const PrimarySidebar: React.FC = () => {
                   recentCases.map((caseItem) => (
                     <div
                       key={caseItem.id}
-                      className="border border-white/20 rounded p-2 hover:bg-[#3a153a] transition-colors cursor-pointer bg-[#4a1e4a]"
+                      className="border border-white/20 rounded p-2 hover:bg-[#007a2e] transition-colors cursor-pointer bg-[#009639]"
                       onClick={() => handleResumeCase(caseItem.id)}
                     >
                       <div className="flex items-start justify-between mb-1">
@@ -396,9 +451,9 @@ export const PrimarySidebar: React.FC = () => {
         variant={isActive ? 'default' : 'ghost'}
         size="sm"
         className={cn(
-          'w-full justify-start gap-3 h-10',
+          'w-full justify-start gap-3 h-10 relative',
           isActive && 'bg-blue-500 text-white hover:bg-blue-600',
-          !isActive && 'hover:bg-[#3a153a] text-white'
+          !isActive && 'hover:bg-[#007a2e] text-white'
         )}
         onClick={() => handleItemClick(item.href)}
         aria-current={isActive ? 'page' : undefined}
@@ -406,7 +461,19 @@ export const PrimarySidebar: React.FC = () => {
       >
         <Icon className="h-4 w-4 flex-shrink-0" />
         {!sidebarCollapsed && (
-          <span className="truncate">{item.label}</span>
+          <>
+            <span className="truncate flex-1">{item.label}</span>
+            {item.badgeCount !== undefined && item.badgeCount > 0 && (
+              <Badge className="ml-auto bg-red-600 text-white text-xs min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                {item.badgeCount}
+              </Badge>
+            )}
+          </>
+        )}
+        {sidebarCollapsed && item.badgeCount !== undefined && item.badgeCount > 0 && (
+          <Badge className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full">
+            {item.badgeCount}
+          </Badge>
         )}
       </Button>
     );
@@ -434,7 +501,7 @@ export const PrimarySidebar: React.FC = () => {
   return (
     <div
       className={cn(
-        'flex flex-col bg-[#4a1e4a] border-r border-[#3a153a] transition-all duration-300 ease-in-out h-full',
+        'flex flex-col bg-[#009639] border-r border-[#007a2e] transition-all duration-300 ease-in-out h-full',
         sidebarCollapsed ? 'w-20' : 'w-70'
       )}
       style={{
@@ -442,7 +509,7 @@ export const PrimarySidebar: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[#3a153a]">
+      <div className="flex items-center justify-between p-4 border-b border-[#007a2e]">
         {!sidebarCollapsed && (
           <div
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -465,7 +532,7 @@ export const PrimarySidebar: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className="h-8 w-8 p-0 hover:bg-[#3a153a] text-white"
+          className="h-8 w-8 p-0 hover:bg-[#007a2e] text-white"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!sidebarCollapsed}
         >
@@ -488,7 +555,7 @@ export const PrimarySidebar: React.FC = () => {
       </div>
 
       {/* Bottom items - Fixed at bottom */}
-      <div className="p-2 space-y-1 border-t border-[#3a153a] bg-[#4a1e4a] flex-shrink-0">
+      <div className="p-2 space-y-1 border-t border-[#007a2e] bg-[#009639] flex-shrink-0">
         {sidebarItems
           .filter((item) => item.isBottom)
           .map(renderSidebarItem)}

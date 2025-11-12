@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Globe, Bell, User, LogOut, ChevronRight, Home, Menu } from 'lucide-react';
+import { Globe, Bell, User, LogOut, ChevronRight, Home, Menu, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/lib/i18n';
@@ -103,15 +103,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-[#4a1e4a] border-b border-[#3a153a] shadow-sm">
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between px-4 lg:px-6 py-3">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mr-4">
+          <Mic className="h-6 w-6 text-[#009639]" />
+          <h1 className="text-lg font-bold text-[#009639]">techemd</h1>
+        </div>
+        
         {/* Mobile Menu Button */}
         <div className="lg:hidden">
           <Button
             variant="ghost"
             size="sm"
             onClick={onMobileMenuToggle}
-            className="text-white hover:bg-[#3a153a]"
+            className="text-gray-700 hover:bg-gray-100"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -121,7 +127,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
           {breadcrumbs.map((breadcrumb, index) => (
             <React.Fragment key={breadcrumb.href}>
               {index > 0 && (
-                <ChevronRight className="h-4 w-4 text-white/60 mx-1" />
+                <ChevronRight className="h-4 w-4 text-gray-400 mx-1" />
               )}
               <button
                 onClick={() => handleBreadcrumbClick(breadcrumb.href)}
@@ -134,8 +140,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
                 className={`
                   flex items-center gap-1 px-2 py-1 rounded-md transition-colors
                   ${index === breadcrumbs.length - 1 
-                    ? 'text-white font-semibold cursor-default' 
-                    : 'text-white/80 hover:text-white hover:bg-[#3a153a] cursor-pointer focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#4a1e4a]'
+                    ? 'text-gray-900 font-semibold cursor-default' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#009639] focus:ring-offset-2 focus:ring-offset-white'
                   }
                 `}
                 tabIndex={index === breadcrumbs.length - 1 ? -1 : 0}
@@ -155,7 +161,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             variant="ghost"
             size="sm"
             onClick={toggleLanguage}
-            className="flex items-center gap-1 lg:gap-2 text-white hover:bg-[#3a153a]"
+            className="flex items-center gap-1 lg:gap-2 text-gray-700 hover:bg-gray-100"
           >
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">{inputLanguage.toUpperCase()}</span>
@@ -165,13 +171,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-white hover:bg-[#3a153a]"
+            className="text-gray-700 hover:bg-gray-100"
           >
             <Bell className="h-4 w-4" />
           </Button>
 
           {/* Clinic name - Demo purposes only */}
-          <div className="hidden lg:flex items-center px-3 py-1.5 text-sm text-white/90 border border-white/20 rounded-md bg-white/5">
+          <div className="hidden lg:flex items-center px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-md bg-gray-50">
             <span>Clinique St Justine Orthopedie</span>
           </div>
 
@@ -181,7 +187,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
               variant="ghost"
               size="sm"
               onClick={() => navigate(ROUTES.PROFILE)}
-              className="flex items-center gap-1 lg:gap-2 text-white hover:bg-[#3a153a] cursor-pointer"
+              className="flex items-center gap-1 lg:gap-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
               title="Open Profile"
             >
               <User className="h-4 w-4" />
@@ -195,7 +201,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle }) => {
             size="sm"
             onClick={handleLogout}
             disabled={!user}
-            className="text-white hover:bg-[#3a153a] disabled:text-white/40 disabled:cursor-not-allowed"
+            className="text-gray-700 hover:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             title={user ? "Sign out" : "Not authenticated"}
           >
             <LogOut className="h-4 w-4" />

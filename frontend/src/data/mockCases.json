@@ -1,0 +1,155 @@
+[
+  {
+    "id": "case-2024-102",
+    "case_id": "2024-102",
+    "worker_name": "Jean Dupont",
+    "injury_date": "2024-01-15",
+    "assigned_doctor": "doctor-1",
+    "status": "in_progress",
+    "sections": {
+      "section_a": {
+        "completed": true,
+        "content": "Renseignements sur le travailleur complétés"
+      },
+      "section_b": {
+        "completed": true,
+        "content": "Renseignements sur le médecin complétés"
+      },
+      "section_7": {
+        "completed": false,
+        "content": ""
+      }
+    },
+    "compliance": {
+      "status": "needs_review",
+      "flags": [
+        {
+          "type": "missing_field",
+          "severity": "high",
+          "section": "section_7",
+          "message": "Section 7 (Identification) is incomplete"
+        }
+      ]
+    },
+    "timeline": [
+      {
+        "timestamp": "2024-01-20T10:00:00Z",
+        "action": "created",
+        "user": "admin-1"
+      },
+      {
+        "timestamp": "2024-01-20T11:30:00Z",
+        "action": "assigned",
+        "user": "admin-1",
+        "details": "Assigned to Dr. Harry Durusso"
+      }
+    ],
+    "source": {
+      "type": "cnesst",
+      "name": "CNESST"
+    },
+    "claimId": "2024-102",
+    "patientName": "Jean Dupont"
+  },
+  {
+    "id": "case-2024-103",
+    "case_id": "2024-103",
+    "worker_name": "Marie Tremblay",
+    "injury_date": "2024-01-18",
+    "assigned_doctor": "doctor-2",
+    "status": "completed",
+    "sections": {
+      "section_a": {
+        "completed": true,
+        "content": "Renseignements sur le travailleur complétés"
+      },
+      "section_b": {
+        "completed": true,
+        "content": "Renseignements sur le médecin complétés"
+      },
+      "section_7": {
+        "completed": true,
+        "content": "Identification complète avec toutes les informations requises"
+      }
+    },
+    "compliance": {
+      "status": "compliant",
+      "flags": []
+    },
+    "timeline": [
+      {
+        "timestamp": "2024-01-19T09:00:00Z",
+        "action": "created",
+        "user": "admin-1"
+      },
+      {
+        "timestamp": "2024-01-19T09:15:00Z",
+        "action": "assigned",
+        "user": "admin-1",
+        "details": "Assigned to Dr. Marie Dubois"
+      },
+      {
+        "timestamp": "2024-01-22T14:30:00Z",
+        "action": "completed",
+        "user": "doctor-2"
+      }
+    ],
+    "source": {
+      "type": "employer",
+      "name": "Employeur"
+    },
+    "claimId": "2024-103",
+    "patientName": "Marie Tremblay"
+  },
+  {
+    "id": "case-2024-104",
+    "case_id": "2024-104",
+    "worker_name": "Pierre Gagnon",
+    "injury_date": "2024-01-20",
+    "assigned_doctor": "doctor-1",
+    "status": "pending_review",
+    "sections": {
+      "section_a": {
+        "completed": true,
+        "content": "Renseignements sur le travailleur complétés"
+      },
+      "section_b": {
+        "completed": true,
+        "content": "Renseignements sur le médecin complétés"
+      },
+      "section_7": {
+        "completed": true,
+        "content": "Identification complète"
+      }
+    },
+    "compliance": {
+      "status": "compliant",
+      "flags": []
+    },
+    "timeline": [
+      {
+        "timestamp": "2024-01-21T08:00:00Z",
+        "action": "created",
+        "user": "admin-1"
+      },
+      {
+        "timestamp": "2024-01-21T08:30:00Z",
+        "action": "assigned",
+        "user": "admin-1",
+        "details": "Assigned to Dr. Harry Durusso"
+      },
+      {
+        "timestamp": "2024-01-23T16:00:00Z",
+        "action": "completed",
+        "user": "doctor-1"
+      }
+    ],
+    "source": {
+      "type": "clinic",
+      "name": "Clinic"
+    },
+    "claimId": "2024-104",
+    "patientName": "Pierre Gagnon"
+  }
+]
+

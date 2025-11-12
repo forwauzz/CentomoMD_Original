@@ -35,3 +35,4 @@ J'attribue des limitations fonctionnelles résultant de la lésion professionnel
 Évaluation des limitations fonctionnelles résultant de la lésion professionnelle :
 Le travailleur doit éviter la marche prolongée (plus de 20 minutes), marcher en terrain accidenté ou glissant. Éviter de monter descendre des escaliers à plusieurs reprises ou manière fréquente dans la journée et éviter de monter dans des échelles, escabeaux, échafauds. Il doit éviter la position debout statique de plus de 30 minutes.
 
+

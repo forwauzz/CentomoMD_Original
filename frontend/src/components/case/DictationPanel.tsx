@@ -1,120 +1,248 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mic, ArrowRight, Info, Link } from 'lucide-react';
+/**
+ * Condensed Dictation Panel Component
+ * Simplified dictation interface for Section 8
+ */
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useI18n } from '@/lib/i18n';
-import { ROUTES } from '@/lib/constants';
-import { useCaseStore } from '@/stores/caseStore';
-import { useFeatureFlags } from '@/lib/featureFlags';
+import { Mic, Square, Sparkles } from 'lucide-react';
+import { useTranscription } from '@/hooks/useTranscription';
+import { TemplateDropdown, TemplateJSON } from '@/components/transcription/TemplateDropdown';
+import { RichTextEditor } from '@/components/case/RichTextEditor';
+import { useUIStore } from '@/stores/uiStore';
+import { useBackendConfig } from '@/hooks/useBackendConfig';
+import { apiFetch } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 interface DictationPanelProps {
-  sectionTitle: string;
-  caseId?: string;
-  sectionId?: string;
+  onTranscriptReady: (transcript: string) => void;
+  onFormattedReady: (formatted: string) => void;
+  initialTranscript?: string;
 }
 
-export const DictationPanel: React.FC<DictationPanelProps> = ({ 
-  sectionTitle, 
-  caseId, 
-  sectionId 
+export const DictationPanel: React.FC<DictationPanelProps> = ({
+  onTranscriptReady,
+  onFormattedReady,
+  initialTranscript = ''
 }) => {
-  const navigate = useNavigate();
-  const { t } = useI18n();
-  const { getCaseContext } = useCaseStore();
-  const featureFlags = useFeatureFlags();
-  
-  const [caseContext, setCaseContext] = useState<any>(null);
+  const addToast = useUIStore(state => state.addToast);
+  const { config: backendConfig } = useBackendConfig();
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [formattedText, setFormattedText] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateJSON | null>(null);
+  const [isFormatting, setIsFormatting] = useState(false);
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
-  // Check if case management is enabled
-  const isCaseManagementEnabled = featureFlags.caseManagement || false;
+  const {
+    isRecording,
+    currentTranscript,
+    startRecording,
+    stopRecording,
+    error
+  } = useTranscription(undefined, 'fr-CA', 'smart_dictation');
 
+  // Don't initialize with initial transcript - start blank for live transcription
+
+  // Update live transcript when currentTranscript changes (from recording)
   useEffect(() => {
-    if (isCaseManagementEnabled && caseId && sectionId) {
-      const context = getCaseContext(caseId, sectionId);
-      setCaseContext(context);
+    if (currentTranscript && currentTranscript !== liveTranscript) {
+      setLiveTranscript(currentTranscript);
+      onTranscriptReady(currentTranscript);
     }
-  }, [isCaseManagementEnabled, caseId, sectionId, getCaseContext]);
+  }, [currentTranscript]);
 
-  const handleGoToDictation = () => {
-    if (isCaseManagementEnabled && caseId && sectionId) {
-      // Navigate to dictation with case context
-      navigate(`${ROUTES.DICTATION}?caseId=${caseId}&sectionId=${sectionId}`);
+  // Scroll to bottom when transcript updates
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [liveTranscript]);
+
+  const handleStartStop = () => {
+    if (isRecording) {
+      stopRecording();
+      if (currentTranscript) {
+        setLiveTranscript(currentTranscript);
+        onTranscriptReady(currentTranscript);
+      }
     } else {
-      // Fallback to original behavior
-      navigate(ROUTES.DICTATION);
+      startRecording();
     }
   };
 
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplate || !liveTranscript.trim()) {
+      addToast({
+        type: 'warning',
+        title: 'Données manquantes',
+        message: 'Veuillez sélectionner un template et avoir un transcript.'
+      });
+      return;
+    }
+
+    setIsFormatting(true);
+    try {
+      // Use the same API endpoint as TranscriptionInterface
+      const result = await apiFetch('/api/format/mode2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: liveTranscript,
+          section: '8',
+          language: 'fr',
+          inputLanguage: 'fr',
+          outputLanguage: 'fr',
+          useUniversal: true,
+          templateRef: selectedTemplate.id,
+          templateId: selectedTemplate.id,
+          templateCombo: selectedTemplate.meta?.templateConfig?.config?.templateCombo || undefined
+        })
+      });
+
+      // Extract formatted text from response
+      const formatted = result.formatted || result.content || liveTranscript;
+      setFormattedText(formatted);
+      onFormattedReady(formatted);
+      
+      addToast({
+        type: 'success',
+        title: 'Template appliqué',
+        message: 'Le transcript a été formaté avec succès.'
+      });
+    } catch (error) {
+      console.error('Template application error:', error);
+      addToast({
+        type: 'error',
+        title: 'Erreur',
+        message: error instanceof Error ? error.message : 'Impossible d\'appliquer le template.'
+      });
+    } finally {
+      setIsFormatting(false);
+    }
+  };
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 p-4">
-      <Card className="h-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Mic className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg font-semibold text-slate-700">
-              {t('dictation')}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              {t('dictationInfo')}
-            </p>
-            
-            {/* Case Context Information */}
-            {isCaseManagementEnabled && caseContext && (
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                <div className="flex items-start gap-2">
-                  <Link className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs text-green-700">
-                    <p className="font-medium mb-1">Case Linked:</p>
-                    <p className="font-mono text-xs">{caseContext.caseId}</p>
-                    <p className="mt-1">Section: {caseContext.sectionTitle}</p>
-                  </div>
-                </div>
-              </div>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Mic className="h-4 w-4" />
+          <span>Dictée</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col min-h-0 space-y-4">
+        {/* Recording Controls */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            onClick={handleStartStop}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2",
+              isRecording
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-[#009639] hover:bg-[#007a2e] text-white"
             )}
+          >
+            {isRecording ? (
+              <>
+                <Square className="h-4 w-4" />
+                <span>Arrêter</span>
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                <span>Démarrer</span>
+              </>
+            )}
+          </Button>
+        </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-blue-700">
-                  <p className="font-medium mb-1">{t('currentSection')}:</p>
-                  <p>{sectionTitle}</p>
-                  {isCaseManagementEnabled && caseId && (
-                    <p className="mt-1 text-green-600">
-                      ✓ Auto-save to case enabled
-                    </p>
-                  )}
-                </div>
-              </div>
+        {/* Live Transcript / Formatted Text Display */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <label className="text-xs font-medium text-gray-700 mb-1">
+            {formattedText ? 'Texte formaté' : 'Transcript en direct'}
+          </label>
+          {formattedText ? (
+            <div className="flex-1 min-h-0">
+              <RichTextEditor
+                value={formattedText}
+                onChange={(newValue) => {
+                  setFormattedText(newValue);
+                  onFormattedReady(newValue);
+                }}
+                placeholder="Le texte formaté apparaîtra ici..."
+                className="h-full"
+              />
             </div>
-
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>• {t('realTimeTranscription')}</p>
-              <p>• {t('aiAccuracy')} 98.5%</p>
-              <p>• {t('autosave')}</p>
-              {isCaseManagementEnabled && (
-                <p>• Case integration enabled</p>
+          ) : (
+            <div
+              ref={transcriptRef}
+              className={cn(
+                "flex-1 p-3 border border-gray-300 rounded-md bg-gray-50",
+                "overflow-y-auto text-sm leading-relaxed",
+                "min-h-[200px]"
+              )}
+            >
+              {liveTranscript ? (
+                <p className="whitespace-pre-wrap text-gray-800">{liveTranscript}</p>
+              ) : (
+                <p className="text-gray-400 italic">
+                  {isRecording ? 'Parlez maintenant...' : 'Le transcript apparaîtra ici lors de l\'enregistrement...'}
+                </p>
               )}
             </div>
-          </div>
+          )}
+        </div>
 
-                <div className="space-y-2">
-                  <Button
-                    onClick={handleGoToDictation}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Mic className="h-4 w-4 mr-2" />
-                    {t('goToDictation')}
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-      </Card>
-    </div>
+        {/* Template Selection - Only show when recording is stopped and transcript exists */}
+        {!isRecording && liveTranscript && (
+          <div className="space-y-2 flex-shrink-0">
+            <label className="text-xs font-medium text-gray-700">
+              Sélectionner un template
+            </label>
+            <TemplateDropdown
+              currentSection="8"
+              currentLanguage="fr-CA"
+              onTemplateSelect={setSelectedTemplate}
+              selectedTemplate={selectedTemplate}
+            />
+          </div>
+        )}
+
+        {/* Apply Template Button - Only show when template is selected and transcript exists */}
+        {!isRecording && selectedTemplate && liveTranscript && !formattedText && (
+          <Button
+            onClick={handleApplyTemplate}
+            disabled={isFormatting || !liveTranscript.trim()}
+            className="w-full flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isFormatting ? (
+              <>
+                <Sparkles className="h-4 w-4 animate-pulse" />
+                <span>Formatage en cours...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                <span>Appliquer le template</span>
+              </>
+            )}
+          </Button>
+        )}
+
+        {/* Clear formatted text button - allow user to re-apply template */}
+        {formattedText && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setFormattedText('');
+              setSelectedTemplate(null);
+            }}
+            className="w-full flex items-center gap-2"
+          >
+            <span>Effacer et réappliquer le template</span>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };

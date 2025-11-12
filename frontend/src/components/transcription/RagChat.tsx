@@ -27,7 +27,11 @@ const truncateSnippet = (text: string, maxLength: number): string => {
   return text.substring(0, maxLength) + '...';
 };
 
-export const RagChat: React.FC = () => {
+interface RagChatProps {
+  hideHeader?: boolean;
+}
+
+export const RagChat: React.FC<RagChatProps> = ({ hideHeader = false }) => {
   const { t } = useI18n();
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -95,14 +99,16 @@ export const RagChat: React.FC = () => {
   };
 
   return (
-    <Card className="border-gray-200 shadow-sm">
-      <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-        <CardTitle className="text-base font-semibold text-gray-800 flex items-center space-x-2">
-          <BookOpen className="h-5 w-5 text-blue-600" />
-          <span className="leading-tight">{t('ragDocumentTitle')}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-4">
+    <Card className="border-gray-200 shadow-sm h-full flex flex-col">
+      {!hideHeader && (
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+          <CardTitle className="text-base font-semibold text-gray-800 flex items-center space-x-2">
+            <BookOpen className="h-5 w-5 text-blue-600" />
+            <span className="leading-tight">{t('ragDocumentTitle')}</span>
+          </CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className="space-y-4 pt-4 flex-1 overflow-y-auto">
         <Tabs defaultValue="ask" className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
             <TabsTrigger 

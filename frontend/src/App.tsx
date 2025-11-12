@@ -11,6 +11,13 @@ import { VoiceCommandsPage } from '@/pages/VoiceCommandsPage';
 import { VerbatimPage } from '@/pages/VerbatimPage';
 import { MacrosPage } from '@/pages/MacrosPage';
 import { TranscriptAnalysisPage } from '@/pages/TranscriptAnalysisPage';
+import { ReviewCasesPage } from '@/pages/ReviewCasesPage';
+import { CaseReviewPage } from '@/pages/CaseReviewPage';
+import { CaseEditorPage } from '@/pages/CaseEditorPage';
+import { AdminDashboard } from '@/pages/AdminDashboard';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { CalendarPage } from '@/pages/CalendarPage';
+import { AuditLogPage } from '@/pages/AuditLogPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage';
@@ -51,6 +58,13 @@ function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/security-policy" element={<SecurityPolicy />} />
+        
+        {/* Case Editor - PROTECTED (standalone, no AppLayout) */}
+        <Route path="/case/edit/:caseId" element={
+          <ProtectedRoute>
+            <CaseEditorPage />
+          </ProtectedRoute>
+        } />
         
         {/* App layout with existing routes */}
         <Route path="/" element={<AppLayout />}>
@@ -123,6 +137,48 @@ function App() {
           <Route path="/transcript-analysis" element={
             <ProtectedRoute>
               <TranscriptAnalysisPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Review Cases */}
+          <Route path="/review-cases" element={
+            <ProtectedRoute>
+              <ReviewCasesPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Case Review Split View */}
+          <Route path="/case/review/:caseId" element={
+            <ProtectedRoute>
+              <CaseReviewPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Analytics Page - PROTECTED */}
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <AnalyticsPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Calendar Page - PROTECTED */}
+          <Route path="/calendar" element={
+            <ProtectedRoute>
+              <CalendarPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Audit Log Page - PROTECTED */}
+          <Route path="/audit-log" element={
+            <ProtectedRoute>
+              <AuditLogPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Admin Dashboard - PROTECTED */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminDashboard />
             </ProtectedRoute>
           } />
           

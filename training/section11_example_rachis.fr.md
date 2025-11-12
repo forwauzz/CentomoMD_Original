@@ -38,3 +38,4 @@ Pour le diagnostic retenu par la CNESST.
 Étant donné que je ne consolide pas la travailleuse pour ce diagnostic;
 Je ne peux statuer sur ce point.
 
+
